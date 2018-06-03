@@ -7,7 +7,7 @@ lhrh = namedtuple('lhrh', 'lhs rhs')
 
 # Parameter initialization is called once, within nrpy.py.
 thismodule = __name__
-par.initialize_param(par.glb_param("bool", thismodule, "SIMD_enable", True))
+par.initialize_param(par.glb_param("bool", thismodule, "SIMD_enable", False))
 par.initialize_param(par.glb_param("bool", thismodule, "SIMD_debug", False))
 par.initialize_param(par.glb_param("char", thismodule, "PRECISION", "double"))
 #par.initialize_param(par.glb_param("bool", thismodule, "CSE_enable", True))

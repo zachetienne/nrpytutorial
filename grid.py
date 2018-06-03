@@ -10,7 +10,7 @@ glb_gridfcs_list = []
 glb_gridfc  = namedtuple('gridfunction', 'gftype name')
 
 thismodule = __name__
-par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess",   "ETK"))
+par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess",   "SENRlike"))
 par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","kji"))
 par.initialize_param(par.glb_param("int",  thismodule, "DIM", 3))
 par.initialize_param(par.glb_param("int",  thismodule, "Nx[DIM]", "SetAtCRuntime"))
