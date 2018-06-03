@@ -23,44 +23,45 @@
 # and nabla is the Laplaciaion differential operator.
 
 import NRPy_param_funcs as par
-import tensor as ten
+import indexedexp as ixp
 import grid as gri
 import finite_difference as fin
-from outputC import *
+from outputC import * # Needed for lhrh() named tuple
 
-import sympy as sp
-
-# import finite_difference as fin
-
-# Step 1: Initialize free parameters for this module:
-# modulename here will be set to "scalarwave", based on the filename.
+# The name of this module ("scalarwave") is given by __name__:
 thismodule = __name__
 
-# Step 3: Define the main scalarwave() function, which outputs C code
+# Define the main scalarwave() function, which outputs C code
 def scalarwave():
-    # Step 3a: Register gridfunctions that are needed as input.
+    # Step 0: Get the spatial dimension, as it was set in 
+    #         the grid module.
     DIM = par.parval_from_str("DIM")
+
+    # Step 1: Register gridfunctions that are needed as input.
     uu, vv = gri.register_gridfunctions("EVOL",["uu","vv"])
-    # Step 3b: Declare the rank-2 indexed expression \partial_{ij} u,
-    #          which is symmetric about interchange of indices i and j
-    #          Derivative variables like these must have an underscore
-    #          in them, so the finite difference module can parse the
-    #          variable name properly.
-    uu_dDD = ten.declarerank2("uu_dDD","sym12")
-    hDD = ten.register_gridfunctions_for_single_rank2("AUX","hDD","sym12")
-    hDD_dDD = ten.declarerank4("hDD_dDD", "sym12_sym34")
-    hDD_dKOD = ten.declarerank3("hDD_dKOD", "sym12")
+
+    # Step 2: Declare the rank-2 indexed expression \partial_{ij} u,
+    #         which is symmetric about interchange of indices i and j
+    #         Derivative variables like these must have an underscore
+    #         in them, so the finite difference module can parse the
+    #         variable name properly.
+    uu_dDD = ixp.declarerank2("uu_dDD","sym12")
+
+    # Step 3: Define the C parameter wavespeed. The `wavespeed`
+    #         variable is a proper SymPy variable, so it can be
+    #         used in below expressions. In the C code, it acts
+    #         just like a usual parameter, whose value is 
+    #         specified in the parameter file.
     wavespeed = par.Cparameters("REAL",thismodule,"wavespeed")
+
+    # Step 4: Define right-hand sides for the evolution.
     uu_rhs = vv
     vv_rhs = 0
     for i in range(DIM):
         vv_rhs += wavespeed*wavespeed*uu_dDD[i][i]
-        # for j in range(DIM):
-        #     for k in range(DIM):
-        #         vv_rhs += hDD_dKOD[i][j][k]
-        #         for l in range(DIM):
-        #             vv_rhs += hDD_dDD[i][j][k][l]
 
-    fin.FD_outputC_ToFile(str(thismodule)+"/NRPy_codegen/scalarwave_RHS.h",
-                          [lhrh(lhs=gri.gfaccess("out_gfs","UU_rhs"),rhs=uu_rhs),
-                           lhrh(lhs=gri.gfaccess("out_gfs","VV_rhs"),rhs=vv_rhs)])
+    # Step 5: Generate C code for scalarwave evolution equations,
+    #         print output to the screen (standard out, or stdout).
+    fin.FD_outputC("stdout",
+                   [lhrh(lhs=gri.gfaccess("out_gfs","UU_rhs"),rhs=uu_rhs),
+                    lhrh(lhs=gri.gfaccess("out_gfs","VV_rhs"),rhs=vv_rhs)])
