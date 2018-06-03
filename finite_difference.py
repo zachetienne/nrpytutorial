@@ -16,7 +16,7 @@ modulename = __name__
 # Centered finite difference accuracy order
 par.initialize_param(par.glb_param("INT", modulename, "FD_CENTDERIVS_ORDER",  4))
 
-def FD_outputC_ToFile(filename,sympyexpr_list):
+def FD_outputC(filename,sympyexpr_list):
     # Step 0.a:
     # In case sympyexpr_list is a single sympy expression,
     #     convert it to a list with just one element:
