@@ -39,8 +39,12 @@ def get_params_value(input):
 
 #
 def idx_from_str(varname,modname=""):
-    # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
-    
+    if "::" in varname:
+        splitstring = re.split('::', varname)
+        modname=splitstring[0]
+        varname=splitstring[1]
+        
+    # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:    
     if modname == "":
         list = [i for i, v in enumerate(glb_params_list) if v[2] == varname]
     else:
@@ -54,12 +58,7 @@ def idx_from_str(varname,modname=""):
     return list.pop()
 
 def parval_from_str(string):
-    if "::" in string:
-        splitstring = re.split('::', string)
-        idx = idx_from_str(splitstring[1],splitstring[0])
-    else:
-        idx = idx_from_str(string)
-    return glb_paramsvals_list[idx]
+    return glb_paramsvals_list[idx_from_str(string)]
 
 def set_parval_from_str(string,value):
     glb_paramsvals_list[idx_from_str(string)] = value

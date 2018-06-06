@@ -46,20 +46,20 @@ def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
     if not found_registered_gf:
         print("Error: gridfunction \""+varname+"\" is not registered!")
         exit(1)
-        
+       
     DIM = par.parval_from_str("DIM")
     if par.parval_from_str("GridFuncMemAccess") == "SENRlike":
         if gfarrayname == "":
             print("Error: GridFuncMemAccess = SENRlike requires gfarrayname be passed to gfaccess()")
             exit(1)
         # Return gfarrayname[IDX3(varname,i0)] for DIM=1, gfarrayname[IDX3(varname,i0,i1)] for DIM=2, etc.
-        retstring = gfarrayname + "[IDX" + str(DIM+1) + "(" + varname + ", "
+        retstring = gfarrayname + "[IDX" + str(DIM+1) + "(" + varname.upper()+"GF" + ", "
     elif par.parval_from_str("GridFuncMemAccess") == "ETK":
         # Return varname[CCTK_GFINDEX3D(i0,i1,i2)] for DIM=3. Error otherwise
         if DIM != 3:
             print("Error: GridFuncMemAccess = ETK currently requires that gridfunctions be 3D. Can be easily extended.")
             exit(1)
-        retstring = varname + "[CCTK_GFINDEX"+str(DIM)+"D(cctkGH, "
+        retstring = varname + "GF" + "[CCTK_GFINDEX"+str(DIM)+"D(cctkGH, "
     if ijklstring == "":
         for i in range(DIM):
             retstring += "i"+str(i)

@@ -218,9 +218,9 @@ def FD_outputC(filename,sympyexpr_list):
         #    Do not modify the values of os and sz.
         os = 50  # offset
         sz = 100 # assumed size in each direction
-        if par.parval_from_str("MemAllocStyle") == "kji":
+        if par.parval_from_str("MemAllocStyle") == "210":
             return str(int(idx4[0])+os + sz*( (int(idx4[1])+os) + sz*( (int(idx4[2])+os) + sz*( int(idx4[3])+os ) ) ))
-        elif par.parval_from_str("MemAllocStyle") == "ijk":
+        elif par.parval_from_str("MemAllocStyle") == "012":
             return str(int(idx4[3])+os + sz*( (int(idx4[2])+os) + sz*( (int(idx4[1])+os) + sz*( int(idx4[0])+os ) ) ))
         else:
             print("Error: MemAllocStyle = "+par.parval_from_str("MemAllocStyle")+" unsupported.")
@@ -295,7 +295,8 @@ def FD_outputC(filename,sympyexpr_list):
     def read_from_memory_Ccode_onept(gfname,idx):
         idxsplit = idx.split(',')
         idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
-        gfaccess_str = gri.gfaccess("in_gfs",gfname.upper()+"GF",ijkl_string(idx4))
+        #gfaccess_str = gri.gfaccess("in_gfs",gfname.upper()+"GF",ijkl_string(idx4))
+        gfaccess_str = gri.gfaccess("in_gfs",gfname,ijkl_string(idx4))
         if par.parval_from_str("SIMD_enable") == True:
             retstring = indent+vartype() + gfname + varsuffix(idx4) +" = ReadSIMD(&" + gfaccess_str + ");"
         else:
