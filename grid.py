@@ -11,7 +11,7 @@ glb_gridfc  = namedtuple('gridfunction', 'gftype name')
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess",   "SENRlike"))
-par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","kji"))
+par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","210"))
 par.initialize_param(par.glb_param("int",  thismodule, "DIM", 3))
 par.initialize_param(par.glb_param("int",  thismodule, "Nx[DIM]", "SetAtCRuntime"))
 
@@ -35,6 +35,18 @@ def variable_type(var):
         return "gridfunction"
 
 def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
+    found_registered_gf = False
+    for gf in glb_gridfcs_list:
+        if gf.name == varname:
+            if found_registered_gf:
+                print("Error: found duplicate gridfunction name: "+gf.name)
+                exit(1)
+            found_registered_gf = True
+
+    if not found_registered_gf:
+        print("Error: gridfunction \""+varname+"\" is not registered!")
+        exit(1)
+        
     DIM = par.parval_from_str("DIM")
     if par.parval_from_str("GridFuncMemAccess") == "SENRlike":
         if gfarrayname == "":
@@ -78,7 +90,7 @@ def register_gridfunctions(gf_type,gf_names):
 
         for j in range(len(glb_gridfcs_list)):
             if gf_names[i] == glb_gridfcs_list[j].name:
-                print("Error: Tried to register the gridfunction "+gf_names[i]+" twice (ignored type)")
+                print("Error: Tried to register the gridfunction \""+gf_names[i]+"\" twice (ignored type)\n\n")
                 exit(1)
         # If no duplicate found, append to "gridfunctions" list:
         glb_gridfcs_list.append(glb_gridfc(gf_type,gf_names[i]))
@@ -89,4 +101,6 @@ def register_gridfunctions(gf_type,gf_names):
     OBJ_TMPS = []
     for i in range(len(gf_names)):
         OBJ_TMPS.append(sp.sympify(gf_names[i]))
+    if len(gf_names)==1:
+        return OBJ_TMPS[0]
     return OBJ_TMPS
