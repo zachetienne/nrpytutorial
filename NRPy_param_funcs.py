@@ -1,7 +1,7 @@
 glb_params_list = []  # = where we store the parameters and default values of parameters. A list of named tuples
 glb_paramsvals_list = []  # = where we store parameter values.
 from collections import namedtuple
-glb_param = namedtuple('param', 'type module parname defaultval')
+glb_param = namedtuple('glb_param', 'type module parname defaultval')
 import sympy as sp
 
 def initialize_param(input):
@@ -9,8 +9,7 @@ def initialize_param(input):
         glb_params_list.append(input)
         glb_paramsvals_list.append(input.defaultval)
     else:
-        print("Error: Already initialized parameter",input)
-        exit(1)
+        print("initialize_param() warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
 
 # Given the named tuple `input` and list of named tuples `params`,
 #    defined according to namedtuple('param', 'type module name defaultval'),
@@ -39,19 +38,27 @@ def get_params_value(input):
         return glb_paramsvals_list[idx]
 
 #
-def idx_from_str(string):
+def idx_from_str(varname,modname=""):
     # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
-    list = [i for i, v in enumerate(glb_params_list) if v[2] == string]
+    
+    if modname == "":
+        list = [i for i, v in enumerate(glb_params_list) if v[2] == varname]
+    else:
+        list = [i for i, v in enumerate(glb_params_list) if (v[1] == modname and v[2] == varname)]
     if list == []:
-        print("Error: Could not find a parameter matching \""+string+"\" in ",glb_params_list)
+        print("Error: Could not find a parameter matching \""+varname+"\" in ",glb_params_list)
         exit(1)
     if len(list) > 1:
-        print("Error: Found more than one parameter named \""+string+"\". Use get_params_value() instead.")
+        print("Error: Found more than one parameter named \""+varname+"\". Use get_params_value() instead.")
         exit(1)
     return list.pop()
 
 def parval_from_str(string):
-    idx = idx_from_str(string)
+    if "::" in string:
+        splitstring = re.split('::', string)
+        idx = idx_from_str(splitstring[1],splitstring[0])
+    else:
+        idx = idx_from_str(string)
     return glb_paramsvals_list[idx]
 
 def set_parval_from_str(string,value):
@@ -71,7 +78,6 @@ def set_parval_from_str(string,value):
 #   appropriate for the context.
 import re
 def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
-    print(glb_params_list)
     MainModuleFound = True
     if FindMainModuleMode == True:
         MainModuleFound = False
@@ -85,8 +91,6 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
         # with the regex split command, the first three
         # items in single_param_def will be [module, variablename, value]
         single_param_def = re.split('::|=|#', stripped_line_of_text)
-
-        print(single_param_def)
 
         # First verify that single_param_def has at least 3 parts:
         if len(single_param_def) < 3:
@@ -116,7 +120,18 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                 exit(1)
             # If parameter is found at index idx, set paramsval[idx] to the value specified in the file.
             if glb_params_list[idx].defaultval != "RUNTIME":
-                glb_paramsvals_list[idx] = single_param_def[2]
+                if glb_params_list[idx].type == "bool":
+                    if single_param_def[2] == "True":
+                        glb_paramsvals_list[idx] = True
+                    elif single_param_def[2] == "False":
+                        glb_paramsvals_list[idx] = False
+                    else:
+                        print("Error: \"bool\" type can only take values of \"True\" or \"False\"")
+                        exit(1)
+                elif glb_params_list[idx].type == "int":
+                    glb_paramsvals_list[idx] = int(single_param_def[2])
+                else:
+                    glb_paramsvals_list[idx] = single_param_def[2]
             else:
                 print("Error: Tried to set the parameter "
                       + single_param_def[0] + "::" + single_param_def[1] +

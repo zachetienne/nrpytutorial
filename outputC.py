@@ -167,13 +167,13 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
                 outstring += indent + "const " + TYPE + " " + str(commonsubexpression[0]) + " = " + \
                              str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values)) + ";\n"
             else:
-                outstring += indent+"const "+TYPE+" "+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+";\n"
+                outstring += indent+"const "+TYPE+" "+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
         for i,result in enumerate(CSE_results[1]):
             if par.parval_from_str("SIMD_enable") == True:
                 outstring += outtypestring + output_varname_str[i] + " = " + \
                              str(expr_convert_to_SIMD_intrins(result,SIMD_const_varnms,SIMD_const_values)) + ";\n"
             else:
-                outstring += outtypestring+ccode_postproc(sp.ccode(result,output_varname_str[i]))+";\n"
+                outstring += outtypestring+ccode_postproc(sp.ccode(result,output_varname_str[i]))+"\n"
 
         # Step 6b.i: If SIMD_enable == True, then parse the SIMD_const_varnms and SIMD_const_values
         if par.parval_from_str("SIMD_enable") == True:
