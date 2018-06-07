@@ -530,7 +530,7 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
                 if gridpt_posn != 0:
                     dirn = int(derivstring[len(derivstring)-1])
                     idx4[dirn] = gridpt_posn
-            fdstencl.append(idx4)
+                fdstencl.append(idx4)
     else:
         # Mixed second derivative finite difference coeffs
         #     consist of products of first deriv coeffs,
@@ -556,5 +556,5 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
                     dirn2 = int(derivstring[len(derivstring) - 2])
                     idx4[dirn1] = gridpt_posn1
                     idx4[dirn2] = gridpt_posn2
-                fdstencl.append(idx4)
+                    fdstencl.append(idx4)
     return fdcoeffs,fdstencl
