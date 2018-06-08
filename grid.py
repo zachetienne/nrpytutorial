@@ -60,6 +60,9 @@ def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
             print("Error: GridFuncMemAccess = ETK currently requires that gridfunctions be 3D. Can be easily extended.")
             exit(1)
         retstring = varname + "GF" + "[CCTK_GFINDEX"+str(DIM)+"D(cctkGH, "
+    else:
+        print("grid::GridFuncMemAccess = "+par.parval_from_str("GridFuncMemAccess")+" not supported")
+        exit(1)
     if ijklstring == "":
         for i in range(DIM):
             retstring += "i"+str(i)
