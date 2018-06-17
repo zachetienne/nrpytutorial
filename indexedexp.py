@@ -16,6 +16,16 @@ def zerorank2(DIM=-1):
         DIM = par.parval_from_str("DIM")
     return [[sp.sympify(0) for i in range(DIM)] for j in range(DIM)]
 
+def zerorank3(DIM=-1):
+    if DIM == -1:
+        DIM = par.parval_from_str("DIM")
+    return [[[sp.sympify(0) for i in range(DIM)] for j in range(DIM)] for k in range(DIM)]
+
+def zerorank4(DIM=-1):
+    if DIM == -1:
+        DIM = par.parval_from_str("DIM")
+    return [[[[sp.sympify(0) for i in range(DIM)] for j in range(DIM)] for k in range(DIM)] for l in range(DIM)]
+
 def declarerank1(objname, DIM=-1):
     if DIM==-1:
         DIM = par.parval_from_str("DIM")
