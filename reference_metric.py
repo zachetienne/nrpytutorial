@@ -10,11 +10,13 @@ import indexedexp as ixp
 
 # Step 0a: Initialize parameters
 thismodule = __name__
-par.initialize_param(par.glb_param("char", thismodule, "CoordSystem", "Cartesian"))
+par.initialize_param(par.glb_param("char", thismodule, "CoordSystem", "SymTP"))
 
 # Step 0b: Declare global variables
-#x0,x1,x2,x3,M_PI = par.Cparameters("REAL",thismodule,['x0','x1','x2','x3','M_PI'])
-xx     = ixp.declarerank1("xx",DIM=4)
+#xx0,xx1,xx2,xx3 = par.Cparameters("REALARRAY",thismodule,['xx0','xx1','xx2','xx3'])
+# Assuming xx's components are *positive* makes
+#   certain simplifications possible later.
+xx = ixp.declarerank1("xx",DIM=4)
 xxCart = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
@@ -27,6 +29,12 @@ def reference_metric():
 
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
+        # Assuming the spherical radial & theta coordinates
+        #   are positive makes nice simplifications of
+        #   unit vectors possible.
+        xx[0] = sp.symbols("xx0", positive=True)
+        xx[1] = sp.symbols("xx1", positive=True)
+
         r  = xx[0]
         th = xx[1]
         ph = xx[2]
@@ -71,6 +79,11 @@ def reference_metric():
         scalefactor_orthog[2] = xxSph[0]*sp.sin(xxSph[1])
 
     elif CoordSystem == "Cylindrical" or CoordSystem == "SinhCylindrical" or CoordSystem == "SinhCylindricalv2":
+        # Assuming the cylindrical radial coordinate
+        #   is positive makes nice simplifications of
+        #   unit vectors possible.
+        xx[0] = sp.symbols("xx0", positive=True)
+
         RHOCYL = xx[0]
         PHICYL = xx[1]
         ZCYL   = xx[2]
@@ -119,7 +132,12 @@ def reference_metric():
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
         var1, var2= sp.symbols('var1 var2',positive=True)
         bScale, AW, AA, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,["bScale","AW","AA","AMAX","RHOMAX","ZMIN","ZMAX"])
-    
+
+        # Assuming xx0, xx1, and bScale
+        #   are positive makes nice simplifications of
+        #   unit vectors possible.
+        xx[0],xx[1],bScale = sp.symbols("xx0 xx1 bScale", positive=True)
+
         xxmin = ["0.0","0.0","0.0"]
         xxmax = ["params.AMAX","M_PI","2.0*M_PI"]
     
@@ -175,72 +193,85 @@ def reference_metric():
         print("CoordSystem == " + CoordSystem + " is not supported.")
         exit(1)
 
+def UnitVectors3D():
+    xxhats3D = ixp.zerorank2(3)
+    for i in range(3):
+        norm = 0
+        for j in range(3):
+            numer = sp.diff(xxCart[j],xx[i])
+            norm += numer**2
+            xxhats3D[i][j] = numer
+        norm = sp.simplify(sp.sqrt(sp.simplify(norm)))
+        for j in range(3):
+            xxhats3D[i][j] /= norm
+    return xxhats3D
+
 # for i in range(3):
 #     set_parameter("REAL", "x"+str(i+1)+"min", xxmin[i], params_type, params_varname, params_value)
 #     set_parameter("REAL", "x"+str(i+1)+"max", xxmax[i], params_type, params_varname, params_value)
 
 
-    # -={ \gammahat_{ij}: output to codegen_output/NRPy_gammahatDD_*.h }=-
-
-# Set precision to, e.g., double or long double
-PRECISION = get_parameter_value("PRECISION", params_varname, params_value)
-
-# Jacobian matrix needed for ADM integrands inside BSSN_Diagnostics.py
-if RunMode == "Diagnostics" or RunMode == "Everything":
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/gammahatDD.h", [], [], [],
-                     protected_varnames, [],
-                     [ghatDD[0][0], "const " + PRECISION + " gammahatDD00",
-                      ghatDD[0][1], "const " + PRECISION + " gammahatDD01",
-                      ghatDD[0][2], "const " + PRECISION + " gammahatDD02",
-                      ghatDD[1][1], "const " + PRECISION + " gammahatDD11",
-                      ghatDD[1][2], "const " + PRECISION + " gammahatDD12",
-                      ghatDD[2][2], "const " + PRECISION + " gammahatDD22"])
-
-    #ROOTDIR = root_directory(params_str,params_val)+"/"
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/dist_from_origin.h", [],[],[], protected_varnames,[],[r,"const REAL dist_from_origin"])
-
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/scalefactor_orthog.h", [],[],[],protected_varnames,[],
-                     [scalefactor_orthog[0],"scalefactor_orthog[0]",scalefactor_orthog[1], "scalefactor_orthog[1]",scalefactor_orthog[2], "scalefactor_orthog[2]",])
-
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/xyz.h", [],[],[], protected_varnames,
-                     [],[xCart,"Cartxyz[0][idx]",yCart,"Cartxyz[1][idx]",zCart,"Cartxyz[2][idx]"])
-
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/xxCart.h", [],[],[], protected_varnames,
-                     [],[xCart,"xCart",yCart,"yCart",zCart,"zCart"])
-
-    drdx = [[sp.diff(xCart,xx[0]), sp.diff(xCart,xx[1]), sp.diff(xCart,xx[2])],
-            [sp.diff(yCart,xx[0]), sp.diff(yCart,xx[1]), sp.diff(yCart,xx[2])],
-            [sp.diff(zCart,xx[0]), sp.diff(zCart,xx[1]), sp.diff(zCart,xx[2])]]
-    #pprint(drdx)
-    dxdr = [[sp.sympify(0) for i in range(3)] for j in range(3)]
-    dummyDET = generic_matrix_inverter3xx[2](drdx, dxdr)
-
-    dydx = [sp.sympify(0) for i in range(18)]
-    dxdy = [sp.sympify(0) for i in range(18)]
-    counter = 0
-    for i in range(3):
-        for j in range(3):
-            dydx[counter] = (drdx[i][j])
-            dxdy[counter] = (dxdr[i][j])
-            counter += 1
-            dydx[counter] = "dydx["+str(i)+"]["+str(j)+"]"
-            dxdy[counter] = "dxdy["+str(i)+"]["+str(j)+"]"
-            counter += 1
-
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/Jacobian_sp.Matrix.h", [],[],[], protected_varnames,[],dydx)
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/Inverse_Jacobian_sp.Matrix.h", [],[],[], protected_varnames,[],dxdy)
-
-    unitVec = [sp.sympify(0) for i in range(18)]
-    counter = 0
-    for i in range(3):
-        for j in range(3):
-            unitVec[counter] = (xxhat[(i,j)])
-            counter += 1
-            unitVec[counter] = "x"+str(i+1)+"hat["+str(j)+"]"
-            counter += 1
-
-    NRPy_file_output("common_functions/reference_metric/NRPy_codegen/xxhat.h", [],[],[], protected_varnames,[],unitVec)
-
-stop1 = time.time()
-print("Defined reference metric quantities in \t\t\t" + str(round(stop1-start1,2)) + " seconds")
-# *****************************************************
+#     # -={ \gammahat_{ij}: output to codegen_output/NRPy_gammahatDD_*.h }=-
+#
+# # Set precision to, e.g., double or long double
+# PRECISION = get_parameter_value("PRECISION", params_varname, params_value)
+#
+# # Jacobian matrix needed for ADM integrands inside BSSN_Diagnostics.py
+# if RunMode == "Diagnostics" or RunMode == "Everything":
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/gammahatDD.h", [], [], [],
+#                      protected_varnames, [],
+#                      [ghatDD[0][0], "const " + PRECISION + " gammahatDD00",
+#                       ghatDD[0][1], "const " + PRECISION + " gammahatDD01",
+#                       ghatDD[0][2], "const " + PRECISION + " gammahatDD02",
+#                       ghatDD[1][1], "const " + PRECISION + " gammahatDD11",
+#                       ghatDD[1][2], "const " + PRECISION + " gammahatDD12",
+#                       ghatDD[2][2], "const " + PRECISION + " gammahatDD22"])
+#
+#     #ROOTDIR = root_directory(params_str,params_val)+"/"
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/dist_from_origin.h", [],[],[], protected_varnames,[],[r,"const REAL dist_from_origin"])
+#
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/scalefactor_orthog.h", [],[],[],protected_varnames,[],
+#                      [scalefactor_orthog[0],"scalefactor_orthog[0]",scalefactor_orthog[1], "scalefactor_orthog[1]",scalefactor_orthog[2], "scalefactor_orthog[2]",])
+#
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/xyz.h", [],[],[], protected_varnames,
+#                      [],[xCart,"Cartxyz[0][idx]",yCart,"Cartxyz[1][idx]",zCart,"Cartxyz[2][idx]"])
+#
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/xxCart.h", [],[],[], protected_varnames,
+#                      [],[xCart,"xCart",yCart,"yCart",zCart,"zCart"])
+#
+#     drdx = [[sp.diff(xCart,xx[0]), sp.diff(xCart,xx[1]), sp.diff(xCart,xx[2])],
+#             [sp.diff(yCart,xx[0]), sp.diff(yCart,xx[1]), sp.diff(yCart,xx[2])],
+#             [sp.diff(zCart,xx[0]), sp.diff(zCart,xx[1]), sp.diff(zCart,xx[2])]]
+#     #pprint(drdx)
+#     dxdr = [[sp.sympify(0) for i in range(3)] for j in range(3)]
+#     dummyDET = generic_matrix_inverter3xx[2](drdx, dxdr)
+#
+#     dydx = [sp.sympify(0) for i in range(18)]
+#     dxdy = [sp.sympify(0) for i in range(18)]
+#     counter = 0
+#     for i in range(3):
+#         for j in range(3):
+#             dydx[counter] = (drdx[i][j])
+#             dxdy[counter] = (dxdr[i][j])
+#             counter += 1
+#             dydx[counter] = "dydx["+str(i)+"]["+str(j)+"]"
+#             dxdy[counter] = "dxdy["+str(i)+"]["+str(j)+"]"
+#             counter += 1
+#
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/Jacobian_sp.Matrix.h", [],[],[], protected_varnames,[],dydx)
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/Inverse_Jacobian_sp.Matrix.h", [],[],[], protected_varnames,[],dxdy)
+#
+#     unitVec = [sp.sympify(0) for i in range(18)]
+#     counter = 0
+#     for i in range(3):
+#         for j in range(3):
+#             unitVec[counter] = (xxhat[(i,j)])
+#             counter += 1
+#             unitVec[counter] = "x"+str(i+1)+"hat["+str(j)+"]"
+#             counter += 1
+#
+#     NRPy_file_output("common_functions/reference_metric/NRPy_codegen/xxhat.h", [],[],[], protected_varnames,[],unitVec)
+#
+# stop1 = time.time()
+# print("Defined reference metric quantities in \t\t\t" + str(round(stop1-start1,2)) + " seconds")
+# # *****************************************************

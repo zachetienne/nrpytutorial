@@ -148,7 +148,9 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
 
 def Cparameters(type,module,names):
     output = []
-    if names is not list:
+    # if names is not a list, make it a list, to
+    #      simplify the remainder of this routine.
+    if not isinstance(names,list):
         names = [names]
     for i in range(len(names)):
         initialize_param(glb_param(type, module, names[i], "SetAtCRuntime"))
