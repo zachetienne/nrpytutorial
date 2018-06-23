@@ -206,12 +206,13 @@ def ref_metric__hatted_quantities():
     # Step 0: Set dimension DIM
     DIM = par.parval_from_str("grid::DIM")
 
-    global ReU,ReDD,ghatDD
+    global ReU,ReDD,ghatDD,ghatUU,detgammahat
     ReU    = ixp.zerorank1()
     ReDD   = ixp.zerorank2()
     ghatDD = ixp.zerorank2()
 
-    # Step 1: Compute ghatDD (reference metric), as well as 
+    # Step 1: Compute ghatDD (reference metric), ghatUU
+    #         (inverse reference metric), as well as 
     #         rescaling vector ReU & rescaling matrix ReDD
     for i in range(DIM):
         scalefactor_orthog[i] = sp.sympify(scalefactor_orthog[i])
