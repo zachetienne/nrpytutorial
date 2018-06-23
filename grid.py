@@ -97,7 +97,7 @@ def register_gridfunctions(gf_type,gf_names):
                 exit(1)
         # If no duplicate found, append to "gridfunctions" list:
         glb_gridfcs_list.append(glb_gridfc(gf_type,gf_names[i]))
-    if not (gf_type == "EVOL" or gf_type == "AUX"):
+    if not (gf_type == "EVOL" or gf_type == "AUX" or gf_type == "COORDARRAY"):
         print("Error in registering gridfunction(s) with unsupported type "+gf_type+".")
         print("Supported types include \"EVOL\" for gridfunctions related to evolved quantities or \"AUX\" for all others.")
         exit(1)
