@@ -26,19 +26,26 @@ def zerorank4(DIM=-1):
         DIM = par.parval_from_str("DIM")
     return [[[[sp.sympify(0) for i in range(DIM)] for j in range(DIM)] for k in range(DIM)] for l in range(DIM)]
 
-def declarerank1(objname, DIM=-1):
+def declarerank1(objname, DIM=-1, RegisterAsGridfunction=False):
     if DIM==-1:
         DIM = par.parval_from_str("DIM")
     IDX_OBJ_TMP = [sp.sympify(objname + str(i)) for i in range(DIM)]
     return IDX_OBJ_TMP
 
-def register_gridfunctions_for_single_rank1(gf_type,gf_basename):
+def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
+    # Step 1: Declare a list of SymPy variables, 
+    #         where IDX_OBJ_TMP[i] = gf_basename+str(i)
     IDX_OBJ_TMP = declarerank1(gf_basename)
-    DIM = par.parval_from_str("DIM")
-    stringIDX_OBJ_TMP = []
+
+    # Step 2: Register each gridfunction
+    if DIM==-1:
+        DIM = par.parval_from_str("DIM")
+    gf_list = []
     for i in range(DIM):
-        stringIDX_OBJ_TMP[i] = str(IDX_OBJ_TMP[i])
-    gri.register_gridfunctions(gf_type,stringIDX_OBJ_TMP)
+        gf_list.append(str(IDX_OBJ_TMP[i]))
+    gri.register_gridfunctions(gf_type, gf_list)
+
+    # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP
 
 def declarerank2(objname, symmetry_option, DIM=-1):
@@ -60,11 +67,17 @@ def declarerank2(objname, symmetry_option, DIM=-1):
                 exit(1)
     return IDX_OBJ_TMP
 
-def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option):
-    # First convert gf_names to a list if it's not already a list
-    DIM = par.parval_from_str("DIM")
-    IDX_OBJ_TMP = declarerank2(gf_basename,symmetry_option)
-    # Now drop to a flat list, so we can register each gridfunction
+def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option, DIM=-1):
+    # Step 1: Declare a list of lists of SymPy variables, 
+    #         where IDX_OBJ_TMP[i][j] = gf_basename+str(i)+str(j)
+    IDX_OBJ_TMP = declarerank2(gf_basename,symmetry_option, DIM)
+
+    # Step 2: register each gridfunction, being careful not
+    #         not to store duplicates due to rank-2 symmetries.
+    if DIM==-1:
+        DIM = par.parval_from_str("DIM")
+    # Register only unique gridfunctions. Otherwise 
+    # rank-2 symmetries might result in duplicates
     gf_list = []
     for i in range(DIM):
         for j in range(DIM):
@@ -75,6 +88,8 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
             if save == True:
                 gf_list.append(str(IDX_OBJ_TMP[i][j]))
     gri.register_gridfunctions(gf_type,gf_list)
+
+    # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP
 
 def declarerank3(objname, symmetry_option, DIM=-1):
