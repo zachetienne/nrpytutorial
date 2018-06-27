@@ -157,7 +157,7 @@ def symm_matrix_inverter3x3(in2Darray):
     return outINV, outDET
 
 # symmetry_optionPy's generic matrix inverter is highly inefficient for 3x3 matrices, so here we have an optimized version.
-def generic_matrix_inverter3x3(in2Darray, outINV):
+def generic_matrix_inverter3x3(in2Darray):
     outDET = -in2Darray[0][2]*in2Darray[1][1]*in2Darray[2][0] + in2Darray[0][1]*in2Darray[1][2]*in2Darray[2][0] + \
               in2Darray[0][2]*in2Darray[1][0]*in2Darray[2][1] - in2Darray[0][0]*in2Darray[1][2]*in2Darray[2][1] - \
               in2Darray[0][1]*in2Darray[1][0]*in2Darray[2][2] + in2Darray[0][0]*in2Darray[1][1]*in2Darray[2][2]
