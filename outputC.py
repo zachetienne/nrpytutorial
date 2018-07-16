@@ -175,8 +175,10 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
             else:
                 outstring += outtypestring+ccode_postproc(sp.ccode(result,output_varname_str[i]))+"\n"
 
-        # Step 6b.i: If SIMD_enable == True, then parse the SIMD_const_varnms and SIMD_const_values
-        if par.parval_from_str("SIMD_enable") == True:
+        # Step 6b.i: If SIMD_enable == True , and
+        #            there is at least one SIMD const variable, 
+        #            then declare the SIMD_const_varnms and SIMD_const_values arrays
+        if par.parval_from_str("SIMD_enable") == True and len(SIMD_const_varnms) != 0:
             # Step 6a) Sort the list of definitions. Idea from:
             # https://stackoverflow.com/questions/9764298/is-it-possible-to-sort-two-listswhich-reference-each-other-in-the-exact-same-w
             SIMD_const_varnms, SIMD_const_values = \
