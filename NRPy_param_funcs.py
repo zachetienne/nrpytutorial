@@ -9,7 +9,7 @@ def initialize_param(input):
         glb_params_list.append(input)
         glb_paramsvals_list.append(input.defaultval)
     else:
-        print("initialize_param() warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
+        print("initialize_param() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
 
 # Given the named tuple `input` and list of named tuples `params`,
 #    defined according to namedtuple('param', 'type module name defaultval'),

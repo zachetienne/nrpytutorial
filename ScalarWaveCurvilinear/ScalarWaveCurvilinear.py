@@ -82,6 +82,11 @@ def ScalarWaveCurvilinear():
     #          variable name properly.
     uu_dDD = ixp.declarerank2("uu_dDD","sym12")
 
+    # Step 7: Specify RHSs as global variables,
+    #         to enable access outside this
+    #         function (e.g., for C code output)
+    global uu_rhs,vv_rhs
+
     # Step 6: Define right-hand sides for the evolution.
     # Step 6a: uu_rhs = vv:
     uu_rhs = vv
@@ -99,14 +104,9 @@ def ScalarWaveCurvilinear():
 
     vv_rhs *= wavespeed*wavespeed
 
-    # Step 7: Specify RHSs as global variables,
-    #         to enable access outside this
-    #         function (e.g., for C code output)
-    global uu_rhs,vv_rhs
 
     # Step 7: Generate C code for scalarwave evolution equations,
     #         print output to the screen (standard out, or stdout).
-
-    fin.FD_outputC("stdout",
-                   [lhrh(lhs=gri.gfaccess("rhs_gfs","uu"),rhs=uu_rhs),
-                    lhrh(lhs=gri.gfaccess("rhs_gfs","vv"),rhs=vv_rhs)])
+    # fin.FD_outputC("stdout",
+    #                [lhrh(lhs=gri.gfaccess("rhs_gfs","uu"),rhs=uu_rhs),
+    #                 lhrh(lhs=gri.gfaccess("rhs_gfs","vv"),rhs=vv_rhs)])
