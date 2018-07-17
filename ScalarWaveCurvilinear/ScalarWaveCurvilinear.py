@@ -43,16 +43,15 @@ import finite_difference as fin
 #          used in below expressions. In the C code, it acts
 #          just like a usual parameter, whose value is
 #          specified in the parameter file.
-# The name of this module ("ScalarWaveCurvlinear") is given by __name__:
+# The name of this module ("ScalarWaveCurvilinear") is given by __name__:
 thismodule = __name__
 wavespeed = par.Cparameters("REAL", thismodule, "wavespeed")
 
 def ScalarWaveCurvilinear():
-    # Step 1: Set spatial dimension.
-    #         With reference metrics, this must be
-    #         set to 3 or fewer.
-    DIM = 3 # Three spatial dimensions
-    par.set_parval_from_str("grid::DIM",DIM)
+    # Step 1: Get the spatial dimension, defined in the
+    #         NRPy+ "grid" module. With reference metrics,
+    #         this must be set to 3 or fewer.
+    DIM = par.parval_from_str("DIM")
 
     # Step 2: Set up the reference metric and
     #         quantities derived from the
@@ -66,7 +65,8 @@ def ScalarWaveCurvilinear():
             for j in range(DIM):
                 contractedGammahatU[k] += rfm.ghatUU[i][j] * rfm.GammahatUDD[k][i][j]
 
-    # Step 4: Register gridfunctions that are needed as input.
+    # Step 4: Register gridfunctions that are needed as input
+    #         to the scalar wave RHS expressions.
     uu, vv = gri.register_gridfunctions("EVOL",["uu","vv"])
 
     # Step 5a: Declare the rank-1 indexed expression \partial_{i} u,
@@ -99,10 +99,14 @@ def ScalarWaveCurvilinear():
 
     vv_rhs *= wavespeed*wavespeed
 
-    vv_rhs = sp.simplify(vv_rhs)
+    # Step 7: Specify RHSs as global variables,
+    #         to enable access outside this
+    #         function (e.g., for C code output)
+    global uu_rhs,vv_rhs
 
     # Step 7: Generate C code for scalarwave evolution equations,
     #         print output to the screen (standard out, or stdout).
+
     fin.FD_outputC("stdout",
                    [lhrh(lhs=gri.gfaccess("rhs_gfs","uu"),rhs=uu_rhs),
                     lhrh(lhs=gri.gfaccess("rhs_gfs","vv"),rhs=vv_rhs)])
