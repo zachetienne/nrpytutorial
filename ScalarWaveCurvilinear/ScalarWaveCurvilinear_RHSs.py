@@ -31,12 +31,7 @@
 # \partial_t v = \hat{g}^{i j} \partial_{i} \partial_{j} u - \hat{\Gamma}^i \partial_i u
 
 # Step P1: Import needed NRPy+ core modules:
-from outputC import *
 import NRPy_param_funcs as par
-import indexedexp as ixp
-import reference_metric as rfm
-import grid as gri
-import finite_difference as fin
 
 # Step P2: Define the C parameter wavespeed. The `wavespeed`
 #          variable is a proper SymPy variable, so it can be
@@ -47,7 +42,11 @@ import finite_difference as fin
 thismodule = __name__
 wavespeed = par.Cparameters("REAL", thismodule, "wavespeed")
 
-def ScalarWaveCurvilinear():
+def ScalarWaveCurvilinear_RHSs():
+    import indexedexp as ixp
+    import reference_metric as rfm
+    import grid as gri
+
     # Step 1: Get the spatial dimension, defined in the
     #         NRPy+ "grid" module. With reference metrics,
     #         this must be set to 3 or fewer.
