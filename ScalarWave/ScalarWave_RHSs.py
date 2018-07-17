@@ -49,7 +49,7 @@ thismodule = __name__
 wavespeed = par.Cparameters("REAL", thismodule, "wavespeed")
 
 # Define the main ScalarWave() function, which outputs C code
-def ScalarWave():
+def ScalarWave_RHSs():
     # Step 1: Get the spatial dimension, defined in the
     #         NRPy+ "grid" module.
     DIM = par.parval_from_str("DIM")
@@ -65,16 +65,17 @@ def ScalarWave():
     #         variable name properly.
     uu_dDD = ixp.declarerank2("uu_dDD","sym12")
 
-    # Step 4: Define right-hand sides for the evolution.
+    # Step 4: Specify RHSs as global variables,
+    #         to enable access outside this
+    #         function (e.g., for C code output)
+    global uu_rhs,vv_rhs
+
+    # Step 5: Define right-hand sides for the evolution.
     uu_rhs = vv
     vv_rhs = 0
     for i in range(DIM):
         vv_rhs += wavespeed*wavespeed*uu_dDD[i][i]
 
-    # Step 5: Specify RHSs as global variables,
-    #         to enable access outside this
-    #         function (e.g., for C code output)
-    global uu_rhs,vv_rhs
 
     # # Step 5: Generate C code for scalarwave evolution equations,
     # #         print output to the screen (standard out, or stdout).
