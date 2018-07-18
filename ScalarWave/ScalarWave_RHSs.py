@@ -46,6 +46,7 @@ import finite_difference as fin
 #          specified in the parameter file.
 # The name of this module ("ScalarWave") is given by __name__:
 thismodule = __name__
+global wavespeed
 wavespeed = par.Cparameters("REAL", thismodule, "wavespeed")
 
 # Define the main ScalarWave() function, which outputs C code

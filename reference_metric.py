@@ -19,9 +19,7 @@ thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "CoordSystem", "Spherical"))
 
 # Step 0b: Declare global variables
-#xx0,xx1,xx2,xx3 = par.Cparameters("REALARRAY",thismodule,['xx0','xx1','xx2','xx3'])
-#xx = ixp.declarerank1("xx",DIM=4)
-xx = par.Cparameters("REALARRAY",thismodule,["xx0","xx1","xx2","xx3"])
+xx = gri.xx
 xxCart = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s

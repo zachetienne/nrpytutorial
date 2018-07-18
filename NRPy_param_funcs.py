@@ -146,7 +146,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     exit(1)
                 glb_paramsvals_list[idx] = single_param_def[2]
 
-def Cparameters(type,module,names):
+def Cparameters(type,module,names,assumption="Real"):
     output = []
     # if names is not a list, make it a list, to
     #      simplify the remainder of this routine.
@@ -154,7 +154,13 @@ def Cparameters(type,module,names):
         names = [names]
     for i in range(len(names)):
         initialize_param(glb_param(type, module, names[i], "SetAtCRuntime"))
-        tmp = sp.Symbol(names[i], real=True) # Assumes all Cparameters are real.
+        if assumption == "Real":
+            tmp = sp.Symbol(names[i], real=True) # Assumes all Cparameters are real.
+        elif assumption == "RealPositive":
+            tmp = sp.Symbol(names[i], real=True, positive=True) # Assumes all Cparameters are real and positive.
+        else:
+            print("Error: assumption "+str(assumption)+" not supported.")
+            exit(1)
         output.append(tmp)
     if len(names) == 1:
         return output[0]

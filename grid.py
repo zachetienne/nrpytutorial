@@ -14,6 +14,7 @@ par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess",   "S
 par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","210"))
 par.initialize_param(par.glb_param("int",  thismodule, "DIM", 3))
 par.initialize_param(par.glb_param("int",  thismodule, "Nx[DIM]", "SetAtCRuntime"))
+xx = par.Cparameters("REALARRAY",thismodule,["xx0","xx1","xx2","xx3"])
 
 def variable_type(var):
     var_is_gf = False
