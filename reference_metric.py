@@ -11,8 +11,8 @@ import time
 import sympy as sp
 
 import NRPy_param_funcs as par
-# from outputC import *
 import indexedexp as ixp
+import grid as gri
 
 # Step 0a: Initialize parameters
 thismodule = __name__
