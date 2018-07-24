@@ -65,11 +65,12 @@ def WeylScalars():
         vbU[0] = xmoved + offset
         vbU[1] = ymoved
         vbU[2] = zmoved
+        LeviCivitaSymbol = define_LeviCivitaSymbol()
         for a in range(DIM):
             for b in range(DIM):
-                for c in range(DIM)
-                    for d in range(DIM)
-                        vcU[a] += sqrt(detgammabar) * gammabarUU[a][d] * levicivita(d,b,c) * vaU[b] *vbU[c]
+                for c in range(DIM):
+                    for d in range(DIM):
+                        vcU[a] += sp.sqrt(bssn.detgammabar) * bssn.gammabarUU[a][d] * LeviCivitaSymbol[d][b][c] * vaU[b] *vbU[c]
 
         # TO DO: code up the Levi-Civita tensor
         # Graham-Schmidt orthonormalization of the tetrad
@@ -77,28 +78,28 @@ def WeylScalars():
         omega11 = 0
         for a in range(DIM):
             for b in range(DIM):
-                omega11 += waU[a] * waU[b] * gammabarDD[a][b]
-        eaU = waU / sqrt(omega11)
+                omega11 += waU[a] * waU[b] * bssn.gammabarDD[a][b]
+        eaU = waU / sp.sqrt(omega11)
 
         omega12 = 0
         for a in range(DIM):
             for b in range(DIM):
-                omega12 += eaU[a] * vaU[b] * gammabarDD[a][b]
+                omega12 += eaU[a] * vaU[b] * bssn.gammabarDD[a][b]
         wbU = vbU - omega12*eaU
         omega22 = 0
         for a in range(DIM):
             for b in range(DIM):
-                omega22 += wbU[a] * wbU[b] *gammabarDD[a][b]
+                omega22 += wbU[a] * wbU[b] *bssn.gammabarDD[a][b]
         ebU = wbU / sqrt(omega22)
 
         omega13 = 0
         for a in range(DIM):
             for b in range(DIM):
-                omega13 += eaU[a] * vcU[b] * gammabarDD[a][b]
+                omega13 += eaU[a] * vcU[b] * bssn.gammabarDD[a][b]
         omega23 = 0
         for a in range(DIM):
             for b in range(DIM):
-                omega23 += ebU[a] * vcU[b] * gammabarDD[a][b]
+                omega23 += ebU[a] * vcU[b] * bssn.gammabarDD[a][b]
         wcU = vcU - omega13*eaU - omega23*ebU
 
         # Construct the tetrad
