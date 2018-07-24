@@ -13,11 +13,13 @@ from sympy import conjugate,I
 
 # Step 1: Initialize WeylScalar parameters
 thismodule = __name__
-TetradChoice = par.initialize_param(par.glb_param("int", thismodule, "TetradChoice", "0"))
-xorig = par.initialize_param(par.glb_param("double", thismodule, "xorig", "0.0"))
-yorig = par.initialize_param(par.glb_param("double", thismodule, "yorig", "0.0"))
-zorig = par.initialize_param(par.glb_param("double", thismodule, "zorig", "0.0"))
-offset = par.initialize_param(par.glb_param("double", thismodule, "offset", "1.0e-15"))
+# Use proper names for Tetrad Choices. If no name given (hunt the literature), then use the literature reference as the name.
+TetradChoice = par.initialize_param(par.glb_param("char", thismodule, "TetradChoice", "SOME NAME"))
+# Why are these needed?
+# xorig = par.initialize_param(par.glb_param("REAL", thismodule, "xorig", "0.0"))
+# yorig = par.initialize_param(par.glb_param("REAL", thismodule, "yorig", "0.0"))
+# zorig = par.initialize_param(par.glb_param("REAL", thismodule, "zorig", "0.0"))
+# offset = par.initialize_param(par.glb_param("REAL", thismodule, "offset", "1.0e-15"))
 
 # Step 2: Define the Levi-Civita symbol
 def LeviCivitaSymbol(i,j,k):
