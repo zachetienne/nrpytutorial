@@ -1,16 +1,18 @@
 # This module will declare and set many of the quantities that are useful for numerical relativity.
 # This includes the Ricci tensor, metric tensor, and Christoffel Symbols
 
-# Step 1: import all needed modules from NRPy+:
+# Step P1: import all needed modules from NRPy+:
 import NRPy_param_funcs as par
 import indexedexp as ixp
 import grid as gri
 import finite_difference as fin
 import reference_metric as rfm
-rfm.reference_metric()
 from outputC import *
 
-def bssn_metric():
+def BSSN_RHSs():
+    # Step 1: Set up reference metric
+    rfm.reference_metric()
+
     # Calculates the useful tensors and tensor-like quantities in the BSSN metric.
     # Step 2a: Initialize BSSN_RHS parameters
     thismodule = __name__
@@ -741,6 +743,7 @@ def bssn_metric():
 
     # Step 16: Rescale the RHS quantities so that the evolved
     #          variables are smooth across coord singularities
+    global h_rhsDD,a_rhsDD,lambda_rhsU,vet_rhsU,bet_rhsU
     h_rhsDD     = ixp.zerorank2()
     a_rhsDD     = ixp.zerorank2()
     lambda_rhsU = ixp.zerorank1()
@@ -755,4 +758,6 @@ def bssn_metric():
             a_rhsDD[i][j] =     Abar_rhsDD[i][j] / rfm.ReDD[i][j]
     #print(str(Abar_rhsDD[2][2]).replace("**","^").replace("_","").replace("xx","x").replace("sin(x2)","Sin[x2]").replace("sin(2*x2)","Sin[2*x2]").replace("cos(x2)","Cos[x2]").replace("detgbaroverdetghat","detg"))
     #print(str(Dbarbetacontraction).replace("**","^").replace("_","").replace("xx","x").replace("sin(x2)","Sin[x2]").replace("detgbaroverdetghat","detg"))
-    #print(betaU_dD)
+
+BSSN_RHSs()
+print(vet_rhsU[0])
