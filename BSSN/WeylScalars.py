@@ -9,7 +9,7 @@ import reference_metric as rfm
 rfm.reference_metric()
 from outputC import *
 import BSSN_RHSs as bssn
-from sympy import conjugate,I
+import sympy as sp
 
 # Step 1: Initialize WeylScalar parameters
 thismodule = __name__
@@ -21,17 +21,21 @@ TetradChoice = par.initialize_param(par.glb_param("char", thismodule, "TetradCho
 # zorig = par.initialize_param(par.glb_param("REAL", thismodule, "zorig", "0.0"))
 # offset = par.initialize_param(par.glb_param("REAL", thismodule, "offset", "1.0e-15"))
 
-# Step 2: Define the Levi-Civita symbol
-def LeviCivitaSymbol(i,j,k):
-    i = int(i)
-    j = int(j)
-    k = int(k)
-    a = j-i
-    b = k-j
-    c = i-k
-    if abs(a) == 2:
-        a = a/2
+# Step 2: Define the Levi-Civita symbol, used with tetrads <- better description needed.
+def define_LeviCivitaSymbol(DIM=-1):
+    if DIM == -1:
+        DIM = par.parval_from_str("DIM")
 
+    LeviCivitaSymbol = ixp.zerorank3()
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
+                LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) / 2
+    return LeviCivitaSymbol
+
+# Step 3: Compute the Weyl scalars
 def WeylScalars():
     # Step 1:
     bssn.BSSN_RHSs()
