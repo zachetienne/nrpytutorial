@@ -1,6 +1,9 @@
 # This module will declare and set many of the quantities that are useful for numerical relativity.
 # This includes the Ricci tensor, metric tensor, and Christoffel Symbols
 
+# Author: Zachariah B. Etienne
+#         zachetie **at** gmail **dot* com
+
 # Step P1: import all needed modules from NRPy+:
 import NRPy_param_funcs as par
 import indexedexp as ixp
@@ -114,16 +117,17 @@ def BSSN_RHSs():
                                                          - rfm.GammahatUDD[m][j][k]*gammabarDD_dHatD[i][m][l]
 
     # Step 5g: Compute \bar{\gamma}_{ij} and its inverse (using built-in function ixp.symm_matrix_inverter3x3()):
-    global gammabarDD # Needed as global for Psi4.py
-    gammabarDD = ixp.zerorank2() # Needed as global for Psi4.py
+    global gammabarDD # Needed as global for WeylScalars.py
+    gammabarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
             gammabarDD[i][j] = hDD[i][j]*rfm.ReDD[i][j] + rfm.ghatDD[i][j]
-    global gammabarUU # Needed as global for Psi4.py
+    global gammabarUU # Needed as global for WeylScalars.py
     gammabarUU, dummydet = ixp.symm_matrix_inverter3x3(gammabarDD)
 
     # Step 5h: Add the first term to RbarDD:
     #         - \frac{1}{2} \bar{\gamma}^{k l} \hat{D}_{k} \hat{D}_{l} \bar{\gamma}_{i j}
+    global RbarDD # Needed as global for WeylScalars.py
     RbarDD = ixp.zerorank2()
     RbarDDpiece = ixp.zerorank2()
     for i in range(DIM):
@@ -163,7 +167,7 @@ def BSSN_RHSs():
                                          + rfm.ghatDDdD[i][j][k]
 
     # Step 7b: Define barred Christoffel symbol \bar{\Gamma}^{i}_{jk} = GammabarUDD[i][j][k]
-    global GammabarUDD # Needed as global for Psi4.py
+    global GammabarUDD # Needed as global for WeylScalars.py
     GammabarUDD = ixp.zerorank3()
     for i in range(DIM):
         for k in range(DIM):
@@ -244,6 +248,7 @@ def BSSN_RHSs():
                                         + betaU_dD[k][j] * gammabarDD[i][k]
 
     # Step 8c: Define \bar{A}_{ij} = a_{ij} \text{ReDD[i][j]} = AbarDD[i][j], and its contraction trAbar = \bar{A}^k_k
+    global AbarDD # Needed as global for WeylScalars.py
     AbarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
@@ -326,6 +331,7 @@ def BSSN_RHSs():
     phi_dD = ixp.zerorank1()
     phi_dupD = ixp.zerorank1()
     phi_dDD = ixp.zerorank2()
+    global exp_m4phi # Needed as global for WeylScalars.py
     exp_m4phi = sp.sympify(0)
     if par.parval_from_str("BSSN_RHSs::ConformalFactor") == "phi":
         for i in range(DIM):

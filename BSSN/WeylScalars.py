@@ -73,7 +73,6 @@ def WeylScalars():
                     for d in range(DIM):
                         vcU[a] += sp.sqrt(bssn.detgammabar) * bssn.gammabarUU[a][d] * LeviCivitaSymbol[d][b][c] * vaU[b] *vbU[c]
 
-        # TO DO: code up the Levi-Civita tensor
         # Graham-Schmidt orthonormalization of the tetrad
         waU = ixp.zerorank1("waU")
         wbU = ixp.zerorank1("wbU")
