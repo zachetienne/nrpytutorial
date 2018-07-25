@@ -9,16 +9,16 @@ import finite_difference as fin
 import reference_metric as rfm
 from outputC import *
 
+# Calculates the useful tensors and tensor-like quantities in the BSSN metric.
+# Step P2: Initialize BSSN_RHS parameters
+thismodule = __name__
+par.initialize_param(par.glb_param("char", thismodule, "ConformalFactor", "W"))
+
 def BSSN_RHSs():
     # Step 1: Set up reference metric
     rfm.reference_metric()
 
-    # Calculates the useful tensors and tensor-like quantities in the BSSN metric.
-    # Step 2a: Initialize BSSN_RHS parameters
-    thismodule = __name__
-    par.initialize_param(par.glb_param("char", thismodule, "ConformalFactor", "W"))
-
-    # Step 2b: Set spatial dimension (must be 3 for BSSN)
+    # Step 2: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
 
@@ -217,22 +217,22 @@ def BSSN_RHSs():
     # Step 8a: Define \beta^i and \beta^i_{,k} in terms of rescaled quantity vetU[i] and vetU_dD[i][j]:
     betaU = ixp.zerorank1()
     for i in range(DIM):
-        betaU[i] = vetU[i]*rfm.ReU[i]
+        betaU[i] = vetU[i] * rfm.ReU[i]
 
-    vetU_dD = ixp.declarerank2("vetU_dD","none")
-    vetU_dupD = ixp.declarerank2("vetU_dupD","none") # Needed for \beta^i RHS
-    vetU_dDD = ixp.declarerank3("vetU_dDD","sym23") # Needed for \bar{\Lambda}^i RHS
+    vetU_dD = ixp.declarerank2("vetU_dD", "none")
+    vetU_dupD = ixp.declarerank2("vetU_dupD", "none")  # Needed for \beta^i RHS
+    vetU_dDD = ixp.declarerank3("vetU_dDD", "sym23")  # Needed for \bar{\Lambda}^i RHS
     betaU_dD = ixp.zerorank2()
-    betaU_dupD = ixp.zerorank2() # Needed for \beta^i RHS
-    betaU_dDD = ixp.zerorank3() # Needed for \bar{\Lambda}^i RHS
+    betaU_dupD = ixp.zerorank2()  # Needed for \beta^i RHS
+    betaU_dDD = ixp.zerorank3()  # Needed for \bar{\Lambda}^i RHS
     for i in range(DIM):
         for j in range(DIM):
-            betaU_dD[i][j] = vetU_dD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j]
-            betaU_dupD[i][j] = vetU_dupD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j] # Needed for \beta^i RHS
+            betaU_dD[i][j] = vetU_dD[i][j] * rfm.ReU[i] + vetU[i] * rfm.ReUdD[i][j]
+            betaU_dupD[i][j] = vetU_dupD[i][j] * rfm.ReU[i] + vetU[i] * rfm.ReUdD[i][j]  # Needed for \beta^i RHS
             for k in range(DIM):
                 # Needed for \bar{\Lambda}^i RHS:
-                betaU_dDD[i][j][k] = vetU_dDD[i][j][k]*rfm.ReU[i]  + vetU_dD[i][j]*rfm.ReUdD[i][k] + \
-                                     vetU_dD[i][k]*rfm.ReUdD[i][j] + vetU[i]*rfm.ReUdDD[i][j][k]
+                betaU_dDD[i][j][k] = vetU_dDD[i][j][k] * rfm.ReU[i] + vetU_dD[i][j] * rfm.ReUdD[i][k] + \
+                                     vetU_dD[i][k] * rfm.ReUdD[i][j] + vetU[i] * rfm.ReUdDD[i][j][k]
 
     # Step 8b: First term of \partial_t \bar{\gamma}_{i j} right-hand side:
     # \beta^k \bar{\gamma}_{ij,k} + \beta^k_{,i} \bar{\gamma}_{kj} + \beta^k_{,j} \bar{\gamma}_{ik}
@@ -240,202 +240,52 @@ def BSSN_RHSs():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                gammabar_rhsDD[i][j] += betaU[k]*gammabarDD_dupD[i][j][k] + betaU_dD[k][i]*gammabarDD[k][j] \
-                                                                          + betaU_dD[k][j]*gammabarDD[i][k]
+                gammabar_rhsDD[i][j] += betaU[k] * gammabarDD_dupD[i][j][k] + betaU_dD[k][i] * gammabarDD[k][j] \
+                                        + betaU_dD[k][j] * gammabarDD[i][k]
+
     # Step 8c: Define \bar{A}_{ij} = a_{ij} \text{ReDD[i][j]} = AbarDD[i][j], and its contraction trAbar = \bar{A}^k_k
     AbarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            AbarDD[i][j] = aDD[i][j]*rfm.ReDD[i][j]
+            AbarDD[i][j] = aDD[i][j] * rfm.ReDD[i][j]
     trAbar = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
-            trAbar += gammabarUU[i][j]*AbarDD[i][j]
+            trAbar += gammabarUU[i][j] * AbarDD[i][j]
 
-    # Step 8e: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
-    global detgammabar  # Needed as global for Psi4.py
+    # Step 8d: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
     detgammabar = detgbar_over_detghat * rfm.detgammahat
 
     detgammabar_dD = ixp.zerorank1()
     detgbar_over_detghat_dD = ixp.declarerank1("detgbar_over_detghat_dD")
     for i in range(DIM):
-        detgammabar_dD[i] = detgbar_over_detghat_dD[i]*rfm.detgammahat + detgbar_over_detghat*rfm.detgammahatdD[i]
+        detgammabar_dD[i] = detgbar_over_detghat_dD[i] * rfm.detgammahat + detgbar_over_detghat * rfm.detgammahatdD[i]
 
     detgammabar_dDD = ixp.zerorank2()
-    detgbar_over_detghat_dDD = ixp.declarerank2("detgbar_over_detghat_dDD","sym12")
+    detgbar_over_detghat_dDD = ixp.declarerank2("detgbar_over_detghat_dDD", "sym12")
     for i in range(DIM):
         for j in range(DIM):
-            detgammabar_dDD[i][j] = detgbar_over_detghat_dDD[i][j]*rfm.detgammahat +   \
-                                    detgbar_over_detghat_dD[i]*rfm.detgammahatdD[j] + \
-                                    detgbar_over_detghat_dD[j]*rfm.detgammahatdD[i] + \
-                                    detgbar_over_detghat*rfm.detgammahatdDD[i][j]
+            detgammabar_dDD[i][j] = detgbar_over_detghat_dDD[i][j] * rfm.detgammahat + \
+                                    detgbar_over_detghat_dD[i] * rfm.detgammahatdD[j] + \
+                                    detgbar_over_detghat_dD[j] * rfm.detgammahatdD[i] + \
+                                    detgbar_over_detghat * rfm.detgammahatdDD[i][j]
 
-    # Step 8d: Compute the contraction \bar{D}_k \beta^k = \beta^k_{,k} + \frac{\beta^k \bar{\gamma}_{,k}}{2 \bar{\gamma}}
+    # Step 8e: Compute the contraction \bar{D}_k \beta^k = \beta^k_{,k} + \frac{\beta^k \bar{\gamma}_{,k}}{2 \bar{\gamma}}
     Dbarbetacontraction = sp.sympify(0)
     for k in range(DIM):
-        Dbarbetacontraction += betaU_dD[k][k] + betaU[k]*detgammabar_dD[k]/(2*detgammabar)
+        Dbarbetacontraction += betaU_dD[k][k] + betaU[k] * detgammabar_dD[k] / (2 * detgammabar)
 
-    # Step 8d: Second term of \partial_t \bar{\gamma}_{i j} right-hand side:
+    # Step 8f: Second term of \partial_t \bar{\gamma}_{i j} right-hand side:
     # \frac{2}{3} \bar{\gamma}_{i j} \left (\alpha \bar{A}_{k}^{k} - \bar{D}_{k} \beta^{k}\right )
     for i in range(DIM):
         for j in range(DIM):
-            gammabar_rhsDD[i][j] += sp.Rational(2,3)*gammabarDD[i][j]*(alpha*trAbar - Dbarbetacontraction)
+            gammabar_rhsDD[i][j] += sp.Rational(2, 3) * gammabarDD[i][j] * (alpha * trAbar - Dbarbetacontraction)
 
-    # Step 8a: Define \beta^i and \beta^i_{,k} in terms of rescaled quantity vetU[i] and vetU_dD[i][j]:
-    betaU = ixp.zerorank1()
-    for i in range(DIM):
-        betaU[i] = vetU[i]*rfm.ReU[i]
-
-    vetU_dD = ixp.declarerank2("vetU_dD","none")
-    vetU_dupD = ixp.declarerank2("vetU_dupD","none") # Needed for \beta^i RHS
-    vetU_dDD = ixp.declarerank3("vetU_dDD","sym23") # Needed for \bar{\Lambda}^i RHS
-    betaU_dD = ixp.zerorank2()
-    betaU_dupD = ixp.zerorank2() # Needed for \beta^i RHS
-    betaU_dDD = ixp.zerorank3() # Needed for \bar{\Lambda}^i RHS
-    for i in range(DIM):
-        for j in range(DIM):
-            betaU_dD[i][j] = vetU_dD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j]
-            betaU_dupD[i][j] = vetU_dupD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j] # Needed for \beta^i RHS
-            for k in range(DIM):
-                # Needed for \bar{\Lambda}^i RHS:
-                betaU_dDD[i][j][k] = vetU_dDD[i][j][k]*rfm.ReU[i]  + vetU_dD[i][j]*rfm.ReUdD[i][k] + \
-                                     vetU_dD[i][k]*rfm.ReUdD[i][j] + vetU[i]*rfm.ReUdDD[i][j][k]
-
-    # Step 8b: First term of \partial_t \bar{\gamma}_{i j} right-hand side:
-    # \beta^k \bar{\gamma}_{ij,k} + \beta^k_{,i} \bar{\gamma}_{kj} + \beta^k_{,j} \bar{\gamma}_{ik}
-    gammabar_rhsDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                gammabar_rhsDD[i][j] += betaU[k]*gammabarDD_dupD[i][j][k] + betaU_dD[k][i]*gammabarDD[k][j] \
-                                                                          + betaU_dD[k][j]*gammabarDD[i][k]
-    # Step 8a: Define \beta^i and \beta^i_{,k} in terms of rescaled quantity vetU[i] and vetU_dD[i][j]:
-    betaU = ixp.zerorank1()
-    for i in range(DIM):
-        betaU[i] = vetU[i]*rfm.ReU[i]
-
-    vetU_dD = ixp.declarerank2("vetU_dD","none")
-    vetU_dupD = ixp.declarerank2("vetU_dupD","none") # Needed for \beta^i RHS
-    vetU_dDD = ixp.declarerank3("vetU_dDD","sym23") # Needed for \bar{\Lambda}^i RHS
-    betaU_dD = ixp.zerorank2()
-    betaU_dupD = ixp.zerorank2() # Needed for \beta^i RHS
-    betaU_dDD = ixp.zerorank3() # Needed for \bar{\Lambda}^i RHS
-    for i in range(DIM):
-        for j in range(DIM):
-            betaU_dD[i][j] = vetU_dD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j]
-            betaU_dupD[i][j] = vetU_dupD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j] # Needed for \beta^i RHS
-            for k in range(DIM):
-                # Needed for \bar{\Lambda}^i RHS:
-                betaU_dDD[i][j][k] = vetU_dDD[i][j][k]*rfm.ReU[i]  + vetU_dD[i][j]*rfm.ReUdD[i][k] + \
-                                     vetU_dD[i][k]*rfm.ReUdD[i][j] + vetU[i]*rfm.ReUdDD[i][j][k]
-
-    # Step 8b: First term of \partial_t \bar{\gamma}_{i j} right-hand side:
-    # \beta^k \bar{\gamma}_{ij,k} + \beta^k_{,i} \bar{\gamma}_{kj} + \beta^k_{,j} \bar{\gamma}_{ik}
-    gammabar_rhsDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                gammabar_rhsDD[i][j] += betaU[k]*gammabarDD_dupD[i][j][k] + betaU_dD[k][i]*gammabarDD[k][j] \
-                                                                          + betaU_dD[k][j]*gammabarDD[i][k]
-    # Step 8a: Define \beta^i and \beta^i_{,k} in terms of rescaled quantity vetU[i] and vetU_dD[i][j]:
-    betaU = ixp.zerorank1()
-    for i in range(DIM):
-        betaU[i] = vetU[i]*rfm.ReU[i]
-
-    vetU_dD = ixp.declarerank2("vetU_dD","none")
-    vetU_dupD = ixp.declarerank2("vetU_dupD","none") # Needed for \beta^i RHS
-    vetU_dDD = ixp.declarerank3("vetU_dDD","sym23") # Needed for \bar{\Lambda}^i RHS
-    betaU_dD = ixp.zerorank2()
-    betaU_dupD = ixp.zerorank2() # Needed for \beta^i RHS
-    betaU_dDD = ixp.zerorank3() # Needed for \bar{\Lambda}^i RHS
-    for i in range(DIM):
-        for j in range(DIM):
-            betaU_dD[i][j] = vetU_dD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j]
-            betaU_dupD[i][j] = vetU_dupD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j] # Needed for \beta^i RHS
-            for k in range(DIM):
-                # Needed for \bar{\Lambda}^i RHS:
-                betaU_dDD[i][j][k] = vetU_dDD[i][j][k]*rfm.ReU[i]  + vetU_dD[i][j]*rfm.ReUdD[i][k] + \
-                                     vetU_dD[i][k]*rfm.ReUdD[i][j] + vetU[i]*rfm.ReUdDD[i][j][k]
-
-    # Step 8b: First term of \partial_t \bar{\gamma}_{i j} right-hand side:
-    # \beta^k \bar{\gamma}_{ij,k} + \beta^k_{,i} \bar{\gamma}_{kj} + \beta^k_{,j} \bar{\gamma}_{ik}
-    gammabar_rhsDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                gammabar_rhsDD[i][j] += betaU[k]*gammabarDD_dupD[i][j][k] + betaU_dD[k][i]*gammabarDD[k][j] \
-                                                                          + betaU_dD[k][j]*gammabarDD[i][k]
-    # Step 8a: Define \beta^i and \beta^i_{,k} in terms of rescaled quantity vetU[i] and vetU_dD[i][j]:
-    betaU = ixp.zerorank1()
-    for i in range(DIM):
-        betaU[i] = vetU[i]*rfm.ReU[i]
-
-    vetU_dD = ixp.declarerank2("vetU_dD","none")
-    vetU_dupD = ixp.declarerank2("vetU_dupD","none") # Needed for \beta^i RHS
-    vetU_dDD = ixp.declarerank3("vetU_dDD","sym23") # Needed for \bar{\Lambda}^i RHS
-    betaU_dD = ixp.zerorank2()
-    betaU_dupD = ixp.zerorank2() # Needed for \beta^i RHS
-    betaU_dDD = ixp.zerorank3() # Needed for \bar{\Lambda}^i RHS
-    for i in range(DIM):
-        for j in range(DIM):
-            betaU_dD[i][j] = vetU_dD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j]
-            betaU_dupD[i][j] = vetU_dupD[i][j]*rfm.ReU[i] + vetU[i]*rfm.ReUdD[i][j] # Needed for \beta^i RHS
-            for k in range(DIM):
-                # Needed for \bar{\Lambda}^i RHS:
-                betaU_dDD[i][j][k] = vetU_dDD[i][j][k]*rfm.ReU[i]  + vetU_dD[i][j]*rfm.ReUdD[i][k] + \
-                                     vetU_dD[i][k]*rfm.ReUdD[i][j] + vetU[i]*rfm.ReUdDD[i][j][k]
-
-    # Step 8b: First term of \partial_t \bar{\gamma}_{i j} right-hand side:
-    # \beta^k \bar{\gamma}_{ij,k} + \beta^k_{,i} \bar{\gamma}_{kj} + \beta^k_{,j} \bar{\gamma}_{ik}
-    gammabar_rhsDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                gammabar_rhsDD[i][j] += betaU[k]*gammabarDD_dupD[i][j][k] + betaU_dD[k][i]*gammabarDD[k][j] \
-                                                                          + betaU_dD[k][j]*gammabarDD[i][k]
-    # Step 8c: Define \bar{A}_{ij} = a_{ij} \text{ReDD[i][j]} = AbarDD[i][j], and its contraction trAbar = \bar{A}^k_k
-    AbarDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            AbarDD[i][j] = aDD[i][j]*rfm.ReDD[i][j]
-    trAbar = sp.sympify(0)
-    for i in range(DIM):
-        for j in range(DIM):
-            trAbar += gammabarUU[i][j]*AbarDD[i][j]
-
-    # Step 8e: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
-    detgammabar = detgbar_over_detghat * rfm.detgammahat
-
-    detgammabar_dD = ixp.zerorank1()
-    detgbar_over_detghat_dD = ixp.declarerank1("detgbar_over_detghat_dD")
-    for i in range(DIM):
-        detgammabar_dD[i] = detgbar_over_detghat_dD[i]*rfm.detgammahat + detgbar_over_detghat*rfm.detgammahatdD[i]
-
-    detgammabar_dDD = ixp.zerorank2()
-    detgbar_over_detghat_dDD = ixp.declarerank2("detgbar_over_detghat_dDD","sym12")
-    for i in range(DIM):
-        for j in range(DIM):
-            detgammabar_dDD[i][j] = detgbar_over_detghat_dDD[i][j]*rfm.detgammahat +   \
-                                    detgbar_over_detghat_dD[i]*rfm.detgammahatdD[j] + \
-                                    detgbar_over_detghat_dD[j]*rfm.detgammahatdD[i] + \
-                                    detgbar_over_detghat*rfm.detgammahatdDD[i][j]
-
-    # Step 8d: Compute the contraction \bar{D}_k \beta^k = \beta^k_{,k} + \frac{\beta^k \bar{\gamma}_{,k}}{2 \bar{\gamma}}
-    Dbarbetacontraction = sp.sympify(0)
-    for k in range(DIM):
-        Dbarbetacontraction += betaU_dD[k][k] + betaU[k]*detgammabar_dD[k]/(2*detgammabar)
-
-    # Step 8d: Second term of \partial_t \bar{\gamma}_{i j} right-hand side:
-    # \frac{2}{3} \bar{\gamma}_{i j} \left (\alpha \bar{A}_{k}^{k} - \bar{D}_{k} \beta^{k}\right )
-    for i in range(DIM):
-        for j in range(DIM):
-            gammabar_rhsDD[i][j] += sp.Rational(2,3)*gammabarDD[i][j]*(alpha*trAbar - Dbarbetacontraction)
-
-    # Step 8e: Third term of \partial_t \bar{\gamma}_{i j} right-hand side:
+    # Step 8g: Third term of \partial_t \bar{\gamma}_{i j} right-hand side:
     # -2 \alpha \bar{A}_{ij}
     for i in range(DIM):
         for j in range(DIM):
-            gammabar_rhsDD[i][j] += -2*alpha*AbarDD[i][j]
+            gammabar_rhsDD[i][j] += -2 * alpha * AbarDD[i][j]
 
     # Step 9a: First term of \partial_t \bar{A}_{i j}:
     # \beta^k \partial_k \bar{A}_{ij} + \partial_i \beta^k \bar{A}_{kj} + \partial_j \beta^k \bar{A}_{ik}
@@ -477,14 +327,14 @@ def BSSN_RHSs():
     phi_dupD = ixp.zerorank1()
     phi_dDD = ixp.zerorank2()
     exp_m4phi = sp.sympify(0)
-    if par.parval_from_str("ConformalFactor") == "phi":
+    if par.parval_from_str("BSSN_RHSs::ConformalFactor") == "phi":
         for i in range(DIM):
             phi_dD[i] = cf_dD[i]
             phi_dupD[i] = cf_dupD[i]
             for j in range(DIM):
                 phi_dDD[i][j] = cf_dDD[i][j]
         exp_m4phi = sp.exp(-4 * cf)
-    elif par.parval_from_str("ConformalFactor") == "W":
+    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "W":
         # \partial_i W = \partial_i (e^{-2 phi}) = -2 e^{-2 phi} \partial_i phi
         # -> \partial_i phi = -\partial_i cf / (2 cf)
         for i in range(DIM):
@@ -495,7 +345,7 @@ def BSSN_RHSs():
                 #                           = - cf_{,ij} / (2 cf) + \partial_i cf \partial_j cf / (2 cf^2)
                 phi_dDD[i][j] = (- cf_dDD[i][j] + cf_dD[i] * cf_dD[j] / cf) / (2 * cf)
         exp_m4phi = cf * cf
-    elif par.parval_from_str("ConformalFactor") == "chi":
+    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "chi":
         # \partial_i chi = \partial_i (e^{-4 phi}) = -4 e^{-4 phi} \partial_i phi
         # -> \partial_i phi = -\partial_i cf / (4 cf)
         for i in range(DIM):
@@ -507,7 +357,7 @@ def BSSN_RHSs():
                 phi_dDD[i][j] = (- cf_dDD[i][j] + cf_dD[i] * cf_dD[j] / cf) / (4 * cf)
         exp_m4phi = cf
     else:
-        print("Error: ConformalFactor == " + par.parval_from_str("ConformalFactor") + " unsupported!")
+        print("Error: ConformalFactor == " + par.parval_from_str("BSSN_RHSs::ConformalFactor") + " unsupported!")
         exit(1)
 
     # Step 9d: Define phi_dBarD = phi_dD (since phi is a scalar) and phi_dBarDD (covariant derivative)
@@ -558,20 +408,20 @@ def BSSN_RHSs():
     #          options include: cf=phi, cf=W=e^(-2*phi) (default), and cf=chi=e^(-4*phi)
     # \partial_t phi = \left[\beta^k \partial_k \phi \right] <- TERM 1
     #                  + \frac{1}{6} \left (\bar{D}_{k} \beta^{k} - \alpha K \right ) <- TERM 2
-
+    global cf_rhs
     cf_rhs = sp.Rational(1,6) * (Dbarbetacontraction - alpha*trK) # Term 2
     for k in range(DIM):
         cf_rhs += betaU[k]*phi_dupD[k] # Term 1
 
     # Next multiply to convert phi_rhs to cf_rhs.
-    if par.parval_from_str("ConformalFactor") == "phi":
+    if par.parval_from_str("BSSN_RHSs::ConformalFactor") == "phi":
         pass # do nothing; cf_rhs = phi_rhs
-    elif par.parval_from_str("ConformalFactor") == "W":
+    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "W":
         cf_rhs *= -2*cf # cf_rhs = -2*cf*phi_rhs
-    elif par.parval_from_str("ConformalFactor") == "chi":
+    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "chi":
         cf_rhs *= -4*cf # cf_rhs = -4*cf*phi_rhs
     else:
-        print("Error: ConformalFactor == "+par.parval_from_str("ConformalFactor")+" unsupported!")
+        print("Error: ConformalFactor == "+par.parval_from_str("BSSN_RHSs::ConformalFactor")+" unsupported!")
         exit(1)
 
     # Step 11: right-hand side of trK (trace of extrinsic curvature):
@@ -579,6 +429,7 @@ def BSSN_RHSs():
     #           + \frac{1}{3} \alpha K^{2} <- TERM 2
     #           + \alpha \bar{A}_{i j} \bar{A}^{i j} <- TERM 3
     #           - - e^{-4 \phi} (\bar{D}_{i} \bar{D}^{i} \alpha + 2 \bar{D}^{i} \alpha \bar{D}_{i} \phi ) <- TERM 4
+    global trK_rhs
     trK_rhs = sp.Rational(1,3)*alpha*trK*trK # Term 2
     trK_dupD = ixp.declarerank1("trK_dupD")
     for k in range(DIM):
@@ -696,6 +547,7 @@ def BSSN_RHSs():
             Lambar_rhsU[i] += -sp.Rational(4,3)*alpha*gammabarUU[i][j]*trK_dD[j]
 
     # Step 13: \partial_t \alpha = \beta^i \alpha_{,i} - 2*\alpha*K
+    global alpha_rhs
     alpha_rhs = -2*alpha*trK
     alpha_dupD = ixp.declarerank1("alpha_dupD")
     for i in range(DIM):
@@ -756,8 +608,3 @@ def BSSN_RHSs():
         for j in range(DIM):
             h_rhsDD[i][j] = gammabar_rhsDD[i][j] / rfm.ReDD[i][j]
             a_rhsDD[i][j] =     Abar_rhsDD[i][j] / rfm.ReDD[i][j]
-    #print(str(Abar_rhsDD[2][2]).replace("**","^").replace("_","").replace("xx","x").replace("sin(x2)","Sin[x2]").replace("sin(2*x2)","Sin[2*x2]").replace("cos(x2)","Cos[x2]").replace("detgbaroverdetghat","detg"))
-    #print(str(Dbarbetacontraction).replace("**","^").replace("_","").replace("xx","x").replace("sin(x2)","Sin[x2]").replace("detgbaroverdetghat","detg"))
-
-BSSN_RHSs()
-print(vet_rhsU[0])
