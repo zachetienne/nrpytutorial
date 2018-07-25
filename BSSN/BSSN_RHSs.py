@@ -1,6 +1,9 @@
 # This module will declare and set many of the quantities that are useful for numerical relativity.
 # This includes the Ricci tensor, metric tensor, and Christoffel Symbols
 
+# Author: Zachariah B. Etienne
+#         zachetie **at** gmail **dot* com
+
 # Step P1: import all needed modules from NRPy+:
 import NRPy_param_funcs as par
 import indexedexp as ixp
