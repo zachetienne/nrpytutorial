@@ -33,6 +33,7 @@ def BSSN_RHSs():
     vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU")
     betU = ixp.register_gridfunctions_for_single_rank1("EVOL","betU")
     # Step 3b: Register scalar quantities, using gri.register_gridfunctions()
+    global trK # Needed as global for WeylScalars.py
     trK, cf, alpha = gri.register_gridfunctions("EVOL",["trK","cf","alpha"])
 
     # Step 4: Register all *auxiliary* gridfunctions.
