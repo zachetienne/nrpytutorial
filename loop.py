@@ -1,4 +1,8 @@
 def loop1D(idxvar="i0",lower="0",upper="Nx0",incr="1",OpenMPpragma="#pragma omp parallel for",prefix=""):
+    if not (isinstance(idxvar, str) and isinstance(lower, str) and
+            isinstance(upper, str) and isinstance(incr, str) and isinstance(OpenMPpragma, str)):
+        print("Error: all inputs to loop1D() must be STRINGS, and to loop() must be LISTS OF STRINGS")
+        exit(1)
     OMPheader = ""
     if OpenMPpragma != "":
         OMPheader = OpenMPpragma + "\n"
@@ -21,10 +25,6 @@ def loop(idxvar,lower,upper,incr,OpenMPpragma):
     header = ""
     footerarray = []
     for i in range(len(idxvar)):
-        if not (isinstance(idxvar[i],str) and isinstance(lower[i],str) and
-                isinstance(upper[i], str) and isinstance(incr[i], str) and isinstance(OpenMPpragma[i], str)):
-            print("Error: all inputs to loop() must be lists of STRINGS")
-            exit(1)
         headerstr,footerstr = loop1D(idxvar[i],lower[i],upper[i],incr[i],OpenMPpragma[i],prefix)
         header += headerstr
         footerarray.append(footerstr)
