@@ -42,8 +42,6 @@ def BSSN_RHSs():
     # Step 4b: Register scalar quantities, using gri.register_gridfunctions()
     detgbar_over_detghat = gri.register_gridfunctions("AUX",["detgbar_over_detghat"])
 
-    RbarDD = ixp.zerorank2()
-
     # Step 5a: Define \varepsilon_{ij} = epsDD[i][j]
     epsDD = ixp.zerorank3()
     for i in range(DIM):
