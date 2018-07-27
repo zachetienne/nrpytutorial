@@ -27,6 +27,7 @@ def BSSN_RHSs():
 
     # Step 3: Register all needed *evolved* gridfunctions.
     # Step 3a: Register indexed quantities, using ixp.register_... functions
+    global hDD # Needed as global for WeylScalars.py
     hDD = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD", "sym12")
     aDD = ixp.register_gridfunctions_for_single_rank2("EVOL","aDD", "sym12")
     lambdaU = ixp.register_gridfunctions_for_single_rank1("EVOL","lambdaU")
@@ -49,6 +50,7 @@ def BSSN_RHSs():
             epsDD[i][j] = hDD[i][j]*rfm.ReDD[i][j]
 
     # Step 5b: Define epsDD_dD[i][j][k]
+    global hDD_dD # Needed as global for WeylScalars.py
     hDD_dD = ixp.declarerank3("hDD_dD","sym12")
     epsDD_dD = ixp.zerorank3()
     for i in range(DIM):
@@ -57,6 +59,7 @@ def BSSN_RHSs():
                 epsDD_dD[i][j][k] = hDD_dD[i][j][k]*rfm.ReDD[i][j] + hDD[i][j]*rfm.ReDDdD[i][j][k]
 
     # Step 5c: Define epsDD_dDD[i][j][k][l]
+    global hDD_dDD # Needed as global for WeylScalars.py
     hDD_dDD = ixp.declarerank4("hDD_dDD","sym12_sym34")
     epsDD_dDD = ixp.zerorank4()
     for i in range(DIM):
@@ -258,6 +261,7 @@ def BSSN_RHSs():
             trAbar += gammabarUU[i][j] * AbarDD[i][j]
 
     # Step 8d: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
+    global detgammabar # Needed as global for WeylScalars.py
     detgammabar = detgbar_over_detghat * rfm.detgammahat
 
     detgammabar_dD = ixp.zerorank1()
@@ -332,14 +336,14 @@ def BSSN_RHSs():
     phi_dDD = ixp.zerorank2()
     global exp_m4phi # Needed as global for WeylScalars.py
     exp_m4phi = sp.sympify(0)
-    if par.parval_from_str("BSSN_RHSs::ConformalFactor") == "phi":
+    if par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "phi":
         for i in range(DIM):
             phi_dD[i] = cf_dD[i]
             phi_dupD[i] = cf_dupD[i]
             for j in range(DIM):
                 phi_dDD[i][j] = cf_dDD[i][j]
         exp_m4phi = sp.exp(-4 * cf)
-    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "W":
+    elif par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "W":
         # \partial_i W = \partial_i (e^{-2 phi}) = -2 e^{-2 phi} \partial_i phi
         # -> \partial_i phi = -\partial_i cf / (2 cf)
         for i in range(DIM):
@@ -350,7 +354,7 @@ def BSSN_RHSs():
                 #                           = - cf_{,ij} / (2 cf) + \partial_i cf \partial_j cf / (2 cf^2)
                 phi_dDD[i][j] = (- cf_dDD[i][j] + cf_dD[i] * cf_dD[j] / cf) / (2 * cf)
         exp_m4phi = cf * cf
-    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "chi":
+    elif par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "chi":
         # \partial_i chi = \partial_i (e^{-4 phi}) = -4 e^{-4 phi} \partial_i phi
         # -> \partial_i phi = -\partial_i cf / (4 cf)
         for i in range(DIM):
@@ -419,11 +423,11 @@ def BSSN_RHSs():
         cf_rhs += betaU[k]*phi_dupD[k] # Term 1
 
     # Next multiply to convert phi_rhs to cf_rhs.
-    if par.parval_from_str("BSSN_RHSs::ConformalFactor") == "phi":
+    if par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "phi":
         pass # do nothing; cf_rhs = phi_rhs
-    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "W":
+    elif par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "W":
         cf_rhs *= -2*cf # cf_rhs = -2*cf*phi_rhs
-    elif par.parval_from_str("BSSN_RHSs::ConformalFactor") == "chi":
+    elif par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "chi":
         cf_rhs *= -4*cf # cf_rhs = -4*cf*phi_rhs
     else:
         print("Error: ConformalFactor == "+par.parval_from_str("BSSN_RHSs::ConformalFactor")+" unsupported!")
