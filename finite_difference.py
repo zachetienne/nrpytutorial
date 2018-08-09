@@ -379,7 +379,20 @@ def FD_outputC(filename,sympyexpr_list):
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += indent+"WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
     Coutput = outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring=read_from_memory_Ccode,poststring=write_to_mem_string)
-    print(Coutput)
+    if filename == "stdout":
+        print(Coutput)
+    elif filename == "returnstring":
+        return Coutput+'\n'
+    else:
+        # Output to the file specified by outCfilename
+        with open(filename, par.parval_from_str("outCfileaccess")) as file:
+            file.write(final_Ccode_output_str)
+        successstr = ""
+        if par.parval_from_str("outCfileaccess") == "a":
+            successstr = "Appended to "
+        elif par.parval_from_str("outCfileaccess") == "w":
+            successstr = "Wrote "
+        print(successstr + "to file \"" + par.parval_from_str("outCfilename") + "\"")
 #    print(gri.glb_gridfcs_list[1].name,list_of_points_read_from_memory[1])
 
 
