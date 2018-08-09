@@ -60,7 +60,7 @@ def declarerank2(objname, symmetry_option, DIM=-1):
                     #  By this convention, we must set
                     #  g_{21} = g_{12}:
                     IDX_OBJ_TMP[i][j] = IDX_OBJ_TMP[j][i]
-            elif symmetry_option == "none":
+            elif symmetry_option == "nosym":
                 pass
             else:
                 print("Error: symmetry option " + symmetry_option + " unsupported.")
@@ -105,7 +105,7 @@ def declarerank3(objname, symmetry_option, DIM=-1):
                 if symmetry_option == "sym23":
                     if k < j:
                         IDX_OBJ_TMP[i][j][k] = IDX_OBJ_TMP[i][k][j]
-                if not (symmetry_option == "sym12" or symmetry_option == "sym23" or symmetry_option == "none"):
+                if not (symmetry_option == "sym12" or symmetry_option == "sym23" or symmetry_option == "nosym"):
                     print("Error: symmetry option " + symmetry_option + " unsupported.")
                     exit(1)
     return IDX_OBJ_TMP

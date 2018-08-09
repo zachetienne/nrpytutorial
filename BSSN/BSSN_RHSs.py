@@ -140,7 +140,7 @@ def BSSN_RHSs():
                     RbarDDpiece[i][j] += -sp.Rational(1,2) * gammabarUU[k][l]*gammabarDD_dHatDD[i][j][l][k]
 
     # Step 6a: Second term of RhatDD: compute \hat{D}_{j} \bar{\Lambda}^{k} = LambarU_dHatD[k][j]
-    lambdaU_dD = ixp.declarerank2("lambdaU_dD","none")
+    lambdaU_dD = ixp.declarerank2("lambdaU_dD","nosym")
     LambarU_dHatD = ixp.zerorank2()
     for j in range(DIM):
         for k in range(DIM):
@@ -225,8 +225,8 @@ def BSSN_RHSs():
     for i in range(DIM):
         betaU[i] = vetU[i] * rfm.ReU[i]
 
-    vetU_dD = ixp.declarerank2("vetU_dD", "none")
-    vetU_dupD = ixp.declarerank2("vetU_dupD", "none")  # Needed for \beta^i RHS
+    vetU_dD = ixp.declarerank2("vetU_dD", "nosym")
+    vetU_dupD = ixp.declarerank2("vetU_dupD", "nosym")  # Needed for \beta^i RHS
     vetU_dDD = ixp.declarerank3("vetU_dDD", "sym23")  # Needed for \bar{\Lambda}^i RHS
     betaU_dD = ixp.zerorank2()
     betaU_dupD = ixp.zerorank2()  # Needed for \beta^i RHS
@@ -469,7 +469,7 @@ def BSSN_RHSs():
     # First we declare \bar{\Lambda}^i and \bar{\Lambda}^i_{,j} in terms of \lambda^i and \lambda^i_{,j}
     LambarU = ixp.zerorank1()
     LambarU_dupD = ixp.zerorank2()
-    lambdaU_dupD = ixp.declarerank2("lambdaU_dupD","none")
+    lambdaU_dupD = ixp.declarerank2("lambdaU_dupD","nosym")
     for i in range(DIM):
         LambarU[i] = lambdaU[i]*rfm.ReU[i]
         for j in range(DIM):
@@ -581,7 +581,7 @@ def BSSN_RHSs():
 
     # Step 15a: Define BU_dupD, in terms of derivative of rescaled variable \bet^i
     BU_dupD = ixp.zerorank2()
-    betU_dupD = ixp.declarerank2("betU_dupD", "none")
+    betU_dupD = ixp.declarerank2("betU_dupD", "nosym")
     for i in range(DIM):
         for j in range(DIM):
             BU_dupD[i][j] = betU_dupD[i][j] * rfm.ReU[i] + betU[i] * rfm.ReUdD[i][j]
