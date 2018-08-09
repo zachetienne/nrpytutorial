@@ -442,7 +442,7 @@ def BSSN_RHSs():
     trK_rhs = sp.Rational(1,3)*alpha*trK*trK # Term 2
     trK_dupD = ixp.declarerank1("trK_dupD")
     for k in range(DIM):
-        trK_rhs += betaU[k]*trK_dupD[k]*trK # Term 1
+        trK_rhs += betaU[k]*trK_dupD[k] # Term 1
     for i in range(DIM):
         for j in range(DIM):
             trK_rhs += -exp_m4phi*gammabarUU[i][j]*(alpha_dBarDD[i][j] + 2*alpha_dBarD[j]*phi_dBarD[i]) # Term 4
