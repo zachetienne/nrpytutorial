@@ -385,14 +385,10 @@ def FD_outputC(filename,sympyexpr_list):
         return Coutput+'\n'
     else:
         # Output to the file specified by outCfilename
-        with open(filename, par.parval_from_str("outCfileaccess")) as file:
-            file.write(final_Ccode_output_str)
+        with open(filename, "w") as file:
+            file.write(Coutput)
         successstr = ""
-        if par.parval_from_str("outCfileaccess") == "a":
-            successstr = "Appended to "
-        elif par.parval_from_str("outCfileaccess") == "w":
-            successstr = "Wrote "
-        print(successstr + "to file \"" + par.parval_from_str("outCfilename") + "\"")
+        print("Wrote to file \"" + filename + "\"")
 #    print(gri.glb_gridfcs_list[1].name,list_of_points_read_from_memory[1])
 
 
