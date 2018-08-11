@@ -1,3 +1,2 @@
 sympy
-python3-tk
 nbgoogleanalytics
