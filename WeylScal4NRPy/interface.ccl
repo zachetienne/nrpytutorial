@@ -1,0 +1,16 @@
+
+implements: WeylScal4
+
+inherits:   admbase Boundary GenericFD Grid methodoflines
+
+public:
+CCTK_REAL Psi4r_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 tensorparity=1'
+{
+  Psi4r
+} "Psi4r_group"
+
+public:
+CCTK_REAL Psi4i_group type=GF timelevels=3 tags='tensortypealias="Scalar" tensorweight=0 tensorparity=-1'
+{
+  Psi4i
+} "Psi4i_group"

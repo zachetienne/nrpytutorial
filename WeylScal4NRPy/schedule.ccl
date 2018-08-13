@@ -1,0 +1,28 @@
+
+STORAGE: Psi4r_group[timelevels]
+
+STORAGE: Psi4i_group[timelevels]
+
+schedule group WeylScal4_psi4_calc_Nth_group in MoL_PseudoEvolution after ADMBase_SetADMVars
+
+schedule WeylScal4_psi4_calc_Nth in WeylScal4_psi4_calc_Nth_group
+{
+  LANG: C
+  READS: admbase::kxx(Everywhere)
+  READS: admbase::kxy(Everywhere)
+  READS: admbase::kxz(Everywhere)
+  READS: admbase::kyy(Everywhere)
+  READS: admbase::kyz(Everywhere)
+  READS: admbase::kzz(Everywhere)
+  READS: admbase::gxx(Everywhere)
+  READS: admbase::gxy(Everywhere)
+  READS: admbase::gxz(Everywhere)
+  READS: admbase::gyy(Everywhere)
+  READS: admbase::gyz(Everywhere)
+  READS: admbase::gzz(Everywhere)
+  READS: grid::x(Everywhere)
+  READS: grid::y(Everywhere)
+  READS: grid::z(Everywhere)
+  WRITES: WeylScal4::Psi4i(Interior)
+  WRITES: WeylScal4::Psi4r(Interior)
+} "WeylScal4_psi4_calc_Nth"
