@@ -3,9 +3,9 @@ STORAGE: Psi4r_group[timelevels]
 
 STORAGE: Psi4i_group[timelevels]
 
-schedule group WeylScal4_psi4_calc_Nth_group in MoL_PseudoEvolution after ADMBase_SetADMVars
+schedule group WeylScal4NRPy_group in MoL_PseudoEvolution after ADMBase_SetADMVars
 
-schedule WeylScal4_psi4_calc_Nth in WeylScal4_psi4_calc_Nth_group
+schedule WeylScal4NRPy in WeylScal4NRPy_group
 {
   LANG: C
   READS: admbase::kxx(Everywhere)
