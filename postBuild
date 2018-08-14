@@ -1,0 +1,5 @@
+jupyter nbextensions install --py --sys-prefix nbgoogleanalytics
+jupyter nbextensions enable --py --sys-prefix nbgoogleanalytics
+jupyter serverextensions enable --sys-prefix nbgoogleanalytics
+jupyter notebook --GoogleAnalytics.tracking_id="UA-59152712-5"
+
