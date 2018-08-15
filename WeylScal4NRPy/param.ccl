@@ -10,3 +10,15 @@ CCTK_INT WeylScal4NRPy_MaxNumArrayEvolvedVars "Number of Array evolved variables
 {
   0:0 :: "Number of Array evolved variables used by this thorn"
 } 0
+
+restricted:
+CCTK_INT WeylScal4NRPy_calc_every "WeylScal4_psi4_calc_Nth_calc_every" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 1
+
+restricted:
+CCTK_INT WeylScal4NRPy_calc_offset "WeylScal4_psi4_calc_4th_calc_offset" STEERABLE=ALWAYS
+{
+  *:* :: ""
+} 0
