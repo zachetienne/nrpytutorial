@@ -323,6 +323,7 @@ def FD_outputC(filename,sympyexpr_list):
     # *** No need to do anything here; already set in
     #     string "read_from_memory_Ccode". ***
 
+    # FIXME: Update these code comments:
     # Step 5b: Perform arithmetic needed for finite differences
     #          associated with input expressions provided in
     #          sympyexpr_list[].rhs.
@@ -335,8 +336,8 @@ def FD_outputC(filename,sympyexpr_list):
     #              variables.
     exprs    = [sp.sympify(0) for i in range(len(list_of_deriv_vars))]
     lhsvarnames = ["" for i in range(len(list_of_deriv_vars))]
-    # Step 5b.i: Add finite difference expressions to
-    #            exprs and lhsvarnames lists
+    # Step 5b.i: Output finite difference expressions to
+    #            Coutput string
     for i in range(len(list_of_deriv_vars)):
         exprs[i]    = sp.sympify(0)
         lhsvarnames[i] = vartype()+str(list_of_deriv_vars[i])
@@ -364,8 +365,17 @@ def FD_outputC(filename,sympyexpr_list):
         else:
             print("Error: was unable to parse derivative operator: ",deriv__operator[i])
             exit(1)
+    if len(list_of_deriv_vars) > 0:
+        default_CSE_varprefix = par.parval_from_str("outputC::CSE_varprefix")
+        par.set_parval_from_str("outputC::CSE_varprefix",default_CSE_varprefix+"FD")
+        Coutput = outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring=read_from_memory_Ccode)
+        par.set_parval_from_str("outputC::CSE_varprefix",default_CSE_varprefix)
+    else:
+        Coutput = ""
     # Step 5b.ii: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
+    exprs       = []
+    lhsvarnames = []
     for i in range(len(sympyexpr_list)):
         exprs.append(sympyexpr_list[i].rhs)
         if par.parval_from_str("SIMD_enable") == True:
@@ -378,7 +388,8 @@ def FD_outputC(filename,sympyexpr_list):
     if par.parval_from_str("SIMD_enable") == True:
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += indent+"WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
-    Coutput = outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring=read_from_memory_Ccode,poststring=write_to_mem_string)
+    Coutput += outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring="",poststring=write_to_mem_string)
+#outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring=read_from_memory_Ccode,poststring=write_to_mem_string)
     if filename == "stdout":
         print(Coutput)
     elif filename == "returnstring":

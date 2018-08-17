@@ -13,7 +13,7 @@
 #include "vectors.h"
 
 void calc_psi4(double *in_gfs,double *out_gfs,const int i0,const int i1,const int i2,const int Npts_in_stencil,const double invdx0,const double invdx1,const double invdx2)  {
-#include "WeylScal4_NRPy.h"
+#include "WeylScal4NRPy.h"
 }
 
 namespace WeylScal4NRPy {
