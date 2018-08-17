@@ -24,8 +24,10 @@ def FD_outputC(filename,sympyexpr_list):
         sympyexpr_list = [sympyexpr_list]
 
     # Step 0.b:
-    # Add proper indentation for C code written by this
-    #     function.
+    # Disable braces in FD code
+    default_brace_behavior = par.parval_from_str("outputC::includebraces")
+    par.set_parval_from_str("outputC::includebraces",False)
+    # FIXME: The following if() always evaluates to False:
     if par.parval_from_str("includebraces") == True:
         indent = "   "
     else:
@@ -389,7 +391,7 @@ def FD_outputC(filename,sympyexpr_list):
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += indent+"WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
     Coutput += outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring="",poststring=write_to_mem_string)
-#outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring=read_from_memory_Ccode,poststring=write_to_mem_string)
+    par.set_parval_from_str("outputC::includebraces",default_brace_behavior)
     if filename == "stdout":
         print(Coutput)
     elif filename == "returnstring":
