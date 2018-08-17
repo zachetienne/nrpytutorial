@@ -1,5 +1,3 @@
-#include <algorithm>
-#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,12 +5,8 @@
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
-#include "Kranc.hh"
-#include "Differencing.h"
-#include "loopcontrol.h"
-#include "vectors.h"
 
-void calc_psi4(double *in_gfs,double *out_gfs,const int i0,const int i1,const int i2,const int Npts_in_stencil,const double invdx0,const double invdx1,const double invdx2)  {
+void calc_psi4(const double *gammaDD00GF,const double *gammaDD01GF,const double *gammaDD02GF,const double *gammaDD11GF,const double *gammaDD12GF,const double *gammaDD22GF,const double *kDD00GF,const double *kDD01GF,const double *kDD02GF,const double *kDD11GF,const double *kDD12GF,const double *kDD22GF,const double *xx0,const double *xx1,const double *xx2,const double *psi4rGF,const double *psi4iGF,const cGH* restrict const cctkGH,const int i0,const int i1,const int i2,const double invdx0,const double invdx1,const double invdx2)  {
 #include "WeylScal4NRPy.h"
 }
 
@@ -89,25 +83,28 @@ static void WeylScal4NRPy_Body(const cGH* restrict const cctkGH, const int dir, 
     const ptrdiff_t index CCTK_ATTRIBUTE_UNUSED = di*i + dj*j + dk*k;
     /* Assign local copies of grid functions */
     
-    CCTK_REAL_VEC gammaDD00 CCTK_ATTRIBUTE_UNUSED = vec_load(gxx[index]);
-    CCTK_REAL_VEC gammaDD01 CCTK_ATTRIBUTE_UNUSED = vec_load(gxy[index]);
-    CCTK_REAL_VEC gammaDD02 CCTK_ATTRIBUTE_UNUSED = vec_load(gxz[index]);
-    CCTK_REAL_VEC gammaDD11 CCTK_ATTRIBUTE_UNUSED = vec_load(gyy[index]);
-    CCTK_REAL_VEC gammaDD12 CCTK_ATTRIBUTE_UNUSED = vec_load(gyz[index]);
-    CCTK_REAL_VEC gammaDD22 CCTK_ATTRIBUTE_UNUSED = vec_load(gzz[index]);
-    CCTK_REAL_VEC kDD00 CCTK_ATTRIBUTE_UNUSED = vec_load(kxx[index]);
-    CCTK_REAL_VEC kDD01 CCTK_ATTRIBUTE_UNUSED = vec_load(kxy[index]);
-    CCTK_REAL_VEC kDD02 CCTK_ATTRIBUTE_UNUSED = vec_load(kxz[index]);
-    CCTK_REAL_VEC kDD11 CCTK_ATTRIBUTE_UNUSED = vec_load(kyy[index]);
-    CCTK_REAL_VEC kDD12 CCTK_ATTRIBUTE_UNUSED = vec_load(kyz[index]);
-    CCTK_REAL_VEC kDD22 CCTK_ATTRIBUTE_UNUSED = vec_load(kzz[index]);
-    CCTK_REAL_VEC xx0 CCTK_ATTRIBUTE_UNUSED = vec_load(x[index]);
-    CCTK_REAL_VEC xx1 CCTK_ATTRIBUTE_UNUSED = vec_load(y[index]);
-    CCTK_REAL_VEC xx2 CCTK_ATTRIBUTE_UNUSED = vec_load(z[index]);
-
-    /* Now, to calculate psi4: */
-    calc_psi4(double *in_gfs,double *out_gfs,i,j,k,const int Npts_in_stencil,dxi,dyi,dzi) // Finish matching variables.
+    CCTK_REAL_VEC gammaDD00 CCTK_ATTRIBUTE_UNUSED = vec_load(gxx[index]); // gf = 1
+    CCTK_REAL_VEC gammaDD01 CCTK_ATTRIBUTE_UNUSED = vec_load(gxy[index]); // gf = 2
+    CCTK_REAL_VEC gammaDD02 CCTK_ATTRIBUTE_UNUSED = vec_load(gxz[index]); // gf = 3
+    CCTK_REAL_VEC gammaDD11 CCTK_ATTRIBUTE_UNUSED = vec_load(gyy[index]); // gf = 4
+    CCTK_REAL_VEC gammaDD12 CCTK_ATTRIBUTE_UNUSED = vec_load(gyz[index]); // gf = 5
+    CCTK_REAL_VEC gammaDD22 CCTK_ATTRIBUTE_UNUSED = vec_load(gzz[index]); // gf = 6
+    CCTK_REAL_VEC kDD00 CCTK_ATTRIBUTE_UNUSED = vec_load(kxx[index]); // gf = 7
+    CCTK_REAL_VEC kDD01 CCTK_ATTRIBUTE_UNUSED = vec_load(kxy[index]); // gf = 8
+    CCTK_REAL_VEC kDD02 CCTK_ATTRIBUTE_UNUSED = vec_load(kxz[index]); // gf = 9
+    CCTK_REAL_VEC kDD11 CCTK_ATTRIBUTE_UNUSED = vec_load(kyy[index]); // gf = 10
+    CCTK_REAL_VEC kDD12 CCTK_ATTRIBUTE_UNUSED = vec_load(kyz[index]); // gf = 11
+    CCTK_REAL_VEC kDD22 CCTK_ATTRIBUTE_UNUSED = vec_load(kzz[index]); // gf = 12
+    CCTK_REAL_VEC xx0 CCTK_ATTRIBUTE_UNUSED = vec_load(x[index]); // gf = 13
+    CCTK_REAL_VEC xx1 CCTK_ATTRIBUTE_UNUSED = vec_load(y[index]); // gf = 14
+    CCTK_REAL_VEC xx2 CCTK_ATTRIBUTE_UNUSED = vec_load(z[index]); // gf = 15
+    CCTK_REAL_VEC psi4r CCTK_ATTRIBUTE_UNUSED;
+    CCTK_REAL_VEC psi4i CCTK_ATTRIBUTE_UNUSED;
     
+    /* Now, to calculate psi4: */
+    calc_psi4(gammaDD00,gammaDD01,gammaDD02,gammaDD11,gammaDD12,gammaDD22,kDD00,kDD01GF,kDD02,kDD11,kDD12,kDD22GF,xx0,xx1,xx2,psi4r,psi4i,cctkGH,i,j,k,Npts_in_stencil,dxi,dyi,dzi); // Finish matching variables
+
+    // Write psi4 to memory here.
   }
   CCTK_ENDLOOP3STR(WeylScal4NRPy);
 }
