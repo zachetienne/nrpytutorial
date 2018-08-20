@@ -6,22 +6,37 @@
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 
-void calc_psi4(const double *gammaDD00GF,const double *gammaDD01GF,const double *gammaDD02GF,const double *gammaDD11GF,const double *gammaDD12GF,const double *gammaDD22GF,const double *kDD00GF,const double *kDD01GF,const double *kDD02GF,const double *kDD11GF,const double *kDD12GF,const double *kDD22GF,const double *xx0,const double *xx1,const double *xx2,const double *psi4rGF,const double *psi4iGF,const cGH* restrict const cctkGH,const int i0,const int i1,const int i2,const double invdx0,const double invdx1,const double invdx2)  {
- ZACH:
+void calc_psi4(const cGH* restrict const cctkGH,
+	       const double *gammaDD00GF,const double *gammaDD01GF,const double *gammaDD02GF,const double *gammaDD11GF,const double *gammaDD12GF,const double *gammaDD22GF,
+	       const double *kDD00GF,const double *kDD01GF,const double *kDD02GF,const double *kDD11GF,const double *kDD12GF,const double *kDD22GF,
+	       double *psi4rGF,double *psi4iGF)  {
+  DECLARE_CCTK_PARAMETERS;
+  DECLARE_CCTK_ARGUMENTS;
+
+  const CCTK_REAL invdx0 = 1.0 / (CCTK_DELTA_SPACE(0));
+  const CCTK_REAL invdx1 = 1.0 / (CCTK_DELTA_SPACE(1));
+  const CCTK_REAL invdx2 = 1.0 / (CCTK_DELTA_SPACE(2));
+
   for(int i2=cctk_nghostzones[2];i2<cctk_lsh[1]-cctk_nghostzones[2];i2++) {
     for(int i1=cctk_nghostzones[1];i1<cctk_lsh[1]-cctk_nghostzones[1];i1++) {
       for(int i0=cctk_nghostzones[0];i0<cctk_lsh[0]-cctk_nghostzones[0];i0++) {
+	  const CCTK_REAL xx0 = x[CCTK_GFINDEX3D(cctkGH, i0,i1,i2)];
+	  const CCTK_REAL xx1 = y[CCTK_GFINDEX3D(cctkGH, i0,i1,i2)];
+	  const CCTK_REAL xx2 = z[CCTK_GFINDEX3D(cctkGH, i0,i1,i2)];
 #include "WeylScal4NRPy.h"
       }
     }
   }
 }
-extern "C" void weylscal4_mainfunction(CCTK_ARGUMENTS) {
+extern void weylscal4_mainfunction(CCTK_ARGUMENTS) {
 
   DECLARE_CCTK_PARAMETERS;
   DECLARE_CCTK_ARGUMENTS;
 
   /* Now, to calculate psi4: */
-  calc_psi4(ZACH: gxx,ZACH: gxy,gammaDD02,gammaDD11,gammaDD12,gammaDD22,kDD00,kDD01GF,kDD02,kDD11,kDD12,kDD22GF,xx0,xx1,xx2,psi4r,psi4i,cctkGH,i,j,k,Npts_in_stencil,dxi,dyi,dzi); // Finish matching variables
+  calc_psi4(cctkGH,
+	    gxx,gxy,gxz,gyy,gyz,gzz,
+	    kxx,kxy,kxz,kyy,kyz,kzz,
+	    psi4r,psi4i);
 
 }
