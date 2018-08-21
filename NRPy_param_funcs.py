@@ -165,3 +165,28 @@ def Cparameters(type,module,names,assumption="Real"):
     if len(names) == 1:
         return output[0]
     return output
+
+def Ccode__declare_params(filename):
+    Coutput = ""
+    for i in range(len(glb_params_list)):
+        if glb_params_list[i].type == "char":
+            type = "char *"
+        else:
+            type = glb_params_list[i].type
+        Coutput += type + " " + glb_params_list[i].module + "__" + glb_params_list[i].parname
+        if isinstance(glb_paramsvals_list[i], (bool,int,float)):
+            Coutput += " = " + str(glb_paramsvals_list[i]).lower() + ";\n"
+        elif isinstance(glb_paramsvals_list[i], (str)):
+            Coutput += " = \"" + str(glb_paramsvals_list[i]).lower() + "\";\n"
+        else:
+            Coutput += " = " + str(glb_paramsvals_list[i]) + ";\n"
+    if filename == "stdout":
+        print(Coutput)
+        return
+    elif filename == "returnstring":
+        return Coutput
+    else:
+        # Output to the file specified by outCfilename
+        with open(filename, "w") as file:
+            file.write(Coutput)
+        print("Wrote to file \"" + filename + "\"")

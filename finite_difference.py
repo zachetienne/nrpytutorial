@@ -427,7 +427,6 @@ def FD_outputC(filename,sympyexpr_list):
         # Output to the file specified by outCfilename
         with open(filename, "w") as file:
             file.write(Coutput)
-        successstr = ""
         print("Wrote to file \"" + filename + "\"")
 #    print(gri.glb_gridfcs_list[1].name,list_of_points_read_from_memory[1])
 
