@@ -119,7 +119,8 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                 exit(1)
             # If parameter is found at index idx, set paramsval[idx] to the value specified in the file.
             if glb_params_list[idx].defaultval != "RUNTIME":
-                if glb_params_list[idx].type == "bool":
+                partype = glb_params_list[idx].type
+                if partype == "bool":
                     if single_param_def[2] == "True":
                         glb_paramsvals_list[idx] = True
                     elif single_param_def[2] == "False":
@@ -127,10 +128,18 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     else:
                         print("Error: \"bool\" type can only take values of \"True\" or \"False\"")
                         exit(1)
-                elif glb_params_list[idx].type == "INT":
+                elif partype == "INT":
                     glb_paramsvals_list[idx] = int(single_param_def[2])
-                else:
+                elif partype is "REAL" or \
+                    partype is "REALARRAY" or \
+                    partype is "char" or \
+                    partype is "char *":
                     glb_paramsvals_list[idx] = single_param_def[2]
+                else:
+                    print("Error: type \""+partype+"\" on variable \""+ glb_params_list[idx].parname +"\" is unsupported.")
+                    print("Supported types include: bool, INT, REAL, REALARRAY, char, and char *")
+                    exit(1)
+#                    glb_paramsvals_list[idx] = single_param_def[2]
             else:
                 print("Error: Tried to set the parameter "
                       + single_param_def[0] + "::" + single_param_def[1] +
@@ -177,11 +186,11 @@ def Ccode__declare_params(filename):
             print("Error: parameter "+glb_params_list[i].module+"::"+glb_params_list[i].parname+" has unsupported type: \""
                   + glb_params_list[i].type + "\"")
             exit(1)
-        if glb_params_list[i].type == "char":
-            type = "char *"
+        if partype == "char":
+            Ctype = "char *"
         else:
-            type = glb_params_list[i].type
-        Coutput += type + " " + glb_params_list[i].module + "__" + glb_params_list[i].parname
+            Ctype = partype
+        Coutput += Ctype + " " + glb_params_list[i].module + "__" + glb_params_list[i].parname
         if isinstance(glb_paramsvals_list[i], (bool,int,float)):
             Coutput += " = " + str(glb_paramsvals_list[i]).lower() + ";\n"
         elif isinstance(glb_paramsvals_list[i], (str)):
