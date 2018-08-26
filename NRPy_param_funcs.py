@@ -127,7 +127,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     else:
                         print("Error: \"bool\" type can only take values of \"True\" or \"False\"")
                         exit(1)
-                elif glb_params_list[idx].type == "int":
+                elif glb_params_list[idx].type == "INT":
                     glb_paramsvals_list[idx] = int(single_param_def[2])
                 else:
                     glb_paramsvals_list[idx] = single_param_def[2]
@@ -169,6 +169,14 @@ def Cparameters(type,module,names,assumption="Real"):
 def Ccode__declare_params(filename):
     Coutput = ""
     for i in range(len(glb_params_list)):
+        partype = glb_params_list[i].type
+        if partype != "bool" and \
+           partype != "char" and \
+           partype != "INT" and \
+           partype != "REAL":
+            print("Error: parameter "+glb_params_list[i].module+"::"+glb_params_list[i].parname+" has unsupported type: \""
+                  + glb_params_list[i].type + "\"")
+            exit(1)
         if glb_params_list[i].type == "char":
             type = "char *"
         else:
