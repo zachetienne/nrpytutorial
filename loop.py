@@ -1,4 +1,6 @@
-def loop1D(idxvar="i0",lower="0",upper="Nx0",incr="1",OpenMPpragma="#pragma omp parallel for",prefix=""):
+# loop1D() is just a special case of loop(), and in fact is called by loop().
+#   For documentation on the inputs, see loop()'s documentation below.
+def loop1D(idxvar="i0",lower="0",upper="Nx0",incr="1",OpenMPpragma="#pragma omp parallel for",tabprefix=""):
     if not (isinstance(idxvar, str) and isinstance(lower, str) and
             isinstance(upper, str) and isinstance(incr, str) and isinstance(OpenMPpragma, str)):
         print("Error: all inputs to loop1D() must be STRINGS, and to loop() must be LISTS OF STRINGS")
@@ -9,8 +11,8 @@ def loop1D(idxvar="i0",lower="0",upper="Nx0",incr="1",OpenMPpragma="#pragma omp 
     incrstr = "++"
     if incr != "1":
         incrstr = "+="+incr
-    loopbody = prefix+"for(int "+idxvar+"="+lower+"; "+idxvar+"<"+upper+"; "+idxvar+incrstr+")"
-    return OMPheader+loopbody+" {\n", prefix+"} // END LOOP: "+loopbody.replace(prefix,"")+"\n"
+    loopbody = tabprefix+"for(int "+idxvar+"="+lower+"; "+idxvar+"<"+upper+"; "+idxvar+incrstr+")"
+    return OMPheader+loopbody+" {\n", tabprefix+"} // END LOOP: "+loopbody.replace(tabprefix,"")+"\n"
 
 # loop() creates a C code loop, taking as input:
 #    idxvar (string or list of strings): the index variable name or list of names.
@@ -27,7 +29,8 @@ def loop1D(idxvar="i0",lower="0",upper="Nx0",incr="1",OpenMPpragma="#pragma omp 
 #         (incr[i] = 1 -> idxvar++)
 #    OpenMPpragma (string or list of strings): Defined similarly to "lower", except
 #         this refers to the OpenMP pragma corresponding to idxvar or idxvar[i].
-#    loopguts (optional; string): the loop interior.
+#    tabprefix (optional; string): Sets the tab stop for the C code.
+#    loopguts (optional; string): The loop interior.
 #
 # Example: loop(["i0","i1"],["0","5"],["N","N-5"],["1","5"],["#pragma omp parallel for",""],
 #               "double a=-2;\n gf[IDX3(GF,i0,i1)]=-2*a;\n"])
