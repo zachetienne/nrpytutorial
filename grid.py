@@ -117,7 +117,8 @@ def register_gridfunctions(gf_type,gf_names):
     #         SymPy expression
     OBJ_TMPS = []
     for i in range(len(gf_names)):
-        OBJ_TMPS.append(sp.sympify(gf_names[i]))
+        OBJ_TMPS.append(sp.symbols(gf_names[i], real=True))
+#        OBJ_TMPS.append(sp.sympify(gf_names[i]))
     if len(gf_names)==1:
         return OBJ_TMPS[0]
     return OBJ_TMPS

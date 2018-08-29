@@ -3,9 +3,9 @@ import NRPy_param_funcs as par
 import indexedexp as ixp
 import grid as gri
 import finite_difference as fin
-import reference_metric as rfm
+#import reference_metric as rfm
 from outputC import *
-#import BSSN.BSSN_RHSs as bssn
+#import BSSN.BSSNs as bssn
 import sympy as sp
 
 # Step 2: Initialize WeylScalar parameters
@@ -31,38 +31,44 @@ def define_LeviCivitaSymbol_rank3(DIM=-1):
                 LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) / 2
     return LeviCivitaSymbol
 
-# Step 1: Call BSSN_RHSs. This module computes many different quantities related to the metric,
+# Step 1: Call BSSNs. This module computes many different quantities related to the metric,
 #         many of which will be essential here. We must first change to our desired coordinate
 #         system, however.
 def WeylScalars_Cartesian():
     par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
     par.set_parval_from_str("grid::GridFuncMemAccess","ETK")
     par.set_parval_from_str("outputC::outCverbose",False) # To prevent absurdly large output files.
-    rfm.reference_metric()
+    #rfm.reference_metric()
     # We do not need the barred or hatted quantities calculated when using Cartesian coordinates.
     # Instead, we declare the PHYSICAL metric and extrinsic curvature as grid functions.
     gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD", "sym12")
     kDD = ixp.register_gridfunctions_for_single_rank2("EVOL","kDD", "sym12")
     gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
+    
+    output_scalars = par.parval_from_str("output_scalars")
+    global psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i
+#    if output_scalars is "all_psis_and_invariants":
+#        psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = sp.symbols("psi4r psi4i\
+#                                                                                  psi3r psi3i\
+#                                                                                  psi2r psi2i\
+#                                                                                  psi1r psi1i\
+#                                                                                  psi0r psi0i")
+ #   elif output_scalars is "all_psis":
     psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = gri.register_gridfunctions("AUX",["psi4r","psi4i",\
                                                                                                     "psi3r","psi3i",\
                                                                                                     "psi2r","psi2i",\
                                                                                                     "psi1r","psi1i",\
                                                                                                     "psi0r","psi0i"])
-    curvIr,curvIi,curvJr,curvJi,curvJ1,curvJ2,curvJ3,curvJ4 = gri.register_gridfunctions("AUX",["curvIr","curvIi",\
-                                                                                                "curvJr","curvJi",\
-                                                                                                "curvJ1","curvJ2",\
-                                                                                                "curvJ3","curvJ4"])
-
 
     # Step 2a: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
 
     # Step 2b: Set the coordinate system to Cartesian
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
-    z = rfm.xxCart[2]
+    #x = rfm.xxCart[0]
+    #y = rfm.xxCart[1]
+    #z = rfm.xxCart[2]
+    x,y,z = gri.register_gridfunctions("AUX",["x","y","z"])
 
     # Step 2c: Set which tetrad is used; at the moment, only one supported option
     if par.parval_from_str("WeylScal4NRPy.WeylScalars_Cartesian::TetradChoice") == "Approx_QuasiKinnersley":
@@ -230,127 +236,55 @@ def WeylScalars_Cartesian():
 
     # Now we can calculate $\psi_4$ itself!
     # We calculate the Weyl scalars as defined in https://arxiv.org/abs/gr-qc/0104063
-    global psi4r_rhs,psi4i_rhs,psi3r_rhs,psi3i_rhs,psi2r_rhs,psi2i_rhs,psi1r_rhs,psi1i_rhs,psi0r_rhs,psi0i_rhs
-    psi4r_rhs = sp.sympify(0)
-    psi4i_rhs = sp.sympify(0)
-    psi3r_rhs = sp.sympify(0)
-    psi3i_rhs = sp.sympify(0)
-    psi2r_rhs = sp.sympify(0)
-    psi2i_rhs = sp.sympify(0)
-    psi1r_rhs = sp.sympify(0)
-    psi1i_rhs = sp.sympify(0)
-    psi0r_rhs = sp.sympify(0)
-    psi0i_rhs = sp.sympify(0)
+    psi4r = sp.sympify(0)
+    psi4i = sp.sympify(0)
+    psi3r = sp.sympify(0)
+    psi3i = sp.sympify(0)
+    psi2r = sp.sympify(0)
+    psi2i = sp.sympify(0)
+    psi1r = sp.sympify(0)
+    psi1i = sp.sympify(0)
+    psi0r = sp.sympify(0)
+    psi0i = sp.sympify(0)
     for l in range(DIM):
         for j in range(DIM):
-            psi4r_rhs += RojoDD[j][l] * nn * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
-            psi4i_rhs += RojoDD[j][l] * nn * nn * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
-            psi3r_rhs +=-RojoDD[j][l] * nn * nn * (ntetU[j]-ltetU[j]) * remtetU[l]
-            psi3i_rhs += RojoDD[j][l] * nn * nn * (ntetU[j]-ltetU[j]) * immtetU[l]
-            psi2r_rhs +=-RojoDD[j][l] * nn * nn * (remtetU[l]*remtetU[j]+immtetU[j]*immtetU[l])
-            psi2i_rhs +=-RojoDD[j][l] * nn * nn * (immtetU[l]*remtetU[j]-remtetU[j]*immtetU[l])
-            psi1r_rhs += RojoDD[j][l] * nn * nn * (ntetU[j]*remtetU[l]-ltetU[j]*remtetU[l])
-            psi1i_rhs += RojoDD[j][l] * nn * nn * (ntetU[j]*immtetU[l]-ltetU[j]*immtetU[l])
-            psi0r_rhs += RojoDD[j][l] * nn * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
-            psi0i_rhs += RojoDD[j][l] * nn * nn * (remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
+            psi4r += RojoDD[j][l] * nn * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
+            psi4i += RojoDD[j][l] * nn * nn * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
+            psi3r +=-RojoDD[j][l] * nn * nn * (ntetU[j]-ltetU[j]) * remtetU[l]
+            psi3i += RojoDD[j][l] * nn * nn * (ntetU[j]-ltetU[j]) * immtetU[l]
+            psi2r +=-RojoDD[j][l] * nn * nn * (remtetU[l]*remtetU[j]+immtetU[j]*immtetU[l])
+            psi2i +=-RojoDD[j][l] * nn * nn * (immtetU[l]*remtetU[j]-remtetU[j]*immtetU[l])
+            psi1r += RojoDD[j][l] * nn * nn * (ntetU[j]*remtetU[l]-ltetU[j]*remtetU[l])
+            psi1i += RojoDD[j][l] * nn * nn * (ntetU[j]*immtetU[l]-ltetU[j]*immtetU[l])
+            psi0r += RojoDD[j][l] * nn * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
+            psi0i += RojoDD[j][l] * nn * nn * (remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
 
     for l in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                psi4r_rhs += 2 * CodazziDDD[j][k][l] * ntetU[k] * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
-                psi4i_rhs += 2 * CodazziDDD[j][k][l] * ntetU[k] * nn * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
-                psi3r_rhs += 1 * CodazziDDD[j][k][l] * nn * ((ntetU[j]-ltetU[j])*remtetU[k]*ntetU[l]-remtetU[j]*ltetU[k]*ntetU[l])
-                psi3i_rhs +=-1 * CodazziDDD[j][k][l] * nn * ((ntetU[j]-ltetU[j])*immtetU[k]*ntetU[l]-immtetU[j]*ltetU[k]*ntetU[l])
-                psi2r_rhs += 1 * CodazziDDD[j][k][l] * nn * (ntetU[l]*(remtetU[j]*remtetU[k]+immtetU[j]*immtetU[k])-ltetU[k]*(remtetU[j]*remtetU[l]+immtetU[j]*immtetU[l]))
-                psi2i_rhs += 1 * CodazziDDD[j][k][l] * nn * (ntetU[l]*(immtetU[j]*remtetU[k]-remtetU[j]*immtetU[k])-ltetU[k]*(remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l]))
-                psi1r_rhs += 1 * CodazziDDD[j][k][l] * nn * (ltetU[j]*remtetU[k]*ltetU[l]-remtetU[j]*ntetU[k]*ltetU[l]-ntetU[j]*remtetU[k]*ltetU[l])
-                psi1i_rhs += 1 * CodazziDDD[j][k][l] * nn * (ltetU[j]*immtetU[k]*ltetU[l]-immtetU[j]*ntetU[k]*ltetU[l]-ntetU[j]*immtetU[k]*ltetU[l])
-                psi0r_rhs += 2 * CodazziDDD[j][k][l] * nn * ltetU[k]*(remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
-                psi0i_rhs += 2 * CodazziDDD[j][k][l] * nn * ltetU[k]*(remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
+                psi4r += 2 * CodazziDDD[j][k][l] * ntetU[k] * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
+                psi4i += 2 * CodazziDDD[j][k][l] * ntetU[k] * nn * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
+                psi3r += 1 * CodazziDDD[j][k][l] * nn * ((ntetU[j]-ltetU[j])*remtetU[k]*ntetU[l]-remtetU[j]*ltetU[k]*ntetU[l])
+                psi3i +=-1 * CodazziDDD[j][k][l] * nn * ((ntetU[j]-ltetU[j])*immtetU[k]*ntetU[l]-immtetU[j]*ltetU[k]*ntetU[l])
+                psi2r += 1 * CodazziDDD[j][k][l] * nn * (ntetU[l]*(remtetU[j]*remtetU[k]+immtetU[j]*immtetU[k])-ltetU[k]*(remtetU[j]*remtetU[l]+immtetU[j]*immtetU[l]))
+                psi2i += 1 * CodazziDDD[j][k][l] * nn * (ntetU[l]*(immtetU[j]*remtetU[k]-remtetU[j]*immtetU[k])-ltetU[k]*(remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l]))
+                psi1r += 1 * CodazziDDD[j][k][l] * nn * (ltetU[j]*remtetU[k]*ltetU[l]-remtetU[j]*ntetU[k]*ltetU[l]-ntetU[j]*remtetU[k]*ltetU[l])
+                psi1i += 1 * CodazziDDD[j][k][l] * nn * (ltetU[j]*immtetU[k]*ltetU[l]-immtetU[j]*ntetU[k]*ltetU[l]-ntetU[j]*immtetU[k]*ltetU[l])
+                psi0r += 2 * CodazziDDD[j][k][l] * nn * ltetU[k]*(remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
+                psi0i += 2 * CodazziDDD[j][k][l] * nn * ltetU[k]*(remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
 
     for l in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 for i in range(DIM):
-                    psi4r_rhs += GaussDDDD[i][j][k][l] * ntetU[i] * ntetU[k] * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
-                    psi4i_rhs += GaussDDDD[i][j][k][l] * ntetU[i] * ntetU[k] * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
-                    psi3r_rhs += GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[j] * remtetU[k] * ntetU[l]
-                    psi3i_rhs +=-GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[j] * immtetU[k] * ntetU[l]
-                    psi2r_rhs += GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[l] * (remtetU[j]*remtetU[k]+immtetU[j]*immtetU[k])
-                    psi2i_rhs += GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[l] * (immtetU[j]*remtetU[k]-remtetU[j]*immtetU[k])
-                    psi1r_rhs += GaussDDDD[i][j][k][l] * ntetU[i] * ltetU[j] * remtetU[k] * ltetU[l]
-                    psi1i_rhs += GaussDDDD[i][j][k][l] * ntetU[i] * ltetU[j] * immtetU[k] * ltetU[l]
-                    psi0r_rhs += GaussDDDD[i][j][k][l] * ltetU[i] * ltetU[k] * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
-                    psi0i_rhs += GaussDDDD[i][j][k][l] * ltetU[i] * ltetU[k] * (remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
+                    psi4r += GaussDDDD[i][j][k][l] * ntetU[i] * ntetU[k] * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
+                    psi4i += GaussDDDD[i][j][k][l] * ntetU[i] * ntetU[k] * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
+                    psi3r += GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[j] * remtetU[k] * ntetU[l]
+                    psi3i +=-GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[j] * immtetU[k] * ntetU[l]
+                    psi2r += GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[l] * (remtetU[j]*remtetU[k]+immtetU[j]*immtetU[k])
+                    psi2i += GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[l] * (immtetU[j]*remtetU[k]-remtetU[j]*immtetU[k])
+                    psi1r += GaussDDDD[i][j][k][l] * ntetU[i] * ltetU[j] * remtetU[k] * ltetU[l]
+                    psi1i += GaussDDDD[i][j][k][l] * ntetU[i] * ltetU[j] * immtetU[k] * ltetU[l]
+                    psi0r += GaussDDDD[i][j][k][l] * ltetU[i] * ltetU[k] * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
+                    psi0i += GaussDDDD[i][j][k][l] * ltetU[i] * ltetU[k] * (remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
 
-    # The complex scalar invariants I and J, as found in https://arxiv.org/abs/gr-qc/0407013
-    psi4 = sp.re(psi4r) + sp.I * sp.im(psi4i)
-    psi3 = sp.re(psi3r) + sp.I * sp.im(psi3i)
-    psi2 = sp.re(psi2r) + sp.I * sp.im(psi2i)
-    psi1 = sp.re(psi1r) + sp.I * sp.im(psi1i)
-    psi0 = sp.re(psi0r) + sp.I * sp.im(psi0i)
-
-    global curvIr_rhs,curvIi_rhs,curvJr_rhs,curvJi_rhs
-    curvIr_rhs = sp.re(3*psi2*psi2 - 4*psi1*psi3 + psi4*psi0)
-    curvIi_rhs = sp.im(3*psi2*psi2 - 4*psi1*psi3 + psi4*psi0)
-    curvJr_rhs = sp.re(psi4 * (psi2*psi0 - psi1*psi1) - \
-                   psi3 * (psi3*psi0 - psi1*psi2) + \
-                   psi2 * (psi3*psi1 - psi2*psi2) )
-    curvJi_rhs = sp.im(psi4 * (psi2*psi0 - psi1*psi1) - \
-                   psi3 * (psi3*psi0 - psi1*psi2) + \
-                   psi2 * (psi3*psi1 - psi2*psi2) )
-
-    # The scalar invariants J1, J2, J3, and J4, as found in https://arxiv.org/abs/0704.1756, ported from
-    # https://bitbucket.org/einsteintoolkit/einsteinanalysis/src
-    global curvJ1_rhs,curvJ2_rhs,curvJ3_rhs,curvJ4_rhs
-    curvJ1_rhs =-16*(3*psi2i**2-3*psi2r**2-4*psi1i*psi3i+4*psi1r*psi3r+psi0i*psi4i-psi0r*psi4r)
-
-    curvJ2_rhs = 96*(-3*psi2i**2*psi2r+psi2r**3+2*psi1r*psi2i*psi3i+2*psi1i*psi2r*psi3i-psi0r*psi3i**2+\
-                2*psi1i*psi2i*psi3r-2*psi1r*psi2r*psi3r-2*psi0i*psi3i*psi3r+psi0r*psi3r**2-\
-                2*psi1i*psi1r*psi4i+psi0r*psi2i*psi4i+psi0i*psi2r*psi4i-psi1i**2*psi4r+psi1r**2*psi4r+\
-                psi0i*psi2i*psi4r-psi0r*psi2r*psi4r)
-
-    curvJ3_rhs = 64*(9*psi2i**4-54*psi2i**2*psi2r**2+9*psi2r**4-24*psi1i*psi2i**2*psi3i+48*psi1r*psi2i*psi2r*psi3i+\
-                24*psi1i*psi2r**2*psi3i+16*psi1i**2*psi3i**2-16*psi1r**2*psi3i**2+\
-                24*psi1r*psi2i**2*psi3r+48*psi1i*psi2i*psi2r*psi3r-24*psi1r*psi2r**2*psi3r-64*psi1i*psi1r*psi3i*psi3r-\
-                16*psi1i**2*psi3r**2+16*psi1r**2*psi3r**2+6*psi0i*psi2i**2*psi4i-12*psi0r*psi2i*psi2r*psi4i-\
-                6*psi0i*psi2r**2*psi4i-8*psi0i*psi1i*psi3i*psi4i+8*psi0r*psi1r*psi3i*psi4i+8*psi0r*psi1i*psi3r*psi4i+\
-                8*psi0i*psi1r*psi3r*psi4i+psi0i**2*psi4i**2-psi0r**2*psi4i**2-6*psi0r*psi2i**2*psi4r-\
-                12*psi0i*psi2i*psi2r*psi4r+6*psi0r*psi2r**2*psi4r+8*psi0r*psi1i*psi3i*psi4r+8*psi0i*psi1r*psi3i*psi4r+\
-                8*psi0i*psi1i*psi3r*psi4r-8*psi0r*psi1r*psi3r*psi4r-4*psi0i*psi0r*psi4i*psi4r-psi0i**2*psi4r**2+\
-                psi0r**2*psi4r**2)
-
-    curvJ4_rhs = -640*(-15*psi2i**4*psi2r+30*psi2i**2*psi2r**3-3*psi2r**5+10*psi1r*psi2i**3*psi3i+\
-                  30*psi1i*psi2i**2*psi2r*psi3i-30*psi1r*psi2i*psi2r**2*psi3i-10*psi1i*psi2r**3*psi3i-\
-                  16*psi1i*psi1r*psi2i*psi3i**2-3*psi0r*psi2i**2*psi3i**2-8*psi1i**2*psi2r*psi3i**2+\
-                  8*psi1r**2*psi2r*psi3i**2-6*psi0i*psi2i*psi2r*psi3i**2+3*psi0r*psi2r**2*psi3i**2+\
-                  4*psi0r*psi1i*psi3i**3+4*psi0i*psi1r*psi3i**3+10*psi1i*psi2i**3*psi3r-\
-                  30*psi1r*psi2i**2*psi2r*psi3r-30*psi1i*psi2i*psi2r**2*psi3r+10*psi1r*psi2r**3*psi3r-\
-                  16*psi1i**2*psi2i*psi3i*psi3r+16*psi1r**2*psi2i*psi3i*psi3r-6*psi0i*psi2i**2*psi3i*psi3r+\
-                  32*psi1i*psi1r*psi2r*psi3i*psi3r+12*psi0r*psi2i*psi2r*psi3i*psi3r+6*psi0i*psi2r**2*psi3i*psi3r+\
-                  12*psi0i*psi1i*psi3i**2*psi3r-12*psi0r*psi1r*psi3i**2*psi3r+16*psi1i*psi1r*psi2i*psi3r**2+\
-                  3*psi0r*psi2i**2*psi3r**2+8*psi1i**2*psi2r*psi3r**2-8*psi1r**2*psi2r*psi3r**2+\
-                  6*psi0i*psi2i*psi2r*psi3r**2-3*psi0r*psi2r**2*psi3r**2-12*psi0r*psi1i*psi3i*psi3r**2-\
-                  12*psi0i*psi1r*psi3i*psi3r**2-4*psi0i*psi1i*psi3r**3+4*psi0r*psi1r*psi3r**3-\
-                  6*psi1i*psi1r*psi2i**2*psi4i+2*psi0r*psi2i**3*psi4i-6*psi1i**2*psi2i*psi2r*psi4i+\
-                  6*psi1r**2*psi2i*psi2r*psi4i+6*psi0i*psi2i**2*psi2r*psi4i+6*psi1i*psi1r*psi2r**2*psi4i-\
-                  6*psi0r*psi2i*psi2r**2*psi4i-2*psi0i*psi2r**3*psi4i+12*psi1i**2*psi1r*psi3i*psi4i-\
-                  4*psi1r**3*psi3i*psi4i-2*psi0r*psi1i*psi2i*psi3i*psi4i-2*psi0i*psi1r*psi2i*psi3i*psi4i-\
-                  2*psi0i*psi1i*psi2r*psi3i*psi4i+2*psi0r*psi1r*psi2r*psi3i*psi4i-2*psi0i*psi0r*psi3i**2*psi4i+\
-                  4*psi1i**3*psi3r*psi4i-12*psi1i*psi1r**2*psi3r*psi4i-2*psi0i*psi1i*psi2i*psi3r*psi4i+\
-                  2*psi0r*psi1r*psi2i*psi3r*psi4i+2*psi0r*psi1i*psi2r*psi3r*psi4i+2*psi0i*psi1r*psi2r*psi3r*psi4i-\
-                  2*psi0i**2*psi3i*psi3r*psi4i+2*psi0r**2*psi3i*psi3r*psi4i+2*psi0i*psi0r*psi3r**2*psi4i-\
-                  psi0r*psi1i**2*psi4i**2-2*psi0i*psi1i*psi1r*psi4i**2+psi0r*psi1r**2*psi4i**2+\
-                  2*psi0i*psi0r*psi2i*psi4i**2+psi0i**2*psi2r*psi4i**2-psi0r**2*psi2r*psi4i**2-3*psi1i**2*psi2i**2*psi4r+\
-                  3*psi1r**2*psi2i**2*psi4r+2*psi0i*psi2i**3*psi4r+12*psi1i*psi1r*psi2i*psi2r*psi4r-\
-                  6*psi0r*psi2i**2*psi2r*psi4r+3*psi1i**2*psi2r**2*psi4r-3*psi1r**2*psi2r**2*psi4r-\
-                  6*psi0i*psi2i*psi2r**2*psi4r+2*psi0r*psi2r**3*psi4r+4*psi1i**3*psi3i*psi4r-12*psi1i*psi1r**2*psi3i*psi4r-\
-                  2*psi0i*psi1i*psi2i*psi3i*psi4r+2*psi0r*psi1r*psi2i*psi3i*psi4r+2*psi0r*psi1i*psi2r*psi3i*psi4r+\
-                  2*psi0i*psi1r*psi2r*psi3i*psi4r-psi0i**2*psi3i**2*psi4r+psi0r**2*psi3i**2*psi4r-\
-                  12*psi1i**2*psi1r*psi3r*psi4r+4*psi1r**3*psi3r*psi4r+2*psi0r*psi1i*psi2i*psi3r*psi4r+\
-                  2*psi0i*psi1r*psi2i*psi3r*psi4r+2*psi0i*psi1i*psi2r*psi3r*psi4r-2*psi0r*psi1r*psi2r*psi3r*psi4r+\
-                  4*psi0i*psi0r*psi3i*psi3r*psi4r+psi0i**2*psi3r**2*psi4r-psi0r**2*psi3r**2*psi4r-\
-                  2*psi0i*psi1i**2*psi4i*psi4r+4*psi0r*psi1i*psi1r*psi4i*psi4r+2*psi0i*psi1r**2*psi4i*psi4r+\
-                  2*psi0i**2*psi2i*psi4i*psi4r-2*psi0r**2*psi2i*psi4i*psi4r-4*psi0i*psi0r*psi2r*psi4i*psi4r+\
-                  psi0r*psi1i**2*psi4r**2+2*psi0i*psi1i*psi1r*psi4r**2-psi0r*psi1r**2*psi4r**2-
-                  2*psi0i*psi0r*psi2i*psi4r**2-psi0i**2*psi2r*psi4r**2+psi0r**2*psi2r*psi4r**2)
