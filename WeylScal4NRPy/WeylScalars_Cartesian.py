@@ -8,7 +8,7 @@ from outputC import *
 #import BSSN.BSSNs as bssn
 import sympy as sp
 
-# Step 2: Initialize WeylScalar parameters
+# Step 2: Initialize WeylScalars parameters
 thismodule = __name__
 # Current option: Approx_QuasiKinnersley = choice made in Baker, Campanelli, and Lousto. PRD 65, 044001 (2002)
 par.initialize_param(par.glb_param("char *", thismodule, "TetradChoice", "Approx_QuasiKinnersley"))
