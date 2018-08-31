@@ -1,3 +1,9 @@
+# This code calculates the invariant scalars I, J, J1, J2, J3, and J4. It does so by following the papers
+# arXiv:gr-qc/0407013 and arXiv:0704.1756, and the example set by the Kranc-generated ETK thorn which
+# can be found at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src. While WeylScalarInvariants_Cartesian()
+# does not depend on WeylScalars_Cartesian(), when implementing C code generated from the outputs of these two 
+# functions, the psis from WeylScalars_Cartesian() must be calculated before the invariants generated here.
+
 # Step P1: import all needed modules from NRPy+:
 import NRPy_param_funcs as par
 import indexedexp as ixp
@@ -19,18 +25,26 @@ def WeylScalarInvariants_Cartesian():
                                                                                                     "psi1r","psi1i",\
                                                                                                     "psi0r","psi0i"])
 
+    # We will first set the complex psis as the appropriate combinations of their real and imaginary parts.
+    # This will allow us to take advantage of SymPy's functions for handling complex numbers.
     psi4 = psi4r + sp.I * psi4i
     psi3 = psi3r + sp.I * psi3i
     psi2 = psi2r + sp.I * psi2i
     psi1 = psi1r + sp.I * psi1i
     psi0 = psi0r + sp.I * psi0i
 
+    # We declare the variants as global to access them from other codes. We will also declare them as gridfunctions.
     global curvIr,curvIi,curvJr,curvJi,curvJ1,curvJ2,curvJ3,curvJ4
-
     curvIr, curvIi, curvJr, curvJi, curvJ1, curvJ2, curvJ3, curvJ4 = gri.register_gridfunctions("AUX",["curvIr","curvIi",\
                                                                                                        "curvJr","curvJi",\
                                                                                                        "curvJ1","curvJ2",\
                                                                                                        "curvJ3","curvJ4"])
+
+    # The equations for the real and complex parts of I and J, from arXiv:gr-qc/0407013, equations (2.2a) and (2.2b):
+    # I &= 3 \psi_2^2 - 4 \psi_1 \psi_3 + \psi_4 \psi_0 \\
+    # J &= det |\psi_4 & \psi_3 & \psi_2|
+    #          |\psi_3 & \psi_2 & \psi_1|
+    #          |\psi_2 & \psi_1 & \psi_0|
 
     curvIr = sp.re(3*psi2*psi2 - 4*psi1*psi3 + psi4*psi0)
     curvIi = sp.im(3*psi2*psi2 - 4*psi1*psi3 + psi4*psi0)
@@ -41,6 +55,10 @@ def WeylScalarInvariants_Cartesian():
                    psi3 * (psi3*psi0 - psi1*psi2) +\
                    psi2 * (psi3*psi1 - psi2*psi2) )
 
+    # Next, the real scalars J_1, J_2, J_3, and J_4 from equations B5-B8 of arXiv:0704.1756.
+    # These equations are based directly on those used in the Mathematica notebook that generates WeylScal4
+    # (available at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src), modified so that Python can 
+    # interpret them. Those equations were generated in turn using xTensor from equations B5-B8.
     curvJ1 =-16*(3*psi2i**2-3*psi2r**2-4*psi1i*psi3i+4*psi1r*psi3r+psi0i*psi4i-psi0r*psi4r)
 
     curvJ2 = 96*(-3*psi2i**2*psi2r+psi2r**3+2*psi1r*psi2i*psi3i+2*psi1i*psi2r*psi3i-psi0r*psi3i**2+\
