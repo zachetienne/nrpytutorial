@@ -3,9 +3,7 @@ import NRPy_param_funcs as par
 import indexedexp as ixp
 import grid as gri
 import finite_difference as fin
-#import reference_metric as rfm
 from outputC import *
-#import BSSN.BSSNs as bssn
 import sympy as sp
 
 # Step 2: Initialize WeylScalars parameters
@@ -35,10 +33,8 @@ def define_LeviCivitaSymbol_rank3(DIM=-1):
 #         many of which will be essential here. We must first change to our desired coordinate
 #         system, however.
 def WeylScalars_Cartesian():
-    par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
     par.set_parval_from_str("grid::GridFuncMemAccess","ETK")
     par.set_parval_from_str("outputC::outCverbose",False) # To prevent absurdly large output files.
-    #rfm.reference_metric()
     # We do not need the barred or hatted quantities calculated when using Cartesian coordinates.
     # Instead, we declare the PHYSICAL metric and extrinsic curvature as grid functions.
     gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD", "sym12")
@@ -65,9 +61,6 @@ def WeylScalars_Cartesian():
     par.set_parval_from_str("grid::DIM",DIM)
 
     # Step 2b: Set the coordinate system to Cartesian
-    #x = rfm.xxCart[0]
-    #y = rfm.xxCart[1]
-    #z = rfm.xxCart[2]
     x,y,z = gri.register_gridfunctions("AUX",["x","y","z"])
 
     # Step 2c: Set which tetrad is used; at the moment, only one supported option

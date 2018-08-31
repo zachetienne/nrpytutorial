@@ -65,6 +65,8 @@ def FD_outputC(filename,sympyexpr_list):
                     print("Please check for typos, or register as a gridfunction or Cparameter.")
                     exit(1)
                 list_of_deriv_vars_with_duplicates.append(var)
+#            elif vartype == "gridfunction":
+#                list_of_deriv_vars_with_duplicates.append(var)
     list_of_deriv_vars = superfast_uniq(list_of_deriv_vars_with_duplicates)
 
     # Step 2:
@@ -94,7 +96,6 @@ def FD_outputC(filename,sympyexpr_list):
             print(str(num_digits)+" integers at the end. These must be equal.")
             print("Please rename your gridfunction.")
             exit(1)
-
         # Step 2a.2: Based on the variable name, find the rank of
         #            the underlying gridfunction of which we're
         #            trying to take the derivative.
@@ -199,6 +200,7 @@ def FD_outputC(filename,sympyexpr_list):
                     if gfname == str(var):
                         list_of_points_read_from_memory_with_duplicates[i].append("0,0,0,0")
 
+
     # Step 4c: Remove duplicates when reading from memory;
     #     do not needlessly read the same variable
     #     from memory twice.
@@ -273,7 +275,6 @@ def FD_outputC(filename,sympyexpr_list):
                 UNUSEDlist, sorted_list_of_points_read_from_memory[gfidx] = \
                     [list(x) for x in zip(*sorted(zip(read_from_memory_index, list_of_points_read_from_memory[gfidx]),
                                                   key=itemgetter(0)))]
-
     # Step 4e: Create the full C code string
     #      for reading from memory:
 
@@ -386,7 +387,7 @@ def FD_outputC(filename,sympyexpr_list):
             print("Error: was unable to parse derivative operator: ",deriv__operator[i])
             exit(1)
     Coutput += indent_Ccode("/* \n * Step 1 of 2: Read from main memory and compute finite difference stencils (if any):\n */\n")
-    if len(list_of_deriv_vars) > 0:
+    if len(read_from_memory_Ccode) > 0:
         default_CSE_varprefix = par.parval_from_str("outputC::CSE_varprefix")
         par.set_parval_from_str("outputC::CSE_varprefix",default_CSE_varprefix+"FD")
         Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring=read_from_memory_Ccode))
