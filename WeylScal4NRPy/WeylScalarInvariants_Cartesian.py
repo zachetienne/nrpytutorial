@@ -9,9 +9,7 @@ import NRPy_param_funcs as par
 import indexedexp as ixp
 import grid as gri
 import finite_difference as fin
-#import reference_metric as rfm
 from outputC import *
-#import BSSN.BSSNs as bssn
 import sympy as sp
 
 # Step P2: Initialize WeylScalar Invariants parameters
