@@ -1,4 +1,4 @@
 pip
 matplotlib
 sympy
-nbgoogleanalytics
+astropy
