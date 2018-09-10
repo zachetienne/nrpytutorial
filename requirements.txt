@@ -1,3 +1,4 @@
+pip
 matplotlib
 sympy
-astropy
+
