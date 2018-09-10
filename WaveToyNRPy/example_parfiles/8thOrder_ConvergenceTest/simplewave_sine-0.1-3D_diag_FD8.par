@@ -34,21 +34,21 @@ CoordBase::boundary_size_y_upper        = 2
 CoordBase::boundary_size_z_upper        = 2
 
 # Size of the grid (including boundary points)
-PUGH::global_nx = 245
-PUGH::global_ny = 245
-PUGH::global_nz = 245
+PUGH::global_nx = 249
+PUGH::global_ny = 249
+PUGH::global_nz = 249
 
-PUGH::ghost_size = 2
+PUGH::ghost_size = 4
 
 CartGrid3D::type         = "byrange"
 CartGrid3D::avoid_origin = "no"
 
-CartGrid3D::xmin = -7.043673284113434
-CartGrid3D::ymin = -7.043673284113434
-CartGrid3D::zmin = -7.043673284113434
-CartGrid3D::xmax =  7.043673284113434
-CartGrid3D::ymax =  7.043673284113434
-CartGrid3D::zmax =  7.043673284113434
+CartGrid3D::xmin = -12.4
+CartGrid3D::ymin = -12.4
+CartGrid3D::zmin = -12.4
+CartGrid3D::xmax =  12.4
+CartGrid3D::ymax =  12.4
+CartGrid3D::zmax =  12.4
 
 Periodic::periodic = "yes"
 
