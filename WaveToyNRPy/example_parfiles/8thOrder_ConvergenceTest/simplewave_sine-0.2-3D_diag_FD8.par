@@ -59,7 +59,7 @@ Periodic::periodic = "yes"
 Cactus::terminate                     = "time"
 Cactus::cctk_final_time               = 4
 
-Time::dtfac                           = 0.5
+Time::dtfac                           = 0.25
 MethodOfLines::ode_method             = "RK4"
 MethodOfLines::MoL_Intermediate_Steps = 4
 MethodOfLines::MoL_Num_Scratch_Levels = 1
