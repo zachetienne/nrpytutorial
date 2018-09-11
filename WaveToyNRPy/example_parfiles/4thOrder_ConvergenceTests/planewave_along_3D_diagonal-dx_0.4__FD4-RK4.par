@@ -34,21 +34,21 @@ CoordBase::boundary_size_y_upper        = 2
 CoordBase::boundary_size_z_upper        = 2
 
 # Size of the grid (including boundary points)
-PUGH::global_nx = 125
-PUGH::global_ny = 125
-PUGH::global_nz = 125
+PUGH::global_nx = 65
+PUGH::global_ny = 65
+PUGH::global_nz = 65
 
 PUGH::ghost_size = 2
 
 CartGrid3D::type         = "byrange"
 CartGrid3D::avoid_origin = "no"
 
-CartGrid3D::xmin = -12.4
-CartGrid3D::ymin = -12.4
-CartGrid3D::zmin = -12.4
-CartGrid3D::xmax =  12.4
-CartGrid3D::ymax =  12.4
-CartGrid3D::zmax =  12.4
+CartGrid3D::xmin = -12.8
+CartGrid3D::ymin = -12.8
+CartGrid3D::zmin = -12.8
+CartGrid3D::xmax =  12.8
+CartGrid3D::ymax =  12.8
+CartGrid3D::zmax =  12.8
 
 Periodic::periodic = "yes"
 
@@ -57,7 +57,7 @@ Periodic::periodic = "yes"
 #############################################################
 
 Cactus::terminate                     = "time"
-Cactus::cctk_final_time               = 4
+Cactus::cctk_final_time               = 3
 
 Time::dtfac                           = 0.5
 MethodOfLines::ode_method             = "RK4"
@@ -83,7 +83,7 @@ IOBasic::outInfo_every        = 1
 IOBasic::outInfo_vars         = "WaveToyNRPy::uuGF"
 
 
-IOASCII::out1D_style          = "gnuplot f(x)"
+IOASCII::out1D_style          = "gnuplot f(t,x)"
 IOASCII::out1D_every          = 1
 IOASCII::out1D_x              = "yes"
 IOASCII::out1D_y              = "no"
@@ -97,3 +97,5 @@ IOASCII::out1D_vars           = "WaveToyNRPy::uuGF WaveToyNRPy::vvGF"
 IDScalarWaveNRPy::kk0 = 0.4
 IDScalarWaveNRPy::kk1 = 0.4
 IDScalarWaveNRPy::kk2 = 0.4
+
+WaveToyNRPy::bound = "static" # There is no good boundary condition option for plane-wave initial data.

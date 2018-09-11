@@ -1,0 +1,14 @@
+# GNUPLOT SCRIPTS
+
+
+# RK4 + FD4 3D run:
+set term post enh color fontscale 1.5
+set out "out-RK4-FD4-3D.ps"
+set title "4th-order Convergence:\n om=k=c=1 Sine Plane Wave along Grid Diagonal, t=3 / om";set xlabel "x (units of 1/k)";set ylabel "|Numerical - Exact|";a=15;p [-4:4] "planewave_along_3D_diagonal-dx_0.4__FD4-RK4/uuGF.gnuplot" u 2:(abs($3-$4)) i a ti "dx=0.4" w l,"planewave_along_3D_diagonal-dx_0.2__FD4-RK4/uuGF.gnuplot" u 2:(abs($3-$4)*16) i a ti "rescaled (by 2**4; 4th order conv) dx = 0.2" w lp
+!ps2pdf out-RK4-FD4-3D.ps
+
+# RK4 + FD4 1D run:
+set term post enh color fontscale 1.5
+set out "out-RK4-FD4-1D.ps"
+set title "4th-order Convergence:\n om=k=c=1 Sine Plane Wave along x-axis, t=3 / om";set xlabel "x (units of 1/k)";set ylabel "|Numerical - Exact|";a=15;p [-4:4] "1D-planewave-dx_0.4__FD4-RK4/uuGF.gnuplot" u 2:(abs($3-$5)) i a ti "dx=0.4" w l,"1D-planewave-dx_0.2__FD4-RK4/uuGF.gnuplot" u 2:(abs($3-$5)*16) i a ti "rescaled (by 2**4; 4th order conv) dx = 0.2" w lp
+!ps2pdf out-RK4-FD4-1D.ps
