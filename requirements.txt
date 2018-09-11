@@ -2,3 +2,4 @@ pip
 matplotlib
 sympy
 astropy
+wand
