@@ -25,13 +25,13 @@ Time
 # Grid
 #############################################################
 
-CoordBase::boundary_size_x_lower        = 2
-CoordBase::boundary_size_y_lower        = 2
-CoordBase::boundary_size_z_lower        = 2
+CoordBase::boundary_size_x_lower        = 4
+CoordBase::boundary_size_y_lower        = 4
+CoordBase::boundary_size_z_lower        = 4
 
-CoordBase::boundary_size_x_upper        = 2
-CoordBase::boundary_size_y_upper        = 2
-CoordBase::boundary_size_z_upper        = 2
+CoordBase::boundary_size_x_upper        = 4
+CoordBase::boundary_size_y_upper        = 4
+CoordBase::boundary_size_z_upper        = 4
 
 # Size of the grid (including boundary points)
 PUGH::global_nx = 129
@@ -57,12 +57,12 @@ Periodic::periodic = "yes"
 #############################################################
 
 Cactus::terminate                     = "time"
-Cactus::cctk_final_time               = 4
+Cactus::cctk_final_time               = 3
 
-Time::dtfac                           = 0.25
-MethodOfLines::ode_method             = "RK4"
-MethodOfLines::MoL_Intermediate_Steps = 4
-MethodOfLines::MoL_Num_Scratch_Levels = 1
+Time::dtfac                           = 0.5
+MethodOfLines::ode_method             = "RK87"
+MethodOfLines::MoL_Intermediate_Steps = 13
+MethodOfLines::MoL_Num_Scratch_Levels = 13
 MethodOfLines::MoL_NaN_Check          = "yes"
 
 #############################################################
@@ -83,8 +83,8 @@ IOBasic::outInfo_every        = 1
 IOBasic::outInfo_vars         = "WaveToyNRPy::uuGF"
 
 
-IOASCII::out1D_style          = "gnuplot f(x)"
-IOASCII::out1D_every          = 1
+IOASCII::out1D_style          = "gnuplot f(t,x)"
+IOASCII::out1D_every          = 2
 IOASCII::out1D_x              = "yes"
 IOASCII::out1D_y              = "no"
 IOASCII::out1D_z              = "no"
@@ -97,3 +97,5 @@ IOASCII::out1D_vars           = "WaveToyNRPy::uuGF WaveToyNRPy::vvGF"
 IDScalarWaveNRPy::kk0 = 0.4
 IDScalarWaveNRPy::kk1 = 0.4
 IDScalarWaveNRPy::kk2 = 0.4
+
+WaveToyNRPy::bound = "static" # There is no good boundary condition option for plane-wave initial data.
