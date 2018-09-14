@@ -79,7 +79,7 @@ def ScalarWaveCurvilinear_RHSs():
     #          Derivative variables like these must have an underscore
     #          in them, so the finite difference module can parse the
     #          variable name properly.
-    uu_dDD = ixp.declarerank2("uu_dDD","sym12")
+    uu_dDD = ixp.declarerank2("uu_dDD","sym01")
 
     # Step 7: Specify RHSs as global variables,
     #         to enable access outside this

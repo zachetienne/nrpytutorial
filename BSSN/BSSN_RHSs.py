@@ -28,8 +28,8 @@ def BSSN_RHSs():
     # Step 3: Register all needed *evolved* gridfunctions.
     # Step 3a: Register indexed quantities, using ixp.register_... functions
     global hDD # Needed as global for WeylScalars.py
-    hDD = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD", "sym12")
-    aDD = ixp.register_gridfunctions_for_single_rank2("EVOL","aDD", "sym12")
+    hDD = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD", "sym01")
+    aDD = ixp.register_gridfunctions_for_single_rank2("EVOL","aDD", "sym01")
     lambdaU = ixp.register_gridfunctions_for_single_rank1("EVOL","lambdaU")
     vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU")
     betU = ixp.register_gridfunctions_for_single_rank1("EVOL","betU")
@@ -39,7 +39,7 @@ def BSSN_RHSs():
 
     # Step 4: Register all *auxiliary* gridfunctions.
     # Step 4a: Register indexed quantities, using ixp.register_... functions
-    #RbarDD = ixp.register_gridfunctions_for_single_rank2("EVOL","RbarDD", "sym12")
+    #RbarDD = ixp.register_gridfunctions_for_single_rank2("EVOL","RbarDD", "sym01")
     # Step 4b: Register scalar quantities, using gri.register_gridfunctions()
     detgbar_over_detghat = gri.register_gridfunctions("AUX",["detgbar_over_detghat"])
 
@@ -51,7 +51,7 @@ def BSSN_RHSs():
 
     # Step 5b: Define epsDD_dD[i][j][k]
     global hDD_dD # Needed as global for WeylScalars.py
-    hDD_dD = ixp.declarerank3("hDD_dD","sym12")
+    hDD_dD = ixp.declarerank3("hDD_dD","sym01")
     epsDD_dD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
@@ -60,7 +60,7 @@ def BSSN_RHSs():
 
     # Step 5c: Define epsDD_dDD[i][j][k][l]
     global hDD_dDD # Needed as global for WeylScalars.py
-    hDD_dDD = ixp.declarerank4("hDD_dDD","sym12_sym34")
+    hDD_dDD = ixp.declarerank4("hDD_dDD","sym01_sym23")
     epsDD_dDD = ixp.zerorank4()
     for i in range(DIM):
         for j in range(DIM):
@@ -158,7 +158,7 @@ def BSSN_RHSs():
     # Step 7a: Define \bar{\gamma}_{ij,k} = gammabarDDdD[i][j][k]
     #          = h_{ij,k} \text{ReDD[i][j]} + h_{ij} \text{ReDDdD[i][j][k]} + \hat{\gamma}_{ij,k}.
     gammabarDD_dD = ixp.zerorank3()
-    hDD_dupD = ixp.declarerank3("hDD_dupD","sym12") # Needed for \bar{\gamma}_{ij} RHS
+    hDD_dupD = ixp.declarerank3("hDD_dupD","sym01") # Needed for \bar{\gamma}_{ij} RHS
     gammabarDD_dupD = ixp.zerorank3()  # Needed for \bar{\gamma}_{ij} RHS
     for i in range(DIM):
         for j in range(DIM):
@@ -227,7 +227,7 @@ def BSSN_RHSs():
 
     vetU_dD = ixp.declarerank2("vetU_dD", "nosym")
     vetU_dupD = ixp.declarerank2("vetU_dupD", "nosym")  # Needed for \beta^i RHS
-    vetU_dDD = ixp.declarerank3("vetU_dDD", "sym23")  # Needed for \bar{\Lambda}^i RHS
+    vetU_dDD = ixp.declarerank3("vetU_dDD", "sym12")  # Needed for \bar{\Lambda}^i RHS
     betaU_dD = ixp.zerorank2()
     betaU_dupD = ixp.zerorank2()  # Needed for \beta^i RHS
     betaU_dDD = ixp.zerorank3()  # Needed for \bar{\Lambda}^i RHS
@@ -270,7 +270,7 @@ def BSSN_RHSs():
         detgammabar_dD[i] = detgbar_over_detghat_dD[i] * rfm.detgammahat + detgbar_over_detghat * rfm.detgammahatdD[i]
 
     detgammabar_dDD = ixp.zerorank2()
-    detgbar_over_detghat_dDD = ixp.declarerank2("detgbar_over_detghat_dDD", "sym12")
+    detgbar_over_detghat_dDD = ixp.declarerank2("detgbar_over_detghat_dDD", "sym01")
     for i in range(DIM):
         for j in range(DIM):
             detgammabar_dDD[i][j] = detgbar_over_detghat_dDD[i][j] * rfm.detgammahat + \
@@ -300,7 +300,7 @@ def BSSN_RHSs():
 
     # First define aDD_dupD:
     AbarDD_dupD = ixp.zerorank3()
-    aDD_dupD = ixp.declarerank3("aDD_dupD","sym12")
+    aDD_dupD = ixp.declarerank3("aDD_dupD","sym01")
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
@@ -330,7 +330,7 @@ def BSSN_RHSs():
     # Step 9c: Define partial derivatives of \phi in terms of evolved quantity "cf":
     cf_dD = ixp.declarerank1("cf_dD")
     cf_dupD = ixp.declarerank1("cf_dupD")  # Needed for \partial_t \phi next.
-    cf_dDD = ixp.declarerank2("cf_dDD", "sym12")
+    cf_dDD = ixp.declarerank2("cf_dDD", "sym01")
     phi_dD = ixp.zerorank1()
     phi_dupD = ixp.zerorank1()
     phi_dDD = ixp.zerorank2()
@@ -383,7 +383,7 @@ def BSSN_RHSs():
     # Step 9e: Define first and second derivatives of \alpha, as well as
     #         \bar{D}_i \bar{D}_j \alpha, which is defined just like phi
     alpha_dD = ixp.declarerank1("alpha_dD")
-    alpha_dDD = ixp.declarerank2("alpha_dDD", "sym12")
+    alpha_dDD = ixp.declarerank2("alpha_dDD", "sym01")
     alpha_dBarD = alpha_dD
     alpha_dBarDD = ixp.zerorank2()
     for i in range(DIM):

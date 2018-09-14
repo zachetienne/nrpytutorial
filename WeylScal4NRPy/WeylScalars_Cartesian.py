@@ -39,8 +39,8 @@ def WeylScalars_Cartesian():
     par.set_parval_from_str("outputC::outCverbose",False) # To prevent absurdly large output files.
     # We do not need the barred or hatted quantities calculated when using Cartesian coordinates.
     # Instead, we declare the PHYSICAL metric and extrinsic curvature as grid functions.
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD", "sym12")
-    kDD = ixp.register_gridfunctions_for_single_rank2("EVOL","kDD", "sym12")
+    gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD", "sym01")
+    kDD = ixp.register_gridfunctions_for_single_rank2("EVOL","kDD", "sym01")
     gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
     
     output_scalars = par.parval_from_str("output_scalars")
@@ -167,7 +167,7 @@ def WeylScalars_Cartesian():
         print("Error: TetradChoice == "+par.parval_from_str("TetradChoice")+" unsupported!")
         exit(1)
 
-    gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym12")
+    gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
 
     # Define the Christoffel symbols
     GammaUDD = ixp.zerorank3(DIM)
@@ -182,7 +182,7 @@ def WeylScalars_Cartesian():
     # Step 4b: Declare and construct the Riemann curvature tensor:
     # R_{abcd} = \frac{1}{2} (\gamma_{ad,cb}+\gamma_{bc,da}-\gamma_{ac,bd}-\gamma_{bd,ac}) 
     #            + \gamma_{je} \Gamma^{j}_{bc}\Gamma^{e}_{ad} - \gamma_{je} \Gamma^{j}_{bd} \Gamma^{e}_{ac}
-    gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym12_sym34")
+    gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
     RiemannDDDD = ixp.zerorank4()
     for a in range(DIM):
         for b in range(DIM):
@@ -219,7 +219,7 @@ def WeylScalars_Cartesian():
     # Codazzi equation: involving partial derivatives of the extrinsic curvature. 
     # We will first need to declare derivatives of kDD
     # CodazziDDD[j][k][l] =& -2 (K_{j[k,l]} + \Gamma^p_{j[k} K_{l]p})
-    kDD_dD = ixp.declarerank3("kDD_dD","sym12")
+    kDD_dD = ixp.declarerank3("kDD_dD","sym01")
     CodazziDDD = ixp.zerorank3()
     for j in range(DIM):
         for k in range(DIM):

@@ -8,7 +8,7 @@ def MaxwellCartesian_ID():
     DIM = par.parval_from_str("grid::DIM")
 
     x,y,z = gri.register_gridfunctions("AUX",["x","y","z"])
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym12") # The AUX or EVOL designation is *not*
+    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01") # The AUX or EVOL designation is *not*
                                                                                     # used in diagnostic modules.
 
     # Step 1: Declare free parameters intrinsic to these initial data

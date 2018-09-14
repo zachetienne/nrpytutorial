@@ -29,15 +29,15 @@ def MaxwellCartesian_Evol():
     ## Step 3b: Declare the conformal metric tensor and its first 
     #           derivative. These are needed to find the Christoffel
     #           symbols, which we need for covariant derivatives.
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym12") # The AUX or EVOL designation is *not*
+    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01") # The AUX or EVOL designation is *not*
                                                                                     # used in diagnostic modules.
-    gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym12")
-    gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym12_sym34")
+    gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
+    gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
 
-    gammaUU = ixp.declarerank3("gammaUU","sym12")
+    gammaUU = ixp.declarerank3("gammaUU","sym01")
     detgamma = gri.register_gridfunctions("AUX",["detgamma"])
     gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
-    gammaUU_dD = ixp.declarerank3("gammaDD_dD","sym12")
+    gammaUU_dD = ixp.declarerank3("gammaDD_dD","sym01")
 
     # Define the Christoffel symbols
     GammaUDD = ixp.zerorank3(DIM)
@@ -57,7 +57,7 @@ def MaxwellCartesian_Evol():
 
     # Step 3c: Declare the rank-3 indexed expression \partial_{jk} A_{i},
     #          which is symmetric in the two {jk} indices.
-    AD_dDD = ixp.declarerank3("AD_dDD", "sym23")
+    AD_dDD = ixp.declarerank3("AD_dDD", "sym12")
 
     # Step 4: Calculate first and second covariant derivatives, and the
     #         necessary contractions.
@@ -144,7 +144,7 @@ def MaxwellCartesian_Evol():
         # Step 8a: Construct the second covariant derivative of the scalar \psi
         # \psi_{;\hat{i}\hat{j}} = \psi_{,i;\hat{j}}
         #                        = \psi_{,ij} - \Gamma^{k}_{ij} \psi_{,k}
-        psi_dDD = ixp.declarerank2("psi_dDD", "sym12")
+        psi_dDD = ixp.declarerank2("psi_dDD", "sym01")
         psi_dcovDD = ixp.zerorank2()
         for i in range(DIM):
             for j in range(DIM):
