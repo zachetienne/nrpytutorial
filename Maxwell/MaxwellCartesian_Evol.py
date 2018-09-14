@@ -120,16 +120,16 @@ def MaxwellCartesian_Evol():
                 DivA_dD[i] += gammaUU[j][k] * AD_dcovDD[k][j][i]
                 LapAD[i]   += gammaUU[j][k] * AD_dcovDD[i][j][k]
     
-    global AD_rhs, ED_rhs, psi_rhs
+    global ArhsD, ErhsD, psi_rhs
     system = par.parval_from_str("System_to_use")
     if system is "System_I":
         # Step 5: Define right-hand sides for the evolution.
         print("Warning: System I is less stable!")
-        AD_rhs = ixp.zerorank1()
-        ED_rhs = ixp.zerorank1()
+        ArhsD = ixp.zerorank1()
+        ErhsD = ixp.zerorank1()
         for i in range(DIM):
-            AD_rhs[i] = -ED[i] - psi_dD[i]
-            ED_rhs[i] = -LapAD[i] + DivA_dD[i]
+            ArhsD[i] = -ED[i] - psi_dD[i]
+            ErhsD[i] = -LapAD[i] + DivA_dD[i]
         psi_rhs = -DivA
 
     elif system is "System_II":
@@ -161,11 +161,11 @@ def MaxwellCartesian_Evol():
 
         # Step 9: Define right-hand sides for the evolution.
         global Gamma_rhs
-        AD_rhs = ixp.zerorank1()
-        ED_rhs = ixp.zerorank1()
+        ArhsD = ixp.zerorank1()
+        ErhsD = ixp.zerorank1()
         for i in range(DIM):
-            AD_rhs[i] = -ED[i] - psi_dD[i]
-            ED_rhs[i] = -LapAD[i] + Gamma_dD[i]
+            ArhsD[i] = -ED[i] - psi_dD[i]
+            ErhsD[i] = -LapAD[i] + Gamma_dD[i]
         psi_rhs = -Gamma
         Gamma_rhs = -Lappsi
 

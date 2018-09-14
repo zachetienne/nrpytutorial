@@ -16,21 +16,27 @@ def MaxwellCartesian_ID():
     lam = par.Cparameters("REAL",thismodule,"lam")
 
     # Step 2: Set the initial data
-    global AD_ID,ED_ID,psi_ID
-    AD_ID = ixp.zerorank1()
+    system = par.parval_from_str("System_to_use")
+    if system is "System_I" or "System_II":
+        global AidD,EidD,psi_ID
+        AidD = ixp.zerorank1()
 
-    ED_ID = ixp.zerorank1()
-    EU_ID = ixp.zerorank1()
-    # Set the coordinate transformations:
-    radial = sp.sqrt(x*x + y*y + z*z)
-    polar = sp.atan2(sp.sqrt(x*x + y*y),z)
-    EU_phi = 8*amp*radial*sp.sin(polar)*lam*lam*sp.exp(lam*radial*radial)
-    EU_ID[0] = (y * EU_phi)/sp.sqrt(x*x + y*y)
-    EU_ID[1] = (y * EU_phi)/sp.sqrt(x*x + y*y)
-    # The z component (2)is zero. 
-    for i in range(DIM):
-        for j in range(DIM):
-            ED_ID[i] += gammaDD[i][j] * EU_ID[j]
+        EidD = ixp.zerorank1()
+        EidU = ixp.zerorank1()
+        # Set the coordinate transformations:
+        radial = sp.sqrt(x*x + y*y + z*z)
+        polar = sp.atan2(sp.sqrt(x*x + y*y),z)
+        EU_phi = 8*amp*radial*sp.sin(polar)*lam*lam*sp.exp(lam*radial*radial)
+        EidU[0] = (y * EU_phi)/sp.sqrt(x*x + y*y)
+        EidU[1] = (y * EU_phi)/sp.sqrt(x*x + y*y)
+        # The z component (2)is zero. 
+        for i in range(DIM):
+            for j in range(DIM):
+                EidD[i] += gammaDD[i][j] * EidU[j]
 
-    psi_ID = sp.sympify(0)
-    Gamma_ID = sp.sympify(0)
+        psi_ID = sp.sympify(0)
+        if system is "System_II":
+            global Gamma_ID
+            Gamma_ID = sp.sympify(0)
+    else:
+        print("Invalid choice of system: System_to_use must be either System_I or System_II")
