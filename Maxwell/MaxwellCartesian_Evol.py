@@ -168,3 +168,6 @@ def MaxwellCartesian_Evol():
             ED_rhs[i] = -LapAD[i] + Gamma_dD[i]
         psi_rhs = -Gamma
         Gamma_rhs = -Lappsi
+
+    else:
+        print("Invalid choice of system: System_to_use must be either System_I or System_II")
