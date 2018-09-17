@@ -171,3 +171,11 @@ def MaxwellCartesian_Evol():
 
     else:
         print("Invalid choice of system: System_to_use must be either System_I or System_II")
+    
+    ED_dD = ixp.declarerank2("ED_dD","nosym")
+    global Cviola
+    Cviola = gri.register_gridfunctions("AUX", ["Cviola"])
+    for i in range(DIM):
+        for j in range(DIM):
+            for b in range(DIM):
+                Cviola += gammaUU[i][j] * (ED_dD[j][i] - GammaUDD[b][i][j]*ED[b])
