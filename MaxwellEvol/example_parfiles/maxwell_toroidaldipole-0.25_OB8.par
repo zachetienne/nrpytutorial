@@ -1,0 +1,103 @@
+
+ActiveThorns = "
+ADMBase
+Boundary
+CartGrid3d
+CoordBase
+GenericFD
+IOASCII
+IOUtil
+IOBasic
+MoL
+NanChecker
+Periodic
+PUGH
+PUGHReduce
+LocalReduce
+PUGHSlab
+MaxwellID
+MaxwellEvol
+Slab
+SymBase
+Time
+"
+
+#############################################################
+# Grid
+#############################################################
+
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
+
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
+
+# Case: Outer Boundary at 8, 32^3 points (per quadrant)
+# Size of the grid (including boundary points)
+PUGH::global_nx = 69
+PUGH::global_ny = 69
+PUGH::global_nz = 69
+
+PUGH::ghost_size = 2
+
+CartGrid3D::type         = "byrange"
+CartGrid3D::avoid_origin = "no"
+
+CartGrid3D::xmin = -8.375
+CartGrid3D::ymin = -8.375
+CartGrid3D::zmin = -8.375
+CartGrid3D::xmax =  8.625
+CartGrid3D::ymax =  8.625
+CartGrid3D::zmax =  8.625
+
+Periodic::periodic = "yes"
+
+#############################################################
+# Time integration
+#############################################################
+
+Cactus::terminate                     = "time"
+Cactus::cctk_final_time               = 100.0
+
+Time::dtfac                           = 0.5
+MethodOfLines::ode_method             = "RK4"
+MethodOfLines::MoL_Intermediate_Steps = 4
+MethodOfLines::MoL_Num_Scratch_Levels = 1
+MethodOfLines::MoL_NaN_Check          = "yes"
+
+#############################################################
+# Boundary conditions
+#############################################################
+
+#WaveToyNRPy::evolved_group_bound   = "none"
+
+#############################################################
+# Output
+#############################################################
+
+IO::out_dir                   = $parfile
+IO::out_fileinfo              = "none"
+IO::new_filename_scheme       = "no"
+
+IOBasic::outInfo_every        = 1
+IOBasic::outInfo_vars         = "MaxwellEvol::CviolaIGF MaxwellEvol::CviolaIIGF"
+
+
+IOASCII::out1D_style          = "gnuplot f(x)"
+IOASCII::out1D_every          = 1
+IOASCII::out1D_x              = "yes"
+IOASCII::out1D_y              = "no"
+IOASCII::out1D_z              = "no"
+IOASCII::out1D_d              = "no"
+IOASCII::out1D_vars           = "MaxwellEvol::CviolaIGF MaxwellEvol::CviolaIIGF"
+
+IOASCII::out2D_style          = "gnuplot f(t,x,y)"
+IOASCII::out2D_every          = 1
+IOASCII::out2D_xyplane_z      = 0.0625
+IOASCII::out2D_vars           = "MaxwellEvol::CviolaIGF MaxwellEvol::CviolaIIGF"
+
+#############################################################
+# Initial Data
+#############################################################
