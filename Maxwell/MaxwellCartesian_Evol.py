@@ -175,6 +175,7 @@ def MaxwellCartesian_Evol():
     ED_dD = ixp.declarerank2("ED_dD","nosym")
     global Cviola
     Cviola = gri.register_gridfunctions("AUX", ["Cviola"])
+    Cviola = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
             for b in range(DIM):

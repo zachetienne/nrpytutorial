@@ -27,8 +27,8 @@ def MaxwellCartesian_ID():
         radial = sp.sqrt(x*x + y*y + z*z)
         polar = sp.atan2(sp.sqrt(x*x + y*y),z)
         EU_phi = 8*amp*radial*sp.sin(polar)*lam*lam*sp.exp(-lam*radial*radial)
-        EidU[0] = (y * EU_phi)/sp.sqrt(x*x + y*y)
-        EidU[1] = (y * EU_phi)/sp.sqrt(x*x + y*y)
+        EidU[0] = -(y * EU_phi)/sp.sqrt(x*x + y*y)
+        EidU[1] = (x * EU_phi)/sp.sqrt(x*x + y*y)
         # The z component (2)is zero. 
         for i in range(DIM):
             for j in range(DIM):
