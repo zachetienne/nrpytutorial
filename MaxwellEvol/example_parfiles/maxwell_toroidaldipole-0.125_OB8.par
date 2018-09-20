@@ -26,31 +26,31 @@ Time
 # Grid
 #############################################################
 
-CoordBase::boundary_size_x_lower        = 2
-CoordBase::boundary_size_y_lower        = 2
-CoordBase::boundary_size_z_lower        = 2
+CoordBase::boundary_size_x_lower        = 1
+CoordBase::boundary_size_y_lower        = 1
+CoordBase::boundary_size_z_lower        = 1
 
-CoordBase::boundary_size_x_upper        = 2
-CoordBase::boundary_size_y_upper        = 2
-CoordBase::boundary_size_z_upper        = 2
+CoordBase::boundary_size_x_upper        = 1
+CoordBase::boundary_size_y_upper        = 1
+CoordBase::boundary_size_z_upper        = 1
 
 # Case: Outer Boundary at 8, 64^3 points (per quadrant)
 # Size of the grid (including boundary points)
-PUGH::global_nx = 133
-PUGH::global_ny = 133
-PUGH::global_nz = 133
+PUGH::global_nx = 131
+PUGH::global_ny = 131
+PUGH::global_nz = 131
 
-PUGH::ghost_size = 2
+PUGH::ghost_size = 1
 
 CartGrid3D::type         = "byrange"
 CartGrid3D::avoid_origin = "no"
 
-CartGrid3D::xmin = -8.1875
-CartGrid3D::ymin = -8.1875
-CartGrid3D::zmin = -8.1875
-CartGrid3D::xmax =  8.3125
-CartGrid3D::ymax =  8.3125
-CartGrid3D::zmax =  8.3125
+CartGrid3D::xmin = -8.0625
+CartGrid3D::ymin = -8.0625
+CartGrid3D::zmin = -8.0625
+CartGrid3D::xmax =  8.1875
+CartGrid3D::ymax =  8.1875
+CartGrid3D::zmax =  8.1875
 
 Periodic::periodic = "yes"
 
@@ -62,7 +62,7 @@ Cactus::terminate                     = "time"
 Cactus::cctk_final_time               = 100.0
 
 Time::dtfac                           = 0.5
-MethodOfLines::ode_method             = "RK4"
+MethodOfLines::ode_method             = "ICN"
 MethodOfLines::MoL_Intermediate_Steps = 4
 MethodOfLines::MoL_Num_Scratch_Levels = 1
 MethodOfLines::MoL_NaN_Check          = "yes"
