@@ -27,14 +27,13 @@ def BSSN_RHSs():
 
     # Step 3: Register all needed *evolved* gridfunctions.
     # Step 3a: Register indexed quantities, using ixp.register_... functions
-    global hDD # Needed as global for WeylScalars.py
     hDD = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD", "sym01")
     aDD = ixp.register_gridfunctions_for_single_rank2("EVOL","aDD", "sym01")
     lambdaU = ixp.register_gridfunctions_for_single_rank1("EVOL","lambdaU")
     vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU")
     betU = ixp.register_gridfunctions_for_single_rank1("EVOL","betU")
     # Step 3b: Register scalar quantities, using gri.register_gridfunctions()
-    global trK # Needed as global for WeylScalars.py
+    global alpha # Needed as global for BSSN matter source terms, etc.
     trK, cf, alpha = gri.register_gridfunctions("EVOL",["trK","cf","alpha"])
 
     # Step 4: Register all *auxiliary* gridfunctions.
@@ -50,7 +49,6 @@ def BSSN_RHSs():
             epsDD[i][j] = hDD[i][j]*rfm.ReDD[i][j]
 
     # Step 5b: Define epsDD_dD[i][j][k]
-    global hDD_dD # Needed as global for WeylScalars.py
     hDD_dD = ixp.declarerank3("hDD_dD","sym01")
     epsDD_dD = ixp.zerorank3()
     for i in range(DIM):
@@ -59,7 +57,6 @@ def BSSN_RHSs():
                 epsDD_dD[i][j][k] = hDD_dD[i][j][k]*rfm.ReDD[i][j] + hDD[i][j]*rfm.ReDDdD[i][j][k]
 
     # Step 5c: Define epsDD_dDD[i][j][k][l]
-    global hDD_dDD # Needed as global for WeylScalars.py
     hDD_dDD = ixp.declarerank4("hDD_dDD","sym01_sym23")
     epsDD_dDD = ixp.zerorank4()
     for i in range(DIM):
@@ -119,17 +116,16 @@ def BSSN_RHSs():
                                                          - rfm.GammahatUDD[m][j][k]*gammabarDD_dHatD[i][m][l]
 
     # Step 5g: Compute \bar{\gamma}_{ij} and its inverse (using built-in function ixp.symm_matrix_inverter3x3()):
-    global gammabarDD # Needed as global for WeylScalars.py
+    global gammabarDD # Needed as global for BSSN matter source terms, etc.
     gammabarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
             gammabarDD[i][j] = hDD[i][j]*rfm.ReDD[i][j] + rfm.ghatDD[i][j]
-    global gammabarUU # Needed as global for WeylScalars.py
+    global gammabarUU # Needed as global for BSSN matter source terms, etc.
     gammabarUU, dummydet = ixp.symm_matrix_inverter3x3(gammabarDD)
 
     # Step 5h: Add the first term to RbarDD:
     #         - \frac{1}{2} \bar{\gamma}^{k l} \hat{D}_{k} \hat{D}_{l} \bar{\gamma}_{i j}
-    global RbarDD # Needed as global for WeylScalars.py
     RbarDD = ixp.zerorank2()
     RbarDDpiece = ixp.zerorank2()
     for i in range(DIM):
@@ -169,7 +165,6 @@ def BSSN_RHSs():
                                          + rfm.ghatDDdD[i][j][k]
 
     # Step 7b: Define barred Christoffel symbol \bar{\Gamma}^{i}_{jk} = GammabarUDD[i][j][k]
-    global GammabarUDD # Needed as global for WeylScalars.py
     GammabarUDD = ixp.zerorank3()
     for i in range(DIM):
         for k in range(DIM):
@@ -250,7 +245,6 @@ def BSSN_RHSs():
                                         + betaU_dD[k][j] * gammabarDD[i][k]
 
     # Step 8c: Define \bar{A}_{ij} = a_{ij} \text{ReDD[i][j]} = AbarDD[i][j], and its contraction trAbar = \bar{A}^k_k
-    global AbarDD # Needed as global for WeylScalars.py
     AbarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
@@ -261,7 +255,6 @@ def BSSN_RHSs():
             trAbar += gammabarUU[i][j] * AbarDD[i][j]
 
     # Step 8d: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
-    global detgammabar # Needed as global for WeylScalars.py
     detgammabar = detgbar_over_detghat * rfm.detgammahat
 
     detgammabar_dD = ixp.zerorank1()
@@ -334,7 +327,7 @@ def BSSN_RHSs():
     phi_dD = ixp.zerorank1()
     phi_dupD = ixp.zerorank1()
     phi_dDD = ixp.zerorank2()
-    global exp_m4phi # Needed as global for WeylScalars.py
+    global exp_m4phi # Needed as global for BSSN matter source terms, etc.
     exp_m4phi = sp.sympify(0)
     if par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "phi":
         for i in range(DIM):
