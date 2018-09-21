@@ -71,7 +71,7 @@ MethodOfLines::MoL_NaN_Check          = "yes"
 # Boundary conditions
 #############################################################
 
-#WaveToyNRPy::evolved_group_bound   = "none"
+MaxwellEvol::bound = "radiation"
 
 #############################################################
 # Output
