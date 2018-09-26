@@ -125,7 +125,7 @@ def reference_metric():
         xxCart[2] = ZCYL
     
         xxSph[0] = sp.sqrt(RHOCYL**2 + ZCYL**2)
-        xxSph[1] = sp.cos(ZCYL / xxSph[0])
+        xxSph[1] = sp.acos(ZCYL / xxSph[0])
         xxSph[2] = PHICYL
     
         scalefactor_orthog[0] = sp.diff(RHOCYL,xx[0])
@@ -165,7 +165,7 @@ def reference_metric():
         xxCart[2] = var2*sp.cos(xx[1])
     
         xxSph[0] = sp.sqrt(RHOSYMTP**2 + ZSYMTP**2)
-        xxSph[1] = sp.cos(ZSYMTP / xxSph[0])
+        xxSph[1] = sp.acos(ZSYMTP / xxSph[0])
         xxSph[2] = PHSYMTP
     
         scalefactor_orthog[0] = sp.diff(AA,xx[0]) * var1 / var2
@@ -186,7 +186,7 @@ def reference_metric():
         xxCart[2] = xx[2]
 
         xxSph[0] = sp.sqrt(xx[0] ** 2 + xx[1] ** 2 + xx[2] ** 2)
-        xxSph[1] = sp.cos(xx[2] / xxSph[0])
+        xxSph[1] = sp.acos(xx[2] / xxSph[0])
         xxSph[2] = sp.atan2(xx[1], xx[0])
 
         scalefactor_orthog[0] = sp.sympify(1)
