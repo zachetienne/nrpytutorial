@@ -66,9 +66,9 @@ def FD_outputC(filename,sympyexpr_list):
                 else:
                     print("Error: Unregistered variable \""+str(var)+"\" in SymPy expression")
                     print("All variables in SymPy expressions passed to FD_outputC() must be registered")
-                    print("   in NRPy+ as either a gridfunction or Cparameter, by calling")
-                    print("   "+str(var)+" = register_gridfunctions...() (in ixp/grid) if \""+str(var)+"\" is a gridfunction, or")
-                    print("   "+str(var)+" = Cparameters() (in par) otherwise (e.g., if it is a free parameter set at C runtime.")
+                    print("in NRPy+ as either a gridfunction or Cparameter, by calling")
+                    print(str(var)+" = register_gridfunctions...() (in ixp/grid) if \""+str(var)+"\" is a gridfunction, or")
+                    print(str(var)+" = Cparameters() (in par) otherwise (e.g., if it is a free parameter set at C runtime).")
                     exit(1)
                 list_of_deriv_vars_with_duplicates.append(var)
 #            elif vartype == "gridfunction":
