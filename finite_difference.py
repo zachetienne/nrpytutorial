@@ -58,11 +58,16 @@ def FD_outputC(filename,sympyexpr_list):
                 # vartype=="other" should ONLY refer to derivatives, so
                 #    if "_dD" or variants do not appear in a variable classified
                 #    neither as a gridfunction nor a Cparameter, then error out.
-                if "_dD" or "_dKOD" or "_dupD" or "_ddnD" in str(var):
+                if ("_dD"   in str(var)) or \
+                   ("_dKOD" in str(var)) or \
+                   ("_dupD" in str(var)) or \
+                   ("_ddnD" in str(var)):
                     pass
                 else:
-                    print("Error: "+str(var)+" is an unregistered variable.")
-                    print("Please check for typos, or register as a gridfunction or Cparameter.")
+                    print("Error: Unregistered variable \""+str(var)+"\" in SymPy expression")
+                    print("All variables in SymPy expressions passed to FD_outputC() must be registered")
+                    print("   in NRPy+ as either a gridfunction or Cparameter, by calling the")
+                    print("   register_gridfunctions...() (in ixp/grid) or Cparameters() (in par) routines.")
                     exit(1)
                 list_of_deriv_vars_with_duplicates.append(var)
 #            elif vartype == "gridfunction":
