@@ -35,7 +35,7 @@ def declarerank1(objname, DIM=-1, RegisterAsGridfunction=False):
 def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     # Step 1: Declare a list of SymPy variables, 
     #         where IDX_OBJ_TMP[i] = gf_basename+str(i)
-    IDX_OBJ_TMP = declarerank1(gf_basename)
+    IDX_OBJ_TMP = declarerank1(gf_basename, DIM)
 
     # Step 2: Register each gridfunction
     if DIM==-1:
