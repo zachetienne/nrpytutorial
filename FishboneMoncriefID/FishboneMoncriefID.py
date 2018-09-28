@@ -25,7 +25,7 @@ def FishboneMoncriefID():
     # Variables needed for initial data given in spherical basis
     r, th, ph = gri.register_gridfunctions("AUX",["r","th","ph"])
 
-    r_in,r_at_max_density,a,M,l = par.Cparameters("REAL",thismodule,["r_in","r_at_max_density","a","M","l"])
+    r_in,r_at_max_density,a,M = par.Cparameters("REAL",thismodule,["r_in","r_at_max_density","a","M"])
 
     kappa,gamma = par.Cparameters("REAL",thismodule,["kappa","gamma"])
 
