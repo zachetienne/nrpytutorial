@@ -216,6 +216,7 @@ def BSSN_RHSs():
                                                             DGammaUDD[m][i][k]*DGammaDDD[m][j][l])
 
     # Step 8a: Define \beta^i and \beta^i_{,k} in terms of rescaled quantity vetU[i] and vetU_dD[i][j]:
+    global betaU # Needed as global for BSSN matter source terms, etc.
     betaU = ixp.zerorank1()
     for i in range(DIM):
         betaU[i] = vetU[i] * rfm.ReU[i]
