@@ -72,9 +72,9 @@ def FishboneMoncriefID():
     mln_h_in += 2*a*M*r_in*l/Ain
 
     global hm1
-    hm1 = gri.register_gridfunctions("AUX","hm1")
     hm1 = sp.exp(ln_h + mln_h_in) - 1
 
+    global rho0
     rho0,Pressure0 = gri.register_gridfunctions("AUX",["rho0","Pressure0"])
 
     # Python 3.4 + sympy 1.0.0 has a serious problem taking the power here, hangs forever.
