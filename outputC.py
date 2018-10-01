@@ -224,4 +224,4 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
             successstr = "Appended "
         elif par.parval_from_str("outCfileaccess") == "w":
             successstr = "Wrote "
-        print(successstr + "to file \"" + par.parval_from_str("outCfilename") + "\"")
+        print(successstr + "to file \"" + filename + "\"")
