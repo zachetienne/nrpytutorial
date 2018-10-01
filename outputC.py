@@ -216,7 +216,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
     elif filename == "returnstring":
         return final_Ccode_output_str
     else:
-        # Output to the file specified by outCfilename
+        # Output to the file specified by the function input parameter string 'filename':
         with open(filename, par.parval_from_str("outCfileaccess")) as file:
             file.write(final_Ccode_output_str)
         successstr = ""
