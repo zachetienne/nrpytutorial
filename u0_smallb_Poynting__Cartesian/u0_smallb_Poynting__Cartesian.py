@@ -48,6 +48,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     thismodule = "smallbPoynET"
 
     # To get \gamma_{\mu \nu} = gammabar4DD[mu][nu], we'll need to construct the 4-metric, using Eq. 2.122 in B&S:
+    global g4DD
     g4DD = ixp.zerorank2(DIM=4)
 
     # Eq. 2.121 in B&S
@@ -237,6 +238,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     # \end{pmatrix},
 
     # where $\gamma^{ij}$ was defined above where we computed $\text{gammaDET}$.
+    global g4UU
     g4UU = ixp.zerorank2(DIM=4)
 
     g4UU[0][0] = -1 / alpha**2
