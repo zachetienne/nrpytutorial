@@ -41,7 +41,7 @@ import indexedexp as ixp
 from outputC import *
 
 
-def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU):
+def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     # Set spatial dimension = 3
     DIM=3
 
@@ -203,10 +203,6 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     # with the goal of outputting now $b^\mu$ and $b^2$:
     M_PI = par.Cparameters("REAL",thismodule,"M_PI")
 
-    BU = ixp.zerorank1()
-    for i in range(DIM):
-        BU[i] = BtildeU[i]/gammaDET
-
     # uBcontraction = u_i B^i
     uBcontraction = sp.sympify(0)
     for i in range(DIM):
@@ -226,7 +222,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     # ## Part 2 of 2: Computing the Poynting Flux Vector $S^{i}$
     #
     # The Poynting flux is defined in Eq. 11 of [Kelly *et al*](https://arxiv.org/pdf/1710.02132.pdf):
-    # S^i = \alpha T^i_{\rm EM\ 0} = \alpha\left(b^2 u^i u_0 + \frac{1}{2} b^2 g^i{}_0 - b^i b_0\right)
+    # S^i = -\alpha T^i_{\rm EM\ 0} = \alpha\left(b^2 u^i u_0 + \frac{1}{2} b^2 g^i{}_0 - b^i b_0\right)
 
     # ## Part 2, Step 1: Computing $g^{i\nu}$:
     # We have already computed all of these quantities above, except $g^i{}_0$ so let's now construct this object:
@@ -257,7 +253,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     # g^\mu{}_\delta = g^{\mu\nu} g_{\nu \delta},
 
     # and then the rest of the Poynting flux vector can be immediately computed from quantities defined above:
-    # S^i = \alpha T^i_{\rm EM\ 0} = \alpha\left(b^2 u^i u_0 + \frac{1}{2} b^2 g^i{}_0 - b^i b_0\right)
+    # S^i = \alpha T^i_{\rm EM\ 0} = -\alpha\left(b^2 u^i u_0 + \frac{1}{2} b^2 g^i{}_0 - b^i b_0\right)
 
     # Step 2a: compute g^\mu_\delta:
     g4UD = ixp.zerorank2(DIM=4)
@@ -287,6 +283,6 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     global PoynSU
     PoynSU = ixp.zerorank1()
     for i in range(DIM):
-        PoynSU[i] = alpha * (smallb2*uU[i]*u_0 + sp.Rational(1,2)*smallb2*g4UD[i+1][0] - smallb4U[i+1]*smallb4D[0])
+        PoynSU[i] = -alpha * (smallb2*uU[i]*u_0 + sp.Rational(1,2)*smallb2*g4UD[i+1][0] - smallb4U[i+1]*smallb4D[0])
     #
     # return computeu0_Cfunction,smallb4U,smallb2,PoynSU
