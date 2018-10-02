@@ -153,7 +153,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     par.set_parval_from_str("outputC::includebraces",True)
     par.set_parval_from_str("outputC::CSE_varprefix","tmprescale")
     computeu0_Cfunction += outputC([rescaledValenciavU[0],rescaledValenciavU[1],rescaledValenciavU[2],rescaledu0],
-                                   ["ValenciavU[0]","ValenciavU[1]","ValenciavU[2]","u0"],"returnstring")
+                                   ["ValenciavU0","ValenciavU1","ValenciavU2","u0"],"returnstring")
 
     # Reset outputC parameters to the same values they were set to coming in to this function.
     par.set_parval_from_str("outputC::includebraces", default_outputC_includebraces)
