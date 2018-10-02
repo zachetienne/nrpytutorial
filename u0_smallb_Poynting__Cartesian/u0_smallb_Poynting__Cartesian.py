@@ -275,7 +275,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     # Step 2c: compute u_0 = g_{mu 0} u^{mu} = g4DD[0][0]*u0 + g4DD[i][0]*uU[i]
     u_0 = g4DD[0][0]*u0
     for i in range(DIM):
-        u_0 += g4DD[i][0]*uU[i]
+        u_0 += g4DD[i+1][0]*uU[i]
 
     # Step 2d: compute b^2
     global smallb2
