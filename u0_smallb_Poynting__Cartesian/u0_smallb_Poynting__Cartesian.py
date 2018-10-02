@@ -130,6 +130,10 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     rescaledu0 = 1/(alpha*sp.sqrt(1-Rmax))
     regularu0 =  1/(alpha*sp.sqrt(1-R))
 
+    default_outputC_includebraces = par.parval_from_str("outputC::includebraces")
+    default_outputC_outCverbose = par.parval_from_str("outputC::outCverbose")
+    default_outputC_CSE_varprefix = par.parval_from_str("outputC::CSE_varprefix")
+
     global computeu0_Cfunction
     computeu0_Cfunction  = "/* Function for computing u^0 from Valencia 3-velocity. */\n"
     computeu0_Cfunction += "/* Inputs: ValenciavU[], alpha, gammaDD[][], GAMMA_SPEED_LIMIT (C parameter) */\n"
@@ -151,6 +155,11 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BtildeU
     computeu0_Cfunction += outputC([rescaledValenciavU[0],rescaledValenciavU[1],rescaledValenciavU[2],rescaledu0],
                                    ["ValenciavU[0]","ValenciavU[1]","ValenciavU[2]","u0"],"returnstring")
 
+    # Reset outputC parameters to the same values they were set to coming in to this function.
+    par.set_parval_from_str("outputC::includebraces", default_outputC_includebraces)
+    par.set_parval_from_str("outputC::outCverbose", default_outputC_outCverbose)
+    par.set_parval_from_str("outputC::CSE_varprefix", default_outputC_CSE_varprefix)
+    
     # ## Step 3: Compute $u_j$ from $u^0$, the Valencia 3-velocity, and $g_{\mu\nu}$
     # The basic equation is
 
