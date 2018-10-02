@@ -48,8 +48,6 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     thismodule = "smallbPoynET"
 
     # To get \gamma_{\mu \nu} = gammabar4DD[mu][nu], we'll need to construct the 4-metric, using Eq. 2.122 in B&S:
-    global g4DD
-    g4DD = ixp.zerorank2(DIM=4)
 
     # Eq. 2.121 in B&S
     betaD = ixp.zerorank1()
@@ -63,12 +61,14 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
         beta2 += betaU[i]*betaD[i]
 
     # Eq. 2.122 in B&S
+    global g4DD
+    g4DD = ixp.zerorank2(DIM=4)
     g4DD[0][0] = -alpha**2 + beta2
-    for mu in range(1,4):
-        g4DD[mu][0] = g4DD[0][mu] = betaD[mu-1]
-    for mu in range(1,4):
-        for nu in range(1,4):
-            g4DD[mu][nu] = gammaDD[mu-1][nu-1]
+    for i in range(DIM):
+        g4DD[i+1][0] = g4DD[0][i+1] = betaD[i]
+    for i in range(DIM):
+        for j in range(DIM):
+            g4DD[i+1][j+1] = gammaDD[i][j]
 
     # ## Step 2: Compute $u^0$ from the Valencia 3-velocity
     #
@@ -242,11 +242,11 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     g4UU = ixp.zerorank2(DIM=4)
 
     g4UU[0][0] = -1 / alpha**2
-    for i in range(3):
+    for i in range(DIM):
         g4UU[0][i+1] = g4UU[i+1][0] = betaU[i]/alpha**2
-    for i in range(3):
-        for j in range(3):
-            g4UU[i+1][j+1] = g4UU[j+1][i+1] = gammaUU[i][j]
+    for i in range(DIM):
+        for j in range(DIM):
+            g4UU[i+1][j+1] = gammaUU[i][j]
 
 
     # ## Part 2, Step 2: Computing $S^{i}$
