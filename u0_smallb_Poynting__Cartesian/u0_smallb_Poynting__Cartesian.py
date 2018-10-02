@@ -1,4 +1,5 @@
-# # Computing $u^0$, $b^{\mu}$, and the Poynting Vector $S^i$
+# # Computing the 4-Velocity Time-Component $u^0$,
+# the Magnetic Field Measured by a Comoving Observer $b^{\mu}$, and the Poynting Vector $S^i$
 # 
 # ## Part 1 of 2: Computing $u^0$ and $b^{\mu}$
 # 
