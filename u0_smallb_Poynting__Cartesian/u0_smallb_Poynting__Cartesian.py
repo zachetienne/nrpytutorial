@@ -172,8 +172,8 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     # &= \alpha u^0 \gamma_{ij} v^i_{(n)} \\
 
     u0 = par.Cparameters("REAL",thismodule,"u0")
+    global uD
     uD = ixp.zerorank1()
-
     for i in range(DIM):
         for j in range(DIM):
             uD[j] += alpha*u0*gammaDD[i][j]*ValenciavU[j]
@@ -205,6 +205,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     M_PI = par.Cparameters("REAL",thismodule,"M_PI")
 
     # uBcontraction = u_i B^i
+    global uBcontraction
     uBcontraction = sp.sympify(0)
     for i in range(DIM):
         uBcontraction += uD[i]*BU[i]
@@ -246,7 +247,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
         g4UU[0][i+1] = g4UU[i+1][0] = betaU[i]/alpha**2
     for i in range(DIM):
         for j in range(DIM):
-            g4UU[i+1][j+1] = gammaUU[i][j]
+            g4UU[i+1][j+1] = gammaUU[i][j] - betaU[i]*betaU[j]/alpha**2
 
 
     # ## Part 2, Step 2: Computing $S^{i}$
@@ -286,5 +287,3 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     PoynSU = ixp.zerorank1()
     for i in range(DIM):
         PoynSU[i] = -alpha * (smallb2*uU[i]*u_0 + sp.Rational(1,2)*smallb2*g4UD[i+1][0] - smallb4U[i+1]*smallb4D[0])
-    #
-    # return computeu0_Cfunction,smallb4U,smallb2,PoynSU
