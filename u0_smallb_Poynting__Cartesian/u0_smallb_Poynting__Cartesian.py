@@ -171,6 +171,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     # &= u^0 \left(\beta_j + \gamma_{ij} \left(\alpha v^i_{(n)} - \beta^i\right) \right)\\
     # &= \alpha u^0 \gamma_{ij} v^i_{(n)} \\
 
+    global u0
     u0 = par.Cparameters("REAL",thismodule,"u0")
     global uD
     uD = ixp.zerorank1()
@@ -211,6 +212,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
         uBcontraction += uD[i]*BU[i]
 
     # uU = 3-vector representing u^i = u^0 \left(\alpha v^i_{(n)} - \beta^i\right)
+    global uU
     uU = ixp.zerorank1()
     for i in range(DIM):
         uU[i] = u0*(alpha*ValenciavU[i] - betaU[i])
@@ -266,6 +268,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
                 g4UD[mu][delta] += g4UU[mu][nu]*g4DD[nu][delta]
 
     # Step 2b: compute b_{\mu}
+    global smallb4D
     smallb4D = ixp.zerorank1(DIM=4)
     for mu in range(4):
         for nu in range(4):
