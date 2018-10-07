@@ -5,8 +5,22 @@
 #define REAL double
 #define IDX4(g,i,j,k)   ( (i) + Nxx_plus_2NGHOSTS[0] * ( (j) + Nxx_plus_2NGHOSTS[1] * ( (k) + Nxx_plus_2NGHOSTS[2] * (g) ) ) )
 
-void rhs_eval(const int Nxx[3],const int NGHOSTS[3],REAL *dxx[3], REAL *gfs_in, REAL *gfs_rhs) {
-  //#include "scalarwave_RHS.h"
+const REAL wavespeed = 1.0;
+
+const REAL time = 0.0;
+const REAL kk0 = 1.0;
+const REAL kk1 = 1.0;
+const REAL kk2 = 1.0;
+
+#define UUGF 0
+#define VVGF 1
+
+void initial_data(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3], REAL *in_gfs) {
+#include "ScalarWave_InitialData.h"
+}
+
+void rhs_eval(const int Nxx[3],const int NGHOSTS,const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3], const REAL *in_gfs, REAL *rhs_gfs) {
+#include "ScalarWave_RHSs.h"
 }
 
 const int MAXFACE = -1;
@@ -34,13 +48,13 @@ void apply_bcs(const int Nxx[3],const int NGHOSTS,const int Nxx_plus_2NGHOSTS[3]
 
       FACE_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
       FACE_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
-   }
+    }
   }
 }
 
 int main(int argc, const char *argv[]) {
 
-  const int Nxx[3] = { 3, 3, 3 };
+  const int Nxx[3] = { 128, 128, 128 };
   const int NGHOSTS = 3;
 
   const REAL xxmin[3] = {-10.,-10.,-10. };
@@ -53,8 +67,9 @@ int main(int argc, const char *argv[]) {
 
   REAL *xx[3];
   for(int i=0;i<3;i++) xx[i] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS[i]);
-  REAL *gfs_evol = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
-  REAL *gfs_aux  = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *evol_gfs = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *rhs_gfs  = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *aux_gfs  = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
 
   // xx[0][i] = xxmin[0] + (i-NGHOSTS)*dxx[0]
   REAL dxx[3];
@@ -71,28 +86,20 @@ int main(int argc, const char *argv[]) {
 
   for(int which_gf=0;which_gf<1;which_gf++) {
     for(int i2=NGHOSTS;i2<NGHOSTS+Nxx[2];i2++) for(int i1=NGHOSTS;i1<NGHOSTS+Nxx[1];i1++) for(int i0=NGHOSTS;i0<NGHOSTS+Nxx[0];i0++) {
-          gfs_evol[IDX4(which_gf,i0,i1,i2)] = 1.0;
+          evol_gfs[IDX4(which_gf,i0,i1,i2)] = 1.0;
         }
   }
-  apply_bcs(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,gfs_evol);
-  //#include "scalarwave_initialdata.h"
+  apply_bcs(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,evol_gfs);
 
-  for(int which_gf=0;which_gf<1;which_gf++) {
-    for(int i2=0;i2<Nxx_plus_2NGHOSTS[2];i2++)
-      for(int i1=0;i1<Nxx_plus_2NGHOSTS[1];i1++)
-        for(int i0=0;i0<Nxx_plus_2NGHOSTS[0];i0++) {
-          if(fabs(gfs_evol[IDX4(which_gf,i0,i1,i2)] - 1.0) > 1e-8) {
-            printf("ERROR %d %d %d %d\t%e\n",which_gf,i0,i1,i2,gfs_evol[IDX4(which_gf,i0,i1,i2)]-1.0);
-          }
-        }
+  initial_data(Nxx_plus_2NGHOSTS,xx, evol_gfs);
+
+  for(int n=0;n<=Nt;n++) {
+    rhs_eval(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,dxx, evol_gfs, rhs_gfs);
   }
-
-  //for(int n=0;n<=Nt;n++) {
-    
-  //    }
   
-    free(gfs_aux);
-    free(gfs_evol);
-    for(int i=0;i<3;i++) free(xx[i]);
-    return 0;
+  free(aux_gfs);
+  free(rhs_gfs);
+  free(evol_gfs);
+  for(int i=0;i<3;i++) free(xx[i]);
+  return 0;
 }
