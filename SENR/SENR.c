@@ -7,7 +7,6 @@
 
 const REAL wavespeed = 1.0;
 
-const REAL time = 0.0;
 const REAL kk0 = 1.0;
 const REAL kk1 = 1.0;
 const REAL kk2 = 1.0;
@@ -15,7 +14,7 @@ const REAL kk2 = 1.0;
 #define UUGF 0
 #define VVGF 1
 
-void initial_data(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3], REAL *in_gfs) {
+void exact_solution(const int Nxx_plus_2NGHOSTS[3],REAL time,REAL *xx[3], REAL *in_gfs) {
 #include "ScalarWave_InitialData.h"
 }
 
@@ -54,12 +53,14 @@ void apply_bcs(const int Nxx[3],const int NGHOSTS,const int Nxx_plus_2NGHOSTS[3]
 
 int main(int argc, const char *argv[]) {
 
-  const int Nxx[3] = { 128, 128, 128 };
+  const int Nxx[3] = { 256, 256, 256 };
+  //const int Nxx[3] = { 64, 64, 64 };
+  //  const int Nxx[3] = { 128, 128, 128 };
   const int NGHOSTS = 3;
 
   const REAL xxmin[3] = {-10.,-10.,-10. };
   const REAL xxmax[3] = { 10., 10., 10. };
-  const int t_final = 20.0;
+  const int t_final = xxmax[0]*0.9;
   const REAL CFL_FACTOR = 0.5;
 
   const int Nxx_plus_2NGHOSTS[3] = { Nxx[0]+2*NGHOSTS, Nxx[1]+2*NGHOSTS, Nxx[2]+2*NGHOSTS };
@@ -68,8 +69,11 @@ int main(int argc, const char *argv[]) {
   REAL *xx[3];
   for(int i=0;i<3;i++) xx[i] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS[i]);
   REAL *evol_gfs = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
-  REAL *rhs_gfs  = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
-  REAL *aux_gfs  = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *next_in_gfs = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *k1_gfs   = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *k2_gfs   = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *k3_gfs   = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
+  REAL *k4_gfs   = (REAL *)malloc(sizeof(REAL) * 2 /* 2 gridfunctions */ * Nxx_plus_2NGHOSTS_tot);
 
   // xx[0][i] = xxmin[0] + (i-NGHOSTS)*dxx[0]
   REAL dxx[3];
@@ -84,21 +88,52 @@ int main(int argc, const char *argv[]) {
     }
   }
 
-  for(int which_gf=0;which_gf<1;which_gf++) {
-    for(int i2=NGHOSTS;i2<NGHOSTS+Nxx[2];i2++) for(int i1=NGHOSTS;i1<NGHOSTS+Nxx[1];i1++) for(int i0=NGHOSTS;i0<NGHOSTS+Nxx[0];i0++) {
-          evol_gfs[IDX4(which_gf,i0,i1,i2)] = 1.0;
-        }
-  }
-  apply_bcs(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,evol_gfs);
-
-  initial_data(Nxx_plus_2NGHOSTS,xx, evol_gfs);
+  exact_solution(Nxx_plus_2NGHOSTS,0.0, xx, evol_gfs);
 
   for(int n=0;n<=Nt;n++) {
-    rhs_eval(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,dxx, evol_gfs, rhs_gfs);
+    rhs_eval(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,dxx, evol_gfs, k1_gfs);
+    for(int i=0;i<Nxx_plus_2NGHOSTS_tot*2;i++) {
+      k1_gfs[i] *= dt;
+      next_in_gfs[i] = evol_gfs[i] + k1_gfs[i]*0.5;
+    }
+    apply_bcs(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,next_in_gfs);
+
+    rhs_eval(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,dxx, next_in_gfs, k2_gfs);
+    for(int i=0;i<Nxx_plus_2NGHOSTS_tot*2;i++) {
+      k2_gfs[i] *= dt;
+      next_in_gfs[i] = evol_gfs[i] + k2_gfs[i]*0.5;
+    }
+    apply_bcs(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,next_in_gfs);
+
+    rhs_eval(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,dxx, next_in_gfs, k3_gfs);
+    for(int i=0;i<Nxx_plus_2NGHOSTS_tot*2;i++) {
+      k3_gfs[i] *= dt;
+      next_in_gfs[i] = evol_gfs[i] + k3_gfs[i];
+    }
+    apply_bcs(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,next_in_gfs);
+
+    rhs_eval(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,dxx, next_in_gfs, k4_gfs);
+    for(int i=0;i<Nxx_plus_2NGHOSTS_tot*2;i++) {
+      k4_gfs[i] *= dt;
+      evol_gfs[i] += (1.0/6.0)*(k1_gfs[i] + 2.0*k2_gfs[i] + 2.0*k3_gfs[i] + k4_gfs[i]);
+    }
+    apply_bcs(Nxx,NGHOSTS,Nxx_plus_2NGHOSTS,evol_gfs);
+
+    const int i0mid=Nxx_plus_2NGHOSTS[0]/2;
+    const int i1mid=Nxx_plus_2NGHOSTS[1]/2;
+    const int i2mid=Nxx_plus_2NGHOSTS[2]/2;
+    exact_solution(Nxx_plus_2NGHOSTS,(n+1)*dt, xx, k1_gfs);
+    const REAL exact     = k1_gfs[IDX4(0,i0mid,i1mid,i2mid)];
+    const REAL numerical = evol_gfs[IDX4(0,i0mid,i1mid,i2mid)];
+    const REAL relative_error = fabs((exact-numerical)/exact);
+    printf("%e %e || %e %e %e: %e %e\n",(n+1)*dt, relative_error, xx[0][i0mid],xx[1][i1mid],xx[2][i2mid], numerical,exact);
   }
   
-  free(aux_gfs);
-  free(rhs_gfs);
+  free(k1_gfs);
+  free(k2_gfs);
+  free(k3_gfs);
+  free(k4_gfs);
+  free(next_in_gfs);
   free(evol_gfs);
   for(int i=0;i<3;i++) free(xx[i]);
   return 0;
