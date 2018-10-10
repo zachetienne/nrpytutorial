@@ -58,8 +58,8 @@ def GiRaFFE_Higher_Order():
     AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD",DIM=3)
 
     # Step 2: Import the four metric
+    global gammaUU,gammadet # Needed for the A to B routine
     gammaUU = ixp.register_gridfunctions_for_single_rank2("AUX","gammaUU","sym01")
-    global gammadet # Needed for the A to B routine
     gammadet = gri.register_gridfunctions("AUX","gammadet")
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
 
@@ -371,7 +371,7 @@ def GiRaFFE_Higher_Order():
     global alpsqrtgam
     alpsqrtgam = gri.register_gridfunctions("AUX","alpsqrtgam")
     alpsqrtgam = alpha*sp.sqrt(gammadet)
-    alpsqrtgam_dD = ixp.register_gridfunctions_for_single_rank1("AUX","alpsqrtgam_dD")
+    alpsqrtgam_dD = ixp.declarerank1("alpsqrtgam_dD")
 
     global Stilde_rhsD
     Stilde_rhsD = ixp.register_gridfunctions_for_single_rank1("EVOL","Stilde_rhsD")
@@ -409,8 +409,8 @@ def GiRaFFE_Higher_Order():
         for i in range(DIM):
             PevolParenU[j] += alpha * sp.sqrt(gammadet) * gammaUU[i][j] * AD[i]
 
-    AevolParen_dD = ixp.register_gridfunctions_for_single_rank1("AUX","AevolParen_dD")
-    PevolParenU_dD = ixp.register_gridfunctions_for_single_rank2("AUX","PevolParenU_dD","nosym")
+    AevolParen_dD = ixp.declarerank1("AevolParen_dD")
+    PevolParenU_dD = ixp.declarerank2("PevolParenU_dD","nosym")
 
 
     # Now to set the evolution equations ([eqs. 17 and 19](https://arxiv.org/pdf/1704.00599.pdf)):
