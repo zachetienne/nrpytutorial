@@ -21,17 +21,21 @@ par.initialize_param(par.glb_param("char", thismodule, "CoordSystem", "Spherical
 # Step 0b: Declare global variables
 xx = gri.xx
 xxCart = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
+Cart_to_xx = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
+Cartx,Carty,Cartz = sp.symbols("Cartx Carty Cartz", real=True)
+Cart = [Cartx,Carty,Cartz]
 xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 
-xxmin = []
-xxmax = []
+#xxmin = []
+#xxmax = []
 
 def reference_metric():
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
     
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
+        M_PI = par.Cparameters("REAL",thismodule,"M_PI")
         # Assuming the spherical radial & theta coordinates
         #   are positive makes nice simplifications of
         #   unit vectors possible.
@@ -44,24 +48,38 @@ def reference_metric():
 
         if CoordSystem == "Spherical":
             RMAX = par.Cparameters("REAL", thismodule, ["RMAX"])
-            xxmin = ["0.0", "0.0", "0.0"]
-            xxmax = ["params.RMAX", "M_PI", "2.0*M_PI"]
+            global xxmin
+            global xxmax
+            xxmin = [sp.sympify(0),sp.sympify(0),-M_PI]
+            xxmax = [RMAX, M_PI, M_PI]
 
+            Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
+            Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
+            Cart_to_xx[2] = sp.atan2(Carty, Cartx)
         elif CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
             AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"])
     
-            xxmin = ["0.0", "0.0", "0.0"]
-            xxmax = ["1.0", "M_PI", "2.0*M_PI"]
+            xxmin = [0, 0, 0]
+            xxmax = [1, M_PI, 2*M_PI]
     
             # Set SinhSpherical radial coordinate by default; overwrite later if CoordSystem == "SinhSphericalv2".
             r = AMPL * (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) / \
                        (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW))
+
+            Cart_to_xx[0] = SINHW*sp.asinh(sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)*sp.sinh(1/SINHW)/AMPL)
+            Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
+            Cart_to_xx[2] = sp.atan2(Carty, Cartx)
+
             # SinhSphericalv2 adds the parameter "const_dr", which allows for a region near xx[0]=0 to have
             # constant radial resolution of const_dr, provided the sinh() term does not dominate near xx[0]=0.
             if CoordSystem == "SinhSphericalv2":
                 const_dr = par.Cparameters("REAL",thismodule,["const_dr"])
                 r = AMPL*( const_dr*xx[0] + (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) /
                            (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW)) )
+
+                Cart_to_xx[0] = "NewtonRaphson"
+                Cart_to_xx[1] = "NewtonRaphson" #sp.acos(Cartz / Cart_to_xx[0])
+                Cart_to_xx[2] = sp.atan2(Carty, Cartx)
 
         # xxhat = sp.Matrix([[sp.sin(xxSph[1])*sp.cos(xxSph[2]), sp.sin(xxSph[1])*sp.sin(xxSph[2]), sp.cos(xxSph[1])],
         #                    [sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]),-sp.sin(xxSph[1])],
