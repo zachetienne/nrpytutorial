@@ -163,6 +163,7 @@ def GiRaFFE_Higher_Order():
     #u0 = par.Cparameters("REAL",thismodule,"u0")
     #u0 = gri.register_gridfunctions("AUX","u0")
     uD = ixp.register_gridfunctions_for_single_rank1("AUX","uD")
+    global uU
     uU = ixp.register_gridfunctions_for_single_rank1("AUX","uU")
 
     u0 = u0b.u0
@@ -181,7 +182,7 @@ def GiRaFFE_Higher_Order():
     # where $B^i$ is the variable tracked by the HydroBase thorn in the Einstein Toolkit. These have already been built by the u0_smallb_Poynting__Cartesian.py module, so we can simply import the variables.
 
 
-    smallbU = ixp.register_gridfunctions_for_single_rank1("AUX","smallbU",DIM=4)
+    smallbU = ixp.zerorank1(DIM=4)
     smallbD = ixp.zerorank1(DIM=4)
     for mu in range(4):
         smallbU[mu] = u0b.smallb4U[mu]
@@ -309,7 +310,7 @@ def GiRaFFE_Higher_Order():
             divb += alphau0*(uD_dD[j][i]*BU[j]*uU[i]+uD[j]*BU_dD[j][i]*uU[i]+uD[j]*BU[j]*uU_dD[i][i])                -(uD[j]*BU[j]*uU[i])*alphau0_dD[i]
     divb /= sp.sqrt(4*M_PI) * alpha * u0 * alpha * u0
 
-    smallbU_dD = ixp.declarerank2("smallbU_dD","nosym")
+    smallbU_dD = ixp.zerorank2()
     for i in range(DIM):
         for k in range(DIM):
             smallbU_dD[i][k] += alphau0*BU_dD[i][k]-BU[i]*alphau0_dD[k]
