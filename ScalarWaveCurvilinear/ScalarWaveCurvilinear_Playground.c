@@ -39,7 +39,7 @@ typedef struct ghostzone_map {
 // Part P4: Declare the function for the exact solution. time==0 corresponds to the initial data.
 void exact_solution(const int Nxx_plus_2NGHOSTS[3],REAL time,REAL *xx[3], REAL *in_gfs) {
 #pragma omp parallel for
-  LOOP_REGION(0,Nxx_plus_2NGHOSTS[0], 1,Nxx_plus_2NGHOSTS[1], 2,Nxx_plus_2NGHOSTS[2]) {
+  LOOP_REGION(0,Nxx_plus_2NGHOSTS[0], 0,Nxx_plus_2NGHOSTS[1], 0,Nxx_plus_2NGHOSTS[2]) {
     REAL xx_to_Cart0,xx_to_Cart1,xx_to_Cart2;
     REAL xx0 = xx[0][i0];
     REAL xx1 = xx[1][i1];
@@ -81,24 +81,19 @@ const int MINFACE = +1;
                  bc_gz_map[idx3].i2)];                                  \
     }                                                                   \
   }
-//      printf("%e %d %d %d | %d %d %d\n",gfs[IDX4(which_gf,i0,i1,i2)],i0,i1,i2, \
-  //           bc_gz_map[idx3].i0,                                        \
-    //         bc_gz_map[idx3].i1,                                        \
-      //       bc_gz_map[idx3].i2);                                       \
 
 // Part P7: Boundary condition driver routine: Apply BCs to all six
 //          boundary faces of the cube, filling in the innermost
 //          ghost zone first, and moving outward.
 void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],gz_map *bc_gz_map,REAL *gfs) {
 #pragma omp parallel for
-    for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
+  for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS[0]-NGHOSTS, Nxx_plus_2NGHOSTS[1]-NGHOSTS, Nxx_plus_2NGHOSTS[2]-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
       for(int inner=0;inner<2;inner++) {
         // After updating each face, adjust imin[] and imax[] 
         //   to reflect the newly-updated face extents.
-        //if(which_gz==2 && inner==0) exit(1);
         OB_UPDATE(inner,which_gf, bc_gz_map, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
         OB_UPDATE(inner,which_gf, bc_gz_map, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
 
@@ -108,7 +103,6 @@ void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],gz_map *bc_gz_map
         OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
         OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
         if(inner==0) { for(int ii=0;ii<3;ii++) {imin[ii]++; imax[ii]--;} }
-        //if(which_gz==1 && inner==1) {printf("hewwo %d\n",NGHOSTS);}
       }
     }
   }
@@ -254,7 +248,7 @@ int main(int argc, const char *argv[]) {
     /* Finally, apply boundary conditions to           */
     /* next_in_gfs, so its data are set everywhere.    */
     apply_bcs(Nxx,Nxx_plus_2NGHOSTS,bc_gz_map,next_in_gfs);
-
+    
     /* -= RK4: Step 2 of 4 =- */
     rhs_eval(Nxx,Nxx_plus_2NGHOSTS,dxx, xx,next_in_gfs, k2_gfs);
     for(int i=0;i<Nxx_plus_2NGHOSTS_tot*NUM_GFS;i++) {
