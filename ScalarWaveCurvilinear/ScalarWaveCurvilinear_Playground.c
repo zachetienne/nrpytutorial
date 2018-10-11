@@ -146,9 +146,9 @@ int main(int argc, const char *argv[]) {
 #include "xxminmax.h"
 
   //          ... and then set up the numerical grid structure in time:
-  const int t_final = xxmax[0]*0.1; // Final time is set so that at t=t_final, 
-                                    // data at the origin have not been corrupted 
-                                    // by the approximate outer boundary condition
+  const REAL t_final = xxmax[0]*0.08; /* Final time is set so that at t=t_final, 
+                                       * data at the origin have not been corrupted 
+                                       * by the approximate outer boundary condition */
   //const REAL CFL_FACTOR = 0.015; // Set the CFL Factor
   const REAL CFL_FACTOR = 0.015; // Set the CFL Factor
 
@@ -292,6 +292,7 @@ int main(int argc, const char *argv[]) {
   } // End main loop to progress forward in time.
   
   // Step 4: Free all allocated memory
+  free(bc_gz_map);
   free(k4_gfs);
   free(k3_gfs);
   free(k2_gfs);
