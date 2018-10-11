@@ -328,3 +328,10 @@ def UnitVectors3D():
         for j in range(3):
             xxhats3D[i][j] /= norm
     return xxhats3D
+
+# Compute proper distance in all 3 directions. Used to find the appropriate timestep for the CFL condition.
+def ds_dirn(delxx):
+    ds_dirn = ixp.zerorank1(3)
+    for i in range(3):
+        ds_dirn[i] = delxx[i]*scalefactor_orthog[i]
+    return ds_dirn
