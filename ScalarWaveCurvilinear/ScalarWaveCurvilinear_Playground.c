@@ -65,15 +65,15 @@ const int MAXFACE = -1;
 const int NUL     = +0;
 const int MINFACE = +1;
 
-#define OB_UPDATE(which_gf, bc_gz_map, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
+#define OB_UPDATE(inner,which_gf, bc_gz_map, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
   LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) {                  \
     const int idx3 = IDX3(i0,i1,i2);                                    \
-    if(bc_gz_map[idx3].i0 == -1) {                                      \
+    if(bc_gz_map[idx3].i0 == -1 && inner==0) {                          \
       gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
         +3.0*gfs[IDX4(which_gf,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]    \
         -3.0*gfs[IDX4(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]    \
         +1.0*gfs[IDX4(which_gf,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)];   \
-    } else {                                                            \
+    } else if(bc_gz_map[idx3].i0 != -1 && inner==1) {                   \
       gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
         gfs[IDX4(which_gf,                                              \
                  bc_gz_map[idx3].i0,                                    \
@@ -81,6 +81,10 @@ const int MINFACE = +1;
                  bc_gz_map[idx3].i2)];                                  \
     }                                                                   \
   }
+//      printf("%e %d %d %d | %d %d %d\n",gfs[IDX4(which_gf,i0,i1,i2)],i0,i1,i2, \
+  //           bc_gz_map[idx3].i0,                                        \
+    //         bc_gz_map[idx3].i1,                                        \
+      //       bc_gz_map[idx3].i2);                                       \
 
 // Part P7: Boundary condition driver routine: Apply BCs to all six
 //          boundary faces of the cube, filling in the innermost
@@ -91,16 +95,21 @@ void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],gz_map *bc_gz_map
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS[0]-NGHOSTS, Nxx_plus_2NGHOSTS[1]-NGHOSTS, Nxx_plus_2NGHOSTS[2]-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      // After updating each face, adjust imin[] and imax[] 
-      //   to reflect the newly-updated face extents.
-      OB_UPDATE(which_gf, bc_gz_map, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
-      OB_UPDATE(which_gf, bc_gz_map, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
+      for(int inner=0;inner<2;inner++) {
+        // After updating each face, adjust imin[] and imax[] 
+        //   to reflect the newly-updated face extents.
+        //if(which_gz==2 && inner==0) exit(1);
+        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
+        OB_UPDATE(inner,which_gf, bc_gz_map, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
 
-      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
-      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
+        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
+        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
 
-      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
-      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
+        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
+        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
+        if(inner==0) { for(int ii=0;ii<3;ii++) {imin[ii]++; imax[ii]--;} }
+        //if(which_gz==1 && inner==1) {printf("hewwo %d\n",NGHOSTS);}
+      }
     }
   }
 }
@@ -115,30 +124,33 @@ void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],gz_map *bc_gz_map
 int main(int argc, const char *argv[]) {
 
   // Step 0a: Read command-line input, error out if nonconformant
-  if(argc != 2 || atoi(argv[1]) < NGHOSTS) {
-      printf("Error: Expected one command-line argument: ./ScalarWaveCurvilinear_Playground [Nx(=Ny=Nz)],\n");
-      printf("where Nx is the number of grid points in the x,y, and z directions.\n");
-      printf("Nx MUST BE larger than NGHOSTS (= %d)\n",NGHOSTS);
+  if(argc != 4 || atoi(argv[1]) < NGHOSTS) {
+      printf("Error: Expected one command-line argument: ./ScalarWaveCurvilinear_Playground Nx0 Nx1 Nx2,\n");
+      printf("where Nx[0,1,2] is the number of grid points in the 0, 1, and 2 directions.\n");
+      printf("Nx[] MUST BE larger than NGHOSTS (= %d)\n",NGHOSTS);
       exit(1);
   }
   // Step 0b: Set up numerical grid structure, first in space...
-  const int Nx0x1x2 = atoi(argv[1]);
-  if(Nx0x1x2%2 != 0) {
+  const int Nx0 = atoi(argv[1]);
+  const int Nx1 = atoi(argv[2]);
+  const int Nx2 = atoi(argv[3]);
+  if(Nx0%2 != 0 || Nx1%2 != 0 || Nx2%2 != 0) {
     printf("Error: Cannot guarantee a proper cell-centered grid if number of grid cells not set to even number.\n");
     printf("       For example, in case of angular directions, proper symmetry zones will not exist.\n");
     exit(1);
   }
-  const int Nxx[3] = { Nx0x1x2, Nx0x1x2, Nx0x1x2 };
+  const int Nxx[3] = { Nx0, Nx1, Nx2 };
   const int Nxx_plus_2NGHOSTS[3] = { Nxx[0]+2*NGHOSTS, Nxx[1]+2*NGHOSTS, Nxx[2]+2*NGHOSTS };
   const int Nxx_plus_2NGHOSTS_tot = Nxx_plus_2NGHOSTS[0]*Nxx_plus_2NGHOSTS[1]*Nxx_plus_2NGHOSTS[2];
   const REAL RMAX = 10.0;
 #include "xxminmax.h"
 
   //          ... and then set up the numerical grid structure in time:
-  const int t_final = xxmax[0]*0.8; // Final time is set so that at t=t_final, 
+  const int t_final = xxmax[0]*0.1; // Final time is set so that at t=t_final, 
                                     // data at the origin have not been corrupted 
                                     // by the approximate outer boundary condition
-  const REAL CFL_FACTOR = 0.005; // Set the CFL Factor
+  //const REAL CFL_FACTOR = 0.015; // Set the CFL Factor
+  const REAL CFL_FACTOR = 0.015; // Set the CFL Factor
 
   // Step 0c: Allocate memory for gridfunctions
   REAL *evol_gfs    = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
@@ -180,9 +192,9 @@ int main(int argc, const char *argv[]) {
     
     REAL Cart_to_xx0_inbounds,Cart_to_xx1_inbounds,Cart_to_xx2_inbounds;
 #include "Cart_to_xx.h"
-    int i0_inbounds = (int)( (Cart_to_xx0_inbounds - xxmin[0] - (1.0/2.0)*dxx[0] + ((REAL)NGHOSTS)*dxx[0])/dxx[0] + 0.1 ); 
-    int i1_inbounds = (int)( (Cart_to_xx1_inbounds - xxmin[1] - (1.0/2.0)*dxx[1] + ((REAL)NGHOSTS)*dxx[1])/dxx[1] + 0.1 );
-    int i2_inbounds = (int)( (Cart_to_xx2_inbounds - xxmin[2] - (1.0/2.0)*dxx[2] + ((REAL)NGHOSTS)*dxx[2])/dxx[2] + 0.01 );
+    int i0_inbounds = (int)( (Cart_to_xx0_inbounds - xxmin[0] - (1.0/2.0)*dxx[0] + ((REAL)NGHOSTS)*dxx[0])/dxx[0] + 0.5 ); 
+    int i1_inbounds = (int)( (Cart_to_xx1_inbounds - xxmin[1] - (1.0/2.0)*dxx[1] + ((REAL)NGHOSTS)*dxx[1])/dxx[1] + 0.5 );
+    int i2_inbounds = (int)( (Cart_to_xx2_inbounds - xxmin[2] - (1.0/2.0)*dxx[2] + ((REAL)NGHOSTS)*dxx[2])/dxx[2] + 0.5 );
 
     REAL xx_to_Cart0_orig = xx_to_Cart0;
     REAL xx_to_Cart1_orig = xx_to_Cart1;
