@@ -49,7 +49,7 @@ void exact_solution(const int Nxx_plus_2NGHOSTS[3],REAL time,REAL *xx[3], REAL *
     xx0 = xx_to_Cart0;
     xx1 = xx_to_Cart1;
     xx2 = xx_to_Cart2;
-#include "ScalarWaveCartesian_InitialData.h"
+#include "ScalarWaveCartesian_ExactSolution.h"
   }
 }
 
@@ -65,18 +65,27 @@ const int MAXFACE = -1;
 const int NUL     = +0;
 const int MINFACE = +1;
 
-#define OB_UPDATE(which_gf, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
+#define OB_UPDATE(which_gf, bc_gz_map, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
   LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) {                  \
-        gfs[IDX4(which_gf,i0,i1,i2)] =                                  \
-          +3.0*gfs[IDX4(which_gf,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]  \
-          -3.0*gfs[IDX4(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]  \
-          +1.0*gfs[IDX4(which_gf,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)]; \
-      }
+    const int idx3 = IDX3(i0,i1,i2);                                    \
+    if(bc_gz_map[idx3].i0 == -1) {                                      \
+      gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
+        +3.0*gfs[IDX4(which_gf,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]    \
+        -3.0*gfs[IDX4(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]    \
+        +1.0*gfs[IDX4(which_gf,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)];   \
+    } else {                                                            \
+      gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
+        gfs[IDX4(which_gf,                                              \
+                 bc_gz_map[idx3].i0,                                    \
+                 bc_gz_map[idx3].i1,                                    \
+                 bc_gz_map[idx3].i2)];                                  \
+    }                                                                   \
+  }
 
 // Part P7: Boundary condition driver routine: Apply BCs to all six
 //          boundary faces of the cube, filling in the innermost
 //          ghost zone first, and moving outward.
-void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *gfs) {
+void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],gz_map *bc_gz_map,REAL *gfs) {
 #pragma omp parallel for
     for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
@@ -84,14 +93,14 @@ void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *gfs) {
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
       // After updating each face, adjust imin[] and imax[] 
       //   to reflect the newly-updated face extents.
-      OB_UPDATE(which_gf, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
-      OB_UPDATE(which_gf, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
+      OB_UPDATE(which_gf, bc_gz_map, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
+      OB_UPDATE(which_gf, bc_gz_map, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
 
-      OB_UPDATE(which_gf, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
-      OB_UPDATE(which_gf, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
+      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
+      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
 
-      OB_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
-      OB_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
+      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
+      OB_UPDATE(which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
     }
   }
 }
@@ -129,7 +138,7 @@ int main(int argc, const char *argv[]) {
   const int t_final = xxmax[0]*0.8; // Final time is set so that at t=t_final, 
                                     // data at the origin have not been corrupted 
                                     // by the approximate outer boundary condition
-  const REAL CFL_FACTOR = 0.5; // Set the CFL Factor
+  const REAL CFL_FACTOR = 0.005; // Set the CFL Factor
 
   // Step 0c: Allocate memory for gridfunctions
   REAL *evol_gfs    = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
@@ -138,7 +147,6 @@ int main(int argc, const char *argv[]) {
   REAL *k2_gfs   = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
   REAL *k3_gfs   = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
   REAL *k4_gfs   = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
-
   
   // Step 0d: Set up coordinates: Set dx, and then dt based on dx_min and CFL condition
 #define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
@@ -233,7 +241,7 @@ int main(int argc, const char *argv[]) {
     }
     /* Finally, apply boundary conditions to           */
     /* next_in_gfs, so its data are set everywhere.    */
-    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,next_in_gfs);
+    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,bc_gz_map,next_in_gfs);
 
     /* -= RK4: Step 2 of 4 =- */
     rhs_eval(Nxx,Nxx_plus_2NGHOSTS,dxx, xx,next_in_gfs, k2_gfs);
@@ -241,7 +249,7 @@ int main(int argc, const char *argv[]) {
       k2_gfs[i] *= dt;
       next_in_gfs[i] = evol_gfs[i] + k2_gfs[i]*0.5;
     }
-    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,next_in_gfs);
+    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,bc_gz_map,next_in_gfs);
 
     /* -= RK4: Step 3 of 4 =- */
     rhs_eval(Nxx,Nxx_plus_2NGHOSTS,dxx, xx,next_in_gfs, k3_gfs);
@@ -249,7 +257,7 @@ int main(int argc, const char *argv[]) {
       k3_gfs[i] *= dt;
       next_in_gfs[i] = evol_gfs[i] + k3_gfs[i];
     }
-    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,next_in_gfs);
+    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,bc_gz_map,next_in_gfs);
 
     /* -= RK4: Step 4 of 4 =- */
     rhs_eval(Nxx,Nxx_plus_2NGHOSTS,dxx, xx,next_in_gfs, k4_gfs);
@@ -257,7 +265,7 @@ int main(int argc, const char *argv[]) {
       k4_gfs[i] *= dt;
       evol_gfs[i] += (1.0/6.0)*(k1_gfs[i] + 2.0*k2_gfs[i] + 2.0*k3_gfs[i] + k4_gfs[i]);
     }
-    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,evol_gfs);
+    apply_bcs(Nxx,Nxx_plus_2NGHOSTS,bc_gz_map,evol_gfs);
 
     /* Step 3: Output relative error between numerical and exact solution, */
     const int i0mid=Nxx_plus_2NGHOSTS[0]/2;
