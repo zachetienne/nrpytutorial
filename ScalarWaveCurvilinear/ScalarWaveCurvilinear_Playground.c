@@ -36,19 +36,22 @@ typedef struct ghostzone_map {
 #define LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) \
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++)
 
-// Part P4: Declare the function for the exact solution. time==0 corresponds to the initial data.
-void exact_solution(const int Nxx_plus_2NGHOSTS[3],REAL time,REAL *xx[3], REAL *in_gfs) {
-#pragma omp parallel for
-  LOOP_REGION(0,Nxx_plus_2NGHOSTS[0], 0,Nxx_plus_2NGHOSTS[1], 0,Nxx_plus_2NGHOSTS[2]) {
-    REAL xx_to_Cart0,xx_to_Cart1,xx_to_Cart2;
+void xxCart(REAL *xx[3],const int i0,const int i1,const int i2, REAL xCart[3]) {
     REAL xx0 = xx[0][i0];
     REAL xx1 = xx[1][i1];
     REAL xx2 = xx[2][i2];
 #include "xxCart.h"
+}
 
-    xx0 = xx_to_Cart0;
-    xx1 = xx_to_Cart1;
-    xx2 = xx_to_Cart2;
+// Part P4: Declare the function for the exact solution. time==0 corresponds to the initial data.
+void exact_solution(const int Nxx_plus_2NGHOSTS[3],REAL time,REAL *xx[3], REAL *in_gfs) {
+#pragma omp parallel for
+  LOOP_REGION(0,Nxx_plus_2NGHOSTS[0], 0,Nxx_plus_2NGHOSTS[1], 0,Nxx_plus_2NGHOSTS[2]) {
+    REAL xCart[3];
+    xxCart(xx, i0,i1,i2, xCart);
+    REAL xx0 = xCart[0];
+    REAL xx1 = xCart[1];
+    REAL xx2 = xCart[2];
 #include "ScalarWaveCartesian_ExactSolution.h"
   }
 }
@@ -175,14 +178,11 @@ int main(int argc, const char *argv[]) {
   //const int num_gz_tot = Nxx_plus_2NGHOSTS_tot - Nxx[0]*Nxx[1]*Nxx[2];
   gz_map *bc_gz_map = (gz_map *)malloc(sizeof(gz_map)*Nxx_plus_2NGHOSTS_tot);
   LOOP_REGION(0,Nxx_plus_2NGHOSTS[0],0,Nxx_plus_2NGHOSTS[1],0,Nxx_plus_2NGHOSTS[2]) {
-    REAL xx_to_Cart0,xx_to_Cart1,xx_to_Cart2;
-    REAL xx0 = xx[0][i0];
-    REAL xx1 = xx[1][i1];
-    REAL xx2 = xx[2][i2];
-#include "xxCart.h"
-    REAL Cartx = xx_to_Cart0;
-    REAL Carty = xx_to_Cart1;
-    REAL Cartz = xx_to_Cart2;
+    REAL xCart[3];
+    xxCart(xx, i0,i1,i2, xCart);
+    REAL Cartx = xCart[0];
+    REAL Carty = xCart[1];
+    REAL Cartz = xCart[2];
     
     REAL Cart_to_xx0_inbounds,Cart_to_xx1_inbounds,Cart_to_xx2_inbounds;
 #include "Cart_to_xx.h"
@@ -190,29 +190,24 @@ int main(int argc, const char *argv[]) {
     int i1_inbounds = (int)( (Cart_to_xx1_inbounds - xxmin[1] - (1.0/2.0)*dxx[1] + ((REAL)NGHOSTS)*dxx[1])/dxx[1] + 0.5 );
     int i2_inbounds = (int)( (Cart_to_xx2_inbounds - xxmin[2] - (1.0/2.0)*dxx[2] + ((REAL)NGHOSTS)*dxx[2])/dxx[2] + 0.5 );
 
-    REAL xx_to_Cart0_orig = xx_to_Cart0;
-    REAL xx_to_Cart1_orig = xx_to_Cart1;
-    REAL xx_to_Cart2_orig = xx_to_Cart2;
-    xx0 = xx[0][i0_inbounds];
-    xx1 = xx[1][i1_inbounds];
-    xx2 = xx[2][i2_inbounds];
-#include "xxCart.h"
-           
-#define EPS_ABS 1e-8
-    if(fabs( (xx_to_Cart0_orig - xx_to_Cart0) ) > EPS_ABS ||
-       fabs( (xx_to_Cart1_orig - xx_to_Cart1) ) > EPS_ABS ||
-       fabs( (xx_to_Cart2_orig - xx_to_Cart2) ) > EPS_ABS) {
-             
-      REAL r = sqrt(xx_to_Cart0*xx_to_Cart0 + xx_to_Cart1*xx_to_Cart1 + xx_to_Cart2*xx_to_Cart2);
-      REAL th = acos(xx_to_Cart2/r);
-      REAL ph = atan2(xx_to_Cart1,xx_to_Cart0);
+    REAL xCart_orig[3]; for(int ii=0;ii<3;ii++) xCart_orig[ii] = xCart[ii];
+    xxCart(xx, i0_inbounds,i1_inbounds,i2_inbounds, xCart);
 
-      REAL rorig = sqrt(xx_to_Cart0_orig*xx_to_Cart0_orig + xx_to_Cart1_orig*xx_to_Cart1_orig + xx_to_Cart2_orig*xx_to_Cart2_orig);
-      REAL thorig = acos(xx_to_Cart2_orig/rorig);
-      REAL phorig = atan2(xx_to_Cart1_orig,xx_to_Cart0_orig);
-      printf("Error. Cartesian disagreement: ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e )\n",xx_to_Cart0_orig,xx_to_Cart1_orig,xx_to_Cart2_orig,
-             xx_to_Cart0,xx_to_Cart1,xx_to_Cart2);
-      printf("Error. Cartesian disagreement2: %e %e %e ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e)\n",xx0,xx1,xx2,rorig,thorig,phorig,r,th,ph);
+#define EPS_ABS 1e-8
+    if(fabs( (xCart_orig[0] - xCart[0]) ) > EPS_ABS ||
+       fabs( (xCart_orig[1] - xCart[1]) ) > EPS_ABS ||
+       fabs( (xCart_orig[2] - xCart[2]) ) > EPS_ABS) {
+             
+      REAL r = sqrt(xCart[0]*xCart[0] + xCart[1]*xCart[1] + xCart[2]*xCart[2]);
+      REAL th = acos(xCart[2]/r);
+      REAL ph = atan2(xCart[1],xCart[0]);
+
+      REAL rorig = sqrt(xCart_orig[0]*xCart_orig[0] + xCart_orig[1]*xCart_orig[1] + xCart_orig[2]*xCart_orig[2]);
+      REAL thorig = acos(xCart_orig[2]/rorig);
+      REAL phorig = atan2(xCart_orig[1],xCart_orig[0]);
+      printf("Error. Cartesian disagreement: ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e )\n",xCart_orig[0],xCart_orig[1],xCart_orig[2],
+             xCart[0],xCart[1],xCart[2]);
+      printf("Error. Cartesian disagreement2: ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e)\n",rorig,thorig,phorig,r,th,ph);
       exit(1);
     }
 
