@@ -144,7 +144,7 @@ int main(int argc, const char *argv[]) {
                                        * data at the origin have not been corrupted 
                                        * by the approximate outer boundary condition */
   //const REAL CFL_FACTOR = 0.015; // Set the CFL Factor
-  const REAL CFL_FACTOR = 0.015; // Set the CFL Factor
+  const REAL CFL_FACTOR = 0.1; // Set the CFL Factor
 
   // Step 0c: Allocate memory for gridfunctions
   REAL *evol_gfs    = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
@@ -159,7 +159,7 @@ int main(int argc, const char *argv[]) {
   // xx[0][i] = xxmin[0] + (i-NGHOSTS)*dxx[0]
   REAL dxx[3];
   for(int i=0;i<3;i++) dxx[i] = (xxmax[i] - xxmin[i]) / ((REAL)Nxx[i]);
-  REAL dt = CFL_FACTOR * MIN(dxx[0],MIN(dxx[1],dxx[2])); // CFL condition
+  REAL dt = CFL_FACTOR * pow(MIN(dxx[0],MIN(dxx[1],dxx[2])),3.0); // CFL condition
   REAL Nt = t_final / dt + 1; // The number of points in time
 
   // Step 0e: Set up Cartesian coordinate grids
