@@ -9,6 +9,13 @@
 // Part P2: Add needed #define's to set data type, the IDX4() macro, and the gridfunctions
 // Part P2a: set REAL=double, so that all gridfunctions are set to 
 #define REAL double
+
+// Step P3: Set free parameters for the initial data
+const REAL wavespeed = 1.0;
+const REAL kk0 = 1.0;
+const REAL kk1 = 1.0;
+const REAL kk2 = 1.0;
+
 // Part P2b: Declare the IDX4(gf,i,j,k) macro, which enables us to store 4-dimensions of
 //           data in a 1D array. In this case, consecutive values of "i" 
 //           (all other indices held to a fixed value) are consecutive in memory, where 
@@ -23,24 +30,34 @@
 #define UUGF 0
 #define VVGF 1
 
-// Step P3: Set free parameters for the initial data
-const REAL wavespeed = 1.0;
-const REAL kk0 = 1.0;
-const REAL kk1 = 1.0;
-const REAL kk2 = 1.0;
-
-typedef struct ghostzone_map {
-  short i0,i1,i2;
-} gz_map;
 
 #define LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) \
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++)
+
 
 void xxCart(REAL *xx[3],const int i0,const int i1,const int i2, REAL xCart[3]) {
     REAL xx0 = xx[0][i0];
     REAL xx1 = xx[1][i1];
     REAL xx2 = xx[2][i2];
 #include "xxCart.h"
+}
+
+
+// Contains generalized boundary condition driver for curvilinear coordinate systems:
+#include "curvilinear_boundary_conditions.h"
+
+REAL find_timestep(const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3],REAL *xx[3], const REAL CFL_FACTOR) {
+  const REAL dxx0 = dxx[0], dxx1 = dxx[1], dxx2 = dxx[2];
+  REAL dsmin = 1e38; // Start with a crazy high value... close to the largest number in single precision.
+  LOOP_REGION(NGHOSTS,Nxx_plus_2NGHOSTS[0]-NGHOSTS, NGHOSTS,Nxx_plus_2NGHOSTS[1]-NGHOSTS, NGHOSTS,Nxx_plus_2NGHOSTS[2]-NGHOSTS) {
+    const REAL xx0 = xx[0][i0], xx1 = xx[1][i1], xx2 = xx[2][i2];
+    REAL ds_dirn0, ds_dirn1, ds_dirn2;
+#include "ds_dirn.h"
+#define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
+    // Set dsmin = MIN(dsmin, ds_dirn0, ds_dirn1, ds_dirn2);
+    dsmin = MIN(dsmin,MIN(ds_dirn0,MIN(ds_dirn1,ds_dirn2)));
+  }
+  return dsmin*CFL_FACTOR;
 }
 
 // Part P4: Declare the function for the exact solution. time==0 corresponds to the initial data.
@@ -59,56 +76,6 @@ void exact_solution(const int Nxx_plus_2NGHOSTS[3],REAL time,REAL *xx[3], REAL *
 // Part P5: Declare the function to evaluate the scalar wave RHSs
 void rhs_eval(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3], REAL *xx[3], const REAL *in_gfs,REAL *rhs_gfs) {
 #include "ScalarWaveCurvilinear_RHSs.h"
-}
-
-// Part P6: Declare boundary condition OB_UPDATE macro,
-//          which updates a single face of the 3D grid cube
-//          using quadratic polynomial extrapolation.
-const int MAXFACE = -1;
-const int NUL     = +0;
-const int MINFACE = +1;
-
-#define OB_UPDATE(inner,which_gf, bc_gz_map, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
-  LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) {                  \
-    const int idx3 = IDX3(i0,i1,i2);                                    \
-    if(bc_gz_map[idx3].i0 == -1 && inner==0) {                          \
-      gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
-        +3.0*gfs[IDX4(which_gf,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]    \
-        -3.0*gfs[IDX4(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]    \
-        +1.0*gfs[IDX4(which_gf,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)];   \
-    } else if(bc_gz_map[idx3].i0 != -1 && inner==1) {                   \
-      gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
-        gfs[IDX4(which_gf,                                              \
-                 bc_gz_map[idx3].i0,                                    \
-                 bc_gz_map[idx3].i1,                                    \
-                 bc_gz_map[idx3].i2)];                                  \
-    }                                                                   \
-  }
-
-// Part P7: Boundary condition driver routine: Apply BCs to all six
-//          boundary faces of the cube, filling in the innermost
-//          ghost zone first, and moving outward.
-void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],gz_map *bc_gz_map,REAL *gfs) {
-#pragma omp parallel for
-  for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
-    int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
-    int imax[3] = { Nxx_plus_2NGHOSTS[0]-NGHOSTS, Nxx_plus_2NGHOSTS[1]-NGHOSTS, Nxx_plus_2NGHOSTS[2]-NGHOSTS };
-    for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      for(int inner=0;inner<2;inner++) {
-        // After updating each face, adjust imin[] and imax[] 
-        //   to reflect the newly-updated face extents.
-        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
-        OB_UPDATE(inner,which_gf, bc_gz_map, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
-
-        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
-        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
-
-        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
-        OB_UPDATE(inner,which_gf, bc_gz_map, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
-        if(inner==0) { for(int ii=0;ii<3;ii++) {imin[ii]++; imax[ii]--;} }
-      }
-    }
-  }
 }
 
 // main() function:
@@ -146,8 +113,7 @@ int main(int argc, const char *argv[]) {
   const REAL t_final = xxmax[0]*0.08; /* Final time is set so that at t=t_final, 
                                        * data at the origin have not been corrupted 
                                        * by the approximate outer boundary condition */
-  //const REAL CFL_FACTOR = 0.015; // Set the CFL Factor
-  const REAL CFL_FACTOR = 0.1; // Set the CFL Factor
+  const REAL CFL_FACTOR = 0.5; // Set the CFL Factor
 
   // Step 0c: Allocate memory for gridfunctions
   REAL *evol_gfs    = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
@@ -157,15 +123,12 @@ int main(int argc, const char *argv[]) {
   REAL *k3_gfs   = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
   REAL *k4_gfs   = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
   
-  // Step 0d: Set up coordinates: Set dx, and then dt based on dx_min and CFL condition
-#define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
-  // xx[0][i] = xxmin[0] + (i-NGHOSTS)*dxx[0]
+  // Step 0d: Set up space and time coordinates
+  // Step 0d.i: Set \Delta x^i on uniform grids.
   REAL dxx[3];
   for(int i=0;i<3;i++) dxx[i] = (xxmax[i] - xxmin[i]) / ((REAL)Nxx[i]);
-  REAL dt = CFL_FACTOR * pow(MIN(dxx[0],MIN(dxx[1],dxx[2])),3.0); // CFL condition
-  REAL Nt = t_final / dt + 1; // The number of points in time
 
-  // Step 0e: Set up Cartesian coordinate grids
+  // Step 0d.ii: Set up uniform coordinate grids
   REAL *xx[3];
   for(int i=0;i<3;i++) {
     xx[i] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS[i]);
@@ -174,53 +137,15 @@ int main(int argc, const char *argv[]) {
     }
   }
 
+  // Step 0d.iii: Set timestep based on smallest proper distance between gridpoints and CFL factor 
+  REAL dt = find_timestep(Nxx_plus_2NGHOSTS, dxx,xx, CFL_FACTOR);
+  printf("hey setting dt = %e\n",(double)dt);
+  REAL Nt = t_final / dt + 1; // The number of points in time
+
   // Step 0f: Find ghostzone mappings:
   //const int num_gz_tot = Nxx_plus_2NGHOSTS_tot - Nxx[0]*Nxx[1]*Nxx[2];
   gz_map *bc_gz_map = (gz_map *)malloc(sizeof(gz_map)*Nxx_plus_2NGHOSTS_tot);
-  LOOP_REGION(0,Nxx_plus_2NGHOSTS[0],0,Nxx_plus_2NGHOSTS[1],0,Nxx_plus_2NGHOSTS[2]) {
-    REAL xCart[3];
-    xxCart(xx, i0,i1,i2, xCart);
-    REAL Cartx = xCart[0];
-    REAL Carty = xCart[1];
-    REAL Cartz = xCart[2];
-    
-    REAL Cart_to_xx0_inbounds,Cart_to_xx1_inbounds,Cart_to_xx2_inbounds;
-#include "Cart_to_xx.h"
-    int i0_inbounds = (int)( (Cart_to_xx0_inbounds - xxmin[0] - (1.0/2.0)*dxx[0] + ((REAL)NGHOSTS)*dxx[0])/dxx[0] + 0.5 ); 
-    int i1_inbounds = (int)( (Cart_to_xx1_inbounds - xxmin[1] - (1.0/2.0)*dxx[1] + ((REAL)NGHOSTS)*dxx[1])/dxx[1] + 0.5 );
-    int i2_inbounds = (int)( (Cart_to_xx2_inbounds - xxmin[2] - (1.0/2.0)*dxx[2] + ((REAL)NGHOSTS)*dxx[2])/dxx[2] + 0.5 );
-
-    REAL xCart_orig[3]; for(int ii=0;ii<3;ii++) xCart_orig[ii] = xCart[ii];
-    xxCart(xx, i0_inbounds,i1_inbounds,i2_inbounds, xCart);
-
-#define EPS_ABS 1e-8
-    if(fabs( (xCart_orig[0] - xCart[0]) ) > EPS_ABS ||
-       fabs( (xCart_orig[1] - xCart[1]) ) > EPS_ABS ||
-       fabs( (xCart_orig[2] - xCart[2]) ) > EPS_ABS) {
-             
-      REAL r = sqrt(xCart[0]*xCart[0] + xCart[1]*xCart[1] + xCart[2]*xCart[2]);
-      REAL th = acos(xCart[2]/r);
-      REAL ph = atan2(xCart[1],xCart[0]);
-
-      REAL rorig = sqrt(xCart_orig[0]*xCart_orig[0] + xCart_orig[1]*xCart_orig[1] + xCart_orig[2]*xCart_orig[2]);
-      REAL thorig = acos(xCart_orig[2]/rorig);
-      REAL phorig = atan2(xCart_orig[1],xCart_orig[0]);
-      printf("Error. Cartesian disagreement: ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e )\n",xCart_orig[0],xCart_orig[1],xCart_orig[2],
-             xCart[0],xCart[1],xCart[2]);
-      printf("Error. Cartesian disagreement2: ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e)\n",rorig,thorig,phorig,r,th,ph);
-      exit(1);
-    }
-
-    if(i0_inbounds-i0 == 0 && i1_inbounds-i1 == 0 && i2_inbounds-i2 == 0) {
-      bc_gz_map[IDX3(i0,i1,i2)].i0=-1;
-      bc_gz_map[IDX3(i0,i1,i2)].i1=-1;
-      bc_gz_map[IDX3(i0,i1,i2)].i2=-1;
-    } else {
-      bc_gz_map[IDX3(i0,i1,i2)].i0=i0_inbounds;
-      bc_gz_map[IDX3(i0,i1,i2)].i1=i1_inbounds;
-      bc_gz_map[IDX3(i0,i1,i2)].i2=i2_inbounds;
-    }
-  }
+  set_up_bc_gz_map(Nxx_plus_2NGHOSTS, xx, dxx, xxmin, xxmax, bc_gz_map);
   
   // Step 1: Set up initial data to be exact solution at time=0:
   exact_solution(Nxx_plus_2NGHOSTS, 0.0, xx, evol_gfs);
@@ -273,11 +198,11 @@ int main(int argc, const char *argv[]) {
     const int i1mid=Nxx_plus_2NGHOSTS[1]/2;
     const int i2mid=Nxx_plus_2NGHOSTS[2]/2;
     exact_solution(Nxx_plus_2NGHOSTS,(n+1)*dt, xx, k1_gfs);
-    const REAL exact     = k1_gfs[IDX4(0,i0mid,i1mid,i2mid)];
-    const REAL numerical = evol_gfs[IDX4(0,i0mid,i1mid,i2mid)];
-    const REAL relative_error = fabs((exact-numerical)/exact);
-    printf("%e %e || %e %e %e: %e %e\n",(n+1)*dt, log10(relative_error),
-           xx[0][i0mid],xx[1][i1mid],xx[2][i2mid], numerical,exact);
+    const double exact     = (double)k1_gfs[IDX4(0,i0mid,i1mid,i2mid)];
+    const double numerical = (double)evol_gfs[IDX4(0,i0mid,i1mid,i2mid)];
+    const double relative_error = fabs((exact-numerical)/exact);
+    printf("%e %e || %e %e %e: %e %e\n",(double)((n+1)*dt), log10(relative_error),
+           (double)xx[0][i0mid],(double)xx[1][i1mid],(double)xx[2][i2mid], numerical,exact);
   } // End main loop to progress forward in time.
   
   // Step 4: Free all allocated memory
