@@ -114,6 +114,11 @@ int main(int argc, const char *argv[]) {
   }
   // Step 0b: Set up numerical grid structure, first in space...
   const int Nx0x1x2 = atoi(argv[1]);
+  if(Nx0x1x2%2 != 0) {
+    printf("Error: Cannot guarantee a proper cell-centered grid if number of grid cells not set to even number.\n");
+    printf("       For example, in case of angular directions, proper symmetry zones will not exist.\n");
+    exit(1);
+  }
   const int Nxx[3] = { Nx0x1x2, Nx0x1x2, Nx0x1x2 };
   const int Nxx_plus_2NGHOSTS[3] = { Nxx[0]+2*NGHOSTS, Nxx[1]+2*NGHOSTS, Nxx[2]+2*NGHOSTS };
   const int Nxx_plus_2NGHOSTS_tot = Nxx_plus_2NGHOSTS[0]*Nxx_plus_2NGHOSTS[1]*Nxx_plus_2NGHOSTS[2];
@@ -167,10 +172,9 @@ int main(int argc, const char *argv[]) {
     
     REAL Cart_to_xx0_inbounds,Cart_to_xx1_inbounds,Cart_to_xx2_inbounds;
 #include "Cart_to_xx.h"
-    int i0_inbounds = (int)( (Cart_to_xx0_inbounds - xxmin[0] - (1.0/2.0)*dxx[0] + ((REAL)NGHOSTS)*dxx[0])/dxx[0] + 0.5 ); /* add the 0.5 because integer
-                                                                                                                              typecast always rounds down*/
-    int i1_inbounds = (int)( (Cart_to_xx1_inbounds - xxmin[1] - (1.0/2.0)*dxx[1] + ((REAL)NGHOSTS)*dxx[1])/dxx[1] + 0.5 );
-    int i2_inbounds = (int)( (Cart_to_xx2_inbounds - xxmin[2] - (1.0/2.0)*dxx[2] + ((REAL)NGHOSTS)*dxx[2])/dxx[2] + 0.5 );
+    int i0_inbounds = (int)( (Cart_to_xx0_inbounds - xxmin[0] - (1.0/2.0)*dxx[0] + ((REAL)NGHOSTS)*dxx[0])/dxx[0] + 0.1 ); 
+    int i1_inbounds = (int)( (Cart_to_xx1_inbounds - xxmin[1] - (1.0/2.0)*dxx[1] + ((REAL)NGHOSTS)*dxx[1])/dxx[1] + 0.1 );
+    int i2_inbounds = (int)( (Cart_to_xx2_inbounds - xxmin[2] - (1.0/2.0)*dxx[2] + ((REAL)NGHOSTS)*dxx[2])/dxx[2] + 0.01 );
 
     REAL xx_to_Cart0_orig = xx_to_Cart0;
     REAL xx_to_Cart1_orig = xx_to_Cart1;
@@ -179,16 +183,22 @@ int main(int argc, const char *argv[]) {
     xx1 = xx[1][i1_inbounds];
     xx2 = xx[2][i2_inbounds];
 #include "xxCart.h"
-#define SMALL 1e-8
-    if(fabs(xx_to_Cart0_orig - xx_to_Cart0) > SMALL || fabs(xx_to_Cart1_orig - xx_to_Cart1) > SMALL || fabs(xx_to_Cart2_orig - xx_to_Cart2) > SMALL) {
+           
+#define EPS_ABS 1e-8
+    if(fabs( (xx_to_Cart0_orig - xx_to_Cart0) ) > EPS_ABS ||
+       fabs( (xx_to_Cart1_orig - xx_to_Cart1) ) > EPS_ABS ||
+       fabs( (xx_to_Cart2_orig - xx_to_Cart2) ) > EPS_ABS) {
+             
       REAL r = sqrt(xx_to_Cart0*xx_to_Cart0 + xx_to_Cart1*xx_to_Cart1 + xx_to_Cart2*xx_to_Cart2);
       REAL th = acos(xx_to_Cart2/r);
+      REAL ph = atan2(xx_to_Cart1,xx_to_Cart0);
 
       REAL rorig = sqrt(xx_to_Cart0_orig*xx_to_Cart0_orig + xx_to_Cart1_orig*xx_to_Cart1_orig + xx_to_Cart2_orig*xx_to_Cart2_orig);
       REAL thorig = acos(xx_to_Cart2_orig/rorig);
+      REAL phorig = atan2(xx_to_Cart1_orig,xx_to_Cart0_orig);
       printf("Error. Cartesian disagreement: ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e )\n",xx_to_Cart0_orig,xx_to_Cart1_orig,xx_to_Cart2_orig,
              xx_to_Cart0,xx_to_Cart1,xx_to_Cart2);
-      printf("Error. Cartesian disagreement2: %e %e %e ( %.15e %.15e ) != ( %.15e %.15e )\n",xx0,xx1,xx2,rorig,thorig,r,th);
+      printf("Error. Cartesian disagreement2: %e %e %e ( %.15e %.15e %.15e ) != ( %.15e %.15e %.15e)\n",xx0,xx1,xx2,rorig,thorig,phorig,r,th,ph);
       exit(1);
     }
 
@@ -196,16 +206,12 @@ int main(int argc, const char *argv[]) {
       bc_gz_map[IDX3(i0,i1,i2)].i0=-1;
       bc_gz_map[IDX3(i0,i1,i2)].i1=-1;
       bc_gz_map[IDX3(i0,i1,i2)].i2=-1;
-      printf("in : %d %d %d\n",i0,i1,i2);
     } else {
       bc_gz_map[IDX3(i0,i1,i2)].i0=i0_inbounds;
       bc_gz_map[IDX3(i0,i1,i2)].i1=i1_inbounds;
       bc_gz_map[IDX3(i0,i1,i2)].i2=i2_inbounds;
-      printf("out: %d %d %d\n",i0,i1,i2);
     }
-    //    if(bc_gz_map[IDX3(i0,i1,i2)].i0 > 0 && bc_gz_map[IDX3(i0,i1,i2)].i1 > 0 && bc_gz_map[IDX3(i0,i1,i2)].i2 > 0 && (i0<NGHOSTS || i1<NGHOSTS
   }
-  exit(0);
   
   // Step 1: Set up initial data to be exact solution at time=0:
   exact_solution(Nxx_plus_2NGHOSTS, 0.0, xx, evol_gfs);
