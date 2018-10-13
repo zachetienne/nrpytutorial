@@ -1,3 +1,2 @@
 sympy
 matplotlib
-wand
