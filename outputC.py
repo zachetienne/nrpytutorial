@@ -205,7 +205,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
     #          outputC::includebraces = True
     if par.parval_from_str("includebraces") == True: final_Ccode_output_str += "{\n"
     final_Ccode_output_str += prestring + SIMD_decls + outstring + poststring
-    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += "}"
+    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += "}\n"
 
     # Step 8: If parameter outputC::outCfilename = "stdout", then output
     #         C code to standard out (useful for copy-paste or interactive
