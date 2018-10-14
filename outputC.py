@@ -60,7 +60,7 @@ import sympy as sp
 #        output_varname_str = a single output variable name *or* a list of output
 #                             variable names, one per sympyexpr.
 # Output: C code, as a string.
-def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = True, prestring = "", poststring = ""):
+def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = True, prestring = "", poststring = "",preindent=""):
     TYPE = par.parval_from_str("PRECISION")
 
     # Step 0: Initialize
@@ -130,17 +130,17 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
 
     # Step 4: Add proper indentation of C code:
     if par.parval_from_str("includebraces") == True:
-        indent = "   "
+        indent = preindent+"   "
     else:
-        indent = ""
+        indent = preindent+""
 
     # Step 5: Should the output variable, e.g., outvar, be declared?
     #         If so, start output line with e.g., "double outvar "
     outtypestring = ""
     if par.parval_from_str("declareoutputvars") == True:
-        outtypestring = indent+TYPE + " "
+        outtypestring = preindent+indent+TYPE + " "
     else:
-        outtypestring = indent
+        outtypestring = preindent+indent
 
     # Step 6a: If common subexpression elimination (CSE) disabled, then
     #         just output the SymPy string in the most boring way,
@@ -164,10 +164,10 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
         CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(CSE_varprefix), order='canonical')
         for commonsubexpression in CSE_results[0]:
             if par.parval_from_str("SIMD_enable") == True:
-                outstring += indent + "const " + TYPE + " " + str(commonsubexpression[0]) + " = " + \
+                outstring += preindent + indent + "const " + TYPE + " " + str(commonsubexpression[0]) + " = " + \
                              str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values)) + ";\n"
             else:
-                outstring += indent+"const "+TYPE+" "+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
+                outstring += preindent+indent+"const "+TYPE+" "+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
         for i,result in enumerate(CSE_results[1]):
             if par.parval_from_str("SIMD_enable") == True:
                 outstring += outtypestring + output_varname_str[i] + " = " + \
@@ -193,8 +193,8 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
                 exit(1)
             else:
                 for i in range(len(SIMD_const_varnms)):
-                    SIMD_decls += indent+"const double " + CSE_varprefix + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_decls += indent+"const REAL_SIMD_ARRAY " + " = Set1SIMD("+ CSE_varprefix + SIMD_const_varnms[i] + ");\n"
+                    SIMD_decls += preindent+indent+"const double " + CSE_varprefix + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
+                    SIMD_decls += preindent+indent+"const REAL_SIMD_ARRAY " + " = Set1SIMD("+ CSE_varprefix + SIMD_const_varnms[i] + ");\n"
                     # if i != len(SIMD_const_varnms)-1:
                     #     SIMD_decls += "\n"
                 SIMD_decls += "\n"
@@ -203,9 +203,9 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
     final_Ccode_output_str = commentblock
     # Step 7a: Output C code in indented curly brackets if
     #          outputC::includebraces = True
-    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += "{\n"
+    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += preindent+"{\n"
     final_Ccode_output_str += prestring + SIMD_decls + outstring + poststring
-    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += "}\n"
+    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += preindent+"}\n"
 
     # Step 8: If parameter outputC::outCfilename = "stdout", then output
     #         C code to standard out (useful for copy-paste or interactive
