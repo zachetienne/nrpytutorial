@@ -126,6 +126,7 @@ def BSSN_RHSs():
 
     # Step 5h: Add the first term to RbarDD:
     #         - \frac{1}{2} \bar{\gamma}^{k l} \hat{D}_{k} \hat{D}_{l} \bar{\gamma}_{i j}
+    global RbarDD # Needed as global for BSSN constraints, etc.
     RbarDD = ixp.zerorank2()
     RbarDDpiece = ixp.zerorank2()
     for i in range(DIM):
@@ -366,7 +367,9 @@ def BSSN_RHSs():
     # Step 9d: Define phi_dBarD = phi_dD (since phi is a scalar) and phi_dBarDD (covariant derivative)
     #          \bar{D}_i \bar{D}_j \phi = \phi_{;\bar{i}\bar{j}} = \bar{D}_i \phi_{,j}
     #                                   = \phi_{,ij} - \bar{\Gamma}^k_{ij} \phi_{,k}
+    global phi_dBarD # Needed for BSSN constraints, etc.
     phi_dBarD = phi_dD
+    global phi_dBarDD # Needed for BSSN constraints, etc.
     phi_dBarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
