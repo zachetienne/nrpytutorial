@@ -28,6 +28,7 @@ def BSSN_RHSs():
     # Step 3: Register all needed *evolved* gridfunctions.
     # Step 3a: Register indexed quantities, using ixp.register_... functions
     hDD = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD", "sym01")
+    global aDD # Needed for BSSN constraints, etc.
     aDD = ixp.register_gridfunctions_for_single_rank2("EVOL","aDD", "sym01")
     lambdaU = ixp.register_gridfunctions_for_single_rank1("EVOL","lambdaU")
     vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU")
@@ -72,6 +73,7 @@ def BSSN_RHSs():
     # \bar{\gamma}_{ij;\hat{l}} = \varepsilon_{i j,l}
     #                           - \hat{\Gamma}^m_{i l} \varepsilon_{m j}
     #                           - \hat{\Gamma}^m_{j l} \varepsilon_{i m}
+    global gammabarDD_dHatD # Needed for BSSN constraints, etc.
     gammabarDD_dHatD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
@@ -175,6 +177,7 @@ def BSSN_RHSs():
                                             (gammabarDD_dD[m][k][l] + gammabarDD_dD[m][l][k] - gammabarDD_dD[k][l][m])
 
     # Step 7c: Define \Delta^i_{jk} = \bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk} = DGammaUDD[i][j][k]
+    global DGammaUDD # Needed for BSSN constraints, etc.
     DGammaUDD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
@@ -258,8 +261,9 @@ def BSSN_RHSs():
             trAbar += gammabarUU[i][j] * AbarDD[i][j]
 
     # Step 8d: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
+    global detgammabar # Needed for BSSN constraints, etc.
     detgammabar = detgbar_over_detghat * rfm.detgammahat
-
+    global detgammabar_dD # Needed for BSSN constraints, etc.
     detgammabar_dD = ixp.zerorank1()
     detgbar_over_detghat_dD = ixp.declarerank1("detgbar_over_detghat_dD")
     for i in range(DIM):
