@@ -75,6 +75,17 @@ def FD_outputC(filename,sympyexpr_list):
 #                list_of_deriv_vars_with_duplicates.append(var)
     list_of_deriv_vars = superfast_uniq(list_of_deriv_vars_with_duplicates)
 
+    # Step 1b:
+    # Sort the list_of_deriv_vars[] list of variables. This ensures
+    #     consistency in our C code output, and might even be
+    #     tuned to reduce cache misses.
+    list_of_deriv_vars_str = []
+    for i in range(len(list_of_deriv_vars)):
+        list_of_deriv_vars_str.append(str(list_of_deriv_vars[i]))
+    list_of_deriv_vars_str.sort()
+    for i in range(len(list_of_deriv_vars)):
+        list_of_deriv_vars[i] = sp.sympify(list_of_deriv_vars_str[i])
+
     # Step 2:
     # Process list_of_deriv_vars into a list of base gridfunctions
     #    and a list of derivative operators.
