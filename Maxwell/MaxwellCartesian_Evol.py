@@ -4,7 +4,7 @@ import grid as gri
 import finite_difference as fin
 from outputC import *
 
-par.initialize_param(par.glb_param("char", thismodule, "System_to_use", "System_II"))
+par.initialize_param(par.glb_param("char", __name__, "System_to_use", "System_II"))
 
 def MaxwellCartesian_Evol():
     #Step 0: Set the spatial dimension parameter to 3.

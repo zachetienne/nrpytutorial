@@ -40,8 +40,7 @@ def CosSIMD_check(a):
 # Resolution: This function extends lists "SIMD_const_varnms" and "SIMD_const_values",
 #             which store the name of each constant SIMD array (e.g., _Integer_1) and
 #             the value of each variable (e.g., 1.0).
-def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values):
-    debug=par.parval_from_str("SIMD_debug")
+def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debug="False"):
 
     # Declare all variables, so we can eval them in the next (AddSIMD & MulSIMD) step
     for item in preorder_traversal(expr):
@@ -292,7 +291,7 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values):
         print("I SHOULDN'T BE HERE!",name,list_of_names)
         exit(1)
 
-    if debug:
+    if debug=="True":
         expr_check = expr
         if "SIMD" in str(expr):
             expr_check = eval(str(expr).replace("SIMD","SIMD_check"))

@@ -4,18 +4,18 @@ from SIMD import expr_convert_to_SIMD_intrins
 
 from collections import namedtuple
 lhrh = namedtuple('lhrh', 'lhs rhs')
+outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix SIMD_enable SIMD_debug')
 
 # Parameter initialization is called once, within nrpy.py.
-thismodule = __name__
-par.initialize_param(par.glb_param("bool", thismodule, "SIMD_enable", False))
-par.initialize_param(par.glb_param("bool", thismodule, "SIMD_debug", False))
-par.initialize_param(par.glb_param("char", thismodule, "PRECISION", "double"))
+par.initialize_param(par.glb_param("char", __name__, "PRECISION", "double")) # __name__ = "outputC", this module's name.
 #par.initialize_param(par.glb_param("bool", thismodule, "CSE_enable", True))
-par.initialize_param(par.glb_param("char", thismodule, "CSE_varprefix", "tmp"))
-par.initialize_param(par.glb_param("char", thismodule, "outCfileaccess", "w"))
-par.initialize_param(par.glb_param("bool", thismodule, "outCverbose", True))
-par.initialize_param(par.glb_param("bool", thismodule, "declareoutputvars", False))
-par.initialize_param(par.glb_param("bool", thismodule, "includebraces", True))
+# par.initialize_param(par.glb_param("bool", thismodule, "SIMD_enable", False))
+# par.initialize_param(par.glb_param("bool", thismodule, "SIMD_debug", False))
+# par.initialize_param(par.glb_param("char", thismodule, "CSE_varprefix", "tmp"))
+# par.initialize_param(par.glb_param("char", thismodule, "outCfileaccess", "w"))
+# par.initialize_param(par.glb_param("bool", thismodule, "outCverbose", True))
+# par.initialize_param(par.glb_param("bool", thismodule, "declareoutputvars", False))
+# par.initialize_param(par.glb_param("bool", thismodule, "includebraces", True))
 
 # super fast 'uniq' function:
 # f8() function from https://www.peterbe.com/plog/uniqifiers-benchmark
@@ -55,12 +55,78 @@ def ccode_postproc(string):
 
     return string
 
+def parse_outCparams_string(params):
+    # Default values:
+    preindent = ""
+    includebraces = "True"
+    declareoutputvars = "False"
+    outCfileaccess = "w"
+    outCverbose = "True"
+    CSE_enable = "True"
+    CSE_varprefix = "tmp"
+    SIMD_enable = "False"
+    SIMD_debug = "False"
+
+    if params != "":
+        params2 = re.sub("^,","",params)
+        params = params2.strip()
+        splitstring = re.split("=|,", params)
+
+        if len(splitstring) % 2 != 0:
+            print("outputC: Invalid params string: "+params)
+            exit(1)
+
+        parnm = []
+        value = []
+        for i in range(len(splitstring)/2):
+            parnm.append(splitstring[2*i])
+            value.append(splitstring[2*i+1])
+
+        for i in range(len(parnm)):
+            # Clean the string
+            if value[i] == "true":
+                value[i] = "True"
+            if value[i] == "false":
+                value[i] = "False"
+            
+            if parnm[i] == "preindent":
+                if not value[i].isdigit():
+                    print("Error: preindent must be set to an integer (corresponding to the number of tab stops). ")
+                    print(value[i]+" is not an integer.")
+                    exit(1)
+                preindent = ""
+                for i in range(int(value[i])):
+                    preindent += "   "
+            elif parnm[i] == "includebraces":
+                includebraces = value[i]
+            elif parnm[i] == "declareoutputvars":
+                declareoutputvars = value[i]
+            elif parnm[i] == "outCfileaccess":
+                outCfileaccess = value[i]
+            elif parnm[i] == "outCverbose":
+                outCverbose = value[i]
+            elif parnm[i] == "CSE_enable":
+                CSE_enable = value[i]
+            elif parnm[i] == "CSE_varprefix":
+                CSE_varprefix = value[i]
+            elif parnm[i] == "SIMD_enable":
+                SIMD_enable = value[i]
+            elif parnm[i] == "SIMD_debug":
+                SIMD_debug = value[i]
+            else:
+                print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
+                exit(1)
+
+    return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_debug)
+
 import sympy as sp
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
 #        output_varname_str = a single output variable name *or* a list of output
 #                             variable names, one per sympyexpr.
 # Output: C code, as a string.
-def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = True, prestring = "", poststring = "",preindent=""):
+def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", prestring = "", poststring = ""):
+    outCparams = parse_outCparams_string(params)
+
     TYPE = par.parval_from_str("PRECISION")
 
     # Step 0: Initialize
@@ -74,7 +140,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
     #         Otherwise set TYPE="REAL_SIMD_ARRAY", which should be #define'd
     #         within the C code. For example for AVX-256, the C code should have
     #         #define REAL_SIMD_ARRAY __m256d
-    if par.parval_from_str("SIMD_enable") == True:
+    if outCparams.SIMD_enable == "True":
         if TYPE != "double":
             print("SIMD output currently only supports double precision. Sorry!")
             exit(1)
@@ -103,9 +169,9 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
         sympyexpr = sympyexprtmp
 
 
-    # Step 3: If outputC::verbose = True, then output the original SymPy
+    # Step 3: If outCparams.verbose = True, then output the original SymPy
     #         expression(s) in code comments prior to actual C code
-    if par.parval_from_str("outCverbose") == True:
+    if outCparams.outCverbose == "True":
         commentblock += "/*\n *  Original SymPy expression"
         if len(output_varname_str)>1:
             commentblock += "s"
@@ -129,18 +195,18 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
         commentblock += " */\n"
 
     # Step 4: Add proper indentation of C code:
-    if par.parval_from_str("includebraces") == True:
-        indent = preindent+"   "
+    if outCparams.includebraces == "True":
+        indent = outCparams.preindent+"   "
     else:
-        indent = preindent+""
+        indent = outCparams.preindent+""
 
     # Step 5: Should the output variable, e.g., outvar, be declared?
     #         If so, start output line with e.g., "double outvar "
     outtypestring = ""
-    if par.parval_from_str("declareoutputvars") == True:
-        outtypestring = preindent+indent+TYPE + " "
+    if outCparams.declareoutputvars == "True":
+        outtypestring = outCparams.preindent+indent+TYPE + " "
     else:
-        outtypestring = preindent+indent
+        outtypestring = outCparams.preindent+indent
 
     # Step 6a: If common subexpression elimination (CSE) disabled, then
     #         just output the SymPy string in the most boring way,
@@ -149,7 +215,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
     #         as well.
     SIMD_decls = ""
 
-    if CSE_enable == False:
+    if outCparams.CSE_enable == "False":
         # If CSE is disabled:
         for i in range(len(sympyexpr)):
             outstring += outtypestring + ccode_postproc(sp.ccode(sympyexpr[i], output_varname_str[i]))+"\n"
@@ -160,25 +226,24 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
         SIMD_const_varnms = []
         SIMD_const_values = []
 
-        CSE_varprefix = par.parval_from_str("CSE_varprefix")
-        CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(CSE_varprefix), order='canonical')
+        CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order='canonical')
         for commonsubexpression in CSE_results[0]:
-            if par.parval_from_str("SIMD_enable") == True:
-                outstring += preindent + indent + "const " + TYPE + " " + str(commonsubexpression[0]) + " = " + \
-                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values)) + ";\n"
+            if outCparams.SIMD_enable == "True":
+                outstring += outCparams.preindent + indent + "const " + TYPE + " " + str(commonsubexpression[0]) + " = " + \
+                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_debug)) + ";\n"
             else:
-                outstring += preindent+indent+"const "+TYPE+" "+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
+                outstring += outCparams.preindent+indent+"const "+TYPE+" "+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
         for i,result in enumerate(CSE_results[1]):
-            if par.parval_from_str("SIMD_enable") == True:
+            if outCparams.SIMD_enable == "True":
                 outstring += outtypestring + output_varname_str[i] + " = " + \
-                             str(expr_convert_to_SIMD_intrins(result,SIMD_const_varnms,SIMD_const_values)) + ";\n"
+                             str(expr_convert_to_SIMD_intrins(result,SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_debug)) + ";\n"
             else:
                 outstring += outtypestring+ccode_postproc(sp.ccode(result,output_varname_str[i]))+"\n"
 
         # Step 6b.i: If SIMD_enable == True , and
         #            there is at least one SIMD const variable, 
         #            then declare the SIMD_const_varnms and SIMD_const_values arrays
-        if par.parval_from_str("SIMD_enable") == True and len(SIMD_const_varnms) != 0:
+        if outCparams.SIMD_enable == "True" and len(SIMD_const_varnms) != 0:
             # Step 6a) Sort the list of definitions. Idea from:
             # https://stackoverflow.com/questions/9764298/is-it-possible-to-sort-two-listswhich-reference-each-other-in-the-exact-same-w
             SIMD_const_varnms, SIMD_const_values = \
@@ -193,8 +258,8 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
                 exit(1)
             else:
                 for i in range(len(SIMD_const_varnms)):
-                    SIMD_decls += preindent+indent+"const double " + CSE_varprefix + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_decls += preindent+indent+"const REAL_SIMD_ARRAY " + " = Set1SIMD("+ CSE_varprefix + SIMD_const_varnms[i] + ");\n"
+                    SIMD_decls += outCparams.preindent+indent+"const double " + outCparams.CSE_varprefix + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
+                    SIMD_decls += outCparams.preindent+indent+"const REAL_SIMD_ARRAY " + " = Set1SIMD("+ outCparams.CSE_varprefix + SIMD_const_varnms[i] + ");\n"
                     # if i != len(SIMD_const_varnms)-1:
                     #     SIMD_decls += "\n"
                 SIMD_decls += "\n"
@@ -202,12 +267,12 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
     # Step 7: Construct final output string
     final_Ccode_output_str = commentblock
     # Step 7a: Output C code in indented curly brackets if
-    #          outputC::includebraces = True
-    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += preindent+"{\n"
+    #          outCparams.includebraces = True
+    if outCparams.includebraces == "True": final_Ccode_output_str += outCparams.preindent+"{\n"
     final_Ccode_output_str += prestring + SIMD_decls + outstring + poststring
-    if par.parval_from_str("includebraces") == True: final_Ccode_output_str += preindent+"}\n"
+    if outCparams.includebraces == "True": final_Ccode_output_str += outCparams.preindent+"}\n"
 
-    # Step 8: If parameter outputC::outCfilename = "stdout", then output
+    # Step 8: If filename == "stdout", then output
     #         C code to standard out (useful for copy-paste or interactive
     #         mode). Otherwise output to file specified in variable name.
     if filename == "stdout":
@@ -217,11 +282,11 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", CSE_enable = Tru
         return final_Ccode_output_str
     else:
         # Output to the file specified by the function input parameter string 'filename':
-        with open(filename, par.parval_from_str("outCfileaccess")) as file:
+        with open(filename, outCparams.outCfileaccess) as file:
             file.write(final_Ccode_output_str)
         successstr = ""
-        if par.parval_from_str("outCfileaccess") == "a":
+        if outCparams.outCfileaccess == "a":
             successstr = "Appended "
-        elif par.parval_from_str("outCfileaccess") == "w":
+        elif outCparams.outCfileaccess == "w":
             successstr = "Wrote "
         print(successstr + "to file \"" + filename + "\"")
