@@ -74,18 +74,12 @@ def FD_outputC(filename,sympyexpr_list):
 #            elif vartype == "gridfunction":
 #                list_of_deriv_vars_with_duplicates.append(var)
     list_of_deriv_vars = superfast_uniq(list_of_deriv_vars_with_duplicates)
-
-    # Step 1b:
-    # Sort the list_of_deriv_vars[] list of variables. This ensures
-    #     consistency in our C code output, and might even be
+    # Finally, sort the list_of_deriv_vars. This ensures
+    #     consistency in the C code output, and might even be
     #     tuned to reduce cache misses.
-    list_of_deriv_vars_str = []
-    for i in range(len(list_of_deriv_vars)):
-        list_of_deriv_vars_str.append(str(list_of_deriv_vars[i]))
-    list_of_deriv_vars_str.sort()
-    for i in range(len(list_of_deriv_vars)):
-        list_of_deriv_vars[i] = sp.sympify(list_of_deriv_vars_str[i])
-
+    #     Thanks to Aaron Meurer for this nice one-liner!
+    list_of_deriv_vars = sorted(list_of_deriv_vars,key=sp.default_sort_key)
+    
     # Step 2:
     # Process list_of_deriv_vars into a list of base gridfunctions
     #    and a list of derivative operators.
