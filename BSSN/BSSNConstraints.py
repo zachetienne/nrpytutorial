@@ -5,7 +5,7 @@
 # Citations: Generic curvilinear coordinate reference metric approach matches that of
 # [Ruchlin, Etienne, and Baumgarte (2018)](https://arxiv.org/abs/1712.07658),
 # which is an extension of the spherical coordinate reference metric approach of
-# [Baumgarte, Montero, Cordero-Carrión, and Müller (2012)](https://arxiv.org/abs/1211.6632),
+# [Baumgarte, Montero, Cordero-Carri\'on, and M\"uller (2012)](https://arxiv.org/abs/1211.6632),
 # which builds upon the covariant "Lagrangian" BSSN formalism of
 # [Brown (2009)](https://arxiv.org/abs/0902.3652).
 #
