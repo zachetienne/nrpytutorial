@@ -8,14 +8,7 @@ outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars
 
 # Parameter initialization is called once, within nrpy.py.
 par.initialize_param(par.glb_param("char", __name__, "PRECISION", "double")) # __name__ = "outputC", this module's name.
-#par.initialize_param(par.glb_param("bool", thismodule, "CSE_enable", True))
 # par.initialize_param(par.glb_param("bool", thismodule, "SIMD_enable", False))
-# par.initialize_param(par.glb_param("bool", thismodule, "SIMD_debug", False))
-# par.initialize_param(par.glb_param("char", thismodule, "CSE_varprefix", "tmp"))
-# par.initialize_param(par.glb_param("char", thismodule, "outCfileaccess", "w"))
-# par.initialize_param(par.glb_param("bool", thismodule, "outCverbose", True))
-# par.initialize_param(par.glb_param("bool", thismodule, "declareoutputvars", False))
-# par.initialize_param(par.glb_param("bool", thismodule, "includebraces", True))
 
 # super fast 'uniq' function:
 # f8() function from https://www.peterbe.com/plog/uniqifiers-benchmark
@@ -78,7 +71,7 @@ def parse_outCparams_string(params):
 
         parnm = []
         value = []
-        for i in range(len(splitstring)/2):
+        for i in range(int(len(splitstring)/2)):
             parnm.append(splitstring[2*i])
             value.append(splitstring[2*i+1])
 
