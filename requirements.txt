@@ -1,5 +1,2 @@
-pip
-matplotlib
 sympy
-astropy
-wand
+matplotlib

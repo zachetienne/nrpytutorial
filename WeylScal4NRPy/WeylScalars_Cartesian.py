@@ -36,7 +36,6 @@ def define_LeviCivitaSymbol_rank3(DIM=-1):
 #         many of which will be essential here. We must first change to our desired coordinate
 #         system, however.
 def WeylScalars_Cartesian():
-    par.set_parval_from_str("outputC::outCverbose",False) # To prevent absurdly large output files.
     # We do not need the barred or hatted quantities calculated when using Cartesian coordinates.
     # Instead, we declare the PHYSICAL metric and extrinsic curvature as grid functions.
     gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD", "sym01")

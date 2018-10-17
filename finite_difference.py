@@ -16,7 +16,9 @@ modulename = __name__
 # Centered finite difference accuracy order
 par.initialize_param(par.glb_param("INT", modulename, "FD_CENTDERIVS_ORDER",  4))
 
-def FD_outputC(filename,sympyexpr_list):
+def FD_outputC(filename,sympyexpr_list, params=""):
+    outCparams = parse_outCparams_string(params)
+
     # Step 0.a:
     # In case sympyexpr_list is a single sympy expression,
     #     convert it to a list with just one element:
@@ -24,26 +26,24 @@ def FD_outputC(filename,sympyexpr_list):
         sympyexpr_list = [sympyexpr_list]
 
     # Step 0.b:
-    # finite_difference.py takes control over outputC::includebraces here,
+    # finite_difference.py takes control over outCparams.includebraces here,
     #     which is necessary because outputC() is called twice:
     #     first for the reads from main memory and finite difference 
     #     stencil expressions, and second for the SymPy expressions and
     #     writes to main memory. 
-    # If outputC::includebraces==True, then it will close off the braces 
+    # If outCparams.includebraces==True, then it will close off the braces 
     #     after the finite difference stencil expressions and start new ones
     #     for the SymPy expressions and writes to main memory, resulting
     #     in a non-functioning C code. 
     # To get around this issue, we create braces around the entire
     #     string of C output from this function, only if 
-    #     outputC::includebraces==True.
-    default_brace_behavior = par.parval_from_str("outputC::includebraces")
-    if par.parval_from_str("includebraces") == True:
+    #     outCparams.includebraces==True.
+    if outCparams.includebraces == "True":
         Coutput = "{\n"
         indent = "    "
     else:
         Coutput = ""
         indent = ""
-    par.set_parval_from_str("outputC::includebraces",False)
     
     # Step 1:
     # Create a list of free symbols in the sympy expr list
@@ -74,7 +74,12 @@ def FD_outputC(filename,sympyexpr_list):
 #            elif vartype == "gridfunction":
 #                list_of_deriv_vars_with_duplicates.append(var)
     list_of_deriv_vars = superfast_uniq(list_of_deriv_vars_with_duplicates)
-
+    # Finally, sort the list_of_deriv_vars. This ensures
+    #     consistency in the C code output, and might even be
+    #     tuned to reduce cache misses.
+    #     Thanks to Aaron Meurer for this nice one-liner!
+    list_of_deriv_vars = sorted(list_of_deriv_vars,key=sp.default_sort_key)
+    
     # Step 2:
     # Process list_of_deriv_vars into a list of base gridfunctions
     #    and a list of derivative operators.
@@ -302,7 +307,7 @@ def FD_outputC(filename,sympyexpr_list):
         return retstring.replace("+-", "-").replace("+0", "")
 
     def vartype():
-        if par.parval_from_str("SIMD_enable") == True:
+        if outCparams.SIMD_enable == "True":
             return "const REAL_SIMD_ARRAY "
         else:
             TYPE = par.parval_from_str("PRECISION")
@@ -318,7 +323,7 @@ def FD_outputC(filename,sympyexpr_list):
         idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
         #gfaccess_str = gri.gfaccess("in_gfs",gfname.upper()+"GF",ijkl_string(idx4))
         gfaccess_str = gri.gfaccess("in_gfs",gfname,ijkl_string(idx4))
-        if par.parval_from_str("SIMD_enable") == True:
+        if outCparams.SIMD_enable == "True":
             retstring = vartype() + gfname + varsuffix(idx4) +" = ReadSIMD(&" + gfaccess_str + ");"
         else:
             retstring = vartype() + gfname + varsuffix(idx4) +" = " + gfaccess_str + ";"
@@ -394,10 +399,10 @@ def FD_outputC(filename,sympyexpr_list):
             exit(1)
     Coutput += indent_Ccode("/* \n * Step 1 of 2: Read from main memory and compute finite difference stencils (if any):\n */\n")
     if len(read_from_memory_Ccode) > 0:
-        default_CSE_varprefix = par.parval_from_str("outputC::CSE_varprefix")
-        par.set_parval_from_str("outputC::CSE_varprefix",default_CSE_varprefix+"FD")
-        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring=read_from_memory_Ccode))
-        par.set_parval_from_str("outputC::CSE_varprefix",default_CSE_varprefix)
+        default_CSE_varprefix = outCparams.CSE_varprefix
+        # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
+        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FD,includebraces=False",
+                                        prestring=read_from_memory_Ccode))
 
     Coutput += indent_Ccode("/* \n * Step 2 of 2: Evaluate SymPy expressions and write to main memory:\n */\n")
     # Step 5b.ii: Add input RHS & LHS expressions from
@@ -406,7 +411,7 @@ def FD_outputC(filename,sympyexpr_list):
     lhsvarnames = []
     for i in range(len(sympyexpr_list)):
         exprs.append(sympyexpr_list[i].rhs)
-        if par.parval_from_str("SIMD_enable") == True:
+        if outCparams.SIMD_enable == "True":
             lhsvarnames.append("const REAL_SIMD_ARRAY __RHS_exp_"+str(i))
         else:
             lhsvarnames.append(sympyexpr_list[i].lhs)
@@ -414,16 +419,16 @@ def FD_outputC(filename,sympyexpr_list):
     # Step 5c: Write output to gridfunctions specified in
     #          sympyexpr_list[].lhs.
     write_to_mem_string = ""
-    if par.parval_from_str("SIMD_enable") == True:
+    if outCparams.SIMD_enable == "True":
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
-    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",CSE_enable=True,prestring="",poststring=write_to_mem_string))
+    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",includebraces=False", prestring="",poststring=write_to_mem_string))
     
-    # Step 6: Reset outputC::includebraces to the value 
-    #         set outside this function.
-    if default_brace_behavior == True:
+    # Step 6: Reset outCparams.includebraces to the value 
+    #         set outside this function. See Step 0.b
+    #         for more details.
+    if outCparams.includebraces == "True":
         Coutput += "}\n"
-    par.set_parval_from_str("outputC::includebraces",default_brace_behavior)
 
     # Step 7: Output the C code in desired format: stdout, string, or file.
     if filename == "stdout":

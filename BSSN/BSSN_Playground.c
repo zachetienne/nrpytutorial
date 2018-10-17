@@ -1,5 +1,5 @@
 // Part P0: Set the number of ghost cells, from NRPy+'s FD_CENTDERIVS_ORDER
-#define NGHOSTS 2
+#define NGHOSTS 3
 
 // Part P1: Import needed header files
 #include "stdio.h"
@@ -10,11 +10,19 @@
 // Part P2a: set REAL=double, so that all gridfunctions are set to 
 #define REAL double
 
-// Step P3: Set free parameters for the initial data
+// Step P3: Set free parameters for the numerical grid
+const REAL RMAX    = 10.0;
+const REAL t_final =  8.0; /* Final time is set so that at t=t_final, 
+                            * data at the origin have not been corrupted 
+                            * by the approximate outer boundary condition */
+const REAL CFL_FACTOR = 1.0; // Set the CFL Factor
+
+// Step P4: Set free parameters for the initial data
 const REAL wavespeed = 1.0;
 const REAL kk0 = 1.0;
 const REAL kk1 = 1.0;
 const REAL kk2 = 1.0;
+
 
 // Part P2b: Declare the IDX4(gf,i,j,k) macro, which enables us to store 4-dimensions of
 //           data in a 1D array. In this case, consecutive values of "i" 
@@ -30,10 +38,8 @@ const REAL kk2 = 1.0;
 #define UUGF 0
 #define VVGF 1
 
-
 #define LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) \
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++)
-
 
 void xxCart(REAL *xx[3],const int i0,const int i1,const int i2, REAL xCart[3]) {
     REAL xx0 = xx[0][i0];
@@ -57,7 +63,7 @@ REAL find_timestep(const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3],REAL *xx[3],
     // Set dsmin = MIN(dsmin, ds_dirn0, ds_dirn1, ds_dirn2);
     dsmin = MIN(dsmin,MIN(ds_dirn0,MIN(ds_dirn1,ds_dirn2)));
   }
-  return dsmin*CFL_FACTOR;
+  return dsmin*CFL_FACTOR/wavespeed;
 }
 
 // Part P4: Declare the function for the exact solution. time==0 corresponds to the initial data.
@@ -106,14 +112,7 @@ int main(int argc, const char *argv[]) {
   const int Nxx[3] = { Nx0, Nx1, Nx2 };
   const int Nxx_plus_2NGHOSTS[3] = { Nxx[0]+2*NGHOSTS, Nxx[1]+2*NGHOSTS, Nxx[2]+2*NGHOSTS };
   const int Nxx_plus_2NGHOSTS_tot = Nxx_plus_2NGHOSTS[0]*Nxx_plus_2NGHOSTS[1]*Nxx_plus_2NGHOSTS[2];
-  const REAL RMAX = 10.0;
 #include "xxminmax.h"
-
-  //          ... and then set up the numerical grid structure in time:
-  const REAL t_final = xxmax[0]*0.08; /* Final time is set so that at t=t_final, 
-                                       * data at the origin have not been corrupted 
-                                       * by the approximate outer boundary condition */
-  const REAL CFL_FACTOR = 0.5; // Set the CFL Factor
 
   // Step 0c: Allocate memory for gridfunctions
   REAL *evol_gfs    = (REAL *)malloc(sizeof(REAL) * NUM_GFS * Nxx_plus_2NGHOSTS_tot);
@@ -139,7 +138,7 @@ int main(int argc, const char *argv[]) {
 
   // Step 0d.iii: Set timestep based on smallest proper distance between gridpoints and CFL factor 
   REAL dt = find_timestep(Nxx_plus_2NGHOSTS, dxx,xx, CFL_FACTOR);
-  printf("hey setting dt = %e\n",(double)dt);
+  //printf("# Timestep set to = %e\n",(double)dt);
   REAL Nt = t_final / dt + 1; // The number of points in time
 
   // Step 0f: Find ghostzone mappings:
@@ -194,15 +193,15 @@ int main(int argc, const char *argv[]) {
     apply_bcs(Nxx,Nxx_plus_2NGHOSTS,bc_gz_map,evol_gfs);
 
     /* Step 3: Output relative error between numerical and exact solution, */
-    const int i0mid=Nxx_plus_2NGHOSTS[0]/2;
+    const int i0MIN=NGHOSTS; // In spherical, r=Delta r/2.
     const int i1mid=Nxx_plus_2NGHOSTS[1]/2;
     const int i2mid=Nxx_plus_2NGHOSTS[2]/2;
     exact_solution(Nxx_plus_2NGHOSTS,(n+1)*dt, xx, k1_gfs);
-    const double exact     = (double)k1_gfs[IDX4(0,i0mid,i1mid,i2mid)];
-    const double numerical = (double)evol_gfs[IDX4(0,i0mid,i1mid,i2mid)];
+    const double exact     = (double)k1_gfs[IDX4(0,i0MIN,i1mid,i2mid)];
+    const double numerical = (double)evol_gfs[IDX4(0,i0MIN,i1mid,i2mid)];
     const double relative_error = fabs((exact-numerical)/exact);
     printf("%e %e || %e %e %e: %e %e\n",(double)((n+1)*dt), log10(relative_error),
-           (double)xx[0][i0mid],(double)xx[1][i1mid],(double)xx[2][i2mid], numerical,exact);
+           (double)xx[0][i0MIN],(double)xx[1][i1mid],(double)xx[2][i2mid], numerical,exact);
   } // End main loop to progress forward in time.
   
   // Step 4: Free all allocated memory

@@ -1,3 +1,4 @@
+
 typedef struct ghostzone_map {
   short i0,i1,i2;
 } gz_map;

@@ -27,9 +27,6 @@ Cart = [Cartx,Carty,Cartz]
 xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 
-#xxmin = []
-#xxmax = []
-
 def reference_metric():
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
     

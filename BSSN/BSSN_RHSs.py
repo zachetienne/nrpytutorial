@@ -28,12 +28,13 @@ def BSSN_RHSs():
     # Step 3: Register all needed *evolved* gridfunctions.
     # Step 3a: Register indexed quantities, using ixp.register_... functions
     hDD = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD", "sym01")
+    global aDD # Needed for BSSN constraints, etc.
     aDD = ixp.register_gridfunctions_for_single_rank2("EVOL","aDD", "sym01")
     lambdaU = ixp.register_gridfunctions_for_single_rank1("EVOL","lambdaU")
     vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU")
     betU = ixp.register_gridfunctions_for_single_rank1("EVOL","betU")
     # Step 3b: Register scalar quantities, using gri.register_gridfunctions()
-    global alpha # Needed as global for BSSN matter source terms, etc.
+    global trK, alpha # Needed as global for BSSN matter source terms, etc.
     trK, cf, alpha = gri.register_gridfunctions("EVOL",["trK","cf","alpha"])
 
     # Step 4: Register all *auxiliary* gridfunctions.
@@ -72,6 +73,7 @@ def BSSN_RHSs():
     # \bar{\gamma}_{ij;\hat{l}} = \varepsilon_{i j,l}
     #                           - \hat{\Gamma}^m_{i l} \varepsilon_{m j}
     #                           - \hat{\Gamma}^m_{j l} \varepsilon_{i m}
+    global gammabarDD_dHatD # Needed for BSSN constraints, etc.
     gammabarDD_dHatD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
@@ -126,6 +128,7 @@ def BSSN_RHSs():
 
     # Step 5h: Add the first term to RbarDD:
     #         - \frac{1}{2} \bar{\gamma}^{k l} \hat{D}_{k} \hat{D}_{l} \bar{\gamma}_{i j}
+    global RbarDD # Needed as global for BSSN constraints, etc.
     RbarDD = ixp.zerorank2()
     RbarDDpiece = ixp.zerorank2()
     for i in range(DIM):
@@ -174,6 +177,7 @@ def BSSN_RHSs():
                                             (gammabarDD_dD[m][k][l] + gammabarDD_dD[m][l][k] - gammabarDD_dD[k][l][m])
 
     # Step 7c: Define \Delta^i_{jk} = \bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk} = DGammaUDD[i][j][k]
+    global DGammaUDD # Needed for BSSN constraints, etc.
     DGammaUDD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
@@ -246,6 +250,7 @@ def BSSN_RHSs():
                                         + betaU_dD[k][j] * gammabarDD[i][k]
 
     # Step 8c: Define \bar{A}_{ij} = a_{ij} \text{ReDD[i][j]} = AbarDD[i][j], and its contraction trAbar = \bar{A}^k_k
+    global AbarDD # Needed for BSSN constraints, etc.
     AbarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
@@ -256,8 +261,9 @@ def BSSN_RHSs():
             trAbar += gammabarUU[i][j] * AbarDD[i][j]
 
     # Step 8d: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
+    global detgammabar # Needed for BSSN constraints, etc.
     detgammabar = detgbar_over_detghat * rfm.detgammahat
-
+    global detgammabar_dD # Needed for BSSN constraints, etc.
     detgammabar_dD = ixp.zerorank1()
     detgbar_over_detghat_dD = ixp.declarerank1("detgbar_over_detghat_dD")
     for i in range(DIM):
@@ -325,6 +331,7 @@ def BSSN_RHSs():
     cf_dD = ixp.declarerank1("cf_dD")
     cf_dupD = ixp.declarerank1("cf_dupD")  # Needed for \partial_t \phi next.
     cf_dDD = ixp.declarerank2("cf_dDD", "sym01")
+    global phi_dD # Needed for BSSN constraints, etc.
     phi_dD = ixp.zerorank1()
     phi_dupD = ixp.zerorank1()
     phi_dDD = ixp.zerorank2()
@@ -366,7 +373,9 @@ def BSSN_RHSs():
     # Step 9d: Define phi_dBarD = phi_dD (since phi is a scalar) and phi_dBarDD (covariant derivative)
     #          \bar{D}_i \bar{D}_j \phi = \phi_{;\bar{i}\bar{j}} = \bar{D}_i \phi_{,j}
     #                                   = \phi_{,ij} - \bar{\Gamma}^k_{ij} \phi_{,k}
+    global phi_dBarD # Needed for BSSN constraints, etc.
     phi_dBarD = phi_dD
+    global phi_dBarDD # Needed for BSSN constraints, etc.
     phi_dBarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
@@ -440,6 +449,7 @@ def BSSN_RHSs():
     for i in range(DIM):
         for j in range(DIM):
             trK_rhs += -exp_m4phi*gammabarUU[i][j]*(alpha_dBarDD[i][j] + 2*alpha_dBarD[j]*phi_dBarD[i]) # Term 4
+    global AbarUU # Needed for BSSN constraints, etc.
     AbarUU = ixp.zerorank2() # Needed also for \partial_t \bar{\Lambda}^i
     for i in range(DIM):
         for j in range(DIM):
