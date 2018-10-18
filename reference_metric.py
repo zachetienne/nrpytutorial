@@ -189,8 +189,8 @@ def reference_metric():
     
     elif CoordSystem == "Cartesian":
         xmin, xmax, ymin, ymax, zmin, zmax = par.Cparameters("REAL",thismodule,["xmin","xmax","ymin","ymax","zmin","zmax"])
-        xxmin = ["params.xmin", "params.ymin", "params.zmin"]
-        xxmax = ["params.xmax", "params.ymax", "params.zmax"]
+        xxmin = ["xmin", "ymin", "zmin"]
+        xxmax = ["xmax", "ymax", "zmax"]
     
         # xxhat = sp.Matrix([[sp.sympify(1), 0, 0],
         #                    [0, sp.sympify(1), 0],
