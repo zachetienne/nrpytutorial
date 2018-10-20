@@ -30,8 +30,8 @@ def BSSNConstraints():
     #         BSSNConstraints() after a BSSN_RHSs() call will result
     #         in a doubly-declared gridfunction error.
     BSSN_RHSs_has_been_called = False
-    for i in range(len(par.glb_params_list)):
-        if "BSSN_RHSs" in par.glb_params_list[i].module:
+    for i in range(len(gri.glb_gridfcs_list)):
+        if "hDD00" in gri.glb_gridfcs_list[i].name:
             BSSN_RHSs_has_been_called = True
     if BSSN_RHSs_has_been_called == False:
         bssnrhs.BSSN_RHSs()
