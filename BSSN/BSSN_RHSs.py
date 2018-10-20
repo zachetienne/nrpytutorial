@@ -41,7 +41,7 @@ def BSSN_RHSs():
     # Step 4a: Register indexed quantities, using ixp.register_... functions
     #RbarDD = ixp.register_gridfunctions_for_single_rank2("EVOL","RbarDD", "sym01")
     # Step 4b: Register scalar quantities, using gri.register_gridfunctions()
-    detgbar_over_detghat = gri.register_gridfunctions("AUX",["detgbar_over_detghat"])
+    detgbarOverdetghat = gri.register_gridfunctions("AUX",["detgbarOverdetghat"])
 
     # Step 5a: Define \varepsilon_{ij} = epsDD[i][j]
     epsDD = ixp.zerorank3()
@@ -262,21 +262,21 @@ def BSSN_RHSs():
 
     # Step 8d: Define detgammabar, detgammabar_dD, and detgammabar_dDD (needed for \partial_t \bar{\Lambda}^i below)
     global detgammabar # Needed for BSSN constraints, etc.
-    detgammabar = detgbar_over_detghat * rfm.detgammahat
+    detgammabar = detgbarOverdetghat * rfm.detgammahat
     global detgammabar_dD # Needed for BSSN constraints, etc.
     detgammabar_dD = ixp.zerorank1()
-    detgbar_over_detghat_dD = ixp.declarerank1("detgbar_over_detghat_dD")
+    detgbarOverdetghat_dD = ixp.declarerank1("detgbarOverdetghat_dD")
     for i in range(DIM):
-        detgammabar_dD[i] = detgbar_over_detghat_dD[i] * rfm.detgammahat + detgbar_over_detghat * rfm.detgammahatdD[i]
+        detgammabar_dD[i] = detgbarOverdetghat_dD[i] * rfm.detgammahat + detgbarOverdetghat * rfm.detgammahatdD[i]
 
     detgammabar_dDD = ixp.zerorank2()
-    detgbar_over_detghat_dDD = ixp.declarerank2("detgbar_over_detghat_dDD", "sym01")
+    detgbarOverdetghat_dDD = ixp.declarerank2("detgbarOverdetghat_dDD", "sym01")
     for i in range(DIM):
         for j in range(DIM):
-            detgammabar_dDD[i][j] = detgbar_over_detghat_dDD[i][j] * rfm.detgammahat + \
-                                    detgbar_over_detghat_dD[i] * rfm.detgammahatdD[j] + \
-                                    detgbar_over_detghat_dD[j] * rfm.detgammahatdD[i] + \
-                                    detgbar_over_detghat * rfm.detgammahatdDD[i][j]
+            detgammabar_dDD[i][j] = detgbarOverdetghat_dDD[i][j] * rfm.detgammahat + \
+                                    detgbarOverdetghat_dD[i] * rfm.detgammahatdD[j] + \
+                                    detgbarOverdetghat_dD[j] * rfm.detgammahatdD[i] + \
+                                    detgbarOverdetghat * rfm.detgammahatdDD[i][j]
 
     # Step 8e: Compute the contraction \bar{D}_k \beta^k = \beta^k_{,k} + \frac{\beta^k \bar{\gamma}_{,k}}{2 \bar{\gamma}}
     Dbarbetacontraction = sp.sympify(0)

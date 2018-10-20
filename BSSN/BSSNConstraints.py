@@ -25,8 +25,16 @@ from outputC import *
 import BSSN.BSSN_RHSs as bssnrhs
 
 def BSSNConstraints():
-    # Step 2: Call BSSN_RHSs() to load needed quantities
-    bssnrhs.BSSN_RHSs()
+    # Step 2: Call BSSN_RHSs() to load needed quantities, but only
+    #         if it has not already been called; calling
+    #         BSSNConstraints() after a BSSN_RHSs() call will result
+    #         in a doubly-declared gridfunction error.
+    BSSN_RHSs_has_been_called = False
+    for i in range(len(par.glb_params_list)):
+        if "BSSN_RHSs" in par.glb_params_list[i].module:
+            BSSN_RHSs_has_been_called = True
+    if BSSN_RHSs_has_been_called == False:
+        bssnrhs.BSSN_RHSs()
 
     # Step 3: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
