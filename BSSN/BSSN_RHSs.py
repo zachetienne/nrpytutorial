@@ -16,6 +16,7 @@ from outputC import *
 # Step P2: Initialize BSSN_RHS parameters
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "ConformalFactor", "W"))
+par.initialize_param(par.glb_param("bool", thismodule, "detgbarOverdetghat_equals_one", "True"))
 
 def BSSN_RHSs():
     # Step 1: Set up reference metric
@@ -41,7 +42,13 @@ def BSSN_RHSs():
     # Step 4a: Register indexed quantities, using ixp.register_... functions
     #RbarDD = ixp.register_gridfunctions_for_single_rank2("EVOL","RbarDD", "sym01")
     # Step 4b: Register scalar quantities, using gri.register_gridfunctions()
-    detgbarOverdetghat = gri.register_gridfunctions("AUX",["detgbarOverdetghat"])
+    if par.parval_from_str("BSSN.BSSN_RHSs::detgbarOverdetghat_equals_one") == "False":
+        detgbarOverdetghat = gri.register_gridfunctions("AUX", ["detgbarOverdetghat"])
+        detgbarOverdetghatInitial = gri.register_gridfunctions("AUX", ["detgbarOverdetghatInitial"])
+        print("Error: detgbarOverdetghat_equals_one=\"False\" is not fully implemented yet.")
+        exit(1)
+    else:
+        detgbarOverdetghat = sp.sympify(1)
 
     # Step 5a: Define \varepsilon_{ij} = epsDD[i][j]
     epsDD = ixp.zerorank3()
@@ -265,12 +272,19 @@ def BSSN_RHSs():
     detgammabar = detgbarOverdetghat * rfm.detgammahat
     global detgammabar_dD # Needed for BSSN constraints, etc.
     detgammabar_dD = ixp.zerorank1()
-    detgbarOverdetghat_dD = ixp.declarerank1("detgbarOverdetghat_dD")
+    if par.parval_from_str("BSSN.BSSN_RHSs::detgbarOverdetghat_equals_one") == "False":
+        detgbarOverdetghat_dD = ixp.declarerank1("detgbarOverdetghat_dD")
+    else:
+        detgbarOverdetghat_dD = ixp.zerorank1()
     for i in range(DIM):
         detgammabar_dD[i] = detgbarOverdetghat_dD[i] * rfm.detgammahat + detgbarOverdetghat * rfm.detgammahatdD[i]
 
     detgammabar_dDD = ixp.zerorank2()
-    detgbarOverdetghat_dDD = ixp.declarerank2("detgbarOverdetghat_dDD", "sym01")
+    if par.parval_from_str("BSSN.BSSN_RHSs::detgbarOverdetghat_equals_one") == "False":
+        detgbarOverdetghat_dDD = ixp.declarerank2("detgbarOverdetghat_dDD", "sym01")
+    else:
+        detgbarOverdetghat_dDD = ixp.zerorank2()
+
     for i in range(DIM):
         for j in range(DIM):
             detgammabar_dDD[i][j] = detgbarOverdetghat_dDD[i][j] * rfm.detgammahat + \
