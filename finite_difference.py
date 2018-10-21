@@ -349,7 +349,7 @@ def FD_outputC(filename,sympyexpr_list, params=""):
         Ccodesplit = Ccode.splitlines()
         outstring = ""
         for i in range(len(Ccodesplit)):
-            outstring += indent+Ccodesplit[i]+'\n'
+            outstring += outCparams.preindent+indent+Ccodesplit[i]+'\n'
         return outstring
     
     # Step 5a: Read gridfunctions from memory at needed pts.
@@ -423,7 +423,7 @@ def FD_outputC(filename,sympyexpr_list, params=""):
     if outCparams.SIMD_enable == "True":
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
-    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",includebraces=False", prestring="",poststring=write_to_mem_string))
+    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
     
     # Step 6: Reset outCparams.includebraces to the value 
     #         set outside this function. See Step 0.b

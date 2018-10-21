@@ -81,13 +81,13 @@ def parse_outCparams_string(params):
                 value[i] = "True"
             if value[i] == "false":
                 value[i] = "False"
-            
             if parnm[i] == "preindent":
                 if not value[i].isdigit():
                     print("Error: preindent must be set to an integer (corresponding to the number of tab stops). ")
                     print(value[i]+" is not an integer.")
                     exit(1)
                 preindent = ""
+                print("preindent = "+str(value[i])+"\n")
                 for i in range(int(value[i])):
                     preindent += "   "
             elif parnm[i] == "includebraces":
@@ -119,7 +119,8 @@ import sympy as sp
 # Output: C code, as a string.
 def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", prestring = "", poststring = ""):
     outCparams = parse_outCparams_string(params)
-
+    preindent = outCparams.preindent
+    print("preindent = \""+preindent+"\"")
     TYPE = par.parval_from_str("PRECISION")
 
     # Step 0: Initialize
@@ -165,18 +166,18 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     # Step 3: If outCparams.verbose = True, then output the original SymPy
     #         expression(s) in code comments prior to actual C code
     if outCparams.outCverbose == "True":
-        commentblock += "/*\n *  Original SymPy expression"
+        commentblock += preindent+"/*\n *  Original SymPy expression"
         if len(output_varname_str)>1:
             commentblock += "s"
         commentblock += ":\n"
         for i in range(len(output_varname_str)):
             if i==0:
                 if len(output_varname_str)!=1:
-                    commentblock += " *  \"["
+                    commentblock += preindent+" *  \"["
                 else:
-                    commentblock += " *  \""
+                    commentblock += preindent+" *  \""
             else:
-                commentblock += " *    "
+                commentblock += preindent+" *    "
             commentblock += output_varname_str[i] + " = " + str(sympyexpr[i])
             if i==len(output_varname_str)-1:
                 if len(output_varname_str)!=1:
@@ -185,7 +186,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                     commentblock += "\"\n"
             else:
                 commentblock += ",\n"
-        commentblock += " */\n"
+        commentblock += preindent+" */\n"
 
     # Step 4: Add proper indentation of C code:
     if outCparams.includebraces == "True":
