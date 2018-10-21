@@ -28,6 +28,7 @@ def BSSN_RHSs():
 
     # Step 3: Register all needed *evolved* gridfunctions.
     # Step 3a: Register indexed quantities, using ixp.register_... functions
+    global hDD # Needed for setting detgammabar = detgammahat constraint, etc.
     hDD = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD", "sym01")
     global aDD # Needed for BSSN constraints, etc.
     aDD = ixp.register_gridfunctions_for_single_rank2("EVOL","aDD", "sym01")
