@@ -87,7 +87,6 @@ def parse_outCparams_string(params):
                     print(value[i]+" is not an integer.")
                     exit(1)
                 preindent = ""
-                print("preindent = "+str(value[i])+"\n")
                 for i in range(int(value[i])):
                     preindent += "   "
             elif parnm[i] == "includebraces":
@@ -120,7 +119,6 @@ import sympy as sp
 def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", prestring = "", poststring = ""):
     outCparams = parse_outCparams_string(params)
     preindent = outCparams.preindent
-    print("preindent = \""+preindent+"\"")
     TYPE = par.parval_from_str("PRECISION")
 
     # Step 0: Initialize
