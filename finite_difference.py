@@ -38,9 +38,10 @@ def FD_outputC(filename,sympyexpr_list, params=""):
     # To get around this issue, we create braces around the entire
     #     string of C output from this function, only if 
     #     outCparams.includebraces==True.
+    # See Step 6 for corresponding end brace.
     if outCparams.includebraces == "True":
-        Coutput = "{\n"
-        indent = "    "
+        Coutput = outCparams.preindent+"{\n"
+        indent = "   "
     else:
         Coutput = ""
         indent = ""
@@ -405,7 +406,7 @@ def FD_outputC(filename,sympyexpr_list, params=""):
         Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FD,includebraces=False",
                                         prestring=read_from_memory_Ccode))
 
-    Coutput += indent_Ccode("/* \n * Step 2 of 2: Evaluate SymPy expressions and write to main memory:\n */\n")
+    Coutput += indent_Ccode("\n/* \n * Step 2 of 2: Evaluate SymPy expressions and write to main memory:\n */\n")
     # Step 5b.ii: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
     exprs       = []
@@ -425,11 +426,10 @@ def FD_outputC(filename,sympyexpr_list, params=""):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
     Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
     
-    # Step 6: Reset outCparams.includebraces to the value 
-    #         set outside this function. See Step 0.b
-    #         for more details.
+    # Step 6: Add consistent indentation to the output end brace. 
+    #         See Step 0.b for corresponding start brace.
     if outCparams.includebraces == "True":
-        Coutput += "}\n"
+        Coutput += outCparams.preindent+"}\n"
 
     # Step 7: Output the C code in desired format: stdout, string, or file.
     if filename == "stdout":
