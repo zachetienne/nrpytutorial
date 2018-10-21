@@ -36,8 +36,8 @@ def reference_metric():
         # Assuming the spherical radial & theta coordinates
         #   are positive makes nice simplifications of
         #   unit vectors possible.
-        xx[0] = sp.symbols("xx0", positive=True)
-        xx[1] = sp.symbols("xx1", positive=True)
+        xx[0] = sp.symbols("xx0", real=True)
+        xx[1] = sp.symbols("xx1", real=True)
 
         r  = xx[0]
         th = xx[1]
@@ -100,7 +100,7 @@ def reference_metric():
         # Assuming the cylindrical radial coordinate
         #   is positive makes nice simplifications of
         #   unit vectors possible.
-        xx[0] = sp.symbols("xx0", positive=True)
+        xx[0] = sp.symbols("xx0", real=True)
 
         RHOCYL = xx[0]
         PHICYL = xx[1]
@@ -148,13 +148,13 @@ def reference_metric():
         scalefactor_orthog[2] = sp.diff(ZCYL,xx[2])
     
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
-        var1, var2= sp.symbols('var1 var2',positive=True)
+        var1, var2= sp.symbols('var1 var2',real=True)
         bScale, AW, AA, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,["bScale","AW","AA","AMAX","RHOMAX","ZMIN","ZMAX"])
 
         # Assuming xx0, xx1, and bScale
         #   are positive makes nice simplifications of
         #   unit vectors possible.
-        xx[0],xx[1],bScale = sp.symbols("xx0 xx1 bScale", positive=True)
+        xx[0],xx[1],bScale = sp.symbols("xx0 xx1 bScale", real=True)
 
         xxmin = ["0.0","0.0","0.0"]
         xxmax = ["params.AMAX","M_PI","2.0*M_PI"]
