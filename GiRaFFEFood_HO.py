@@ -13,9 +13,12 @@
 # (the unspecified components are set to 0). Here, $C_0$ is a constant set to $1$ in our simulations. Now, to use this initial data scheme, we need to transform it into the quantities actually tracked by $\giraffe$ and HydroBase: $A_i$, $B^i$, $S_i$, $v^i$, and $\Phi$. This can be done with eqs. 14, 16, and 18, here given in that same order:
 # \begin{align}
 # S_\mu &= -n_\nu T^\nu_{{\rm EM} \mu} \\
-# v^i &= 4 \pi \alpha \frac{\gamma^{ij} \tilde{S}_j}{\sqrt{\gamma} B^2} - \beta^i \\
+# v^i &= \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i \\
 # B^i &= \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k \\
 # \end{align}
+# -Is this a circular dependency? $\tilde{S}_\mu$ depends on $T^\nu_{{\rm EM} \mu}$ which depends on the velocity, but the velocity depends on $\tilde{S}_\mu$.
+# 
+# **Zach says:** Check out lines 98-131 in the [original GiRaFFEfood implementation of ExactWald](https://bitbucket.org/zach_etienne/wvuthorns/src/62866e19058cd2477ee88d3a7fb259d5cfc2781a/GiRaFFEfood/src/ExactWald.cc?at=master&fileviewer=file-view-default). You will see that only $A_i$ and $v^i=u^i/u^0$ (not the Valencia 3-velocity that we must specify) are set. Then in the [ID\_Converter\_GiRaFFE](https://bitbucket.org/zach_etienne/wvuthorns/src/62866e19058cd2477ee88d3a7fb259d5cfc2781a/ID_converter_GiRaFFE/src/set_GiRaFFE_metric_GRMHD_variables_based_on_HydroBase_and_ADMBase_variables.C?at=master&fileviewer=file-view-default), $B^i$ and $\tilde{S}_i$ are set based on these quantities. I think that we should have in our version of GiRaFFE a function that computes $\tilde{S}_i$ from $B^i$, $v^i$, and metric quantities.
 
 
 # Step 0: Import the NRPy+ core modules and set the reference metric to Cartesian
@@ -41,8 +44,8 @@ def GiRaFFEFood_HO():
     par.initialize_param(par.glb_param("char", thismodule, "IDchoice", "Exact_Wald"))
 
     # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
-    M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole
     global StildeD,ValenciavU,BU
+    M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole
     StildeD = ixp.register_gridfunctions_for_single_rank1("AUX","StildeD")
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU")
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU")
@@ -53,7 +56,7 @@ def GiRaFFEFood_HO():
     # A_{\phi} &= \frac{C_0}{2} r^2 \sin^2 \theta \\
     # E_{\phi} &= 2 M C_0 \left( 1+ \frac {2M}{r} \right)^{-1/2} \sin^2 \theta \\
     # \end{align}
-    # 
+    # While we have $E_i$ set as a variable in NRPy+, note that the final C code won't store these values.
 
 
     # Step 2: Set the vectors A and E in Spherical coordinates
@@ -93,7 +96,7 @@ def GiRaFFEFood_HO():
             ED[i] = drrefmetric__dx_0UDmatrix[(j,i)]*EsphD[j]
 
 
-    # Now that we have the vector potential and electric fields that we need, we will turn our attention to what other quantities we might need for eqs. 14, 16, and 18 from the [$\giraffe$ paper](https://arxiv.org/pdf/1704.00599.pdf). We will need the metric quantites: the lapse $\alpha$, the shift $\beta^i$, and the three-metric $\gamma_{ij}$. We will also need the stress energy tensor $$T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.$$ Note that $T^{\mu \nu}_{\rm EM}$ is in terms of $b^\mu$ and $u^\mu$, provided by $\text{u0_smallb_Poynting__Cartesian}$. We will also need the Levi-Civita symbol, provided by $\text{WeylScal4NRPy}$. 
+    # We will now find the magnetic field $$B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k. $$ We will need the metric quantites: the lapse $\alpha$, the shift $\beta^i$, and the three-metric $\gamma_{ij}$. We will also need the Levi-Civita symbol, provided by $\text{WeylScal4NRPy}$. 
 
 
     #Step 4: Register the basic spacetime quantities
@@ -111,6 +114,21 @@ def GiRaFFEFood_HO():
                 LCijk = LeviCivitaDDD[i][j][k]
                 LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gammadet)
                 LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
+
+    AD_dD = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            AD_dD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
+
+    BU = ixp.zerorank1()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
+
+
+    # Now that we have the vector potential and electric fields that we need, we will turn our attention to what other quantities we might need for eqs. 14, 16, and 18 from the [$\giraffe$ paper](https://arxiv.org/pdf/1704.00599.pdf).  We will also need the stress energy tensor $$T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.$$ Note that $T^{\mu \nu}_{\rm EM}$ is in terms of $b^\mu$ and $u^\mu$, provided by $\text{u0_smallb_Poynting__Cartesian}$. 
+
 
     # Step 5: Construct the Stress-Energy tensor
     # For TEMUU, we can reuse our code from GiRaFFE_HO.
@@ -174,7 +192,8 @@ def GiRaFFEFood_HO():
             StildeD[i] += -gammadet * nD[j] * TEMUD[j][i]
 
 
-    # We will now build the drift velocity $$v^i = 4 \pi \alpha \frac{\gamma^{ij} \tilde{S}_j}{\sqrt{\gamma} B^2} - \beta^i$$. Then, we will need to transform it to the Valencia 3-velocity using the rule $\bar{v}^i = \frac{1}{\alpha} \left(v^i +\beta^i \right)$.
+    # We will now build the drift velocity $$ v^i = \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i. $$ Then, we will need to transform it to the Valencia 3-velocity using the rule $\bar{v}^i = \frac{1}{\alpha} \left(v^i +\beta^i \right)$.
+    # 
 
 
     # B^2 is an inner product defined in the usual way:
@@ -183,23 +202,17 @@ def GiRaFFEFood_HO():
         for j in range(DIM):
             B2 += gammaDD[i][j] * BU[i] * BU[j]
 
+    BD = ixp.zerorank1()
+    for i in range(DIM):
+        for j in range(DIM):
+            BD[i] = gammaDD[i][j] * BU[j]
+
     driftvU = ixp.zerorank1()
     for i in range(DIM):
         driftvU[i] = -betaU[i]
         for j in range(DIM):
-            driftvU[i] += 4*M_PI*alpha*gammaUU[i][j]*StildeD[j]/gammadet/B2
+            driftvU[i] += alpha*LeviCivitaUUU[i][j][k]*ED[j]*BD[k]/B2
 
     for i in range(DIM):
         ValenciavU[i] = (driftvU[i] + betaU[i])/alpha
-
-
-    # We will now find the magnetic field $$B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k$$
-
-
-    AD_dD = ixp.declarerank2("AD_dD","nosym")
-    BU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
 
