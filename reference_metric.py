@@ -134,11 +134,7 @@ def reference_metric():
     
             xxmin = ["0.0","0.0","-1.0"]
             xxmax = ["1.0","2.0*M_PI","1.0"]
-    
-        # xxhat = sp.Matrix([[ sp.cos(PHICYL), sp.sin(PHICYL), 0],
-        #                    [-sp.sin(PHICYL), sp.cos(PHICYL), 0],
-        #                    [0,               0,              1]])
-    
+
         xxCart[0] = RHOCYL*sp.cos(PHICYL)
         xxCart[1] = RHOCYL*sp.sin(PHICYL)
         xxCart[2] = ZCYL
@@ -179,10 +175,6 @@ def reference_metric():
         RHOSYMTP = AA*sp.sin(xx[1])
         PHSYMTP = xx[2]
         ZSYMTP = var2*sp.cos(xx[1])
-    
-        # xxhat = sp.Matrix([[sp.sin(xx[1]) * sp.cos(xx[2]) * var2 / var1, sp.sin(xx[1]) * sp.sin(xx[2]) * var2 / var1, AA * sp.cos(xx[1]) / var1],
-        #                    [AA * sp.cos(xx[1]) * sp.cos(xx[2]) / var1,   AA * sp.cos(xx[1]) * sp.sin(xx[2]) / var1,  -sp.sin(xx[1]) * var2 / var1],
-        #                    [-sp.sin(xx[2]),                           sp.cos(xx[2]),                            0                       ]])
     
         xxCart[0] = AA  *sp.sin(xx[1])*sp.cos(xx[2])
         xxCart[1] = AA  *sp.sin(xx[1])*sp.sin(xx[2])
