@@ -29,7 +29,10 @@ scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 
 def reference_metric():
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
-    
+
+    global UnitVectors
+    UnitVectors = ixp.zerorank2(3)
+
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
         M_PI = par.Cparameters("REAL",thismodule,"M_PI")
@@ -78,10 +81,6 @@ def reference_metric():
                 Cart_to_xx[1] = "NewtonRaphson" #sp.acos(Cartz / Cart_to_xx[0])
                 Cart_to_xx[2] = sp.atan2(Carty, Cartx)
 
-        # xxhat = sp.Matrix([[sp.sin(xxSph[1])*sp.cos(xxSph[2]), sp.sin(xxSph[1])*sp.sin(xxSph[2]), sp.cos(xxSph[1])],
-        #                    [sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]),-sp.sin(xxSph[1])],
-        #                    [-sp.sin(xxSph[2]),           sp.cos(xxSph[2]),            0         ]])
-
         xxSph[0] = r
         xxSph[1] = th
         xxSph[2] = ph
@@ -96,6 +95,11 @@ def reference_metric():
         scalefactor_orthog[1] = xxSph[0]
         scalefactor_orthog[2] = xxSph[0]*sp.sin(xxSph[1])
 
+        # Set the unit vectors
+        UnitVectors = [[ sp.sin(xxSph[1])*sp.cos(xxSph[2]), sp.sin(xxSph[1])*sp.sin(xxSph[2]),  sp.cos(xxSph[1])],
+                       [ sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]), -sp.sin(xxSph[1])],
+                       [                 -sp.sin(xxSph[2]),                  sp.cos(xxSph[2]),  sp.sympify(0)   ]]
+        
     elif CoordSystem == "Cylindrical" or CoordSystem == "SinhCylindrical" or CoordSystem == "SinhCylindricalv2":
         # Assuming the cylindrical radial coordinate
         #   is positive makes nice simplifications of
@@ -146,7 +150,12 @@ def reference_metric():
         scalefactor_orthog[0] = sp.diff(RHOCYL,xx[0])
         scalefactor_orthog[1] = RHOCYL
         scalefactor_orthog[2] = sp.diff(ZCYL,xx[2])
-    
+
+        # Set the transpose of the matrix of unit vectors
+        UnitVectors = [[ sp.cos(PHICYL), sp.sin(PHICYL), sp.sympify(0)],
+                       [-sp.sin(PHICYL), sp.cos(PHICYL), sp.sympify(0)],
+                       [ sp.sympify(0),  sp.sympify(0),  sp.sympify(1)]]
+        
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
         var1, var2= sp.symbols('var1 var2',real=True)
         bScale, AW, AA, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,["bScale","AW","AA","AMAX","RHOMAX","ZMIN","ZMAX"])
@@ -186,15 +195,20 @@ def reference_metric():
         scalefactor_orthog[0] = sp.diff(AA,xx[0]) * var1 / var2
         scalefactor_orthog[1] = var1
         scalefactor_orthog[2] = AA * sp.sin(xx[1])
-    
+
+        # Set the transpose of the matrix of unit vectors
+        UnitVectors = [[sp.sin(xx[1]) * sp.cos(xx[2]) * var2 / var1,
+                        sp.sin(xx[1]) * sp.sin(xx[2]) * var2 / var1,
+                        AA * sp.cos(xx[1]) / var1],
+                       [AA * sp.cos(xx[1]) * sp.cos(xx[2]) / var1,
+                        AA * sp.cos(xx[1]) * sp.sin(xx[2]) / var1,
+                            -sp.sin(xx[1]) * var2 / var1],
+                       [-sp.sin(xx[2]), sp.cos(xx[2]), 0]]
+
     elif CoordSystem == "Cartesian":
         xmin, xmax, ymin, ymax, zmin, zmax = par.Cparameters("REAL",thismodule,["xmin","xmax","ymin","ymax","zmin","zmax"])
         xxmin = ["xmin", "ymin", "zmin"]
         xxmax = ["xmax", "ymax", "zmax"]
-    
-        # xxhat = sp.Matrix([[sp.sympify(1), 0, 0],
-        #                    [0, sp.sympify(1), 0],
-        #                    [0, 0, sp.sympify(1)]])
     
         xxCart[0] = xx[0]
         xxCart[1] = xx[1]
@@ -207,10 +221,15 @@ def reference_metric():
         scalefactor_orthog[0] = sp.sympify(1)
         scalefactor_orthog[1] = sp.sympify(1)
         scalefactor_orthog[2] = sp.sympify(1)
+
+        # Set the transpose of the matrix of unit vectors
+        UnitVectors = [[sp.sympify(1), sp.sympify(0), sp.sympify(0)],
+                       [sp.sympify(0), sp.sympify(1), sp.sympify(0)],
+                       [sp.sympify(0), sp.sympify(0), sp.sympify(1)]]
     else:
         print("CoordSystem == " + CoordSystem + " is not supported.")
         exit(1)
-    
+
     # Finally, call ref_metric__hatted_quantities()
     #  to construct hatted metric, derivs of hatted
     #  metric, and Christoffel symbols
@@ -312,19 +331,6 @@ def ref_metric__hatted_quantities():
             for k in range(DIM):
                 for l in range(DIM):
                     GammahatUDDdD[i][j][k][l] = (sp.diff(GammahatUDD[i][j][k],xx[l]))
-
-def UnitVectors3D():
-    xxhats3D = ixp.zerorank2(3)
-    for i in range(3):
-        norm = 0
-        for j in range(3):
-            numer = sp.diff(xxCart[j],xx[i])
-            norm += numer**2
-            xxhats3D[i][j] = numer
-        norm = sp.simplify(sp.sqrt(sp.simplify(norm)))
-        for j in range(3):
-            xxhats3D[i][j] /= norm
-    return xxhats3D
 
 # Compute proper distance in all 3 directions. Used to find the appropriate timestep for the CFL condition.
 def ds_dirn(delxx):
