@@ -35,7 +35,7 @@ rfm.reference_metric()
 
 def GiRaFFEFood_HO():
     # Step 1a: Set commonly used parameters.
-    thismodule = __name__
+    thismodule = "GiRaFFEFood_HO"
     # Set the spatial dimension parameter to 3.
     par.set_parval_from_str("grid::DIM", 3)
     DIM = par.parval_from_str("grid::DIM")
@@ -44,14 +44,14 @@ def GiRaFFEFood_HO():
     par.initialize_param(par.glb_param("char", thismodule, "IDchoice", "Exact_Wald"))
 
     # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
-    global StildeD,ValenciavU,BU
-    M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole
+    M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
+    global StildeD,ValenciavU
     StildeD = ixp.register_gridfunctions_for_single_rank1("AUX","StildeD")
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU")
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU")
 
 
-    # We will first build the fundamental vectors $A_i$ and $E_i$ in spherical coordinates. Note that we use reference_metric.py to set $r$ and $\theta$ in terms of Cartesian coordinates.
+    # We will first build the fundamental vectors $A_i$ and $E_i$ in spherical coordinates. Note that we use reference_metric.py to set $r$ and $\theta$ in terms of Cartesian coordinates (see [Table 3](https://arxiv.org/pdf/1704.00599.pdf)).
     # \begin{align}
     # A_{\phi} &= \frac{C_0}{2} r^2 \sin^2 \theta \\
     # E_{\phi} &= 2 M C_0 \left( 1+ \frac {2M}{r} \right)^{-1/2} \sin^2 \theta \\
@@ -95,36 +95,11 @@ def GiRaFFEFood_HO():
             AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*AsphD[j]
             ED[i] = drrefmetric__dx_0UDmatrix[(j,i)]*EsphD[j]
 
-
-    # We will now find the magnetic field $$B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k. $$ We will need the metric quantites: the lapse $\alpha$, the shift $\beta^i$, and the three-metric $\gamma_{ij}$. We will also need the Levi-Civita symbol, provided by $\text{WeylScal4NRPy}$. 
-
-
     #Step 4: Register the basic spacetime quantities
     alpha   = gri.register_gridfunctions("AUX","alpha")
     betaU   = ixp.register_gridfunctions_for_single_rank1("AUX","betaU",DIM=3)
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
-
-    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
-    LeviCivitaUUU = ixp.zerorank3()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                LCijk = LeviCivitaDDD[i][j][k]
-                LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gammadet)
-                LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
-
-    AD_dD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            AD_dD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
-
-    BU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
 
 
     # Now that we have the vector potential and electric fields that we need, we will turn our attention to what other quantities we might need for eqs. 14, 16, and 18 from the [$\giraffe$ paper](https://arxiv.org/pdf/1704.00599.pdf).  We will also need the stress energy tensor $$T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.$$ Note that $T^{\mu \nu}_{\rm EM}$ is in terms of $b^\mu$ and $u^\mu$, provided by $\text{u0_smallb_Poynting__Cartesian}$. 
@@ -143,6 +118,7 @@ def GiRaFFEFood_HO():
             g4DD[mu][nu] = u0b.g4DD[mu][nu]
             g4UU[mu][nu] = u0b.g4UU[mu][nu]
 
+    # We will now pull in the components of the four velocity
     uD = ixp.register_gridfunctions_for_single_rank1("AUX","uD")
     uU = ixp.register_gridfunctions_for_single_rank1("AUX","uU")
 
@@ -151,6 +127,7 @@ def GiRaFFEFood_HO():
         uD[i] = u0b.uD[i]
         uU[i] = u0b.uU[i]
 
+    # We will now pull in smallb and related quantities
     smallbU = ixp.zerorank1(DIM=4)
     smallbD = ixp.zerorank1(DIM=4)
     for mu in range(4):
@@ -169,7 +146,7 @@ def GiRaFFEFood_HO():
             TEMUU[mu][nu] = smallb2*uU[mu-1]*uU[nu-1] + smallb2*g4UU[mu][nu]/2 - smallbU[mu]*smallbU[nu]
 
 
-    # We will now find the densitized Poynting flux given by $$S_\mu = -n_\nu T^\nu_{{\rm EM} \mu}$$ and $$\tilde{S}_i = \sqrt{\gamma} S_i, $$ where $n^\mu = (1/\alpha, -\beta^i/\alpha)$.
+    # We will now find the densitized Poynting flux given by equation 18 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), $$S_\mu = -n_\nu T^\nu_{{\rm EM} \mu}$$ and $$\tilde{S}_i = \sqrt{\gamma} S_i, $$ where $n^\mu = (1/\alpha, -\beta^i/\alpha)$.
     # 
 
 
@@ -192,7 +169,34 @@ def GiRaFFEFood_HO():
             StildeD[i] += -gammadet * nD[j] * TEMUD[j][i]
 
 
-    # We will now build the drift velocity $$ v^i = \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i. $$ Then, we will need to transform it to the Valencia 3-velocity using the rule $\bar{v}^i = \frac{1}{\alpha} \left(v^i +\beta^i \right)$.
+    # We will now find the magnetic field using equation 18 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf) $$B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k. $$ We will need the metric quantites: the lapse $\alpha$, the shift $\beta^i$, and the three-metric $\gamma_{ij}$. We will also need the Levi-Civita symbol, provided by $\text{WeylScal4NRPy}$. 
+
+
+    # Here, we build the Levi-Civita tensor from the Levi-Civita symbol.
+    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
+    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
+    LeviCivitaUUU = ixp.zerorank3()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                LCijk = LeviCivitaDDD[i][j][k]
+                LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gammadet)
+                LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
+
+    # For the initial data, we can analytically take the derivatives of A_i
+    AD_dD = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            AD_dD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
+
+    BU = ixp.zerorank1()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
+
+
+    # We will now build the drift velocity using equation 152 in [this paper,](https://arxiv.org/pdf/1310.3274v2.pdf) cited in the original $\giraffe$ code: $$ v^i = \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i. $$ Then, we will need to transform it to the Valencia 3-velocity using the rule $\bar{v}^i = \frac{1}{\alpha} \left(v^i +\beta^i \right)$.
     # 
 
 
@@ -202,6 +206,7 @@ def GiRaFFEFood_HO():
         for j in range(DIM):
             B2 += gammaDD[i][j] * BU[i] * BU[j]
 
+    # Lower the index on B^i
     BD = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
