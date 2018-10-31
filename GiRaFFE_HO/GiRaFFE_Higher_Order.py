@@ -440,6 +440,7 @@ def GiRaFFE_Higher_Order():
     
     global StildeD
     StildeD = ixp.register_gridfunctions_for_single_rank1("AUX","StildeD")
+    BU = ixp.declarerank1("BU") # Reset the values in BU so that the C code accesses the gridfunctions directly
     B2 = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):

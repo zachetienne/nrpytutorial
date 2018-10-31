@@ -45,7 +45,7 @@ def GiRaFFEFood_HO():
 
     # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
     M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
-    global StildeD,ValenciavU
+    global ValenciavU
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU")
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU")
 
