@@ -46,7 +46,6 @@ def GiRaFFEFood_HO():
     # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
     M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
     global StildeD,ValenciavU
-    StildeD = ixp.register_gridfunctions_for_single_rank1("AUX","StildeD")
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU")
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU")
 
@@ -100,73 +99,6 @@ def GiRaFFEFood_HO():
     betaU   = ixp.register_gridfunctions_for_single_rank1("AUX","betaU",DIM=3)
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
-
-
-    # Now that we have the vector potential and electric fields that we need, we will turn our attention to what other quantities we might need for eqs. 14, 16, and 18 from the [$\giraffe$ paper](https://arxiv.org/pdf/1704.00599.pdf).  We will also need the stress energy tensor $$T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.$$ Note that $T^{\mu \nu}_{\rm EM}$ is in terms of $b^\mu$ and $u^\mu$, provided by $\text{u0_smallb_Poynting__Cartesian}$. 
-
-
-    # Step 5: Construct the Stress-Energy tensor
-    # For TEMUU, we can reuse our code from GiRaFFE_HO.
-    import u0_smallb_Poynting__Cartesian.u0_smallb_Poynting__Cartesian as u0b
-    u0b.compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU)
-
-    # We will now pull in the four metric and its inverse.
-    g4DD = ixp.zerorank2(DIM=4)
-    g4UU = ixp.zerorank2(DIM=4)
-    for mu in range(4):
-        for nu in range(4):
-            g4DD[mu][nu] = u0b.g4DD[mu][nu]
-            g4UU[mu][nu] = u0b.g4UU[mu][nu]
-
-    # We will now pull in the components of the four velocity
-    uD = ixp.register_gridfunctions_for_single_rank1("AUX","uD")
-    uU = ixp.register_gridfunctions_for_single_rank1("AUX","uU")
-
-    u0 = u0b.u0
-    for i in range(DIM):
-        uD[i] = u0b.uD[i]
-        uU[i] = u0b.uU[i]
-
-    # We will now pull in smallb and related quantities
-    smallbU = ixp.zerorank1(DIM=4)
-    smallbD = ixp.zerorank1(DIM=4)
-    for mu in range(4):
-        smallbU[mu] = u0b.smallb4U[mu]
-        smallbD[mu] = u0b.smallb4D[mu]
-
-    smallb2 = u0b.smallb2
-
-    TEMUU = ixp.register_gridfunctions_for_single_rank2("AUX","TEMUU","sym01",DIM=4)
-
-    TEMUU[0][0] = smallb2*u0*u0 + smallb2*g4UU[0][0]/2 - smallbU[0]*smallbU[0]
-    for mu in range(1,4):
-        TEMUU[mu][0] = TEMUU[0][mu] = smallb2*uU[mu-1]*u0 + smallb2*g4UU[mu][0]/2 - smallbU[mu]*smallbU[0]
-    for mu in range(1,4):
-        for nu in range(1,4):
-            TEMUU[mu][nu] = smallb2*uU[mu-1]*uU[nu-1] + smallb2*g4UU[mu][nu]/2 - smallbU[mu]*smallbU[nu]
-
-
-    # We will now find the densitized Poynting flux given by equation 18 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), $$S_\mu = -n_\nu T^\nu_{{\rm EM} \mu}$$ and $$\tilde{S}_i = \sqrt{\gamma} S_i, $$ where $n^\mu = (1/\alpha, -\beta^i/\alpha)$.
-    # 
-
-
-    nU = ixp.zerorank1()
-    for i in range(DIM):
-        nU[i] = -betaU[i] / alpha # we only need the spatial components here.
-
-    # Next, we'll lower the index for both n and T
-    nD = ixp.zerorank1()
-    TEMUD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            nD[i] = gammaDD[i][j] * nU[j]
-            for k in range(DIM):
-                TEMUD[i][j] = gammaDD[j][k] * TEMUU[i+1][k+1]
-
-    for i in range(DIM):
-        StildeD[i] = sp.sympify(0)
-        for j in range(DIM):
-            StildeD[i] += -gammadet * nD[j] * TEMUD[j][i]
 
 
     # We will now find the magnetic field using equation 18 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf) $$B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k. $$ We will need the metric quantites: the lapse $\alpha$, the shift $\beta^i$, and the three-metric $\gamma_{ij}$. We will also need the Levi-Civita symbol, provided by $\text{WeylScal4NRPy}$. 

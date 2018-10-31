@@ -139,7 +139,7 @@ def GiRaFFE_Higher_Order():
 
     # Step 3c: Set the 00 components
     for chi in range(1,4):
-        g4DDdD[0][0][i] = -2*alpha*alpha_dD[chi-1]
+        g4DDdD[0][0][chi] = -2*alpha*alpha_dD[chi-1]
         for k in range(DIM):
             g4DDdD[0][0][chi] += betaU_dD[k][chi-1] * betaD[k] + betaU[k] * betaDdD[k][chi-1]
         for mu in range(1,4):
@@ -162,8 +162,8 @@ def GiRaFFE_Higher_Order():
 
     #u0 = par.Cparameters("REAL",thismodule,"u0")
     #u0 = gri.register_gridfunctions("AUX","u0")
+    global uD,uU
     uD = ixp.register_gridfunctions_for_single_rank1("AUX","uD")
-    global uU
     uU = ixp.register_gridfunctions_for_single_rank1("AUX","uU")
 
     u0 = u0b.u0
@@ -177,7 +177,7 @@ def GiRaFFE_Higher_Order():
     # b^0 &= \frac{1}{\sqrt{4\pi}} B^0_{\rm (u)} = \frac{u_j B^j}{\sqrt{4\pi}\alpha}, \\
     # b^i &= \frac{1}{\sqrt{4\pi}} B^i_{\rm (u)} = \frac{B^i + (u_j B^j) u^i}{\sqrt{4\pi}\alpha u^0}, \\
     # \end{align} and \begin{align}
-    # B^i &= \frac{\tilde{B}^i}{\gamma},
+    # B^i &= \frac{\tilde{B}^i}{\sqrt{\gamma}},
     # \end{align}
     # where $B^i$ is the variable tracked by the HydroBase thorn in the Einstein Toolkit. These have already been built by the u0_smallb_Poynting__Cartesian.py module, so we can simply import the variables.
 
@@ -208,7 +208,7 @@ def GiRaFFE_Higher_Order():
 
     # If we look at the evolution equation, we see that we will need spatial  derivatives of $T^{\mu\nu}_{\rm EM}$; we will now now take these derivatives, applying the chain rule until it is only in terms of basic gridfunctions: $\alpha$, $\beta^i$, $\gamma_{ij}$, $A_i$, and the Valencia 3-velocity, $v^i_{(n)}$. We will need the definitions of $\tilde{B}^i$ and $B^i$ in terms of $B^i$ and $A_i$:
     # \begin{align}
-    # \tilde{B}^i &= \gamma B^i \\
+    # \tilde{B}^i &= \sqrt{\gamma} B^i \\
     # B^i &= \epsilon^{ijk} \partial_j A_k \\
     # \end{align}
     # So then, 
@@ -223,11 +223,11 @@ def GiRaFFE_Higher_Order():
     # u^i_{,j} &= u^0_{,j} (\alpha v^i_{(n)} - \beta^i) + u^0 (\alpha_{,j} v^i_{(n)} + \alpha v^i_{(n),j} - \beta^i_{,j}) \\
     # u_{j,k} &= \alpha_{,k} u^0 \gamma_{ij} v^i_{(n)} + \alpha u^0_{,k} \gamma_{ij} v^i_{(n)} + \alpha u^0 \gamma_{ij,k} v^i_{(n)} + \alpha u^0 \gamma_{ij} v^i_{(n),k} \\
     # b^i_{,k} &= \frac{1}{\sqrt{4 \pi}} \frac{\alpha u^0 (B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}) - (B^i + u_j B^j u^i)(\alpha_{,k} u^0 + \alpha u^0_{,k})}{(\alpha u^0)^2} \\
-    # B^i_{,i} &= \frac{\gamma_{,i} \tilde{B}^i}{\gamma^2} \\
+    # B^i_{,i} &= -\frac{\gamma_{,i} \tilde{B}^i}{2\gamma} \\
     # B^i_{,l} &= \partial_l \left( \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k \right) = [ijk] \partial_l \left( \frac{1}{\sqrt{\gamma}}\right) \partial_j A_k + \frac{[ijk]}{\sqrt{\gamma}} \partial_l \partial_j A_k \\
     # &= [ijk]\left(-\frac{\gamma_{,l}}{2\gamma^{3/2}}\right) \partial_j A_k + \frac{[ijk]}{\sqrt{\gamma}} \partial_l \partial_j A_k \\
     # &= -\frac{\gamma_{,l}}{2\gamma} \epsilon^{ijk} \partial_j A_k + \epsilon^{ijk} \partial_l \partial_j A_k \\
-    # &= \frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, i \neq l, \\
+    # &= -\frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, i \neq l, \\
     # \end{align}
     # 
     # First, we will handle the derivatives of the velocity $u^i$ and its lowered form.
@@ -271,8 +271,8 @@ def GiRaFFE_Higher_Order():
     # Now, we will build the derivatives of the magnetic field. We will build one expression for the divergence of $b^i$, $b^i_{,i}$ (reducing to functions of $\tilde{B}^i$ (which is itself a function of $B^i$) since $\tilde{B}^i$ is divergenceless) and another for $b^i_{,l}$, reducing to functions of second derivatives of the vector potential $A_i$:
     # \begin{align}
     # b^i_{,k} &= \frac{1}{\sqrt{4 \pi}} \frac{\alpha u^0 (B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}) - (B^i + u_j B^j u^i)(\alpha_{,k} u^0 + \alpha u^0_{,k})}{(\alpha u^0)^2} \\
-    # B^i_{,i} &= -\frac{\gamma_{,i} \tilde{B}^i}{\gamma^2} = -\frac{\gamma_{,i} B^i}{\gamma} \\
-    # B^i_{,l} &= \frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, i \neq l, \\
+    # B^i_{,i} &= -\frac{\gamma_{,i} \tilde{B}^i}{\gamma^{3/2}} = -\frac{\gamma_{,i} B^i}{2\gamma} \\
+    # B^i_{,l} &= -\frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, i \neq l, \\
     # \end{align}
     # where $\epsilon_{ijk} = [ijk] \sqrt{\gamma}$ is the antisymmetric Levi-Civita tensor and $\gamma$ is the determinant of the three metric.
     # 
@@ -284,18 +284,17 @@ def GiRaFFE_Higher_Order():
     # since Btilde is what we choose to be divergenceless.
     divB = sp.sympify(0)
     for i in range(DIM):
-        divB += -gammadet_dD[i]*BU[i]/gammadet
+        divB += -gammadet_dD[i]*BU[i]/2/gammadet
 
     AD_dDD = ixp.declarerank3("AD_dDD","sym12")           
     # The other partial derivatives of B^i
     BU_dD = ixp.zerorank2()
     for i in range(DIM):
         for l in range(DIM):
-            BU_dD[i][l] = gammadet_dD[l]*BU[i]/(2*gammadet)
+            BU_dD[i][l] = -gammadet_dD[l]*BU[i]/(2*gammadet)
             for j in range(DIM):
                 for k in range(DIM):
                     BU_dD[i][l] += LeviCivitaUUU[i][j][k] * AD_dDD[k][j][l]
-
 
     # Now, we will code the derivatives of the spatial componenets of $b^{\mu}$, $b^i$.
     # $$
@@ -315,7 +314,8 @@ def GiRaFFE_Higher_Order():
         for k in range(DIM):
             smallbU_dD[i][k] += alphau0*BU_dD[i][k]-BU[i]*alphau0_dD[k]
             for j in range(DIM):
-                divb += alphau0*(uD_dD[j][k]*BU[j]*uU[i]+uD[j]*BU_dD[j][k]*uU[i]+uD[j]*BU[j]*uU_dD[i][k])                    -(uD[j]*BU[j]*uU[i])*alphau0_dD[k]
+                smallbU_dD[i][k] += alphau0*(uD_dD[j][k]*BU[j]*uU[i]+uD[j]*BU_dD[j][k]*uU[i]+uD[j]*BU[j]*uU_dD[i][k])\
+                                    -(uD[j]*BU[j]*uU[i])*alphau0_dD[k]
             smallbU_dD[i][k] /= sp.sqrt(4*M_PI) * alpha * u0 * alpha * u0
 
 
@@ -434,3 +434,17 @@ def GiRaFFE_Higher_Order():
     for j in range(DIM):
         psi6Phi_rhs += -PevolParenU_dD[j][j]
 
+
+    # We will now find the densitized Poynting flux given by equation 21 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), $$\tilde{S}_i = \gamma_{ij} \frac{(v^j+\beta^j)\sqrt{\gamma}B^2}{4 \pi \alpha}.$$ This is needed to set initial data for $\tilde{S}_i$. 
+    
+    
+    global StildeD
+    StildeD = ixp.register_gridfunctions_for_single_rank1("AUX","StildeD")
+    B2 = sp.sympify(0)
+    for i in range(DIM):
+        for j in range(DIM):
+            B2 += gammaDD[i][j] * BU[i] * BU[j]
+    for i in range(DIM):
+        StildeD[i] = 0
+        for j in range(DIM):
+            StildeD[i] += gammaDD[i][j] * (ValenciavU[j])*sp.sqrt(gammadet)*B2/4/M_PI
