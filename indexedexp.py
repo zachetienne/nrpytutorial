@@ -6,6 +6,9 @@ import NRPy_param_funcs as par
 import grid as gri
 import sympy as sp
 
+thismodule = __name__
+par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
+
 def zerorank1(DIM=-1):
     if DIM == -1:
         DIM = par.parval_from_str("DIM")
@@ -26,11 +29,77 @@ def zerorank4(DIM=-1):
         DIM = par.parval_from_str("DIM")
     return [[[[sp.sympify(0) for i in range(DIM)] for j in range(DIM)] for k in range(DIM)] for l in range(DIM)]
 
-def declarerank1(objname, DIM=-1, RegisterAsGridfunction=False):
+def apply_symmetry_condition_to_derivatives(IDX_OBJ):
+    symmetry_axes = par.parval_from_str("indexedexp::symmetry_axes")
+    if symmetry_axes == "":
+        return IDX_OBJ
+
+    rank = 1
+    if isinstance(IDX_OBJ[0], list):
+        if not isinstance(IDX_OBJ[0][0], list):
+            rank = 2
+        elif not isinstance(IDX_OBJ[0][0][0], list):
+            rank = 3
+        elif not isinstance(IDX_OBJ[0][0][0][0], list):
+            rank = 4
+        else:
+            print("Error: could not figure out rank for ",IDX_OBJ)
+            exit(1)
+
+    def does_IDXOBJ_perform_derivative_across_symmetry_axis(idxobj_str):
+        returnval = False
+        if "_d" in idxobj_str:
+            # First we find the order of the derivative:
+            deriv_order = 0
+            underscore_position = -1000
+            for i in range(len(idxobj_str)-1):
+                if idxobj_str[i] == "_" and idxobj_str[i+1]=="d":
+                    # The order of the derivative is given by the number of D's in a row after the _d:
+                    for k in range(i+2,len(idxobj_str)):
+                        if idxobj_str[k] == "D":
+                            deriv_order = deriv_order + 1
+            if deriv_order > 2:
+                print("Error. Derivative order > 2 not supported. Found derivative order = "+str(deriv_order))
+                exit(1)
+            end_idx_of_idxobj_str = len(idxobj_str)-1
+            for j in range(end_idx_of_idxobj_str,end_idx_of_idxobj_str-deriv_order,-1):
+                if idxobj_str[j] in symmetry_axes:
+                    return True
+        return False
+
+    if rank == 1:
+        DIM = len(IDX_OBJ)
+        for i0 in range(DIM):
+            if does_IDXOBJ_perform_derivative_across_symmetry_axis(str(IDX_OBJ[i0])) == True:
+                IDX_OBJ[i0] = sp.sympify(0)
+    if rank == 2:
+        DIM = len(IDX_OBJ[0])
+        for i0 in range(DIM):
+            for i1 in range(DIM):
+                if does_IDXOBJ_perform_derivative_across_symmetry_axis(str(IDX_OBJ[i0][i1])) == True:
+                    IDX_OBJ[i0][i1] = sp.sympify(0)
+    if rank == 3:
+        DIM = len(IDX_OBJ[0][0])
+        for i0 in range(DIM):
+            for i1 in range(DIM):
+                for i2 in range(DIM):
+                    if does_IDXOBJ_perform_derivative_across_symmetry_axis(str(IDX_OBJ[i0][i1][i2])) == True:
+                        IDX_OBJ[i0][i1][i2] = sp.sympify(0)
+    if rank == 4:
+        DIM = len(IDX_OBJ[0][0][0])
+        for i0 in range(DIM):
+            for i1 in range(DIM):
+                for i2 in range(DIM):
+                    for i3 in range(DIM):
+                        if does_IDXOBJ_perform_derivative_across_symmetry_axis(str(IDX_OBJ[i0][i1][i2][i3])) == True:
+                            IDX_OBJ[i0][i1][i2][i3] = sp.sympify(0)
+    return IDX_OBJ
+
+def declarerank1(objname, DIM=-1):
     if DIM==-1:
         DIM = par.parval_from_str("DIM")
     IDX_OBJ_TMP = [sp.sympify(objname + str(i)) for i in range(DIM)]
-    return IDX_OBJ_TMP
+    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     # Step 1: Declare a list of SymPy variables, 
@@ -65,7 +134,7 @@ def declarerank2(objname, symmetry_option, DIM=-1):
             else:
                 print("Error: symmetry option " + symmetry_option + " unsupported.")
                 exit(1)
-    return IDX_OBJ_TMP
+    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option, DIM=-1):
     # Step 1: Declare a list of lists of SymPy variables, 
@@ -108,7 +177,7 @@ def declarerank3(objname, symmetry_option, DIM=-1):
                 if not (symmetry_option == "sym01" or symmetry_option == "sym12" or symmetry_option == "nosym"):
                     print("Error: symmetry option " + symmetry_option + " unsupported.")
                     exit(1)
-    return IDX_OBJ_TMP
+    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 def declarerank4(objname, symmetry_option, DIM=-1):
     if DIM==-1:
@@ -131,7 +200,7 @@ def declarerank4(objname, symmetry_option, DIM=-1):
                     if not (symmetry_option=="sym01" or symmetry_option=="sym23" or symmetry_option=="sym01_sym23" or symmetry_option=="none"):
                         print("Error: symmetry option "+symmetry_option+" unsupported.")
                         exit(1)
-    return IDX_OBJ_TMP
+    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 
 # We use the following functions to evaluate 3-metric inverses
