@@ -16,6 +16,7 @@ from outputC import *
 # Step P2: Initialize BSSN_RHS parameters
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "ConformalFactor", "W"))
+par.initialize_param(par.glb_param("char", thismodule, "ShiftEvolutionOption", "GammaDriving2ndOrder_NoCovariant"))
 par.initialize_param(par.glb_param("bool", thismodule, "detgbarOverdetghat_equals_one", "True"))
 
 def BSSN_RHSs():
@@ -581,45 +582,112 @@ def BSSN_RHSs():
     for i in range(DIM):
         alpha_rhs += betaU[i]*alpha_dupD[i]
 
-    # Step 14: \partial_t \beta^i = \beta^j \beta^i_{,j} + B^i
+    # Step 14: Set \partial_t \beta^i
     beta_rhsU = ixp.zerorank1()
+    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
+        # Step 14 Option 1: \partial_t \beta^i = \beta^j \beta^i_{,j} + B^i
+        # First define BU, in terms of rescaled variable \bet^i
+        BU = ixp.zerorank1()
+        for i in range(DIM):
+            BU[i] = betU[i]*rfm.ReU[i]
 
-    # First define BU, in terms of rescaled variable \bet^i
-    BU = ixp.zerorank1()
-    for i in range(DIM):
-        BU[i] = betU[i]*rfm.ReU[i]
+        # Then compute right-hand side:
+        for i in range(DIM):
+            beta_rhsU[i] += BU[i]
+            for j in range(DIM):
+                beta_rhsU[i] += betaU[j]*betaU_dupD[i][j]
+    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+        # Step 14 Option 2: \partial_t \beta^i = \left[\beta^j \bar{D}_j \beta^i\right] + B^{i}
+        # First define BU, in terms of rescaled variable \bet^i
+        BU = ixp.zerorank1()
+        for i in range(DIM):
+            BU[i] = betU[i]*rfm.ReU[i]
 
-    # Then compute right-hand side:
-    for i in range(DIM):
-        beta_rhsU[i] += BU[i]
-        for j in range(DIM):
-            beta_rhsU[i] += betaU[j]*betaU_dupD[i][j]
+        # Then compute right-hand side:
+        # Term 1: \beta^j \beta^i_{,j}
+        for i in range(DIM):
+            for j in range(DIM):
+                beta_rhsU[i] += betaU[j]*betaU_dupD[i][j]
 
-    # Step 15: \partial_t B^i = \beta^j \partial_j B^i
-    #          + \frac{3}{4} \partial_{0} \bar{\Lambda}^{i} - \eta B^{i}
+        # Term 2: \beta^j \bar{\Gamma}^i_{mj} \beta^m
+        for i in range(DIM):
+            for j in range(DIM):
+                for m in range(DIM):
+                    beta_rhsU[i] += betaU[j]*GammabarUDD[i][m][j]*betaU[m]
+        # Term 3: B^i
+        for i in range(DIM):
+            beta_rhsU[i] += BU[i]
+        
+    # Step 15: Evaluate \partial_t B^i
 
-    # Step 15a: Define BU_dupD, in terms of derivative of rescaled variable \bet^i
-    BU_dupD = ixp.zerorank2()
-    betU_dupD = ixp.declarerank2("betU_dupD", "nosym")
-    for i in range(DIM):
-        for j in range(DIM):
-            BU_dupD[i][j] = betU_dupD[i][j] * rfm.ReU[i] + betU[i] * rfm.ReUdD[i][j]
-
-    # Step 15b: Compute \partial_0 \bar{\Lambda}^i = (\partial_t - \beta^i \partial_i) \bar{\Lambda}^j
-    Lambar_partial0 = ixp.zerorank1()
-    for i in range(DIM):
-        Lambar_partial0[i] = Lambar_rhsU[i]
-    for i in range(DIM):
-        for j in range(DIM):
-            Lambar_partial0[j] += -betaU[i] * LambarU_dupD[j][i]
-
-    # Step 15c: Evaluate RHS of B^i:
-    eta = par.Cparameters("REAL", thismodule, ["eta"])
+    # Step 15a: Declare free parameter eta and B_rhsU
+    eta = par.Cparameters("REAL",thismodule,["eta"])
     B_rhsU = ixp.zerorank1()
-    for i in range(DIM):
-        B_rhsU[i] += sp.Rational(3, 4) * Lambar_partial0[i] - eta * BU[i]
-        for j in range(DIM):
-            B_rhsU[i] += betaU[j] * BU_dupD[i][j]
+
+    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
+        # Step 15: Non-covariant option:
+        #  \partial_t B^i = \beta^j \partial_j B^i
+        #                 + \frac{3}{4} \partial_{0} \bar{\Lambda}^{i} - \eta B^{i}
+        # Step 15b: Define BU_dupD, in terms of derivative of rescaled variable \bet^i
+        BU_dupD = ixp.zerorank2()
+        betU_dupD = ixp.declarerank2("betU_dupD","nosym")
+        for i in range(DIM):
+            for j in range(DIM):
+                BU_dupD[i][j] = betU_dupD[i][j]*rfm.ReU[i] + betU[i]*rfm.ReUdD[i][j]
+
+        # Step 15c: Compute \partial_0 \bar{\Lambda}^i = (\partial_t - \beta^i \partial_i) \bar{\Lambda}^j 
+        Lambar_partial0 = ixp.zerorank1()
+        for i in range(DIM):
+            Lambar_partial0[i] = Lambar_rhsU[i]
+        for i in range(DIM):
+            for j in range(DIM):
+                Lambar_partial0[j] += -betaU[i]*LambarU_dupD[j][i]
+
+        # Step 15d: Evaluate RHS of B^i:
+        for i in range(DIM):
+            B_rhsU[i] += sp.Rational(3,4)*Lambar_partial0[i] - eta*BU[i]
+            for j in range(DIM):
+                B_rhsU[i] += betaU[j]*BU_dupD[i][j]
+
+    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+        # Step 15: Covariant option:
+        #  \partial_t B^i = \beta^j \bar{D}_j B^i
+        #               + \frac{3}{4} ( \partial_t \bar{\Lambda}^{i} - \beta^j \bar{D}_j \bar{\Lambda}^{i} ) 
+        #               - \eta B^{i}
+        #                 = \beta^j B^i_{,j} + \beta^j \bar{\Gamma}^i_{mj} B^m
+        #               + \frac{3}{4}[ \partial_t \bar{\Lambda}^{i} 
+        #                            - \beta^j (\bar{\Lambda}^i_{,j} + \bar{\Gamma}^i_{mj} \bar{\Lambda}^m)] 
+        #               - \eta B^{i}
+        # Term 1, part a: First compute B^i_{,j} using upwinded derivative
+        BU_dupD = ixp.zerorank2()
+        betU_dupD = ixp.declarerank2("betU_dupD","nosym")
+        for i in range(DIM):
+            for j in range(DIM):
+                BU_dupD[i][j] = betU_dupD[i][j]*rfm.ReU[i] + betU[i]*rfm.ReUdD[i][j]
+        # Term 1: \beta^j B^i_{,j}
+        for i in range(DIM):
+            for j in range(DIM):
+                B_rhsU[i] += betaU[j]*BU_dupD[i][j]
+        # Term 2: \beta^j \bar{\Gamma}^i_{mj} B^m
+        for i in range(DIM):
+            for j in range(DIM):
+                for m in range(DIM):
+                    B_rhsU[i] += betaU[j]*GammabarUDD[i][m][j]*BU[m]
+        # Term 3: \frac{3}{4}\partial_t \bar{\Lambda}^{i}
+        for i in range(DIM):
+            B_rhsU[i] += sp.Rational(3,4)*Lambar_rhsU[i]
+        # Term 4: -\frac{3}{4}\beta^j \bar{\Lambda}^i_{,j}
+        for i in range(DIM):
+            for j in range(DIM):
+                B_rhsU[i] += -sp.Rational(3,4)*betaU[j]*LambarU_dupD[i][j]
+        # Term 5: -\frac{3}{4}\beta^j \bar{\Gamma}^i_{mj} \bar{\Lambda}^m
+        for i in range(DIM):
+            for j in range(DIM):
+                for m in range(DIM):
+                    B_rhsU[i] += -sp.Rational(3,4)*betaU[j]*GammabarUDD[i][m][j]*LambarU[m]
+        # Term 6: - \eta B^i
+        for i in range(DIM):
+            B_rhsU[i] += -eta*BU[i]
 
     # Step 16: Rescale the RHS quantities so that the evolved
     #          variables are smooth across coord singularities
