@@ -16,7 +16,7 @@ modulename = __name__
 # Centered finite difference accuracy order
 par.initialize_param(par.glb_param("INT", modulename, "FD_CENTDERIVS_ORDER",  4))
 
-def FD_outputC(filename,sympyexpr_list, params=""):
+def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     outCparams = parse_outCparams_string(params)
 
     # Step 0.a:
@@ -46,7 +46,7 @@ def FD_outputC(filename,sympyexpr_list, params=""):
         Coutput = ""
         indent = ""
     
-    # Step 1:
+    # Step 1a:
     # Create a list of free symbols in the sympy expr list
     #     that are registered neither as gridfunctions nor
     #     as C parameters. These *must* be derivatives,
@@ -61,8 +61,18 @@ def FD_outputC(filename,sympyexpr_list, params=""):
                 #    neither as a gridfunction nor a Cparameter, then error out.
                 if ("_dD"   in str(var)) or \
                    ("_dKOD" in str(var)) or \
-                   ("_dupD" in str(var)) or \
-                   ("_ddnD" in str(var)):
+                   ("_dupD" in str(var)):
+                    if ("_dupD" in str(var)) and (upwindcontrolvec=="" or not isinstance(upwindcontrolvec,list)):
+                        print("Error: Variable "+str(var)+" implies an upwind derivative, but NRPy+'s upwinding")
+                        print("  algorithm requires that up or downwinding be with respect to some upwinding")
+                        print("  control variable, set as FD_outputC()'s fourth function argument")
+                        print("  Note that in BSSN, the shift vector betaU controls the upwinding.")
+                        print("  See https://arxiv.org/pdf/gr-qc/0206072.pdf for motivation and")
+                        print("  https://arxiv.org/pdf/gr-qc/0109032.pdf for implementation details,")
+                        print("  at second order. Note that the BSSN shift vector behaves like a *negative*")
+                        print("  velocity. See http://www.damtp.cam.ac.uk/user/naweb/ii/advection/advection.php")
+                        print("  for a very basic example motivating this choice.")
+                        exit(1)
                     pass
                 else:
                     print("Error: Unregistered variable \""+str(var)+"\" in SymPy expression")
@@ -75,6 +85,17 @@ def FD_outputC(filename,sympyexpr_list, params=""):
 #            elif vartype == "gridfunction":
 #                list_of_deriv_vars_with_duplicates.append(var)
     list_of_deriv_vars = superfast_uniq(list_of_deriv_vars_with_duplicates)
+
+    # Step 1b: For each variable with suffix _dupD, append to
+    #          the list_of_deriv_vars the corresponding _ddnD.
+    #          Both are required for proper upwinding. See
+    #          the above print() block for further documentation
+    #          on upwinding--both motivation and implementation
+    #          details.
+    for var in list_of_deriv_vars:
+        if "_dupD" in str(var):
+            list_of_deriv_vars.append(sp.sympify(str(var).replace("_dupD","_ddnD")))
+
     # Finally, sort the list_of_deriv_vars. This ensures
     #     consistency in the C code output, and might even be
     #     tuned to reduce cache misses.
@@ -160,6 +181,26 @@ def FD_outputC(filename,sympyexpr_list, params=""):
         if not found_derivID:
             print("Error: Valid derivative operator in "+deriv__operator[i]+" not found.")
             exit(1)
+
+    # Step 2d (Upwinded derivatives algorithm, part 1):
+    # Each upwinded derivative has an associated direction.
+    #     If a symmetry axis is specified, it is possible
+    #     that, e.g., upwind derivatives with respect to
+    #     two of the three dimensions are used. Here
+    #     we find all directions used for upwinding.
+    upwind_directions_unsorted_withdups = []
+    for deriv_op in deriv__operator:
+        if "dupD" in deriv_op:
+            if deriv_op[len(deriv_op)-1].isdigit():
+                dirn = int(deriv_op[len(deriv_op)-1])
+                upwind_directions_unsorted_withdups.append(dirn)
+            else:
+                print("Error: Derivative operator "+deriv_op+" does not contain a direction")
+                exit(1)
+    upwind_directions = []
+    if len(upwind_directions_unsorted_withdups)>0:
+        upwind_directions = superfast_uniq(upwind_directions_unsorted_withdups)
+        upwind_directions = sorted(upwind_directions,key=sp.default_sort_key)
 
     # Step 3:
     # Evaluate the finite difference stencil for each
@@ -308,12 +349,28 @@ def FD_outputC(filename,sympyexpr_list, params=""):
             retstring += "i"+str(i)+"+"+str(idx4[i])
         return retstring.replace("+-", "-").replace("+0", "")
 
-    def vartype():
+    def out__type_var(in_var,AddPrefix_for_UpDownWindVars=True):
+        varname = str(in_var)
+        if AddPrefix_for_UpDownWindVars:
+            if "_dupD" in varname:  # Variables suffixed with "_dupD" are set
+                #                    to be the "pure" upwinded derivative,
+                #                    before the upwinding algorithm has been
+                #                    applied. However, when they are used
+                #                    in the RHS expressions, it is assumed
+                #                    that the up. algorithm has been applied.
+                #                    To ensure consistency we rename all
+                #                    _dupD suffixed variables as
+                #                    _dupDPUREUPWIND, and use them as input
+                #                    into the upwinding algorithm. The output
+                #                    will be the original _dupD variable.
+                varname = "UpwindAlgInput"+varname
+            if "_ddnD" in varname: # For consistency with _dupD
+                varname = "UpwindAlgInput"+varname
         if outCparams.SIMD_enable == "True":
-            return "const REAL_SIMD_ARRAY "
+            return "const REAL_SIMD_ARRAY " + varname
         else:
             TYPE = par.parval_from_str("PRECISION")
-            return "const " + TYPE + " "
+            return "const "+ TYPE + " " + varname
 
     def varsuffix(idx4):
         if idx4 == [0,0,0,0]:
@@ -326,9 +383,9 @@ def FD_outputC(filename,sympyexpr_list, params=""):
         #gfaccess_str = gri.gfaccess("in_gfs",gfname.upper()+"GF",ijkl_string(idx4))
         gfaccess_str = gri.gfaccess("in_gfs",gfname,ijkl_string(idx4))
         if outCparams.SIMD_enable == "True":
-            retstring = vartype() + gfname + varsuffix(idx4) +" = ReadSIMD(&" + gfaccess_str + ");"
+            retstring = out__type_var(gfname) + varsuffix(idx4) +" = ReadSIMD(&" + gfaccess_str + ");"
         else:
-            retstring = vartype() + gfname + varsuffix(idx4) +" = " + gfaccess_str + ";"
+            retstring = out__type_var(gfname) + varsuffix(idx4) +" = " + gfaccess_str + ";"
         return retstring+"\n"
 
     read_from_memory_Ccode = ""
@@ -368,13 +425,13 @@ def FD_outputC(filename,sympyexpr_list, params=""):
     #          ii) Input expressions sympyexpr_list[], which
     #              in general depend on finite difference
     #              variables.
-    exprs    = [sp.sympify(0) for i in range(len(list_of_deriv_vars))]
-    lhsvarnames = ["" for i in range(len(list_of_deriv_vars))]
+    exprs       = []
+    lhsvarnames = []
     # Step 5b.i: Output finite difference expressions to
     #            Coutput string
     for i in range(len(list_of_deriv_vars)):
-        exprs[i]    = sp.sympify(0)
-        lhsvarnames[i] = vartype()+str(list_of_deriv_vars[i])
+        exprs.append(sp.sympify(0)) # Append a new element to the list of derivative expressions.
+        lhsvarnames.append(out__type_var(list_of_deriv_vars[i]))
         var = deriv__base_gridfunction_name[i]
         for j in range(len(fdcoeffs[i])):
             varname = str(var)+varsuffix(fdstencl[i][j])
@@ -399,16 +456,65 @@ def FD_outputC(filename,sympyexpr_list, params=""):
         else:
             print("Error: was unable to parse derivative operator: ",deriv__operator[i])
             exit(1)
-    Coutput += indent_Ccode("/* \n * Step 1 of 2: Read from main memory and compute finite difference stencils (if any):\n */\n")
+    # Step 5b.ii: Add upwind control vectors to the
+    #             derivative expression list
+    for i in range(len(upwind_directions)):
+        exprs.append(upwindcontrolvec[upwind_directions[i]])
+        lhsvarnames.append(out__type_var("UpwindControlVectorU"+str(upwind_directions[i])))
+
+    # Step 5b.iii: Output useful code comment regarding
+    #              which step we are on. *At most* this
+    #              is a 3-step process:
+    #           1. Read from memory & compute FD stencils,
+    #           2. Perform upwinding, and
+    #           3. Evaluate remaining expressions+write
+    #              results to main memory.
+    NRPy_FD_StepNumber = 1
+    NRPy_FD__Number_of_Steps = 1
+    if len(list_of_deriv_vars) > 0:
+        NRPy_FD__Number_of_Steps += 1
+    if len(upwind_directions) > 0:
+        NRPy_FD__Number_of_Steps += 1
+
     if len(read_from_memory_Ccode) > 0:
+        Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+                                + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps)+
+                                ": Read from main memory and compute finite difference stencils:\n */\n")
+        NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
         default_CSE_varprefix = outCparams.CSE_varprefix
         # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
         Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FD,includebraces=False",
                                         prestring=read_from_memory_Ccode))
 
-    Coutput += indent_Ccode("\n/* \n * Step 2 of 2: Evaluate SymPy expressions and write to main memory:\n */\n")
-    # Step 5b.ii: Add input RHS & LHS expressions from
+    # Step 5b.iv: Implement upwinding algorithm.
+    if len(upwind_directions) > 0:
+        Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+                                + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
+                                ": Implement upwinding algorithm:\n */\n")
+        NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
+        for dirn in upwind_directions:
+            Coutput += indent_Ccode(out__type_var("UpWind" + str(dirn)) + " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
+    upwindU = [sp.sympify(0) for i in range(par.parval_from_str("DIM"))]
+    for dirn in upwind_directions:
+        upwindU[dirn] = sp.sympify("UpWind"+str(dirn))
+    for i in range(len(list_of_deriv_vars)):
+        if len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i]):
+            var_dupD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]))
+            var_ddnD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]).replace("_dupD","_ddnD"))
+            upwind_dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
+            upwind_expr = upwindU[upwind_dirn]*(var_dupD - var_ddnD) + var_ddnD
+            # For convenience, we require out__type_var() above to
+            # prefix up/downwinded variables with "UpwindAlgInput".
+            # Here we do not wish to have this prefix.
+            Coutput += indent_Ccode(outputC(upwind_expr,
+                                            out__type_var(str(list_of_deriv_vars[i]),AddPrefix_for_UpDownWindVars=False),
+                                            "returnstring",params=params + ",includebraces=False"))
+
+    # Step 5b.v: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
+    Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+                            + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
+                            ": Evaluate SymPy expressions and write to main memory:\n */\n")
     exprs       = []
     lhsvarnames = []
     for i in range(len(sympyexpr_list)):
@@ -417,7 +523,7 @@ def FD_outputC(filename,sympyexpr_list, params=""):
             lhsvarnames.append("const REAL_SIMD_ARRAY __RHS_exp_"+str(i))
         else:
             lhsvarnames.append(sympyexpr_list[i].lhs)
-            
+
     # Step 5c: Write output to gridfunctions specified in
     #          sympyexpr_list[].lhs.
     write_to_mem_string = ""
