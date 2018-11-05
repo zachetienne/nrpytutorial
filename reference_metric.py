@@ -29,13 +29,13 @@ scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 
 def reference_metric():
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
+    M_PI = par.Cparameters("REAL",thismodule,"M_PI")
 
     global UnitVectors
     UnitVectors = ixp.zerorank2(3)
 
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
-        M_PI = par.Cparameters("REAL",thismodule,"M_PI")
         # Assuming the spherical radial & theta coordinates
         #   are positive makes nice simplifications of
         #   unit vectors possible.
@@ -51,7 +51,7 @@ def reference_metric():
             global xxmin
             global xxmax
             xxmin = [sp.sympify(0),sp.sympify(0),-M_PI]
-            xxmax = [RMAX, M_PI, M_PI]
+            xxmax = [         RMAX,         M_PI, M_PI]
 
             Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
             Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
@@ -112,8 +112,13 @@ def reference_metric():
 
         if CoordSystem == "Cylindrical":
             RHOMAX,ZMIN,ZMAX = par.Cparameters("REAL",thismodule,["RHOMAX","ZMIN","ZMAX"])
-            xxmin = ["0.0", "0.0", "params.ZMIN"]
-            xxmax = ["params.RHOMAX", "2.0*M_PI", "params.ZMAX"]
+            xxmin = [sp.sympify(0), -M_PI, ZMIN]
+            xxmax = [       RHOMAX,  M_PI, ZMAX]
+
+            Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2)
+            Cart_to_xx[1] = sp.atan2(Carty, Cartx)
+            Cart_to_xx[2] = Cartz
+
         elif CoordSystem == "SinhCylindrical" or CoordSystem == "SinhCylindricalv2":
             AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"])
     
@@ -122,7 +127,7 @@ def reference_metric():
             # phi coordinate remains unchanged.
             PHICYL = xx[1]
             ZCYL   = AMPLZ   * (sp.exp(xx[2] / SINHWZ)   - sp.exp(-xx[2] / SINHWZ))   / (sp.exp(1 / SINHWZ)   - sp.exp(-1 / SINHWZ))
-    
+
             # SinhCylindricalv2 adds the parameters "const_drho", "const_dz", which allows for regions near xx[0]=0
             # and xx[2]=0 to have constant rho and z resolution of const_drho and const_dz, provided the sinh() terms
             # do not dominate near xx[0]=0 and xx[2]=0.
@@ -132,8 +137,8 @@ def reference_metric():
                 RHOCYL = AMPLRHO * ( const_drho*xx[0] + (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO)) )
                 ZCYL   = AMPLZ   * ( const_dz  *xx[2] + (sp.exp(xx[2] / SINHWZ  ) - sp.exp(-xx[2] / SINHWZ  )) / (sp.exp(1 / SINHWZ  ) - sp.exp(-1 / SINHWZ  )) )
     
-            xxmin = ["0.0","0.0","-1.0"]
-            xxmax = ["1.0","2.0*M_PI","1.0"]
+            xxmin = [sp.sympify(0), -M_PI, sp.sympify(-1)]
+            xxmax = [sp.sympify(1),  M_PI, sp.sympify(+1)]
 
         xxCart[0] = RHOCYL*sp.cos(PHICYL)
         xxCart[1] = RHOCYL*sp.sin(PHICYL)
@@ -147,7 +152,7 @@ def reference_metric():
         scalefactor_orthog[1] = RHOCYL
         scalefactor_orthog[2] = sp.diff(ZCYL,xx[2])
 
-        # Set the transpose of the matrix of unit vectors
+        # Set the unit vectors
         UnitVectors = [[ sp.cos(PHICYL), sp.sin(PHICYL), sp.sympify(0)],
                        [-sp.sin(PHICYL), sp.cos(PHICYL), sp.sympify(0)],
                        [ sp.sympify(0),  sp.sympify(0),  sp.sympify(1)]]
