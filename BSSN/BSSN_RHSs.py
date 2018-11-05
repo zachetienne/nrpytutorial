@@ -584,7 +584,7 @@ def BSSN_RHSs():
 
     # Step 14: Set \partial_t \beta^i
     beta_rhsU = ixp.zerorank1()
-    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
+    if par.parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
         # Step 14 Option 1: \partial_t \beta^i = \beta^j \beta^i_{,j} + B^i
         # First define BU, in terms of rescaled variable \bet^i
         BU = ixp.zerorank1()
@@ -596,7 +596,7 @@ def BSSN_RHSs():
             beta_rhsU[i] += BU[i]
             for j in range(DIM):
                 beta_rhsU[i] += betaU[j]*betaU_dupD[i][j]
-    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+    if par.parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
         # Step 14 Option 2: \partial_t \beta^i = \left[\beta^j \bar{D}_j \beta^i\right] + B^{i}
         # First define BU, in terms of rescaled variable \bet^i
         BU = ixp.zerorank1()
@@ -624,7 +624,7 @@ def BSSN_RHSs():
     eta = par.Cparameters("REAL",thismodule,["eta"])
     B_rhsU = ixp.zerorank1()
 
-    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
+    if par.parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
         # Step 15: Non-covariant option:
         #  \partial_t B^i = \beta^j \partial_j B^i
         #                 + \frac{3}{4} \partial_{0} \bar{\Lambda}^{i} - \eta B^{i}
@@ -649,7 +649,7 @@ def BSSN_RHSs():
             for j in range(DIM):
                 B_rhsU[i] += betaU[j]*BU_dupD[i][j]
 
-    if par.parval_from_str("BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+    if par.parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
         # Step 15: Covariant option:
         #  \partial_t B^i = \beta^j \bar{D}_j B^i
         #               + \frac{3}{4} ( \partial_t \bar{\Lambda}^{i} - \beta^j \bar{D}_j \bar{\Lambda}^{i} ) 
