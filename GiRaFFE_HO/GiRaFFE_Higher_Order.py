@@ -335,21 +335,37 @@ def GiRaFFE_Higher_Order():
 
     gammaUU_dD = ixp.declarerank3("gammaUU_dD","sym01")
 
+    # The spatial derivatives of the spatial components of the four metric
     gSpatUU_dD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                gSpatUU_dD[i][j][k] = gammaUU_dD[i][j][k] - 2*betaU[i]*(alpha*betaU_dD[j][k]-betaU[j]*alpha_dD[k])/alpha**3
+                gSpatUU_dD[i][j][k] = gammaUU_dD[i][j][k]
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                gSpatUU_dD[i][j][k] += -betaU[i]*betaU_dD[j][k]/alpha**2
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                gSpatUU_dD[i][j][k] += -betaU_dD[i][k]*betaU[j]/alpha**2
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                gSpatUU_dD[i][j][k] += 2*betaU[i]*betaU[j]*alpha_dD[k]/alpha**3
 
     # We will only set the divergence-like components that we need.
     TEMUD_dD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                TEMUD_dD[j][i][j]  = gammaDD_dD[k][i][j] * TEMUU[k+1][j+1]
+                TEMUD_dD[j][i][j] += gammaDD_dD[k][i][j] * TEMUU[k+1][j+1]
                 TEMUD_dD[j][i][j] += gammaDD[k][i]*(smallb2*uU_dD[j][j]*uU[k]+smallb2*uU[j]*uU_dD[k][j]+                                                smallb2*gSpatUU_dD[j][k][j]/2+smallbU_dD[j][j]*smallbU[k+1]+                                                smallbU[j+1]*smallbU_dD[k][j])
                 for l in range(DIM):
-                    TEMUD_dD[j][i][j] += gammaDD[k][i]*2*smallbD[l]*smallbU_dD[l][j]*(uU[j]*uU[k]+g4UU[j+1][k+1])
+                    TEMUD_dD[j][i][j] += 2*smallbD[l]*smallbU_dD[l][j]*gammaDD[k][i]*(uU[j]*uU[k]+g4UU[j+1][k+1])
                     for m in range(DIM):
                         TEMUD_dD[j][i][j] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallbU[l+1]*smallbU[m+1]*(uU[j]*uU[k]                                                                                                      +g4UU[j+1][k+1])
 
