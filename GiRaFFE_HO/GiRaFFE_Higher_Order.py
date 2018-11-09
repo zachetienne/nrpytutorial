@@ -143,7 +143,7 @@ def GiRaFFE_Higher_Order():
         for k in range(DIM):
             g4DDdD[0][0][chi] += betaU_dD[k][chi-1] * betaD[k] + betaU[k] * betaDdD[k][chi-1]
         for mu in range(1,4):
-            g4DDdD[mu][0][i] = g4DDdD[0][mu][chi-1] = betaDdD[mu-1][chi-1]
+            g4DDdD[mu][0][chi] = g4DDdD[0][mu][chi-1] = betaDdD[mu-1][chi-1]
         for mu in range(1,4):
             for nu in range(1,4):
                 g4DDdD[mu][nu][chi] = gammaDD_dD[mu-1][nu-1][chi-1]
@@ -358,16 +358,50 @@ def GiRaFFE_Higher_Order():
                 gSpatUU_dD[i][j][k] += 2*betaU[i]*betaU[j]*alpha_dD[k]/alpha**3
 
     # We will only set the divergence-like components that we need.
+    global TEMUD_dD
     TEMUD_dD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 TEMUD_dD[j][i][j] += gammaDD_dD[k][i][j] * TEMUU[k+1][j+1]
-                TEMUD_dD[j][i][j] += gammaDD[k][i]*(smallb2*uU_dD[j][j]*uU[k]+smallb2*uU[j]*uU_dD[k][j]+                                                smallb2*gSpatUU_dD[j][k][j]/2+smallbU_dD[j][j]*smallbU[k+1]+                                                smallbU[j+1]*smallbU_dD[k][j])
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                # Term 2a: \gamma_{ki} b^2 u^j_{,j} u^k
+                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallb2*uU_dD[j][j]*uU[k]
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                # Term 2b: \gamma_{ki} b^2 u^j u^k_{,j}
+                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallb2*uU[j]*uU_dD[k][j]
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                # Term 2c: \gamma_{ki} \frac{b^2}{2} g^{jk}_{\ ,j}
+                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallb2*gSpatUU_dD[j][k][j]/2
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                # Term 2d: \gamma_{ki} b^j_{,j} b^k
+                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallbU_dD[j][j]*smallbU[k+1]
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                # Term 2e: \gamma_{ki} b^j b^k_{,j}
+                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallbU[j+1]*smallbU_dD[k][j]
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
                 for l in range(DIM):
                     TEMUD_dD[j][i][j] += 2*smallbD[l]*smallbU_dD[l][j]*gammaDD[k][i]*(uU[j]*uU[k]+g4UU[j+1][k+1])
-                    for m in range(DIM):
-                        TEMUD_dD[j][i][j] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallbU[l+1]*smallbU[m+1]*(uU[j]*uU[k]                                                                                                      +g4UU[j+1][k+1])
+                #    for m in range(DIM):
+                #        TEMUD_dD[j][i][j] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallbU[l+1]*smallbU[m+1]*(uU[j]*uU[k]                                                                                                      +g4UU[j+1][k+1])
 
 
     # Finally, we will return our attention to the time evolution equation (from eq. 13 of the [original paper](https://arxiv.org/pdf/1704.00599.pdf)),
@@ -380,9 +414,9 @@ def GiRaFFE_Higher_Order():
 
     thirdterm = ixp.zerorank1()
     for i in range(DIM):
-        for mu in range(DIM):
-            for nu in range(DIM):
-                thirdterm[i] += alpha * sp.sqrt(gammadet) * TEMUU[mu][nu] * g4DDdD[mu][nu][i] / 2
+        for mu in range(4):
+            for nu in range(4):
+                thirdterm[i] += alpha * sp.sqrt(gammadet) * TEMUU[mu][nu] * g4DDdD[mu][nu][i+1] / 2
 
     global alpsqrtgam
     alpsqrtgam = gri.register_gridfunctions("AUX","alpsqrtgam")
