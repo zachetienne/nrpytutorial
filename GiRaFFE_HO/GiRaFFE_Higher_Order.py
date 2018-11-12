@@ -563,14 +563,14 @@ def GiRaFFE_Higher_Order():
             for k in range(DIM):
                 for l in range(DIM):
                     # Term 3a: 2 b_l b^l_{,j} \gamma_{ki} u^j u^k + 
-                    TEMUD_dD[j][i][j] += 2*smallbD[l]*smallbU_dD[l][j]*gammaDD[k][i]*uU[j]*uU[k]
+                    TEMUD_dD[j][i][j] += 2*smallbD[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*uU[j]*uU[k]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
                     # Term 3b: 2 b_l b^l_{,j} \gamma_{ki} g^{jk}
-                    TEMUD_dD[j][i][j] += 2*smallbD[l]*smallbU_dD[l][j]*gammaDD[k][i]*g4UU[j+1][k+1]
+                    TEMUD_dD[j][i][j] += smallbD[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*g4UU[j+1][k+1]
 
 
     # Finally, we will add contractions over $k$, $l$, and $m$: $${\rm Term\ 4} = \gamma_{ki} \gamma_{lm,j} b^l b^m \left( \underbrace{u^j u^k}_{\rm Term\ 4a} + \underbrace{\frac{1}{2} g^{jk}}_{\rm Term\ 4b} \right)$$
@@ -617,7 +617,7 @@ def GiRaFFE_Higher_Order():
     for i in range(DIM):
         for mu in range(4):
             for nu in range(4):
-                Stilde_rhsD[i] += alpha * sp.sqrt(gammadet) * TEMUU[mu][nu] * g4DDdD[mu][nu][i+1] / 2
+                Stilde_rhsD[i] += alpsqrtgam * TEMUU[mu][nu] * g4DDdD[mu][nu][i+1] / 2
 
     # The second term: \alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i}
     for i in range(DIM):
@@ -655,9 +655,13 @@ def GiRaFFE_Higher_Order():
     AevolParen = gri.register_gridfunctions("AUX","AevolParen")
     PevolParenU = ixp.register_gridfunctions_for_single_rank1("AUX","PevolParenU")
 
+    # {\rm AevolParen} = \alpha \Phi - \beta^j A_j
     AevolParen = alpha*Phi
     for j in range(DIM):
         AevolParen     = -betaU[j] * AD[j]
+
+    # {\rm PevolParenU[j]} = \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]
+    for j in range(DIM):
         PevolParenU[j] = -betaU[j] * psi6Phi
         for i in range(DIM):
             PevolParenU[j] += alpha * sp.sqrt(gammadet) * gammaUU[i][j] * AD[i]
