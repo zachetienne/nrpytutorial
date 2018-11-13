@@ -234,11 +234,11 @@ def GiRaFFE_Higher_Order():
 
 
     # Step 4b: import the small b terms
-    smallbU = ixp.zerorank1(DIM=4)
-    smallbD = ixp.zerorank1(DIM=4)
+    smallb4U = ixp.zerorank1(DIM=4)
+    smallb4D = ixp.zerorank1(DIM=4)
     for mu in range(4):
-        smallbU[mu] = u0b.smallb4U[mu]
-        smallbD[mu] = u0b.smallb4D[mu]
+        smallb4U[mu] = u0b.smallb4U[mu]
+        smallb4D[mu] = u0b.smallb4D[mu]
 
     smallb2 = u0b.smallb2
 
@@ -272,7 +272,7 @@ def GiRaFFE_Higher_Order():
     for mu in range(4):
         for nu in range(4):
             # Term 3: b^{\mu} b^{\nu}
-            TEMUU[mu][nu] += -smallbU[mu]*smallbU[nu]
+            TEMUU[mu][nu] += -smallb4U[mu]*smallb4U[nu]
 
 
     # If we look at the evolution equation, we see that we will need spatial  derivatives of $T^{\mu\nu}_{\rm EM}$. In previous tutorials, when confronted with derivatives of complicated expressions, we have declared those expressions as gridfunctions themselves, thus allowing NRPy+ to take finite-difference derivatives of the expressions. This generally reduces the error, because the alternative is to use a function of several finite-difference derivatives, allowing more error to accumulate than the extra gridfunction will introduce. While we will use that technique for some of the subexpressions of $T^{\mu\nu}_{\rm EM}$, we don't want to rely on it for the whole expression; doing so would require us to take the derivative of the magnetic field $B^i$, which is itself found by finite-differencing the vector potential $A_i$. It requires some finesse, then, to find $B^i$ inside the ghost zones, and those values of $B^i$ are necessarily less accurate; taking another derivative from them would only compound the problem. Instead, we will take analytic derivatives of $T^{\mu\nu}_{\rm EM}$.
@@ -546,13 +546,13 @@ def GiRaFFE_Higher_Order():
         for j in range(DIM):
             for k in range(DIM):
                 # Term 2d: \gamma_{ki} b^j_{,j} b^k
-                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallbU_dD[j][j]*smallbU[k+1]
+                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallbU_dD[j][j]*smallb4U[k+1]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 # Term 2e: \gamma_{ki} b^j b^k_{,j}
-                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallbU[j+1]*smallbU_dD[k][j]
+                TEMUD_dD[j][i][j] += gammaDD[k][i]*smallb4U[j+1]*smallbU_dD[k][j]
 
 
     # Now, we will add $${\rm Term\ 3} = 2 b_l b^l_{,j} \gamma_{ki} \left( \underbrace{u^j u^k}_{\rm Term\ 3a} + \underbrace{g^{jk}}_{\rm Term\ 3b} \right),$$ which involves contractions over $k$ and $l$.
@@ -563,14 +563,14 @@ def GiRaFFE_Higher_Order():
             for k in range(DIM):
                 for l in range(DIM):
                     # Term 3a: 2 b_l b^l_{,j} \gamma_{ki} u^j u^k + 
-                    TEMUD_dD[j][i][j] += 2*smallbD[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*uU[j]*uU[k]
+                    TEMUD_dD[j][i][j] += 2*smallb4D[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*uU[j]*uU[k]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
                     # Term 3b: 2 b_l b^l_{,j} \gamma_{ki} g^{jk}
-                    TEMUD_dD[j][i][j] += smallbD[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*g4UU[j+1][k+1]
+                    TEMUD_dD[j][i][j] += smallb4D[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*g4UU[j+1][k+1]
 
 
     # Finally, we will add contractions over $k$, $l$, and $m$: $${\rm Term\ 4} = \gamma_{ki} \gamma_{lm,j} b^l b^m \left( \underbrace{u^j u^k}_{\rm Term\ 4a} + \underbrace{\frac{1}{2} g^{jk}}_{\rm Term\ 4b} \right)$$
@@ -582,7 +582,7 @@ def GiRaFFE_Higher_Order():
                 for l in range(DIM):
                     for m in range(DIM):
                         # Term 4a: \gamma_{ki} \gamma_{lm,j} b^l b^m u^j u^k
-                        TEMUD_dD[j][i][j] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallbU[l+1]*smallbU[m+1]*uU[j]*uU[k]
+                        TEMUD_dD[j][i][j] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallb4U[l+1]*smallb4U[m+1]*uU[j]*uU[k]
 
     for i in range(DIM):
         for j in range(DIM):
@@ -590,7 +590,7 @@ def GiRaFFE_Higher_Order():
                 for l in range(DIM):
                     for m in range(DIM):
                         # Term 4b: \gamma_{ki} \gamma_{lm,j} b^l b^m \frac{1}{2} g^{jk}
-                        TEMUD_dD[j][i][j] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallbU[l+1]*smallbU[m+1]*g4UU[j+1][k+1]
+                        TEMUD_dD[j][i][j] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallb4U[l+1]*smallb4U[m+1]*g4UU[j+1][k+1]
 
 
     # ## Evolution equation for $\tilde{S}_i$
