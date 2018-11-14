@@ -10,15 +10,16 @@
 # A_{\phi} &= \frac{C_0}{2} r^2 \sin^2 \theta \\
 # E_{\phi} &= 2 M C_0 \left( 1+ \frac {2M}{r} \right)^{-1/2} \sin^2 \theta \\
 # \end{align}
-# (the unspecified components are set to 0). Here, $C_0$ is a constant set to $1$ in our simulations. Now, to use this initial data scheme, we need to transform it into the quantities actually tracked by $\giraffe$ and HydroBase: $A_i$, $B^i$, $S_i$, $v^i$, and $\Phi$. This can be done with eqs. 14, 16, and 18, here given in that same order:
+# (the unspecified components are set to 0). Here, $C_0$ is a constant that we will set to $1$ in our simulations. Now, to use this initial data scheme, we need to transform the above into the quantities actually tracked by $\giraffe$ and HydroBase: $A_i$, $B^i$, $\tilde{S}_i$, $v^i$, and $\Phi$. Of these quantities, $\gf$ will only set $A_i$, $v^i$, and $\Phi=0$; $\giraffe$ itself will call functions to set $B^i$ and $\tilde{S}_i$ before the time-evolution begins. This can be done with eqs. 16 and 18, here given in that same order:
 # \begin{align}
-# S_\mu &= -n_\nu T^\nu_{{\rm EM} \mu} \\
 # v^i &= \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i \\
 # B^i &= \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k \\
 # \end{align}
-# -Is this a circular dependency? $\tilde{S}_\mu$ depends on $T^\nu_{{\rm EM} \mu}$ which depends on the velocity, but the velocity depends on $\tilde{S}_\mu$.
+# In the simulations, $B^i$ will be calculated numerically from $A_i$; however, it will be useful to analytically calculate $B^i$ to use calculating the initial $v^i$.
 # 
-# **Zach says:** Check out lines 98-131 in the [original GiRaFFEfood implementation of ExactWald](https://bitbucket.org/zach_etienne/wvuthorns/src/62866e19058cd2477ee88d3a7fb259d5cfc2781a/GiRaFFEfood/src/ExactWald.cc?at=master&fileviewer=file-view-default). You will see that only $A_i$ and $v^i=u^i/u^0$ (not the Valencia 3-velocity that we must specify) are set. Then in the [ID\_Converter\_GiRaFFE](https://bitbucket.org/zach_etienne/wvuthorns/src/62866e19058cd2477ee88d3a7fb259d5cfc2781a/ID_converter_GiRaFFE/src/set_GiRaFFE_metric_GRMHD_variables_based_on_HydroBase_and_ADMBase_variables.C?at=master&fileviewer=file-view-default), $B^i$ and $\tilde{S}_i$ are set based on these quantities. I think that we should have in our version of GiRaFFE a function that computes $\tilde{S}_i$ from $B^i$, $v^i$, and metric quantities.
+
+# ### Steps 0-1: Preliminaries
+# Here, we will import the NRPy+ core modules and set the reference metric to Cartesian, set commonly used NRPy+ parameters, and set C parameters that will be set from outside the code eventually generated from these expressions. We will also set up a parameter to determine what initial data is set up, although it won't do much yet.
 
 
 # Step 0: Import the NRPy+ core modules and set the reference metric to Cartesian
@@ -45,15 +46,13 @@ def GiRaFFEFood_HO():
 
     # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
     M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
-    global ValenciavU
-    ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU")
-    BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU")
 
 
-    # We will first build the fundamental vectors $A_i$ and $E_i$ in spherical coordinates. Note that we use reference_metric.py to set $r$ and $\theta$ in terms of Cartesian coordinates (see [Table 3](https://arxiv.org/pdf/1704.00599.pdf)).
+    # ### Step 2: Set the vectors A and E in Spherical coordinates
+    # We will first build the fundamental vectors $A_i$ and $E_i$ in spherical coordinates (see [Table 3](https://arxiv.org/pdf/1704.00599.pdf)). Note that we use reference_metric.py to set $r$ and $\theta$ in terms of Cartesian coordinates; this will save us a step later when we convert to Cartesian coordinates. Since $C_0 = 1$,
     # \begin{align}
-    # A_{\phi} &= \frac{C_0}{2} r^2 \sin^2 \theta \\
-    # E_{\phi} &= 2 M C_0 \left( 1+ \frac {2M}{r} \right)^{-1/2} \sin^2 \theta \\
+    # A_{\phi} &= \frac{1}{2} r^2 \sin^2 \theta \\
+    # E_{\phi} &= 2 M \left( 1+ \frac {2M}{r} \right)^{-1/2} \sin^2 \theta. \\
     # \end{align}
     # While we have $E_i$ set as a variable in NRPy+, note that the final C code won't store these values.
 
@@ -76,7 +75,8 @@ def GiRaFFEFood_HO():
         exit(1)
 
 
-    # Now, we will use the coordinate transformation definitions provided by reference_metric.py to build the Jacobian $$ \frac{\partial x_i}{\partial y_j}, $$ where $x_i \in \{r,\theta,\phi\}$ and $y_i \in \{x,y,z\}$. We will also compute its inverse. Then, since both $A_i$ and $E_i$ have one lower index, both will need to be multiplied by the Jacobian.
+    # ### Step 3: Use the Jacobian matrix to transform the vectors to Cartesian coordinates.
+    # Now, we will use the coordinate transformation definitions provided by reference_metric.py to build the Jacobian $$ \frac{\partial x_i}{\partial y_j}, $$ where $x_i \in \{r,\theta,\phi\}$ and $y_i \in \{x,y,z\}$. We would normally compute its inverse, but since none of the quantities we need to transform have upper indices, it is not necessary. Then, since both $A_i$ and $E_i$ have one lower index, both will need to be multiplied by the Jacobian.
 
 
     # Step 3: Use the Jacobian matrix to transform the vectors to Cartesian coordinates.
@@ -101,9 +101,12 @@ def GiRaFFEFood_HO():
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
 
 
+    # ### Step 4: Calculate $v^i$ from $A_i$ and $E_i$
     # We will now find the magnetic field using equation 18 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf) $$B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k. $$ We will need the metric quantites: the lapse $\alpha$, the shift $\beta^i$, and the three-metric $\gamma_{ij}$. We will also need the Levi-Civita symbol, provided by $\text{WeylScal4NRPy}$. 
 
 
+    # Step 4: Calculate v^i from A_i and E_i
+    # Step 4a: Calculate the magnetic field B^i
     # Here, we build the Levi-Civita tensor from the Levi-Civita symbol.
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
@@ -112,7 +115,7 @@ def GiRaFFEFood_HO():
         for j in range(DIM):
             for k in range(DIM):
                 LCijk = LeviCivitaDDD[i][j][k]
-                LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gammadet)
+                #LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gammadet)
                 LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
 
     # For the initial data, we can analytically take the derivatives of A_i
@@ -128,10 +131,12 @@ def GiRaFFEFood_HO():
                 BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
 
 
-    # We will now build the drift velocity using equation 152 in [this paper,](https://arxiv.org/pdf/1310.3274v2.pdf) cited in the original $\giraffe$ code: $$ v^i = \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i. $$ Then, we will need to transform it to the Valencia 3-velocity using the rule $\bar{v}^i = \frac{1}{\alpha} \left(v^i +\beta^i \right)$.
-    # 
+    # We will now build the initial velocity using equation 152 in [this paper,](https://arxiv.org/pdf/1310.3274v2.pdf) cited in the original $\giraffe$ code: $$ v^i = \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i. $$ 
+    # However, our code needs the Valencia 3-velocity while this expression is for the drift velocity. So, we will need to transform it to the Valencia 3-velocity using the rule $\bar{v}^i = \frac{1}{\alpha} \left(v^i +\beta^i \right)$.
+    # Thus, $$\bar{v}^i = \frac{\epsilon^{ijk} E_j B_k}{B^2}$$
 
 
+    # Step 4b: Calculate B^2 and B_i
     # B^2 is an inner product defined in the usual way:
     B2 = sp.sympify(0)
     for i in range(DIM):
@@ -144,12 +149,11 @@ def GiRaFFEFood_HO():
         for j in range(DIM):
             BD[i] = gammaDD[i][j] * BU[j]
 
-    driftvU = ixp.zerorank1()
+    # Step 4c: Calculate the Valencia 3-velocity 
+    global ValenciavU
+    ValenciavU = ixp.zerorank1()
     for i in range(DIM):
-        driftvU[i] = -betaU[i]
         for j in range(DIM):
-            driftvU[i] += alpha*LeviCivitaUUU[i][j][k]*ED[j]*BD[k]/B2
-
-    for i in range(DIM):
-        ValenciavU[i] = (driftvU[i] + betaU[i])/alpha
+            for k in range(DIM):
+                ValenciavU[i] += LeviCivitaUUU[i][j][k]*ED[j]*BD[k]/B2
 
