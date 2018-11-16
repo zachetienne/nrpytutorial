@@ -62,7 +62,7 @@ def GiRaFFE_Higher_Order():
     AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD",DIM=3)
 
     # Step 2: Import the four metric
-    global gammaUU,gamm 
+    global gammaUU,gammadet
     gammaUU = ixp.register_gridfunctions_for_single_rank2("AUX","gammaUU","sym01")
     gammadet = gri.register_gridfunctions("AUX","gammadet")
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
