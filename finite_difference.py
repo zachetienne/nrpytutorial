@@ -61,18 +61,8 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                 #    neither as a gridfunction nor a Cparameter, then error out.
                 if ("_dD"   in str(var)) or \
                    ("_dKOD" in str(var)) or \
-                   ("_dupD" in str(var)):
-                    if ("_dupD" in str(var)) and (upwindcontrolvec=="" or not isinstance(upwindcontrolvec,list)):
-                        print("Error: Variable "+str(var)+" implies an upwind derivative, but NRPy+'s upwinding")
-                        print("  algorithm requires that up or downwinding be with respect to some upwinding")
-                        print("  control variable, set as FD_outputC()'s fourth function argument")
-                        print("  Note that in BSSN, the shift vector betaU controls the upwinding.")
-                        print("  See https://arxiv.org/pdf/gr-qc/0206072.pdf for motivation and")
-                        print("  https://arxiv.org/pdf/gr-qc/0109032.pdf for implementation details,")
-                        print("  at second order. Note that the BSSN shift vector behaves like a *negative*")
-                        print("  velocity. See http://www.damtp.cam.ac.uk/user/naweb/ii/advection/advection.php")
-                        print("  for a very basic example motivating this choice.")
-                        exit(1)
+                   ("_dupD" in str(var)) or \
+                   ("_ddnD" in str(var)):
                     pass
                 else:
                     print("Error: Unregistered variable \""+str(var)+"\" in SymPy expression")
@@ -86,15 +76,25 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
 #                list_of_deriv_vars_with_duplicates.append(var)
     list_of_deriv_vars = superfast_uniq(list_of_deriv_vars_with_duplicates)
 
+    # Upwinding with respect to a control vector: algorithm description.
+    #   To enable, set the FD_outputC()'s fourth function argument to the
+    #   desired control vector. In BSSN, the betaU vector controls the upwinding.
+    #   See https://arxiv.org/pdf/gr-qc/0206072.pdf for motivation and
+    #   https://arxiv.org/pdf/gr-qc/0109032.pdf for implementation details,
+    #   at second order. Note that the BSSN shift vector behaves like a *negative*
+    #   velocity. See http://www.damtp.cam.ac.uk/user/naweb/ii/advection/advection.php
+    #   for a very basic example motivating this choice.
+
     # Step 1b: For each variable with suffix _dupD, append to
     #          the list_of_deriv_vars the corresponding _ddnD.
-    #          Both are required for proper upwinding. See
+    #          Both are required for control-vector upwinding. See
     #          the above print() block for further documentation
     #          on upwinding--both motivation and implementation
     #          details.
-    for var in list_of_deriv_vars:
-        if "_dupD" in str(var):
-            list_of_deriv_vars.append(sp.sympify(str(var).replace("_dupD","_ddnD")))
+    if upwindcontrolvec != "":
+        for var in list_of_deriv_vars:
+            if "_dupD" in str(var):
+                list_of_deriv_vars.append(sp.sympify(str(var).replace("_dupD","_ddnD")))
 
     # Finally, sort the list_of_deriv_vars. This ensures
     #     consistency in the C code output, and might even be
@@ -183,24 +183,27 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
             exit(1)
 
     # Step 2d (Upwinded derivatives algorithm, part 1):
-    # Each upwinded derivative has an associated direction.
-    #     If a symmetry axis is specified, it is possible
-    #     that, e.g., upwind derivatives with respect to
+    # If an upwinding control vector is specified, determine
+    #    which of the elements of the vector will be required.
+    #    This ensures that those elements are read from memory.
+    # For example, if a symmetry axis is specified,
+    #     upwind derivatives with respect to only
     #     two of the three dimensions are used. Here
     #     we find all directions used for upwinding.
-    upwind_directions_unsorted_withdups = []
-    for deriv_op in deriv__operator:
-        if "dupD" in deriv_op:
-            if deriv_op[len(deriv_op)-1].isdigit():
-                dirn = int(deriv_op[len(deriv_op)-1])
-                upwind_directions_unsorted_withdups.append(dirn)
-            else:
-                print("Error: Derivative operator "+deriv_op+" does not contain a direction")
-                exit(1)
-    upwind_directions = []
-    if len(upwind_directions_unsorted_withdups)>0:
-        upwind_directions = superfast_uniq(upwind_directions_unsorted_withdups)
-        upwind_directions = sorted(upwind_directions,key=sp.default_sort_key)
+    if upwindcontrolvec != "":
+        upwind_directions_unsorted_withdups = []
+        for deriv_op in deriv__operator:
+            if "dupD" in deriv_op:
+                if deriv_op[len(deriv_op)-1].isdigit():
+                    dirn = int(deriv_op[len(deriv_op)-1])
+                    upwind_directions_unsorted_withdups.append(dirn)
+                else:
+                    print("Error: Derivative operator "+deriv_op+" does not contain a direction")
+                    exit(1)
+        upwind_directions = []
+        if len(upwind_directions_unsorted_withdups)>0:
+            upwind_directions = superfast_uniq(upwind_directions_unsorted_withdups)
+            upwind_directions = sorted(upwind_directions,key=sp.default_sort_key)
 
     # Step 3:
     # Evaluate the finite difference stencil for each
@@ -351,6 +354,10 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
 
     def out__type_var(in_var,AddPrefix_for_UpDownWindVars=True):
         varname = str(in_var)
+        # Disable prefixing upwinded and downwinded variables
+        # if the upwind control vector algorithm is disabled.
+        if upwindcontrolvec == "":
+            AddPrefix_for_UpDownWindVars = False
         if AddPrefix_for_UpDownWindVars:
             if "_dupD" in varname:  # Variables suffixed with "_dupD" are set
                 #                    to be the "pure" upwinded derivative,
@@ -456,11 +463,14 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         else:
             print("Error: was unable to parse derivative operator: ",deriv__operator[i])
             exit(1)
-    # Step 5b.ii: Add upwind control vectors to the
-    #             derivative expression list
-    for i in range(len(upwind_directions)):
-        exprs.append(upwindcontrolvec[upwind_directions[i]])
-        lhsvarnames.append(out__type_var("UpwindControlVectorU"+str(upwind_directions[i])))
+    # Step 5b.ii: If upwind control vector is specified,
+    #             add upwind control vectors to the
+    #             derivative expression list, so its
+    #             needed elements are read from memory.
+    if upwindcontrolvec != "":
+        for i in range(len(upwind_directions)):
+            exprs.append(upwindcontrolvec[upwind_directions[i]])
+            lhsvarnames.append(out__type_var("UpwindControlVectorU"+str(upwind_directions[i])))
 
     # Step 5b.iii: Output useful code comment regarding
     #              which step we are on. *At most* this
@@ -473,7 +483,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     NRPy_FD__Number_of_Steps = 1
     if len(list_of_deriv_vars) > 0:
         NRPy_FD__Number_of_Steps += 1
-    if len(upwind_directions) > 0:
+    if upwindcontrolvec != "" and len(upwind_directions) > 0:
         NRPy_FD__Number_of_Steps += 1
 
     if len(read_from_memory_Ccode) > 0:
@@ -486,29 +496,30 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FD,includebraces=False",
                                         prestring=read_from_memory_Ccode))
 
-    # Step 5b.iv: Implement upwinding algorithm.
-    if len(upwind_directions) > 0:
-        Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
-                                + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
-                                ": Implement upwinding algorithm:\n */\n")
-        NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
+    # Step 5b.iv: Implement control-vector upwinding algorithm.
+    if upwindcontrolvec != "":
+        if len(upwind_directions) > 0:
+            Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+                                    + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
+                                    ": Implement upwinding algorithm:\n */\n")
+            NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
+            for dirn in upwind_directions:
+                Coutput += indent_Ccode(out__type_var("UpWind" + str(dirn)) + " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
+        upwindU = [sp.sympify(0) for i in range(par.parval_from_str("DIM"))]
         for dirn in upwind_directions:
-            Coutput += indent_Ccode(out__type_var("UpWind" + str(dirn)) + " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
-    upwindU = [sp.sympify(0) for i in range(par.parval_from_str("DIM"))]
-    for dirn in upwind_directions:
-        upwindU[dirn] = sp.sympify("UpWind"+str(dirn))
-    for i in range(len(list_of_deriv_vars)):
-        if len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i]):
-            var_dupD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]))
-            var_ddnD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]).replace("_dupD","_ddnD"))
-            upwind_dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
-            upwind_expr = upwindU[upwind_dirn]*(var_dupD - var_ddnD) + var_ddnD
-            # For convenience, we require out__type_var() above to
-            # prefix up/downwinded variables with "UpwindAlgInput".
-            # Here we do not wish to have this prefix.
-            Coutput += indent_Ccode(outputC(upwind_expr,
-                                            out__type_var(str(list_of_deriv_vars[i]),AddPrefix_for_UpDownWindVars=False),
-                                            "returnstring",params=params + ",includebraces=False"))
+            upwindU[dirn] = sp.sympify("UpWind"+str(dirn))
+        for i in range(len(list_of_deriv_vars)):
+            if len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i]):
+                var_dupD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]))
+                var_ddnD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]).replace("_dupD","_ddnD"))
+                upwind_dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
+                upwind_expr = upwindU[upwind_dirn]*(var_dupD - var_ddnD) + var_ddnD
+                # For convenience, we require out__type_var() above to
+                # prefix up/downwinded variables with "UpwindAlgInput".
+                # Here we do not wish to have this prefix.
+                Coutput += indent_Ccode(outputC(upwind_expr,
+                                                out__type_var(str(list_of_deriv_vars[i]),AddPrefix_for_UpDownWindVars=False),
+                                                "returnstring",params=params + ",includebraces=False"))
 
     # Step 5b.v: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
