@@ -1,6 +1,6 @@
 ActiveThorns = "ADMBase ADMCoupling ADMMacros HydroBase InitBase StaticConformal TmunuBase SphericalSurface SummationByParts MoL CarpetIOASCII CarpetRegrid2 CarpetIOBasic CarpetIOScalar CarpetReduce Time SymBase"
 
-ActiveThorns = "GiRaFFE_HO GiRaFFEFood_HO"
+ActiveThorns = "GiRaFFE_HO GiRaFFEfood_HO"
 
 #GiRaFFEfood::test_case = "ExactWald"
 #GiRaFFEfood::Wald_B0 = 1.0

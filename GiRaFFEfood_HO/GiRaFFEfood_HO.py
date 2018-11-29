@@ -2,7 +2,7 @@
 # coding: utf-8
 
 # $\newcommand{\giraffe}{\texttt{GiRaFFE}}$
-# $\newcommand{\gf}{\texttt{GiRaFFEFood}}$
+# $\newcommand{\gf}{\texttt{GiRaFFEfood}}$
 # # $\gf$: Initial data for $\giraffe$
 # 
 # With the $\giraffe$ evolution thorn constructed, we now need to "feed" our giraffe with initial data to evolve. While there are several different choices of initial data we can use here, for the moment, we will only be implementing the "Exact Wald" initial data, given by Table 3 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf):
@@ -34,9 +34,9 @@ import reference_metric as rfm
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
-def GiRaFFEFood_HO():
+def GiRaFFEfood_HO():
     # Step 1a: Set commonly used parameters.
-    thismodule = "GiRaFFEFood_HO"
+    thismodule = "GiRaFFEfood_HO"
     # Set the spatial dimension parameter to 3.
     par.set_parval_from_str("grid::DIM", 3)
     DIM = par.parval_from_str("grid::DIM")

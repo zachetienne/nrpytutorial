@@ -30,7 +30,7 @@
 # Note that as usual, Greek indices refer to four-dimensional quantities where the zeroth component indicates $t$ components, while Latin indices refer to three-dimensional quantities. Since Python always indexes its lists from 0, however, the zeroth component will indicate a spatial direction, and any expressions involving mixed Greek and Latin indices will need to offset one set of indices by one.
 
 # ## Preliminaries
-# First, we will import the core modules of NRPy that we will need and specify the main gridfunctions we will need. The metric quantities $\alpha$, $\beta^i$, and $\gamma_{ij}$ will be initially set by the $\text{ShiftedKerrSchild}$ thorn, while the Valencia 3-velocity $v^i_{(n)}$ and vector potential $A_i$ will initially be set in the separate thorn $\text{GiRaFFEFood_HO}$.
+# First, we will import the core modules of NRPy that we will need and specify the main gridfunctions we will need. The metric quantities $\alpha$, $\beta^i$, and $\gamma_{ij}$ will be initially set by the $\text{ShiftedKerrSchild}$ thorn, while the Valencia 3-velocity $v^i_{(n)}$ and vector potential $A_i$ will initially be set in the separate thorn $\text{GiRaFFEfood_HO}$.
 
 # In[1]:
 
