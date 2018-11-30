@@ -448,6 +448,34 @@ def GiRaFFE_Higher_Order():
             # Term Denom requires us to divide the whole expressions through by sqrt(4 pi) * (alpha u^0)^2
             smallbU_dD[i][k] /= sp.sqrt(4*M_PI) * alphau0 * alphau0
 
+    # First construct the derivative b^0_{,j}
+    # This four-vector will make b^2 simpler:
+    smallb4U_dD = ixp.zerorank2(DIM=4)
+    # Fill in the zeroth component
+    for j in range(DIM):
+        # The numerator:  \alpha u_{k,j} B^k 
+        #               + \alpha u_k B^k_{,j} 
+        #               - \alpha_{,j} u_k B^k
+        smallb4U_dD[0][j+1] =   alpha*uD_dD[k][j]*BU[k] \
+                              + alpha*uD[k]*BU_dD[k][j] \
+                              - alpha_dD[j]*uD[k]*BU[k]
+    for j in range(DIM):
+        # Divide through by the denominator: \sqrt{4\pi} \alpha^2
+        smallb4U_dD[0][j+1] /= sp.sqrt(4*M_PI)*alpha*alpha
+
+    # Now, we'll fill out the rest of the four-vector with b^i_{,j} that we derived above.
+    for i in range(DIM):
+        for j in range(DIM):
+            smallb4U_dD[i+1][j+1] = smallbU_dD[i][j]
+
+    smallb2_dD = ixp.zerorank1()
+    for j in range(DIM):
+        for mu in range(4):
+            for nu in range(4):
+                # g_{\mu\nu,j} b^\mu b^\nu
+                # + 2 g_{\mu\nu} b^\mu_{,j} b^\nu
+                smallb2_dD[j] =   g4DDdD[mu][nu][j+1]*smallb4U[mu]*smallb4U[nu] \
+                                + 2*g4DD[mu][nu]*smallb4U_dD[mu][j+1]*smallb4U[nu]
 
     # We will also need derivatives of the spatial part of the inverse four-metric: since $g^{ij} = \gamma^{ij} - \frac{\beta^i \beta^j}{\alpha^2}$ ([Gourgoulhon, eq. 4.49](https://arxiv.org/pdf/gr-qc/0703035.pdf)), 
     # \begin{align}
@@ -556,42 +584,23 @@ def GiRaFFE_Higher_Order():
                 TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb4U[j+1]*smallbU_dD[k][j]
 
 
-    # Now, we will add $${\rm Term\ 3} = 2 b_l b^l_{,j} \gamma_{ki} \left( \underbrace{u^j u^k}_{\rm Term\ 3a} + \underbrace{g^{jk}}_{\rm Term\ 3b} \right),$$ which involves contractions over $k$ and $l$.
+    # Now, we will add $${\rm Term\ 3} = \gamma_{ki} \left( \underbrace{\left(b^2\right)_{,j} u^j u^k}_{\rm Term\ 3a} + \underbrace{\frac{1}{2} \left(b^2\right)_{,j} g^{jk}}_{\rm Term\ 3b} \right).$$ 
 
+
+    # Step 6e.iii
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                for l in range(DIM):
+                    # Term 3a: \gamma_{ki} ( b^2 )_{,j} u^j u^k
+                    TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*uU[j]*uU[k]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
-                    # Term 3a: 2 b_l b^l_{,j} \gamma_{ki} u^j u^k
-                    TEMUD_dD_contracted[i] += 2*smallb4D[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*uU[j]*uU[k]
-
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    # Term 3b: b_l b^l_{,j} \gamma_{ki} g^{jk}
-                    TEMUD_dD_contracted[i] += smallb4D[l+1]*smallbU_dD[l][j]*gammaDD[k][i]*g4UU[j+1][k+1]
-
-
-    # Finally, we will add contractions over $k$, $l$, and $m$: $${\rm Term\ 4} = \gamma_{ki} \gamma_{lm,j} b^l b^m \left( \underbrace{u^j u^k}_{\rm Term\ 4a} + \underbrace{\frac{1}{2} g^{jk}}_{\rm Term\ 4b} \right)$$
-
-
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    for m in range(DIM):
-                        # Term 4a: \gamma_{ki} \gamma_{lm,j} b^l b^m u^j u^k
-                        TEMUD_dD_contracted[i] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallb4U[l+1]*smallb4U[m+1]*uU[j]*uU[k]
-
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    for m in range(DIM):
-                        # Term 4b: \gamma_{ki} \gamma_{lm,j} b^l b^m \frac{1}{2} g^{jk}
-                        TEMUD_dD_contracted[i] += gammaDD[k][i]*gammaDD_dD[l][m][j]*smallb4U[l+1]*smallb4U[m+1]*g4UU[j+1][k+1]
+                    # Term 3b: \gamma_{ki} ( b^2 )_{,j} g^{jk} / 2
+                    TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*g4DD[j][k]
 
 
     # ## Evolution equation for $\tilde{S}_i$
