@@ -42,5 +42,5 @@ def InitialData_PlaneWave():
 
     # Step 5: Set initial data for uu and vv, where vv_ID = \partial_t uu_ID.
     global uu_ID,vv_ID
-    uu_ID = sp.sin(dot_product - wavespeed * time)
+    uu_ID = sp.sin(dot_product - wavespeed * time)+2
     vv_ID = sp.diff(uu_ID, time)
