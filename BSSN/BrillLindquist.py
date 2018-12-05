@@ -13,12 +13,12 @@
 # ### NRPy+ Source Code for this module: [BSSN/BSSN_RHSs.py](../edit/BSSN/BSSN_RHSs.py), [BSSN/BSSN_Constraints.py](../edit/BSSN/BSSNConstraints.py)
 # 
 # 
-# Here we use NRPy+ to generate initial data for two black holes (Brill-Lindquist, [Brill & Lindquist, Phys. Rev. 131, 471, 1963](https://journals.aps.org/pr/abstract/10.1103/PhysRev.131.471); see also Eq. 1 of [Brandt & Brügmann, arXiv:gr-qc/9711015v1](https://arxiv.org/pdf/gr-qc/9711015v1.pdf)).
+# Here we use NRPy+ to generate initial data for two black holes (Brill-Lindquist, [Brill & Lindquist, Phys. Rev. 131, 471, 1963](https://journals.aps.org/pr/abstract/10.1103/PhysRev.131.471); see also Eq. 1 of [Brandt & Br\"ugmann, arXiv:gr-qc/9711015v1](https://arxiv.org/pdf/gr-qc/9711015v1.pdf)).
 #
 
 # ## Setting up the initial data
 # 
-# ### Brill-Lindquist initial data ([Brill & Lindquist, Phys. Rev. 131, 471, 1963](https://journals.aps.org/pr/abstract/10.1103/PhysRev.131.471); see also Eq. 1 of [Brandt & Brügmann, arXiv:gr-qc/9711015v1](https://arxiv.org/pdf/gr-qc/9711015v1.pdf)) may be written in terms of the BSSN conformal factor and ADM extrinsic curvature as
+# ### Brill-Lindquist initial data ([Brill & Lindquist, Phys. Rev. 131, 471, 1963](https://journals.aps.org/pr/abstract/10.1103/PhysRev.131.471); see also Eq. 1 of [Brandt & Br\"ugmann, arXiv:gr-qc/9711015v1](https://arxiv.org/pdf/gr-qc/9711015v1.pdf)) may be written in terms of the BSSN conformal factor and ADM extrinsic curvature as
 # 
 # $$\psi = e^{\phi} = 1 + \sum_{i=1}^N \frac{m_{(i)}}{2 \left|\vec{r}_{(i)} - \vec{r}\right|};\quad K_{ij}=0.$$
 # 
