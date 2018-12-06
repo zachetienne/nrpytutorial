@@ -5,9 +5,9 @@
     \documentclass[landscape,letterpaper,10pt,english]{article}
 ((* endblock docclass *))
 
-((* block author *))
-\author{Zachariah Etienne, Patrick Nelson, Brandon Clark, and more}
-((* endblock author *))
+%((* block author *))
+%\author{Zachariah Etienne}
+%((* endblock author *))
 
 % ((* block bibliography *))
 % \bibliographystyle{unsrt}
