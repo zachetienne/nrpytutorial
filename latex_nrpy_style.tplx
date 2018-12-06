@@ -1,0 +1,15 @@
+% Based on http://nbviewer.jupyter.org/github/ipython/nbconvert-examples/blob/master/citations/Tutorial.ipynb , authored by Brian E. Granger
+((*- extends 'article.tplx' -*))
+((* block docclass *))
+    % Declare the document class
+    \documentclass[landscape,letterpaper,10pt,english]{article}
+((* endblock docclass *))
+
+%((* block author *))
+%\author{Zachariah Etienne}
+%((* endblock author *))
+
+% ((* block bibliography *))
+% \bibliographystyle{unsrt}
+% \bibliography{ipython}
+% ((* endblock bibliography *))
