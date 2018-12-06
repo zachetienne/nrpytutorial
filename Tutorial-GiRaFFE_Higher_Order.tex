@@ -1,0 +1,1500 @@
+% Based on http://nbviewer.jupyter.org/github/ipython/nbconvert-examples/blob/master/citations/Tutorial.ipynb , authored by Brian E. Granger
+% Default to the notebook output style
+
+    
+
+
+% Inherit from the specified cell style.
+
+
+
+
+    
+    % Declare the document class
+    \documentclass[landscape,letterpaper,10pt,english]{article}
+
+    
+    
+    \usepackage[T1]{fontenc}
+    % Nicer default font (+ math font) than Computer Modern for most use cases
+    \usepackage{mathpazo}
+
+    % Basic figure setup, for now with no caption control since it's done
+    % automatically by Pandoc (which extracts ![](path) syntax from Markdown).
+    \usepackage{graphicx}
+    % We will generate all images so they have a width \maxwidth. This means
+    % that they will get their normal width if they fit onto the page, but
+    % are scaled down if they would overflow the margins.
+    \makeatletter
+    \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+    \else\Gin@nat@width\fi}
+    \makeatother
+    \let\Oldincludegraphics\includegraphics
+    % Set max figure width to be 80% of text width, for now hardcoded.
+    \renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=.8\maxwidth]{#1}}
+    % Ensure that by default, figures have no caption (until we provide a
+    % proper Figure object with a Caption API and a way to capture that
+    % in the conversion process - todo).
+    \usepackage{caption}
+    \DeclareCaptionLabelFormat{nolabel}{}
+    \captionsetup{labelformat=nolabel}
+
+    \usepackage{adjustbox} % Used to constrain images to a maximum size 
+    \usepackage{xcolor} % Allow colors to be defined
+    \usepackage{enumerate} % Needed for markdown enumerations to work
+    \usepackage{geometry} % Used to adjust the document margins
+    \usepackage{amsmath} % Equations
+    \usepackage{amssymb} % Equations
+    \usepackage{textcomp} % defines textquotesingle
+    % Hack from http://tex.stackexchange.com/a/47451/13684:
+    \AtBeginDocument{%
+        \def\PYZsq{\textquotesingle}% Upright quotes in Pygmentized code
+    }
+    \usepackage{upquote} % Upright quotes for verbatim code
+    \usepackage{eurosym} % defines \euro
+    \usepackage[mathletters]{ucs} % Extended unicode (utf-8) support
+    \usepackage[utf8x]{inputenc} % Allow utf-8 characters in the tex document
+    \usepackage{fancyvrb} % verbatim replacement that allows latex
+    \usepackage{grffile} % extends the file name processing of package graphics 
+                         % to support a larger range 
+    % The hyperref package gives us a pdf with properly built
+    % internal navigation ('pdf bookmarks' for the table of contents,
+    % internal cross-reference links, web links for URLs, etc.)
+    \usepackage{hyperref}
+    \usepackage{longtable} % longtable support required by pandoc >1.10
+    \usepackage{booktabs}  % table support for pandoc > 1.12.2
+    \usepackage[inline]{enumitem} % IRkernel/repr support (it uses the enumerate* environment)
+    \usepackage[normalem]{ulem} % ulem is needed to support strikethroughs (\sout)
+                                % normalem makes italics be italics, not underlines
+    \usepackage{mathrsfs}
+    
+
+    
+    
+    % Colors for the hyperref package
+    \definecolor{urlcolor}{rgb}{0,.145,.698}
+    \definecolor{linkcolor}{rgb}{.71,0.21,0.01}
+    \definecolor{citecolor}{rgb}{.12,.54,.11}
+
+    % ANSI colors
+    \definecolor{ansi-black}{HTML}{3E424D}
+    \definecolor{ansi-black-intense}{HTML}{282C36}
+    \definecolor{ansi-red}{HTML}{E75C58}
+    \definecolor{ansi-red-intense}{HTML}{B22B31}
+    \definecolor{ansi-green}{HTML}{00A250}
+    \definecolor{ansi-green-intense}{HTML}{007427}
+    \definecolor{ansi-yellow}{HTML}{DDB62B}
+    \definecolor{ansi-yellow-intense}{HTML}{B27D12}
+    \definecolor{ansi-blue}{HTML}{208FFB}
+    \definecolor{ansi-blue-intense}{HTML}{0065CA}
+    \definecolor{ansi-magenta}{HTML}{D160C4}
+    \definecolor{ansi-magenta-intense}{HTML}{A03196}
+    \definecolor{ansi-cyan}{HTML}{60C6C8}
+    \definecolor{ansi-cyan-intense}{HTML}{258F8F}
+    \definecolor{ansi-white}{HTML}{C5C1B4}
+    \definecolor{ansi-white-intense}{HTML}{A1A6B2}
+    \definecolor{ansi-default-inverse-fg}{HTML}{FFFFFF}
+    \definecolor{ansi-default-inverse-bg}{HTML}{000000}
+
+    % commands and environments needed by pandoc snippets
+    % extracted from the output of `pandoc -s`
+    \providecommand{\tightlist}{%
+      \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+    % Add ',fontsize=\small' for more characters per line
+    \newenvironment{Shaded}{}{}
+    \newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+    \newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+    \newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+    \newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+    \newcommand{\RegionMarkerTok}[1]{{#1}}
+    \newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\NormalTok}[1]{{#1}}
+    
+    % Additional commands for more recent versions of Pandoc
+    \newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+    \newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+    \newcommand{\ImportTok}[1]{{#1}}
+    \newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+    \newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+    \newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+    \newcommand{\BuiltInTok}[1]{{#1}}
+    \newcommand{\ExtensionTok}[1]{{#1}}
+    \newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+    \newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+    \newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    
+    
+    % Define a nice break command that doesn't care if a line doesn't already
+    % exist.
+    \def\br{\hspace*{\fill} \\* }
+    % Math Jax compatibility definitions
+    \def\gt{>}
+    \def\lt{<}
+    \let\Oldtex\TeX
+    \let\Oldlatex\LaTeX
+    \renewcommand{\TeX}{\textrm{\Oldtex}}
+    \renewcommand{\LaTeX}{\textrm{\Oldlatex}}
+    % Document parameters
+    % Document title
+    \title{Tutorial-GiRaFFE\_Higher\_Order}
+    
+    
+%\author{Zachariah Etienne}
+%
+    
+
+    % Pygments definitions
+    
+\makeatletter
+\def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+    \let\PY@ul=\relax \let\PY@tc=\relax%
+    \let\PY@bc=\relax \let\PY@ff=\relax}
+\def\PY@tok#1{\csname PY@tok@#1\endcsname}
+\def\PY@toks#1+{\ifx\relax#1\empty\else%
+    \PY@tok{#1}\expandafter\PY@toks\fi}
+\def\PY@do#1{\PY@bc{\PY@tc{\PY@ul{%
+    \PY@it{\PY@bf{\PY@ff{#1}}}}}}}
+\def\PY#1#2{\PY@reset\PY@toks#1+\relax+\PY@do{#2}}
+
+\expandafter\def\csname PY@tok@w\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.73,0.73}{##1}}}
+\expandafter\def\csname PY@tok@c\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.74,0.48,0.00}{##1}}}
+\expandafter\def\csname PY@tok@k\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.69,0.00,0.25}{##1}}}
+\expandafter\def\csname PY@tok@o\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ow\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@ne\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.82,0.25,0.23}{##1}}}
+\expandafter\def\csname PY@tok@nv\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@no\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ni\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.60,0.60,0.60}{##1}}}
+\expandafter\def\csname PY@tok@na\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.49,0.56,0.16}{##1}}}
+\expandafter\def\csname PY@tok@nt\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@s\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sd\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@si\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@se\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sr\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@ss\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sx\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@m\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@gh\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gu\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.50,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gr\endcsname{\def\PY@tc##1{\textcolor[rgb]{1.00,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ge\endcsname{\let\PY@it=\textit}
+\expandafter\def\csname PY@tok@gs\endcsname{\let\PY@bf=\textbf}
+\expandafter\def\csname PY@tok@gp\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@go\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.53,0.53}{##1}}}
+\expandafter\def\csname PY@tok@gt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
+\expandafter\def\csname PY@tok@err\endcsname{\def\PY@bc##1{\setlength{\fboxsep}{0pt}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}
+\expandafter\def\csname PY@tok@kc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kd\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kr\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@bp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@fm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@vc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vg\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sa\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@dl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s2\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s1\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@mb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@il\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mo\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ch\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cm\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cpf\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@c1\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cs\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+
+\def\PYZbs{\char`\\}
+\def\PYZus{\char`\_}
+\def\PYZob{\char`\{}
+\def\PYZcb{\char`\}}
+\def\PYZca{\char`\^}
+\def\PYZam{\char`\&}
+\def\PYZlt{\char`\<}
+\def\PYZgt{\char`\>}
+\def\PYZsh{\char`\#}
+\def\PYZpc{\char`\%}
+\def\PYZdl{\char`\$}
+\def\PYZhy{\char`\-}
+\def\PYZsq{\char`\'}
+\def\PYZdq{\char`\"}
+\def\PYZti{\char`\~}
+% for compatibility with earlier versions
+\def\PYZat{@}
+\def\PYZlb{[}
+\def\PYZrb{]}
+\makeatother
+
+
+    % Exact colors from NB
+    \definecolor{incolor}{rgb}{0.0, 0.0, 0.5}
+    \definecolor{outcolor}{rgb}{0.545, 0.0, 0.0}
+
+
+
+    
+    % Prevent overflowing lines due to hard-to-break entities
+    \sloppy 
+    % Setup hyperref package
+    \hypersetup{
+      breaklinks=true,  % so long urls are correctly broken across lines
+      colorlinks=true,
+      urlcolor=urlcolor,
+      linkcolor=linkcolor,
+      citecolor=citecolor,
+      }
+    % Slightly bigger margins than the latex defaults
+    
+    \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+    
+    
+
+    \begin{document}
+    
+    
+    \maketitle
+    
+    
+
+    
+    \section{\texorpdfstring{\(\texttt{GiRaFFE}\): General Relativistic
+Force-Free
+Electrodynamics}{\textbackslash{}texttt\{GiRaFFE\}: General Relativistic Force-Free Electrodynamics}}\label{textttgiraffe-general-relativistic-force-free-electrodynamics}
+
+\[\label{top}\]
+
+\subsection{\texorpdfstring{Porting the original \(\texttt{GiRaFFE}\)
+code to
+NRPy+}{Porting the original \textbackslash{}texttt\{GiRaFFE\} code to NRPy+}}\label{porting-the-original-textttgiraffe-code-to-nrpy}
+
+Porting the original \(\texttt{GiRaFFE}\) code, as presented in
+\href{https://arxiv.org/pdf/1704.00599.pdf}{the original paper}, to
+NRPy+ will generally make it easier to maintain, as well as to make
+changes. Specifically, it will make it nearly trivial to increase the
+finite-differencing order.
+
+We will begin this tutorial in the usual way: import the core NRPy+
+modules that we need, set the dimensionality of the grid with parameter
+\(\text{grid::DIM}\), and declare the basic gridfunctions in
+Section \ref{preliminaries}. We will then set
+\(T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}\)
+and derive and set the related quantities
+\(\partial_j T^{j}_{{\rm EM} i}\) in Section \ref{step4}. Then, in
+Section \ref{step7}, we will use the previously constructed quantities
+to build the right hand side for the time-evolution equation
+\[\partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}.\]
+After that, we will construct the evolution equations for the other
+quantities in Section \ref{step8}
+\[\partial_t A_i = \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j)\]
+and
+\[\partial_t [\sqrt{\gamma} \Phi] = -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi].\]
+Finally, in Section \ref{step9}, we will build the expression
+\[\tilde{S}_i = \gamma_{ij} \frac{v^i_{(n)} \sqrt{\gamma}B^2}{4 \pi}.\]
+This will be needed to set initial data for \(\tilde{S}_i\) from the
+initial data defined in the module \url{Tutorial-GiRaFFEfood_HO.ipynb}
+
+\subsubsection{Table of Contents:}\label{table-of-contents}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Preliminaries
+
+  \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
+  \tightlist
+  \item
+    Section \ref{steps0to2}: Set up the basic NRPy+ infrastructure we
+    need
+  \item
+    Section \ref{step3}: Build the spatial derivatives of the four
+    metric
+  \end{enumerate}
+\item
+  \(T^{\mu\nu}_{\rm EM}\) and its derivatives
+
+  \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
+  \tightlist
+  \item
+    Section \ref{step4}: \(u^i\) and \(b^i\) and related quantities
+  \item
+    Section \ref{step5}: Construct the electromagnetic stress-energy
+    tensor
+  \item
+    Section \ref{step6}: Derivatives of the electromagnetic
+    stress-energy tensor
+  \end{enumerate}
+\item
+  Evolution equation for \(\tilde{S}_i\)
+
+  \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
+  \tightlist
+  \item
+    Section \ref{step7}: Construct the evolution equation for
+    \(\tilde{S}_i\)
+  \end{enumerate}
+\item
+  Evolution equations for \(A_i\) and \(\Phi\)
+
+  \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
+  \tightlist
+  \item
+    Section \ref{step8}: Construct the evolution equations for \(A_i\)
+    and \(\sqrt{\gamma}\Phi\)
+  \end{enumerate}
+\item
+  Setting the initial \(\tilde{S}_i\) from initial data
+
+  \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
+  \tightlist
+  \item
+    Section \ref{step9}: Build the expression for \(\tilde{S}_i\)
+  \end{enumerate}
+\item
+  Code Validation
+
+  \begin{enumerate}
+  \def\labelenumii{\arabic{enumii}.}
+  \tightlist
+  \item
+    Section \ref{step10}: NRPy+ Module Code Validation
+  \end{enumerate}
+\end{enumerate}
+
+    Our ultimate goal here will be to code the evolution equations (from eq.
+13 of the \href{https://arxiv.org/pdf/1704.00599.pdf}{original paper}):
+
+\begin{align}
+\partial_t \tilde{S}_i &= - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}\\
+\partial_t A_i &= \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j)\\
+\partial_t [\sqrt{\gamma} \Phi] &= -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi],
+\end{align}
+
+where the densitized spatial Poynting flux one-form
+\(\tilde{S}_i = \sqrt{\gamma} S_i\) (and \(S_i\) comes from
+\(S_{\mu} -n_{\nu} T^{\nu}_{{\rm EM} \mu}\)) and
+
+\begin{align}
+T^{\mu \nu}_{\rm EM} &= b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}, \\
+\sqrt{4\pi} b^0 &= B^0_{\rm (u)} = \frac{u_j B^j}{\alpha}, \\
+\sqrt{4\pi} b^i &= B^i_{\rm (u)} = \frac{B^i + (u_j B^j) u^i}{\alpha u^0}, \\
+\end{align}
+
+and \[
+ B^i = \frac{\tilde{B}^i}{\sqrt{\gamma}}.\]
+
+\(T^{\mu\nu}_{\rm EM}\) is written in terms of
+
+\begin{itemize}
+\tightlist
+\item
+  \(b^\mu\), the 4-component magnetic field vector, related to the
+  comoving magnetic field vector \(B^i_{(u)}\)
+\item
+  \(u^\mu\), the 4-velocity
+\item
+  \(g^{\mu \nu}\), the inverse 4-metric
+\end{itemize}
+
+However, \(\texttt{GiRaFFE}\) has access to only the following
+quantities
+
+\begin{itemize}
+\tightlist
+\item
+  \(\gamma_{ij}\), the 3-metric
+\item
+  \(\alpha\), the lapse
+\item
+  \(\beta^i\), the shift
+\item
+  \(A_i\), the vector potential
+\item
+  \(\left[\sqrt{\gamma}\Phi\right]\), the zero-component of the vector
+  potential \(A_\mu\), times the square root of the determinant of the
+  3-metric
+\item
+  \(v_{(n)}^i\), the Valencia 3-velocity
+\item
+  \(u^0\), the zero-component of the 4-velocity
+\end{itemize}
+
+Thus to compute the needed quantities appearing on the right-hand side
+of \(\partial_t \tilde{S}_i\), \(\partial_t A_i\), and
+\(\partial_t \left[\sqrt{\gamma}\Phi\right]\).
+
+\begin{itemize}
+\tightlist
+\item
+  \(b^\mu\):
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(b^0 = \frac{1}{\sqrt{4\pi}} B^0_{\rm (u)} = \frac{u_j B^j}{\sqrt{4\pi}\alpha}\)
+  \item
+    \(b^i = \frac{1}{\sqrt{4\pi}} B^i_{\rm (u)} = \frac{B^i + (u_j B^j) u^i}{\sqrt{4\pi}\alpha u^0}\)
+  \item
+    \(B^i = \epsilon^{ijk} \partial_j A_k\)
+  \end{itemize}
+\item
+  \(u^\mu\):
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(u^i = u^0 (\alpha v^i_{(n)} - \beta^i)\)
+  \end{itemize}
+\item
+  \(g^{\mu \nu}\):
+
+  \begin{itemize}
+  \tightlist
+  \item
+    \(g^{\mu\nu} = \begin{pmatrix} -\frac{1}{\alpha^2} & \frac{\beta^i}{\alpha^2} \\ \frac{\beta^i}{\alpha^2} & \gamma^{ij} - \frac{\beta^i\beta^j}{\alpha^2} \end{pmatrix},\)
+  \end{itemize}
+\end{itemize}
+
+Most of these are computed in the module
+u0\_smallb\_Poynting\_\_Cartesian.py, and we will import that module to
+save effort. Furthermore, the four-metric \(g_{\mu\nu}\) is related to
+the three-metric \(\gamma_{ij}\), index-lowered shift \(\beta_i\), and
+lapse \(\alpha\) by \[
+g_{\mu\nu} = \begin{pmatrix} 
+-\alpha^2 + \beta^k \beta_k & \beta_j \\
+\beta_i & \gamma_{ij}
+\end{pmatrix}.
+\] Note that as usual, Greek indices refer to four-dimensional
+quantities where the zeroth component indicates \(t\) components, while
+Latin indices refer to three-dimensional quantities. Since Python always
+indexes its lists from 0, however, the zeroth component will indicate a
+spatial direction, and any expressions involving mixed Greek and Latin
+indices will need to offset one set of indices by one. To be more
+specific, a Latin index in a four-vector must be incremented and a Greek
+index in a three-vector must be decremented (however, this case does is
+not as common, and does not occur in this tutorial).
+
+    \section{Preliminaries}\label{preliminaries}
+
+First, we will import the core modules of NRPy that we will need and
+specify the main gridfunctions we will need.
+
+\subsection{Steps 0-2: Set up the needed NRPy+
+infrastructure}\label{steps-0-2-set-up-the-needed-nrpy-infrastructure}
+
+\[\label{steps0to2}\]
+
+{[}Back to Section \ref{top}{]}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{-1}
+\tightlist
+\item
+  Set the spatial dimension parameter to 3.
+\item
+  Set the finite differencing order to 4. The metric quantities
+  \(\alpha\), \(\beta^i\), and \(\gamma_{ij}\) will be initially set by
+  the \(\text{ShiftedKerrSchild}\) thorn, while the Valencia 3-velocity
+  \(v^i_{(n)}\) and vector potential \(A_i\) will initially be set in
+  the separate thorn \textbf{GiRaFFEfood\_HO}.
+\item
+  To import the four-metric, we will need to call the function
+  **compute\_u0\_smallb\_Poynting\_\_Cartesian(gammaDD,betaU,alpha,ValenciavU,BU)\textbf{.
+  Since it has BU as an argument, we will need to first use
+  }ixp.symm\_matrix\_inverter3x3()** to find gammadet, which in turn
+  allows us to set the Levi-Civita tensor, and then to construct BU.
+\end{enumerate}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}1}]:} \PY{k+kn}{import} \PY{n+nn}{NRPy\PYZus{}param\PYZus{}funcs} \PY{k+kn}{as} \PY{n+nn}{par}
+        \PY{k+kn}{import} \PY{n+nn}{indexedexp} \PY{k+kn}{as} \PY{n+nn}{ixp}
+        \PY{k+kn}{import} \PY{n+nn}{grid} \PY{k+kn}{as} \PY{n+nn}{gri}
+        \PY{k+kn}{import} \PY{n+nn}{finite\PYZus{}difference} \PY{k+kn}{as} \PY{n+nn}{fin}
+        \PY{k+kn}{from} \PY{n+nn}{outputC} \PY{k+kn}{import} \PY{o}{*}
+        
+        \PY{c+c1}{\PYZsh{}Step 0: Set the spatial dimension parameter to 3.}
+        \PY{n}{par}\PY{o}{.}\PY{n}{set\PYZus{}parval\PYZus{}from\PYZus{}str}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{grid::DIM}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+m+mi}{3}\PY{p}{)}
+        \PY{n}{DIM} \PY{o}{=} \PY{n}{par}\PY{o}{.}\PY{n}{parval\PYZus{}from\PYZus{}str}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{grid::DIM}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Step 1: Set the finite differencing order to 4.}
+        \PY{n}{par}\PY{o}{.}\PY{n}{set\PYZus{}parval\PYZus{}from\PYZus{}str}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{finite\PYZus{}difference::FD\PYZus{}CENTDERIVS\PYZus{}ORDER}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{)}
+        
+        \PY{n}{thismodule} \PY{o}{=} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{GiRaFFE\PYZus{}NRPy}\PY{l+s+s2}{\PYZdq{}}
+        
+        \PY{c+c1}{\PYZsh{} M\PYZus{}PI will allow the C code to substitute the correct value}
+        \PY{n}{M\PYZus{}PI} \PY{o}{=} \PY{n}{par}\PY{o}{.}\PY{n}{Cparameters}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{REAL}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{thismodule}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{M\PYZus{}PI}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{c+c1}{\PYZsh{} Here, we declare the 3\PYZhy{}metric, shift, and lapse as usual}
+        \PY{n}{gammaDD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank2}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{gammaDD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{sym01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{)}
+        \PY{n}{betaU}   \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{betaU}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{)}
+        \PY{n}{alpha}   \PY{o}{=} \PY{n}{gri}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alpha}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{c+c1}{\PYZsh{} These two gridfunctions are the basic inputs into StildeD\PYZus{}rhs}
+        \PY{n}{ValenciavU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{ValenciavU}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{)}
+        \PY{n}{AD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{3}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Step 2: Import the four metric}
+        \PY{n}{gammaUU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank2}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{gammaUU}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{sym01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{gammadet} \PY{o}{=} \PY{n}{gri}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{gammadet}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{gammaUU}\PY{p}{,} \PY{n}{gammadet} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{symm\PYZus{}matrix\PYZus{}inverter3x3}\PY{p}{(}\PY{n}{gammaDD}\PY{p}{)}
+\end{Verbatim}
+
+    Then, we will declare the gridfunctions related to the metric and build
+the four metric using code from
+\url{Tutorial-smallb2_Poynting_vector-Cartesian.ipynb}, which requires
+the magnetic field \(B^i\). So, we will also define the magnetic field
+as in \href{https://arxiv.org/pdf/1704.00599.pdf}{eq. 18}:
+\[B^i = \epsilon^{ijk} \partial_j A_k,\] where \(\epsilon^{ijk}\) the
+rank-3 Levi-Civita tensor, related to the rank-3 Levi-Civita symbol
+\([ijk]\) and determinant of the three-metric \(\gamma\) by
+\[\epsilon^{ijk} = [ijk]/\sqrt{\gamma}.\]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}2}]:} \PY{c+c1}{\PYZsh{} We already have a handy function to define the Levi\PYZhy{}Civita symbol in WeylScalars}
+        \PY{k+kn}{import} \PY{n+nn}{WeylScal4NRPy.WeylScalars\PYZus{}Cartesian} \PY{k+kn}{as} \PY{n+nn}{weyl}
+        \PY{n}{LeviCivitaDDD} \PY{o}{=} \PY{n}{weyl}\PY{o}{.}\PY{n}{define\PYZus{}LeviCivitaSymbol\PYZus{}rank3}\PY{p}{(}\PY{p}{)}
+        \PY{n}{LeviCivitaUUU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank3}\PY{p}{(}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                    \PY{n}{LCijk} \PY{o}{=} \PY{n}{LeviCivitaDDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+                    \PY{n}{LeviCivitaDDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{=} \PY{n}{LCijk} \PY{o}{*} \PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{n}{gammadet}\PY{p}{)}
+                    \PY{n}{LeviCivitaUUU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{=} \PY{n}{LCijk} \PY{o}{/} \PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{n}{gammadet}\PY{p}{)}
+        
+        \PY{n}{AD\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank2}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AD\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{nosym}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{c+c1}{\PYZsh{} With Levi\PYZhy{}Civita and the derivative of A\PYZus{}i, we set B\PYZca{}i to the curl of A\PYZca{}i}
+        \PY{n}{BU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                    \PY{n}{BU}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{LeviCivitaUUU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{*} \PY{n}{AD\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} We use previous work to set u0 and smallb along with the four metric and its inverse}
+        \PY{k+kn}{import} \PY{n+nn}{u0\PYZus{}smallb\PYZus{}Poynting\PYZus{}\PYZus{}Cartesian.u0\PYZus{}smallb\PYZus{}Poynting\PYZus{}\PYZus{}Cartesian} \PY{k+kn}{as} \PY{n+nn}{u0b}
+        \PY{n}{u0b}\PY{o}{.}\PY{n}{compute\PYZus{}u0\PYZus{}smallb\PYZus{}Poynting\PYZus{}\PYZus{}Cartesian}\PY{p}{(}\PY{n}{gammaDD}\PY{p}{,}\PY{n}{betaU}\PY{p}{,}\PY{n}{alpha}\PY{p}{,}\PY{n}{ValenciavU}\PY{p}{,}\PY{n}{BU}\PY{p}{)}
+\end{Verbatim}
+
+    Recall that the four-metric \(g_{\mu\nu}\) is related to the
+three-metric \(\gamma_{ij}\), index-lowered shift \(\beta_i\), and lapse
+\(\alpha\) by\\
+\[
+g_{\mu\nu} = \begin{pmatrix} 
+-\alpha^2 + \beta^k \beta_k & \beta_j \\
+\beta_i & \gamma_{ij}
+\end{pmatrix}.
+\] This tensor and its inverse have already been built by the
+u0\_smallb\_Poynting\_\_Cartesian.py module, so we can simply import the
+variables.
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}3}]:} \PY{n}{betaD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{n}{betaD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{*} \PY{n}{betaU}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} We will now pull in the four metric and its inverse.}
+        \PY{n}{g4DD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank2}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+        \PY{n}{g4UU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank2}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+        \PY{k}{for} \PY{n}{mu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{nu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                \PY{n}{g4DD}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{g4DD}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]}
+                \PY{n}{g4UU}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{g4UU}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]}
+\end{Verbatim}
+
+    \subsection{Step 3: Build the spatial derivatives of the four
+metric}\label{step-3-build-the-spatial-derivatives-of-the-four-metric}
+
+\[\label{step3}\] {[}Back to Section \ref{top}{]}
+
+We will also need spatial derivatives of the metric,
+\(\partial_i g_{\mu\nu} = g_{\mu\nu,i}\). To do this, we will need
+derivatives of the shift vector with its indexed lowered,
+\(\beta_{i,j} = \partial_j \beta_i\). This becomes
+
+\begin{align}
+\beta_{i,j} &= \partial_j \beta_i \\
+            &= \partial_j (\gamma_{ik} \beta^k) \\
+            &= \gamma_{ik} \partial_j\beta^k + \beta^k \partial_j \gamma_{ik} \\
+\beta_{i,j} &= \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j} \\
+\end{align}
+
+In terms of the three-metric, lapse, and shift, we find \[
+g_{\mu\nu,l} = \begin{pmatrix} 
+-2\alpha \alpha_{,l} + \beta^k_{\ ,l} \beta_k + \beta^k \beta_{k,l} & \beta_{i,l} \\
+\beta_{j,l} & \gamma_{ij,l}
+\end{pmatrix}.
+\]
+
+Since this expression mixes Greek and Latin indices, we will need to
+store the expressions for each of the three spatial derivatives as
+separate variables. Also, consider the term
+\(\beta_{i,j} = \partial_j \beta_i = \partial_j (\gamma_{ik} \beta^k) = \gamma_{ik} \partial_j\beta^k + \beta^k \partial_j \gamma_{ik} = \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j}\),
+that is,
+
+\begin{align}
+\beta_{i,j} &= \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j}. \\
+\end{align}
+
+So, we will first set
+\[ g_{00,l} = \underbrace{-2\alpha \alpha_{,l}}_{\rm Term\ 1} + \underbrace{\beta^k_{\ ,l} \beta_k}_{\rm Term\ 2} + \underbrace{\beta^k \beta_{k,l}}_{\rm Term\ 3} \]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}4}]:} \PY{c+c1}{\PYZsh{} Step 3: Build the spatial derivative of the four metric}
+        \PY{c+c1}{\PYZsh{} Step 3a: Declare derivatives of grid functions. These will be handled by FD\PYZus{}outputC}
+        \PY{n}{alpha\PYZus{}dD}   \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alpha\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{betaU\PYZus{}dD}   \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank2}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{betaU\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{nosym}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{gammaDD\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank3}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{gammaDD\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{sym01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} Step 3b: These derivatives will be constructed analytically.}
+        \PY{n}{betaDdD}    \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank2}\PY{p}{(}\PY{p}{)}
+        
+        \PY{n}{g4DDdD}     \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank3}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+        
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                    \PY{c+c1}{\PYZsh{} \PYZbs{}gamma\PYZus{}\PYZob{}ik\PYZcb{} \PYZbs{}beta\PYZca{}k\PYZus{}\PYZob{},j\PYZcb{} + \PYZbs{}beta\PYZca{}k \PYZbs{}gamma\PYZus{}\PYZob{}ik,j\PYZcb{}}
+                    \PY{n}{betaDdD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{*} \PY{n}{betaU\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{+} \PY{n}{betaU}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{*} \PY{n}{gammaDD\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} Step 3c: Set the 00 components}
+        \PY{c+c1}{\PYZsh{} Step 3c.i: Term 1: \PYZhy{}2\PYZbs{}alpha \PYZbs{}alpha\PYZus{}\PYZob{},l\PYZcb{}}
+        \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{g4DDdD}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{=} \PY{o}{\PYZhy{}}\PY{l+m+mi}{2}\PY{o}{*}\PY{n}{alpha}\PY{o}{*}\PY{n}{alpha\PYZus{}dD}\PY{p}{[}\PY{n}{l}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} Step 3c.ii: Term 2: \PYZbs{}beta\PYZca{}k\PYZus{}\PYZob{}\PYZbs{} ,l\PYZcb{} \PYZbs{}beta\PYZus{}k}
+        \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{n}{g4DDdD}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{betaU\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{p}{]} \PY{o}{*} \PY{n}{betaD}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+                    
+        \PY{c+c1}{\PYZsh{} Step 3c.iii: Term 3: \PYZbs{}beta\PYZca{}k \PYZbs{}beta\PYZus{}\PYZob{}k,l\PYZcb{}}
+        \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{n}{g4DDdD}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{betaU}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{*} \PY{n}{betaDdD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{p}{]}
+                    
+\end{Verbatim}
+
+    Now we will contruct the other components of \(g_{\mu\nu,l}\). We will
+first construct \[ g_{i0,l} = g_{0i,l} = \beta_{i,l}, \] then
+\[ g_{ij,l} = \gamma_{ij,l} \]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}5}]:} \PY{c+c1}{\PYZsh{} Step 3d: Set the i0 and 0j components}
+        \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{c+c1}{\PYZsh{} \PYZbs{}beta\PYZus{}\PYZob{}i,l\PYZcb{}}
+                \PY{n}{g4DDdD}\PY{p}{[}\PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{=} \PY{n}{g4DDdD}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{=} \PY{n}{betaDdD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{}Step 3e: Set the ij components}
+        \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                    \PY{c+c1}{\PYZsh{} \PYZbs{}gamma\PYZus{}\PYZob{}ij,l\PYZcb{}}
+                    \PY{n}{g4DDdD}\PY{p}{[}\PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{=} \PY{n}{gammaDD\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{p}{]}
+\end{Verbatim}
+
+    \section{\texorpdfstring{\(T^{\mu\nu}_{\rm EM}\) and its
+derivatives}{T\^{}\{\textbackslash{}mu\textbackslash{}nu\}\_\{\textbackslash{}rm EM\} and its derivatives}}\label{tmunu_rm-em-and-its-derivatives}
+
+\subsection{\texorpdfstring{Step 4: \(u^i\) and \(b^i\) and related
+quantities}{Step 4: u\^{}i and b\^{}i and related quantities}}\label{step-4-ui-and-bi-and-related-quantities}
+
+\[\label{step4}\] {[}Back to Section \ref{top}{]}
+
+Now that the metric and its derivatives are out of the way, we will
+return our attention to the electromagnetic stress-energy tensor, drawn
+from eq. 27 of \href{https://arxiv.org/pdf/1310.3274.pdf}{this paper}:
+\[T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.\]
+We will need the four-velocity \(u^\mu\), which is related to the
+Valencia 3-velocity \(v^i_{(n)}\) that we are using by\\
+
+\begin{align}
+u^i &= u^0 (\alpha v^i_{(n)} - \beta^i), \\
+u_j &= \alpha u^0 \gamma_{ij} v^i_{(n)}, \\
+\end{align}
+
+and \(v^i_{(n)}\) is the Valencia three-velocity, as shown in
+\href{https://arxiv.org/pdf/astro-ph/0503420.pdf}{Duez, et al, eqs. 53
+and 56}. These have already been built by the
+u0\_smallb\_Poynting\_\_Cartesian.py module, so we can simply import the
+variables.
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}6}]:} \PY{c+c1}{\PYZsh{} Step 4: \PYZdl{}u\PYZca{}i\PYZdl{} and \PYZdl{}b\PYZca{}i\PYZdl{} and related quantities}
+        \PY{c+c1}{\PYZsh{} Step 4a: import the four\PYZhy{}velocity terms}
+        \PY{c+c1}{\PYZsh{}u0 = par.Cparameters(\PYZdq{}REAL\PYZdq{},thismodule,\PYZdq{}u0\PYZdq{})}
+        \PY{c+c1}{\PYZsh{}u0 = gri.register\PYZus{}gridfunctions(\PYZdq{}AUX\PYZdq{},\PYZdq{}u0\PYZdq{})}
+        \PY{n}{uD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{uD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{uU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{uU}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{n}{u0} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{u0}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{uD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{uD}\PY{p}{[}\PY{n}{i}\PY{p}{]}
+            \PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]}
+\end{Verbatim}
+
+    We also need the vector \(b^{\mu}\) before we can compute this, which is
+related to the magnetic field by
+
+\begin{align}
+b^0 &= \frac{1}{\sqrt{4\pi}} B^0_{\rm (u)} = \frac{u_j B^j}{\sqrt{4\pi}\alpha}, \\
+b^i &= \frac{1}{\sqrt{4\pi}} B^i_{\rm (u)} = \frac{B^i + (u_j B^j) u^i}{\sqrt{4\pi}\alpha u^0}, \\
+\end{align}
+
+and
+
+\begin{align}
+B^i &= \frac{\tilde{B}^i}{\sqrt{\gamma}},
+\end{align}
+
+where \(B^i\) is the variable tracked by the HydroBase thorn in the
+Einstein Toolkit. These have already been built by the
+u0\_smallb\_Poynting\_\_Cartesian.py module, so we can simply import the
+variables.
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}7}]:} \PY{c+c1}{\PYZsh{} Step 4b: import the small b terms}
+        \PY{n}{smallb4U} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+        \PY{n}{smallb4D} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+        \PY{k}{for} \PY{n}{mu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+            \PY{n}{smallb4U}\PY{p}{[}\PY{n}{mu}\PY{p}{]} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{mu}\PY{p}{]}
+            \PY{n}{smallb4D}\PY{p}{[}\PY{n}{mu}\PY{p}{]} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{smallb4D}\PY{p}{[}\PY{n}{mu}\PY{p}{]}
+        
+        \PY{n}{smallb2} \PY{o}{=} \PY{n}{u0b}\PY{o}{.}\PY{n}{smallb2}
+\end{Verbatim}
+
+     \#\# Step 5: Construct the electromagnetic stress-energy tensor
+\[\label{step5}\]
+
+{[}Back to Section \ref{top}{]}
+
+We now have all the pieces to calculate the stress-energy tensor,
+\[T^{\mu \nu}_{\rm EM} = \underbrace{b^2 u^{\mu} u^{\nu}}_{\rm Term\ 1} + 
+\underbrace{\frac{b^2}{2} g^{\mu \nu}}_{\rm Term\ 2}
+- \underbrace{b^{\mu} b^{\nu}}_{\rm Term\ 3}.\] Because \(u^0\) is a
+separate variable, we could build the \(00\) component separately, then
+the \(\mu0\) and \(0\nu\) components, and finally the \(\mu\nu\)
+components. Alternatively, for clarity, we could create a temporary
+variable \(u^\mu=\left( u^0, u^i \right)\)
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}8}]:} \PY{c+c1}{\PYZsh{} Step 5: Construct the electromagnetic stress\PYZhy{}energy tensor}
+        \PY{c+c1}{\PYZsh{} Step 5a: Set up the four\PYZhy{}velocity vector}
+        \PY{n}{u4U} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+        \PY{n}{u4U}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]} \PY{o}{=} \PY{n}{u0}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{u4U}\PY{p}{[}\PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{=} \PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} Step 5b: Build T4EMUU itself}
+        \PY{n}{T4EMUU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank2}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+        \PY{k}{for} \PY{n}{mu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{nu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                \PY{c+c1}{\PYZsh{} Term 1: \PYZbs{}underbrace\PYZob{}b\PYZca{}2 u\PYZca{}\PYZob{}\PYZbs{}mu\PYZcb{} u\PYZca{}\PYZob{}\PYZbs{}nu\PYZcb{}\PYZcb{}}
+                \PY{n}{T4EMUU}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]} \PY{o}{=} \PY{n}{smallb2}\PY{o}{*}\PY{n}{u4U}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{o}{*}\PY{n}{u4U}\PY{p}{[}\PY{n}{nu}\PY{p}{]}
+        
+        \PY{k}{for} \PY{n}{mu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{nu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                \PY{c+c1}{\PYZsh{} Term 2: b\PYZca{}2 / 2 g\PYZca{}\PYZob{}\PYZbs{}mu \PYZbs{}nu\PYZcb{}}
+                \PY{n}{T4EMUU}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{smallb2}\PY{o}{*}\PY{n}{g4UU}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]}\PY{o}{/}\PY{l+m+mi}{2}
+        
+        \PY{k}{for} \PY{n}{mu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{nu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                \PY{c+c1}{\PYZsh{} Term 3: b\PYZca{}\PYZob{}\PYZbs{}mu\PYZcb{} b\PYZca{}\PYZob{}\PYZbs{}nu\PYZcb{}}
+                \PY{n}{T4EMUU}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{o}{*}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{nu}\PY{p}{]}
+\end{Verbatim}
+
+    \subsection{Step 6: Derivatives of the electromagnetic stress-energy
+tensor}\label{step-6-derivatives-of-the-electromagnetic-stress-energy-tensor}
+
+\[\label{step6}\]
+
+{[}Back to Section \ref{top}{]}
+
+If we look at the evolution equation, we see that we will need spatial
+derivatives of \(T^{\mu\nu}_{\rm EM}\). In previous tutorials, when
+confronted with derivatives of complicated expressions, we have declared
+those expressions as gridfunctions themselves, thus allowing NRPy+ to
+take finite-difference derivatives of the expressions. This generally
+reduces the error, because the alternative is to use a function of
+several finite-difference derivatives, allowing more error to accumulate
+than the extra gridfunction will introduce. While we will use that
+technique for some of the subexpressions of \(T^{\mu\nu}_{\rm EM}\), we
+don't want to rely on it for the whole expression; doing so would
+require us to take the derivative of the magnetic field \(B^i\), which
+is itself found by finite-differencing the vector potential \(A_i\). It
+requires some finesse, then, to find \(B^i\) inside the ghost zones, and
+those values of \(B^i\) are necessarily less accurate; taking another
+derivative from them would only compound the problem. Instead, we will
+take analytic derivatives of \(T^{\mu\nu}_{\rm EM}\).
+
+We will now now take these spatial derivatives of
+\(T^{\mu\nu}_{\rm EM}\), applying the chain rule until it is only in
+terms of basic gridfunctions and their derivatives: \(\alpha\),
+\(\beta^i\), \(\gamma_{ij}\), \(A_i\), and the four-velocity \(u^i\).
+Along the way, we will also set up useful temporary variables
+representing the steps of chain rule: * \(B^i\) (already computed in
+terms of \(A_k\)), * \(B^i_{,l}\), * \(b^i\) and \(b_i\) (already
+computed), * \(b^i_{,k}\), * \(b^2\) (already computed), * and
+\(\left(b^2\right)_{,j}\).
+
+(The variables not already computed will not be seen by the ETK; they
+simply help to organize the NRPy+ code.)
+
+We will need the definitions of \(\tilde{B}^i\) and \(B^i\) in terms of
+\(B^i\) and \(A_i\):
+
+\begin{align}
+\tilde{B}^i &= \sqrt{\gamma} B^i \\
+B^i &= \epsilon^{ijk} \partial_j A_k \\
+\end{align}
+
+So then,
+
+\begin{align}
+\partial_j T^{j}_{{\rm EM} i} &= \partial_j (\gamma_{ki} T^{kj}_{\rm EM}) \\
+&= \partial_j [\gamma_{ki} (b^2 u^j u^k + \frac{b^2}{2} g^{jk} - b^j b^k)] \\
+&= \underbrace{\gamma_{ki,j} T^{kj}_{\rm EM}}_{\rm Term\ 1} + \gamma_{ki} \left( \underbrace{\partial_j \left(b^2 u^j u^k\right)}_{\rm Term\ 2} + \underbrace{\partial_j \left(\frac{b^2}{2} g^{jk}\right)}_{\rm Term\ 3} - \underbrace{\partial_j \left(b^j b^k\right)}_{\rm Term\ 4} \right) \\
+\end{align}
+
+Following the product and chain rules for each term, we find that
+
+\begin{align}
+{\rm Term\ 2} &= \partial_j (b^2 u^j u^k) \\
+              &= \partial_j b^2 u^j u^k + b^2 \partial_j u^j u^k + b^2 u^j \partial_j u_k \\
+              &= \left(b^2\right)_{,j} u^j u^k + b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} \\
+{\rm Term\ 3} &= \partial_j \left(\frac{b^2}{2} g^{jk}\right) \\
+              &= \frac{1}{2} \left( \partial_j b^2 g^{jk} + b^2 \partial_j g^{jk} \right) \\
+              &= \frac{1}{2} \left(b^2\right)_{,j} g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} \\
+{\rm Term\ 4} &= \partial_j (b^j b^k) \\
+              &= b^j_{,j} b^k + b^j b^k_{,j}\\
+\end{align}
+
+So,
+
+\begin{align}
+\partial_j T^{j}_{{\rm EM} i} &= \gamma_{ki,j} T^{kj}_{\rm EM} \\
+&+ \gamma_{ki} \left(\left(b^2\right)_{,j} u^j u^k +b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{1}{2}\left(b^2\right)_{,j} g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j}\right).
+\end{align}
+
+ \textbf{List of Derivatives} Note that this is in terms of the
+derivatives of several other quantities: * \(B^i_{,l}\):
+Section \ref{bideriv} * \(b^i_{,k}\): Section \ref{bideriv} * The
+derivative of \(b^2 = g_{\mu\nu} b^\mu b^\nu\), Section \ref{b2deriv}. *
+Putting it together: Section \ref{alltogether}
+
+\begin{align}
+%u^i_{,j} &= u^0_{,j} (\alpha v^i_{(n)} - \beta^i) + u^0 (\alpha_{,j} v^i_{(n)} + \alpha v^i_{(n),j} - \beta^i_{,j}) \\
+%u_{j,k} &= \alpha_{,k} u^0 \gamma_{ij} v^i_{(n)} + \alpha u^0_{,k} \gamma_{ij} v^i_{(n)} + \alpha u^0 \gamma_{ij,k} v^i_{(n)} + \alpha u^0 \gamma_{ij} v^i_{(n),k} \\
+%b^i_{,k} &= \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2} \\
+%B^i_{,l} &= -\frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}. \\
+\end{align}
+
+     {[}Back to the Section \ref{table2}{]}
+
+First, we will build the derivatives of the magnetic field. Since
+\(b^i\) is a function of \(B^i\), we will start from the definition of
+\(B^i\) in terms of \(A_i\),
+\(B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k\). We will first
+apply the product rule, noting that the symbol \([ijk]\) consists purely
+of the integers \(-1, 0, 1\) and thus can be treated as a constant in
+this process.
+
+\begin{align}
+B^i_{,l} &= \partial_l \left( \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k \right)  \\
+         &= [ijk] \partial_l \left( \frac{1}{\sqrt{\gamma}}\right) \partial_j A_k + \frac{[ijk]}{\sqrt{\gamma}} \partial_l \partial_j A_k \\
+         &= [ijk]\left(-\frac{\gamma_{,l}}{2\gamma^{3/2}}\right) \partial_j A_k + \frac{[ijk]}{\sqrt{\gamma}} \partial_l \partial_j A_k \\
+\end{align}
+
+Now, we will substitute back in for the definition of the Levi-Civita
+tensor: \(\epsilon^{ijk} = [ijk] / \sqrt{\gamma}\). Then will substitute
+the magnetic field \(B^i\) back in.
+
+\begin{align}
+B^i_{,l} &= -\frac{\gamma_{,l}}{2\gamma} \epsilon^{ijk} \partial_j A_k + \epsilon^{ijk} \partial_l \partial_j A_k \\
+         &= -\frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, \\
+\end{align}
+
+Thus, the expression we are left with for the derivatives of the
+magnetic field is:
+
+\begin{align}
+B^i_{,l} &= \underbrace{-\frac{\gamma_{,l}}{2\gamma} B^i}_{\rm Term\ 1} + \underbrace{\epsilon^{ijk} A_{k,jl}}_{\rm Term\ 2}, \\
+\end{align}
+
+where \(\epsilon^{ijk} = [ijk] / \sqrt{\gamma}\) is the antisymmetric
+Levi-Civita tensor and \(\gamma\) is the determinant of the
+three-metric.
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}9}]:} \PY{c+c1}{\PYZsh{} Step 6: Derivatives of the electromagnetic stress\PYZhy{}energy tensor}
+        \PY{c+c1}{\PYZsh{} Step 6a: Declare gridfunctions and their derivatives that will be useful for TEMUD\PYZus{}dD\PYZus{}contracted (as needed)}
+        
+        \PY{c+c1}{\PYZsh{} Step 6b: Construct the derivatives of the magnetic field.}
+        \PY{n}{gammadet\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{gammadet\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+            
+        \PY{n}{AD\PYZus{}dDD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank3}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AD\PYZus{}dDD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{sym12}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}           
+        \PY{c+c1}{\PYZsh{} The other partial derivatives of B\PYZca{}i}
+        \PY{n}{BU\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank2}\PY{p}{(}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{c+c1}{\PYZsh{} Term 1: \PYZhy{}\PYZbs{}gamma\PYZus{}\PYZob{},l\PYZcb{} / (2\PYZbs{}gamma) B\PYZca{}i}
+                \PY{n}{BU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{p}{]} \PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{gammadet\PYZus{}dD}\PY{p}{[}\PY{n}{l}\PY{p}{]}\PY{o}{*}\PY{n}{BU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{/}\PY{p}{(}\PY{l+m+mi}{2}\PY{o}{*}\PY{n}{gammadet}\PY{p}{)}
+                
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                    \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                        \PY{c+c1}{\PYZsh{} Term 2: \PYZbs{}epsilon\PYZca{}\PYZob{}ijk\PYZcb{} A\PYZus{}\PYZob{}k,jl\PYZcb{}}
+                        \PY{n}{BU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{LeviCivitaUUU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{*} \PY{n}{AD\PYZus{}dDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{l}\PY{p}{]}
+\end{Verbatim}
+
+    Now, we will code the derivatives of the spatial components of
+\(b^{\mu}\), \(b^i\): \[
+b^i_{,k} = \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2}. 
+\]
+
+We should note that while \(b^\mu\) is a four-vector (and the code
+reflects this: \(\text{smallb4U}\) and \(\text{smallb4U}\) have
+\(\text{DIM=4}\)), we only need the spatial components. Since
+\(b^0_{,k}\) would require a separate derivation, we will simply let the
+vector be three-dimensional.
+
+ {[}Back to the Section \ref{table2}{]}
+
+Let's go into a little more detail on where this comes from. We start
+from the definition
+\[b^i = \frac{B^i + (u_j B^j) u^i}{\sqrt{4\pi}\alpha u^0};\] We then
+apply the quotient rule:
+
+\begin{align}
+b^i_{,k} &= \frac{\left(\sqrt{4\pi}\alpha u^0\right) \partial_k \left(B^i + (u_j B^j) u^i\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\sqrt{4\pi}\alpha u^0\right)}{\left(\sqrt{4\pi}\alpha u^0\right)^2} \\
+&= \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right) \partial_k \left(B^i + (u_j B^j) u^i\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2} \\
+\end{align}
+
+Note that \(\left( \alpha u^0 \right)\) is being used as its own
+gridfunction, so we can be done with that term. We will now apply the
+product rule to the term
+\(\partial_k \left(B^i + (u_j B^j) u^i\right) = B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\).
+So,
+\[ b^i_{,k} = \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2}. \]
+
+It will be easier to code this up if we rearrange these terms to group
+together the terms that involve contractions over \(j\). Doing that, we
+find \[
+b^i_{,k} = \frac{\overbrace{\alpha u^0 B^i_{,k} - B^i \partial_k (\alpha u^0)}^{\rm Term\ Num1} + \overbrace{\left( \alpha u^0 \right) \left( u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k} \right)}^{\rm Term\ Num2.a} - \overbrace{\left( u_j B^j u^i \right) \partial_k \left( \alpha u^0 \right) }^{\rm Term\ Num2.b}}{\underbrace{\sqrt{4 \pi} \left( \alpha u^0 \right)^2}_{\rm Term\ Denom}}.
+\]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}10}]:} \PY{n}{alphau0} \PY{o}{=} \PY{n}{gri}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alphau0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+         \PY{n}{alphau0} \PY{o}{=} \PY{n}{alpha} \PY{o}{*} \PY{n}{u0}
+         \PY{n}{alphau0\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alphau0\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+         \PY{n}{uU\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank2}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{uU\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{nosym}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+         \PY{n}{uD\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank2}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{uD\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{nosym}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+         
+         \PY{c+c1}{\PYZsh{} Step 6c: Construct derivatives of the small b vector}
+         \PY{c+c1}{\PYZsh{} smallbU\PYZus{}dD represents the derivative of smallb4U}
+         \PY{n}{smallbU\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank2}\PY{p}{(}\PY{p}{)}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{c+c1}{\PYZsh{} Term Num1: \PYZbs{}alpha u\PYZca{}0 B\PYZca{}i\PYZus{}\PYZob{},k\PYZcb{} \PYZhy{} B\PYZca{}i \PYZbs{}partial\PYZus{}k (\PYZbs{}alpha u\PYZca{}0)}
+                 \PY{n}{smallbU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{alphau0}\PY{o}{*}\PY{n}{BU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{\PYZhy{}}\PY{n}{BU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{alphau0\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+         
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{} Term Num2.a: terms that require contractions over k, and thus an extra loop.}
+                     \PY{c+c1}{\PYZsh{} ( \PYZbs{}alpha u\PYZca{}0 ) (  u\PYZus{}\PYZob{}j,k\PYZcb{} B\PYZca{}j u\PYZca{}i }
+                     \PY{c+c1}{\PYZsh{}                 + u\PYZus{}j B\PYZca{}j\PYZus{}\PYZob{},k\PYZcb{} u\PYZca{}i }
+                     \PY{c+c1}{\PYZsh{}                 + u\PYZus{}j B\PYZca{}j u\PYZca{}i\PYZus{}\PYZob{},k\PYZcb{} )}
+                     \PY{n}{smallbU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{alphau0}\PY{o}{*}\PY{p}{(}\PY{n}{uD\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{*}\PY{n}{BU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PYZbs{}
+                                                  \PY{o}{+}\PY{n}{uD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{BU\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{*}\PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PYZbs{}
+                                                  \PY{o}{+}\PY{n}{uD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{BU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{)}
+         
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{}Term 2.b (More contractions over k): ( u\PYZus{}j B\PYZca{}j u\PYZca{}i ) \PYZbs{}partial\PYZus{}k ( \PYZbs{}alpha u\PYZca{}0 )}
+                     \PY{n}{smallbU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{o}{\PYZhy{}}\PY{p}{(}\PY{n}{uD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{BU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{o}{*}\PY{n}{alphau0\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+                     
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{c+c1}{\PYZsh{} Term Denom requires us to divide the whole expressions through by sqrt(4 pi) * (alpha u\PYZca{}0)\PYZca{}2}
+                 \PY{n}{smallbU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{/}\PY{o}{=} \PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{l+m+mi}{4}\PY{o}{*}\PY{n}{M\PYZus{}PI}\PY{p}{)} \PY{o}{*} \PY{n}{alphau0} \PY{o}{*} \PY{n}{alphau0}
+\end{Verbatim}
+
+     {[}Back to the Section \ref{table2}{]}
+
+Here, we will take the derivative of \(b^2 = g_{\mu\nu} b^\mu b^\nu\).
+Using the product rule,
+
+\begin{align}
+\left(b^2\right)_{,j} &= \partial_j \left( g_{\mu\nu} b^\mu b^\nu \right) \\
+                      &= g_{\mu\nu,j} b^\mu b^\nu + g_{\mu\nu} b^\mu_{,j} b^\nu + g_{\mu\nu} b^\mu b^\nu_{,j} \\
+                      &= g_{\mu\nu,j} b^\mu b^\nu + 2 g_{\mu\nu} b^\mu_{,j} b^\nu.
+\end{align}
+
+We have already defined the derivatives of the four-metric
+\(g_{\mu\nu,j}\); we have also defined the derivatives of spatial
+components of \(b^\mu\), \(b^i_{,k}\). Now, however, we will need the
+take derivatives of the temporal component: \(b^0_{,j}\). Starting with
+the definition, and using the quotient rule:
+
+\begin{align}
+b^0 &= \frac{u_k B^k}{\sqrt{4\pi}\alpha}, \\
+\rightarrow b^0_{,j} &= \frac{1}{\sqrt{4\pi}} \frac{\alpha \left( u_{k,j} B^k + u_k B^k_{,j} \right) - u_k B^k \alpha_{,j}}{\alpha^2} \\
+    &= \frac{\alpha u_{k,j} B^k + \alpha u_k B^k_{,j} - \alpha_{,j} u_k B^k}{\sqrt{4\pi} \alpha^2}.
+\end{align}
+
+We will first code the numerator, and then divide through by the
+denominator.
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}11}]:} \PY{c+c1}{\PYZsh{} First construct the derivative b\PYZca{}0\PYZus{}\PYZob{},j\PYZcb{}}
+         \PY{c+c1}{\PYZsh{} This four\PYZhy{}vector will make b\PYZca{}2 simpler:}
+         \PY{n}{smallb4U\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank2}\PY{p}{(}\PY{n}{DIM}\PY{o}{=}\PY{l+m+mi}{4}\PY{p}{)}
+         \PY{c+c1}{\PYZsh{} Fill in the zeroth component}
+         \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{c+c1}{\PYZsh{} The numerator:  \PYZbs{}alpha u\PYZus{}\PYZob{}k,j\PYZcb{} B\PYZca{}k }
+                 \PY{c+c1}{\PYZsh{}               + \PYZbs{}alpha u\PYZus{}k B\PYZca{}k\PYZus{}\PYZob{},j\PYZcb{} }
+                 \PY{c+c1}{\PYZsh{}               \PYZhy{} \PYZbs{}alpha\PYZus{}\PYZob{},j\PYZcb{} u\PYZus{}k B\PYZca{}k}
+                 \PY{n}{smallb4U\PYZus{}dD}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{=}   \PY{n}{alpha}\PY{o}{*}\PY{n}{uD\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{BU}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PYZbs{}
+                                       \PY{o}{+} \PY{n}{alpha}\PY{o}{*}\PY{n}{uD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{*}\PY{n}{BU\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PYZbs{}
+                                       \PY{o}{\PYZhy{}} \PY{n}{alpha\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{*}\PY{n}{BU}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+         \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{c+c1}{\PYZsh{} Divide through by the denominator: \PYZbs{}sqrt\PYZob{}4\PYZbs{}pi\PYZcb{} \PYZbs{}alpha\PYZca{}2}
+             \PY{n}{smallb4U\PYZus{}dD}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{/}\PY{o}{=} \PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{l+m+mi}{4}\PY{o}{*}\PY{n}{M\PYZus{}PI}\PY{p}{)}\PY{o}{*}\PY{n}{alpha}\PY{o}{*}\PY{n}{alpha}
+         
+         \PY{c+c1}{\PYZsh{} Now, we\PYZsq{}ll fill out the rest of the four\PYZhy{}vector with b\PYZca{}i\PYZus{}\PYZob{},j\PYZcb{} that we derived above.}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{n}{smallb4U\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{=} \PY{n}{smallbU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+\end{Verbatim}
+
+    Now we can calculate
+\[\left(b^2\right)_{,j} = g_{\mu\nu,j} b^\mu b^\nu + 2 g_{\mu\nu} b^\mu_{,j} b^\nu.\]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}12}]:} \PY{n}{smallb2\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{p}{)}
+         \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{mu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{nu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{}   g\PYZus{}\PYZob{}\PYZbs{}mu\PYZbs{}nu,j\PYZcb{} b\PYZca{}\PYZbs{}mu b\PYZca{}\PYZbs{}nu}
+                     \PY{c+c1}{\PYZsh{} + 2 g\PYZus{}\PYZob{}\PYZbs{}mu\PYZbs{}nu\PYZcb{} b\PYZca{}\PYZbs{}mu\PYZus{}\PYZob{},j\PYZcb{} b\PYZca{}\PYZbs{}nu}
+                     \PY{n}{smallb2\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{=}   \PY{n}{g4DDdD}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{o}{*}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{o}{*}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{nu}\PY{p}{]} \PYZbs{}
+                                     \PY{o}{+} \PY{l+m+mi}{2}\PY{o}{*}\PY{n}{g4DD}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]}\PY{o}{*}\PY{n}{smallb4U\PYZus{}dD}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{o}{*}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{nu}\PY{p}{]}
+\end{Verbatim}
+
+    We will also need derivatives of the spatial part of the inverse
+four-metric: since
+\(g^{ij} = \gamma^{ij} - \frac{\beta^i \beta^j}{\alpha^2}\)
+(\href{https://arxiv.org/pdf/gr-qc/0703035.pdf}{Gourgoulhon, eq. 4.49}),
+
+\begin{align}
+g^{ij}_{\ ,k} &= \gamma^{ij}_{\ ,k} - \frac{\alpha^2 \partial_k (\beta^i \beta^j) - \beta^i \beta^j \partial_k \alpha^2}{(\alpha^2)^2} \\
+&= \gamma^{ij}_{\ ,k} - \frac{\alpha^2\beta^i \beta^j_{,k}+\alpha^2\beta^i_{,k} \beta^j-2\beta^i \beta^j \alpha \alpha_{,k}}{\alpha^4}. \\
+&= \gamma^{ij}_{\ ,k} - \frac{\alpha\beta^i \beta^j_{,k}+\alpha\beta^i_{,k} \beta^j-2\beta^i \beta^j \alpha_{,k}}{\alpha^3} \\
+g^{ij}_{\ ,k} &= \underbrace{\gamma^{ij}_{\ ,k}}_{\rm Term\ 1} - \underbrace{\frac{\beta^i \beta^j_{,k}}{\alpha^2}}_{\rm Term\ 2} - \underbrace{\frac{\beta^i_{,k} \beta^j}{\alpha^2}}_{\rm Term\ 3} + \underbrace{\frac{2\beta^i \beta^j \alpha_{,k}}{\alpha^3}}_{\rm Term\ 4}. \\
+\end{align}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}13}]:} \PY{c+c1}{\PYZsh{} Step 6d: Construct derivatives of the spatial components of g\PYZca{}\PYZob{}ij\PYZcb{}}
+         \PY{n}{gammaUU\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank3}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{gammaUU\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{sym01}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+         
+         \PY{c+c1}{\PYZsh{} The spatial derivatives of the spatial components of the four metric:}
+         \PY{c+c1}{\PYZsh{} Term 1: \PYZbs{}gamma\PYZca{}\PYZob{}ij\PYZcb{}\PYZus{}\PYZob{}\PYZbs{} ,k\PYZcb{}}
+         \PY{n}{gSpatialUU\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank3}\PY{p}{(}\PY{p}{)}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{n}{gSpatialUU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{=} \PY{n}{gammaUU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+         
+         \PY{c+c1}{\PYZsh{} Term 2: \PYZhy{} \PYZbs{}beta\PYZca{}i \PYZbs{}beta\PYZca{}j\PYZus{}\PYZob{},k\PYZcb{} / \PYZbs{}alpha\PYZca{}2}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{n}{gSpatialUU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{betaU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{betaU\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{/}\PY{n}{alpha}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}
+         
+         \PY{c+c1}{\PYZsh{} Term 3: \PYZhy{} \PYZbs{}beta\PYZca{}i\PYZus{}\PYZob{},k\PYZcb{} \PYZbs{}beta\PYZca{}j / \PYZbs{}alpha\PYZca{}2}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{n}{gSpatialUU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{betaU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{*}\PY{n}{betaU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{/}\PY{n}{alpha}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}
+         
+         \PY{c+c1}{\PYZsh{} Term 4: 2\PYZbs{}beta\PYZca{}i \PYZbs{}beta\PYZca{}j \PYZbs{}alpha\PYZus{}\PYZob{},k\PYZcb{}\PYZbs{}alpha\PYZca{}3}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{n}{gSpatialUU\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{l+m+mi}{2}\PY{o}{*}\PY{n}{betaU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{betaU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{alpha\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{/}\PY{n}{alpha}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{3}
+\end{Verbatim}
+
+     {[}Back to the Section \ref{table2}{]}
+
+So, we can now put it all together:
+
+\begin{align}
+\partial_j  T^{j}_{{\rm EM} i} &= \gamma_{ki,j} T^{kj}_{\rm EM} + \gamma_{ki} \left(\left(b^2\right)_{,j} u^j u^k + b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{1}{2} \left(b^2\right)_{,j} g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j}\right).
+\end{align}
+
+It should be noted that due to the way our indexing conventions have
+have fallen, the Python indices for \(T^{ij}_{\rm EM}\), \(g^{ij}\),
+\(b^i\) and \(b_i\) will need to be incremented to correctly use the
+spatial components. We will also quickly rearrange the terms of the
+expression to better mimic the loop structure we will need to create:
+
+\begin{align}
+\partial_j  T^{j}_{{\rm EM} i} =& \ 
+\underbrace{\gamma_{ki,j} T^{kj}_{\rm EM}}_{\rm Term\ 1} \\
+& + \underbrace{\gamma_{ki} \left( b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j} \right)}_{\rm Term\ 2} \\
+& + \underbrace{\gamma_{ki} \left( \left(b^2\right)_{,j} u^j u^k + \frac{1}{2} \left(b^2\right)_{,j} g^{jk} \right).}_{\rm Term\ 3} \\
+\end{align}
+
+We will now construct this term by term. Term 1 is straightforward:
+\[{\rm Term\ 1} = \gamma_{ki,j} T^{kj}_{\rm EM}.\]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}14}]:} \PY{c+c1}{\PYZsh{} Step 6e: Construct TEMUD\PYZus{}dD\PYZus{}contracted itself}
+         \PY{c+c1}{\PYZsh{} Step 6e.i}
+         \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{p}{)}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{*} \PY{n}{T4EMUU}\PY{p}{[}\PY{n}{k}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}
+\end{Verbatim}
+
+    We will now add
+\[{\rm Term\ 2} = \gamma_{ki} \left( \underbrace{b^2 u^j_{,j} u^k}_{\rm Term\ 2a} + \underbrace{b^2 u^j u^k_{,j}}_{\rm Term\ 2b} + \underbrace{\frac{b^2}{2} g^{jk}_{\ ,j}}_{\rm Term\ 2c} + \underbrace{b^j_{,j} b^k}_{\rm Term\ 2d} + \underbrace{b^j b^k_{,j}}_{\rm Term\ 2e} \right)\]
+to \(\partial_j T^{j}_{{\rm EM} i}\). These are the terms that involve
+contractions over \(k\) (but no metric derivatives like Term 1 had).
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}15}]:} \PY{c+c1}{\PYZsh{} Step 6e.ii}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{} Term 2a: \PYZbs{}gamma\PYZus{}\PYZob{}ki\PYZcb{} b\PYZca{}2 u\PYZca{}j\PYZus{}\PYZob{},j\PYZcb{} u\PYZca{}k}
+                     \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{smallb2}\PY{o}{*}\PY{n}{uU\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uU}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+         
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{} Term 2b: \PYZbs{}gamma\PYZus{}\PYZob{}ki\PYZcb{} b\PYZca{}2 u\PYZca{}j u\PYZca{}k\PYZus{}\PYZob{},j\PYZcb{}}
+                     \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{smallb2}\PY{o}{*}\PY{n}{uU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uU\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+         
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{} Term 2c: \PYZbs{}gamma\PYZus{}\PYZob{}ki\PYZcb{} b\PYZca{}2 / 2 g\PYZca{}\PYZob{}jk\PYZcb{}\PYZus{}\PYZob{},j\PYZcb{}}
+                     \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{smallb2}\PY{o}{*}\PY{n}{gSpatialUU\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{/}\PY{l+m+mi}{2}
+         
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{} Term 2d: \PYZbs{}gamma\PYZus{}\PYZob{}ki\PYZcb{} b\PYZca{}j\PYZus{}\PYZob{},j\PYZcb{} b\PYZca{}k}
+                     \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{smallbU\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{k}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}
+         
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{c+c1}{\PYZsh{} Term 2e: \PYZbs{}gamma\PYZus{}\PYZob{}ki\PYZcb{} b\PYZca{}j b\PYZca{}k\PYZus{}\PYZob{},j\PYZcb{}}
+                     \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{smallb4U}\PY{p}{[}\PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]}\PY{o}{*}\PY{n}{smallbU\PYZus{}dD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+\end{Verbatim}
+
+    Now, we will add
+\[{\rm Term\ 3} = \gamma_{ki} \left( \underbrace{\left(b^2\right)_{,j} u^j u^k}_{\rm Term\ 3a} + \underbrace{\frac{1}{2} \left(b^2\right)_{,j} g^{jk}}_{\rm Term\ 3b} \right).\]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}16}]:} \PY{c+c1}{\PYZsh{} Step 6e.iii}
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                         \PY{c+c1}{\PYZsh{} Term 3a: \PYZbs{}gamma\PYZus{}\PYZob{}ki\PYZcb{} ( b\PYZca{}2 )\PYZus{}\PYZob{},j\PYZcb{} u\PYZca{}j u\PYZca{}k}
+                         \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{smallb2\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{uU}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+         
+         \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+             \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                     \PY{k}{for} \PY{n}{l} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                         \PY{c+c1}{\PYZsh{} Term 3b: \PYZbs{}gamma\PYZus{}\PYZob{}ki\PYZcb{} ( b\PYZca{}2 )\PYZus{}\PYZob{},j\PYZcb{} g\PYZca{}\PYZob{}jk\PYZcb{} / 2}
+                         \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{*}\PY{n}{smallb2\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{g4DD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+\end{Verbatim}
+
+    \section{\texorpdfstring{Evolution equation for
+\(\tilde{S}_i\)}{Evolution equation for \textbackslash{}tilde\{S\}\_i}}\label{evolution-equation-for-tildes_i}
+
+\subsection{\texorpdfstring{Step 7: Construct the evolution equation for
+\(\tilde{S}_i\)}{Step 7: Construct the evolution equation for \textbackslash{}tilde\{S\}\_i}}\label{step-7-construct-the-evolution-equation-for-tildes_i}
+
+\[\label{step7}\]
+
+{[}Back to Section \ref{top}{]}
+
+Finally, we will return our attention to the time evolution equation
+(from eq. 13 of the \href{https://arxiv.org/pdf/1704.00599.pdf}{original
+paper}),
+
+\begin{align}
+\partial_t \tilde{S}_i &= - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} \\
+                       &= -T^j_{{\rm EM} i} \partial_j (\alpha \sqrt{\gamma}) - \alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i} + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} \\
+                       &= \underbrace{\frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}}_{\rm Term\ 1} - \underbrace{\alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i}}_{\rm Term\ 2} - \underbrace{\gamma_{ik} T^{kj}_{\rm EM} \partial_j (\alpha \sqrt{\gamma})}_{\rm Term\ 3} .
+\end{align}
+
+We construct the first term separately at first, to reduce the
+complication of dealing with mixed Greek and Latin indices. Then we will
+take derivatives of \(\alpha \sqrt{\gamma}\).
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{c+c1}{\PYZsh{} Step 7: Construct the evolution equation for \PYZbs{}tilde\PYZob{}S\PYZcb{}\PYZus{}i}
+        \PY{c+c1}{\PYZsh{} Here, we set up the necessary machinery to take FD derivatives of alpha * sqrt(gamma)}
+        \PY{n}{alpsqrtgam} \PY{o}{=} \PY{n}{gri}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alpsqrtgam}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{alpsqrtgam} \PY{o}{=} \PY{n}{alpha}\PY{o}{*}\PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{n}{gammadet}\PY{p}{)}
+        \PY{n}{alpsqrtgam\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alpsqrtgam\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{n}{Stilde\PYZus{}rhsD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{p}{)}
+        \PY{c+c1}{\PYZsh{} The first term: \PYZbs{}alpha \PYZbs{}sqrt\PYZob{}\PYZbs{}gamma\PYZcb{} T\PYZca{}\PYZob{}\PYZbs{}mu \PYZbs{}nu\PYZcb{}\PYZus{}\PYZob{}\PYZbs{}rm EM\PYZcb{} \PYZbs{}partial\PYZus{}i g\PYZus{}\PYZob{}\PYZbs{}mu \PYZbs{}nu\PYZcb{} / 2}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{mu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{nu} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{:}
+                    \PY{n}{Stilde\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{alpsqrtgam} \PY{o}{*} \PY{n}{T4EMUU}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]} \PY{o}{*} \PY{n}{g4DDdD}\PY{p}{[}\PY{n}{mu}\PY{p}{]}\PY{p}{[}\PY{n}{nu}\PY{p}{]}\PY{p}{[}\PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{]} \PY{o}{/} \PY{l+m+mi}{2}
+        
+        \PY{c+c1}{\PYZsh{} The second term: \PYZbs{}alpha \PYZbs{}sqrt\PYZob{}\PYZbs{}gamma\PYZcb{} \PYZbs{}partial\PYZus{}j T\PYZca{}j\PYZus{}\PYZob{}\PYZob{}\PYZbs{}rm EM\PYZcb{} i\PYZcb{}}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{Stilde\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{alpsqrtgam} \PY{o}{*} \PY{n}{TEMUD\PYZus{}dD\PYZus{}contracted}\PY{p}{[}\PY{n}{i}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} The third term: \PYZbs{}gamma\PYZus{}\PYZob{}ik\PYZcb{} T\PYZca{}\PYZob{}kj\PYZcb{}\PYZus{}\PYZob{}\PYZbs{}rm EM\PYZcb{} \PYZbs{}partial\PYZus{}j (\PYZbs{}alpha \PYZbs{}sqrt\PYZob{}\PYZbs{}gamma\PYZcb{})}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                    \PY{n}{Stilde\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{gammaDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{*}\PY{n}{T4EMUU}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{*}\PY{n}{alpsqrtgam\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+\end{Verbatim}
+
+    \section{\texorpdfstring{Evolution equations for \(A_i\) and
+\(\Phi\)}{Evolution equations for A\_i and \textbackslash{}Phi}}\label{evolution-equations-for-a_i-and-phi}
+
+ \#\# Step 8: Construct the evolution equations for \(A_i\) and
+\(\sqrt{\gamma}\Phi\) \[\label{step8}\]
+
+{[}Back to Section \ref{top}{]}
+
+We will also need to evolve the vector potential \(A_i\). This evolution
+is given as eq. 17 in the
+\href{https://arxiv.org/pdf/1704.00599.pdf}{\(\texttt{GiRaFFE}\)} paper:
+\[\boxed{\partial_t A_i = \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j),}\]
+where \(\epsilon_{ijk} = [ijk] \sqrt{\gamma}\) is the antisymmetric
+Levi-Civita tensor, the drift velocity \(v^i = u^i/u^0\), and \(\gamma\)
+is the determinant of the three metric. The scalar electric potential
+\(\Phi\) is also evolved by eq. 19:
+\[\boxed{\partial_t [\sqrt{\gamma} \Phi] = -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi],}\]
+with \(\xi\) chosen as a damping factor.
+
+\subsubsection{Step 8a: Construct some useful auxiliary gridfunctions
+for the other evolution
+equations}\label{step-8a-construct-some-useful-auxiliary-gridfunctions-for-the-other-evolution-equations}
+
+After declaring a some needed quantities, we will also define the
+parenthetical terms that we need to take derivatives of. For \(A_i\), we
+will define \[{\rm AevolParen} = \alpha \Phi - \beta^j A_j\] and for
+\(\sqrt{\gamma} \Phi\), we will define
+
+\begin{align}
+{\rm PevolParenU[j]} &= \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi] \\
+&= \alpha\sqrt{\gamma\ } \gamma^{ij} A_i - \beta^j [\sqrt{\gamma} \Phi]. \\
+\end{align}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{c+c1}{\PYZsh{} Step 8: Construct the evolution equations for A\PYZus{}i and sqrt(gamma)Phi}
+        \PY{c+c1}{\PYZsh{} Step 8a: Construct some useful auxiliary gridfunctions for the other evolution equations}
+        \PY{n}{xi} \PY{o}{=} \PY{n}{par}\PY{o}{.}\PY{n}{Cparameters}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{REAL}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{thismodule}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{xi}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)} \PY{c+c1}{\PYZsh{} The damping factor}
+        
+        \PY{c+c1}{\PYZsh{} Call sqrt(gamma)Phi psi6Phi}
+        \PY{n}{psi6Phi} \PY{o}{=} \PY{n}{gri}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{psi6Phi}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{Phi} \PY{o}{=} \PY{n}{psi6Phi} \PY{o}{/} \PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{n}{gammadet}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} We\PYZsq{}ll define a few extra gridfunctions to avoid complicated derivatives}
+        \PY{n}{AevolParen}  \PY{o}{=} \PY{n}{gri}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AevolParen}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{PevolParenU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{register\PYZus{}gridfunctions\PYZus{}for\PYZus{}single\PYZus{}rank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AUX}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{PevolParenU}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} \PYZob{}\PYZbs{}rm AevolParen\PYZcb{} = \PYZbs{}alpha \PYZbs{}Phi \PYZhy{} \PYZbs{}beta\PYZca{}j A\PYZus{}j}
+        \PY{n}{AevolParen} \PY{o}{=} \PY{n}{alpha}\PY{o}{*}\PY{n}{Phi}
+        \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{AevolParen}     \PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{betaU}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{*} \PY{n}{AD}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+        
+        \PY{c+c1}{\PYZsh{} \PYZob{}\PYZbs{}rm PevolParenU[j]\PYZcb{} = \PYZbs{}alpha\PYZbs{}sqrt\PYZob{}\PYZbs{}gamma\PYZcb{} \PYZbs{}gamma\PYZca{}\PYZob{}ij\PYZcb{} A\PYZus{}i \PYZhy{} \PYZbs{}beta\PYZca{}j [\PYZbs{}sqrt\PYZob{}\PYZbs{}gamma\PYZcb{} \PYZbs{}Phi]}
+        \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{PevolParenU}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{betaU}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{*} \PY{n}{psi6Phi}
+            \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{n}{PevolParenU}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{alpha} \PY{o}{*} \PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{n}{gammadet}\PY{p}{)} \PY{o}{*} \PY{n}{gammaUU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{*} \PY{n}{AD}\PY{p}{[}\PY{n}{i}\PY{p}{]}
+        
+        \PY{n}{AevolParen\PYZus{}dD}  \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AevolParen\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        \PY{n}{PevolParenU\PYZus{}dD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank2}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{PevolParenU\PYZus{}dD}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{nosym}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+\end{Verbatim}
+
+    \subsubsection{\texorpdfstring{Step 8b: Construct the actual evolution
+equations for \(A_i\) and
+\(\sqrt{\gamma}\Phi\)}{Step 8b: Construct the actual evolution equations for A\_i and \textbackslash{}sqrt\{\textbackslash{}gamma\}\textbackslash{}Phi}}\label{step-8b-construct-the-actual-evolution-equations-for-a_i-and-sqrtgammaphi}
+
+Now to set the evolution equations
+(\href{https://arxiv.org/pdf/1704.00599.pdf}{eqs. 17 and 19}), recalling
+that the drift velocity \(v^i = u^i/u^0\):
+
+\begin{align}
+\partial_t A_i &= \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j) \\
+               &= \epsilon_{ijk} \frac{u^j}{u^0} B^k - {\rm AevolParen\_dD[i]} \\
+\partial_t [\sqrt{\gamma} \Phi] &= -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi] \\
+                                &= -{\rm PevolParenU\_dD[j][j]} - \xi \alpha [\sqrt{\gamma} \Phi]. \\
+\end{align}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{c+c1}{\PYZsh{} Step 8b: Construct the actual evolution equations for A\PYZus{}i and sqrt(gamma)Phi}
+        \PY{n}{A\PYZus{}rhsD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{p}{)}
+        \PY{n}{psi6Phi\PYZus{}rhs} \PY{o}{=} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}
+        
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{A\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{AevolParen\PYZus{}dD}\PY{p}{[}\PY{n}{i}\PY{p}{]}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{k}{for} \PY{n}{k} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                    \PY{n}{A\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{LeviCivitaDDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{k}\PY{p}{]}\PY{o}{*}\PY{p}{(}\PY{n}{uU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{o}{/}\PY{n}{u0}\PY{p}{)}\PY{o}{*}\PY{n}{BU}\PY{p}{[}\PY{n}{k}\PY{p}{]}
+                    
+        \PY{n}{psi6Phi\PYZus{}rhs} \PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{xi}\PY{o}{*}\PY{n}{alpha}\PY{o}{*}\PY{n}{psi6Phi}
+        \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{psi6Phi\PYZus{}rhs} \PY{o}{+}\PY{o}{=} \PY{o}{\PYZhy{}}\PY{n}{PevolParenU\PYZus{}dD}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+\end{Verbatim}
+
+    \section{\texorpdfstring{Step 9: Build the expression for
+\(\tilde{S}_i\)}{Step 9: Build the expression for \textbackslash{}tilde\{S\}\_i}}\label{step-9-build-the-expression-for-tildes_i}
+
+\[\label{step9}\]
+
+{[}Back to Section \ref{top}{]}
+
+We will now find the densitized Poynting flux given by equation 21 in
+\href{https://arxiv.org/pdf/1704.00599.pdf}{the original paper},
+\[\boxed{\tilde{S}_i = \gamma_{ij} \frac{(v^j+\beta^j)\sqrt{\gamma}B^2}{4 \pi \alpha}.}\]
+This is needed to set initial data for \(\tilde{S}_i\) after \(B^i\) is
+set from the initial \(A_i\). Note, however, that this expression uses
+the drift velocity \(v^i = \alpha v^i_{(n)} - \beta^i\); substituting
+this into the definition of \(\tilde{S}_i\) yields an expression in
+terms of the Valencia velocity:
+\[\tilde{S}_i = \gamma_{ij} \frac{v^i_{(n)} \sqrt{\gamma}B^2}{4 \pi}.\]
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{c+c1}{\PYZsh{} Step 9: Build the expression for \PYZbs{}tilde\PYZob{}S\PYZcb{}\PYZus{}i}
+        \PY{n}{StildeD} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{zerorank1}\PY{p}{(}\PY{p}{)}
+        \PY{n}{BU} \PY{o}{=} \PY{n}{ixp}\PY{o}{.}\PY{n}{declarerank1}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{BU}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)} \PY{c+c1}{\PYZsh{} Reset the values in BU so that the C code accesses the gridfunctions directly}
+        \PY{n}{B2} \PY{o}{=} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{n}{B2} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{*} \PY{n}{BU}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{*} \PY{n}{BU}\PY{p}{[}\PY{n}{j}\PY{p}{]}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+            \PY{n}{StildeD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{=} \PY{l+m+mi}{0}
+            \PY{k}{for} \PY{n}{j} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+                \PY{n}{StildeD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{+}\PY{o}{=} \PY{n}{gammaDD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{*} \PY{p}{(}\PY{n}{ValenciavU}\PY{p}{[}\PY{n}{j}\PY{p}{]}\PY{p}{)}\PY{o}{*}\PY{n}{sp}\PY{o}{.}\PY{n}{sqrt}\PY{p}{(}\PY{n}{gammadet}\PY{p}{)}\PY{o}{*}\PY{n}{B2}\PY{o}{/}\PY{l+m+mi}{4}\PY{o}{/}\PY{n}{M\PYZus{}PI}
+\end{Verbatim}
+
+    \section{Step 10: NRPy+ Module Code
+Validation}\label{step-10-nrpy-module-code-validation}
+
+\[\label{step10}\]
+
+{[}Back to Section \ref{top}{]}
+
+Here, as a code validation check, we verify agreement in the SymPy
+expressions for the \(\texttt{GiRaFFE}\) evolution equations and
+auxiliary quantities we intend to use between 1. this tutorial and 2.
+the NRPy+
+\href{../edit/GiRaFFE_HO/GiRaFFE_Higher_Order.py}{GiRaFFE\_Higher\_Order.py}
+module.
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{c+c1}{\PYZsh{} Reset the list of gridfunctions, as registering a gridfunction}
+        \PY{c+c1}{\PYZsh{}   twice will spawn an error.}
+        \PY{n}{gri}\PY{o}{.}\PY{n}{glb\PYZus{}gridfcs\PYZus{}list} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+        
+        \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{vvv Ignore the minor warning below. vvv}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{c+c1}{\PYZsh{} import BSSN.BSSN\PYZus{}RHSs as bssnrhs}
+        \PY{c+c1}{\PYZsh{} bssnrhs.BSSN\PYZus{}RHSs()}
+        
+        \PY{k+kn}{import} \PY{n+nn}{GiRaFFE\PYZus{}HO.GiRaFFE\PYZus{}Higher\PYZus{}Order} \PY{k+kn}{as} \PY{n+nn}{gho}
+        \PY{n}{gho}\PY{o}{.}\PY{n}{GiRaFFE\PYZus{}Higher\PYZus{}Order}\PY{p}{(}\PY{p}{)}
+        
+        \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZca{}\PYZca{}\PYZca{} Ignore the minor warning above. \PYZca{}\PYZca{}\PYZca{}}\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Consistency check between GiRaFFE\PYZus{}Higher\PYZus{}Order tutorial and NRPy+ module: ALL SHOULD BE ZERO.}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
+        
+        \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alphau0 \PYZhy{} gho.alphau0 = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{alphau0} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{alphau0}\PY{p}{)}\PY{p}{)}
+        \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{alpsqrtgam \PYZhy{} gho.alpsqrtgam = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{alpsqrtgam} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{alpsqrtgam}\PY{p}{)}\PY{p}{)}
+        \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{AevolParen \PYZhy{} gho.AevolParen = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{AevolParen} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{AevolParen}\PY{p}{)}\PY{p}{)}
+        \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{psi6Phi\PYZus{}rhs \PYZhy{} gho.psi6Phi\PYZus{}rhs = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{psi6Phi\PYZus{}rhs} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{psi6Phi\PYZus{}rhs}\PY{p}{)}\PY{p}{)}
+        \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{DIM}\PY{p}{)}\PY{p}{:}
+        
+            \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{uD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] \PYZhy{} gho.uD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{uD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{uD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{)}
+            \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{uU[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] \PYZhy{} gho.uU[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{uU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{)}
+            \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{PevolParenU[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] \PYZhy{} gho.PevolParenU[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{PevolParenU}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{PevolParenU}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{)}
+            \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Stilde\PYZus{}rhsD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] \PYZhy{} gho.Stilde\PYZus{}rhsD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{Stilde\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{Stilde\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{)}
+            \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{A\PYZus{}rhsD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] \PYZhy{} gho.A\PYZus{}rhsD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{A\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{A\PYZus{}rhsD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{)}
+            \PY{k}{print}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{StildeD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] \PYZhy{} gho.StildeD[}\PY{l+s+s2}{\PYZdq{}}\PY{o}{+}\PY{n+nb}{str}\PY{p}{(}\PY{n}{i}\PY{p}{)}\PY{o}{+}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{] = }\PY{l+s+s2}{\PYZdq{}} \PY{o}{+} \PY{n+nb}{str}\PY{p}{(}\PY{n}{StildeD}\PY{p}{[}\PY{n}{i}\PY{p}{]} \PY{o}{\PYZhy{}} \PY{n}{gho}\PY{o}{.}\PY{n}{StildeD}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+
+    \subsubsection{\texorpdfstring{Output to \(\LaTeX\), then
+PDF}{Output to \textbackslash{}LaTeX, then PDF}}\label{output-to-latex-then-pdf}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} \PY{o}{!}jupyter nbconvert \PYZhy{}\PYZhy{}to latex \PYZhy{}\PYZhy{}template latex\PYZus{}nrpy\PYZus{}style.tplx Tutorial\PYZhy{}GiRaFFE\PYZus{}Higher\PYZus{}Order.ipynb
+        \PY{o}{!}pdflatex \PYZhy{}interaction\PY{o}{=}batchmode Tutorial\PYZhy{}GiRaFFE\PYZus{}Higher\PYZus{}Order.tex
+        \PY{o}{!}pdflatex \PYZhy{}interaction\PY{o}{=}batchmode Tutorial\PYZhy{}GiRaFFE\PYZus{}Higher\PYZus{}Order.tex
+        \PY{o}{!}pdflatex \PYZhy{}interaction\PY{o}{=}batchmode Tutorial\PYZhy{}GiRaFFE\PYZus{}Higher\PYZus{}Order.tex
+        \PY{c+c1}{\PYZsh{}!rm \PYZhy{}f Tut*.out Tut*.aux Tut*.log}
+\end{Verbatim}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor} }]:} 
+\end{Verbatim}
+
+
+    % Add a bibliography block to the postdoc
+    
+    
+% \bibliographystyle{unsrt}
+% \bibliography{ipython}
+% 
+    
+    \end{document}
