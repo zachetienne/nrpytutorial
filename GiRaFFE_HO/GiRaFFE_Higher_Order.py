@@ -85,7 +85,7 @@ def GiRaFFE_Higher_Order():
                 LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
 
     AD_dD = ixp.declarerank2("AD_dD","nosym")
-    # With Levi-Civita and the derivative of A_i, we set B^i to the curl of A^i
+    # With Levi-Civita and the derivative of A_i, we set B^i to the curl of A_i
     BU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
@@ -591,16 +591,14 @@ def GiRaFFE_Higher_Order():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                for l in range(DIM):
-                    # Term 3a: \gamma_{ki} ( b^2 )_{,j} u^j u^k
-                    TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*uU[j]*uU[k]
+                # Term 3a: \gamma_{ki} ( b^2 )_{,j} u^j u^k
+                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*uU[j]*uU[k]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                for l in range(DIM):
-                    # Term 3b: \gamma_{ki} ( b^2 )_{,j} g^{jk} / 2
-                    TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*g4DD[j][k]
+                # Term 3b: \gamma_{ki} ( b^2 )_{,j} g^{jk} / 2
+                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*g4DD[j][k]/2
 
 
     # ## Evolution equation for $\tilde{S}_i$
@@ -637,7 +635,7 @@ def GiRaFFE_Higher_Order():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                Stilde_rhsD[i] += -gammaDD[i][k]*T4EMUU[k][j]*alpsqrtgam_dD[j]
+                Stilde_rhsD[i] += -gammaDD[i][k]*T4EMUU[k+1][j+1]*alpsqrtgam_dD[j]
 
 
     # ## Evolution equations for $A_i$ and $\Phi$
@@ -667,7 +665,7 @@ def GiRaFFE_Higher_Order():
     # {\rm AevolParen} = \alpha \Phi - \beta^j A_j
     AevolParen = alpha*Phi
     for j in range(DIM):
-        AevolParen     = -betaU[j] * AD[j]
+        AevolParen    += -betaU[j] * AD[j]
 
     # {\rm PevolParenU[j]} = \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]
     for j in range(DIM):
