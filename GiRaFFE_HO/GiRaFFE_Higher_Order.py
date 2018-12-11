@@ -1,38 +1,74 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# $\newcommand{\giraffe}{\texttt{GiRaFFE}}$
-# # $\giraffe$: General Relativistic Force-Free Electrodynamics
-# ## Porting the original $\giraffe$ code to NRPy+
+# <a id='top'></a>
 # 
-# Porting the original $\giraffe$ code, as presented in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), to NRPy+ will generally make it easier to maintain, as well as to make changes. Specifically, it will make it nearly trivial to increase the finite-differencing order.
+# 
+# # $\texttt{GiRaFFE}$: General Relativistic Force-Free Electrodynamics
+# $$\label{top}$$
+# 
+# **Authors: Patrick Nelson, Zachariah Etienne, and Maria Babiuc-Hamilton**
+# 
+# ## A new version of $\texttt{GiRaFFE}$, using NRPy+
+# 
+# The original $\texttt{GiRaFFE}$ code, as presented in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), exists as a significant modification to $\texttt{IllinoisGRMHD}$. As such, it used a third-order reconstruction algorithm with a slope limiter (Colella et al's piecewise parabolic method, or PPM) to handle derivatives. However the equations of general relativistic force-free electrodynamics (GRFFE) do not generally permit shocks, so a more optimal approach would involve finite differencing all derivatives in the GRFFE equations. As it happens, NRPy+ was designed to generate C codes involving complex tensorial expressions and finite difference derivatives, with finite-differencing order a freely-specifiable parameter.
+# 
+# The purpose of this notebook is to rewrite the equations of GRFFE as used in the original $\texttt{GiRaFFE}$ code so that all derivatives that appear are represented numerically as finite difference derivatives. As we will see, the largest complication stems from derivatives of magnetic fields--requiring judicious application of the chain and product rules.
+# 
+# The GRFFE evolution equations (from eq. 13 of the [original paper](https://arxiv.org/pdf/1704.00599.pdf)) we wish to encode in the NRPy+ version of $\texttt{GiRaFFE}$ are as follows:
+# 
+# * $\partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}$: [Link to Step 3.0](#step7)
+# * $\partial_t A_i = \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j)$: [Link to Step 4.0](#step8)
+# * $\partial_t [\sqrt{\gamma} \Phi] = -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi]$: [Link to Step 4.0](#step8)
+# 
+# Here, the densitized spatial Poynting flux one-form $\tilde{S}_i = \sqrt{\gamma} S_i$ (and $S_i$ comes from $S_{\mu} -n_{\nu} T^{\nu}_{{\rm EM} \mu}$), and $(\Phi, A_i)$ is the potential.
+# 
+# ### A Note on Notation
+# 
+# As is standard in NRPy+, 
+# 
+# * Greek indices refer to four-dimensional quantities where the zeroth component indicates $t$ components. 
+# * Latin indices refer to three-dimensional quantities. This is somewhat counterintuitive since Python always indexes its lists starting from 0. As a result, the zeroth component of three-dimensional quantities will necessarily indicate the first *spatial* direction.
+# 
+# As a corollary, any expressions involving mixed Greek and Latin indices will need to offset one set of indices by one: A Latin index in a four-vector will be incremented and a Greek index in a three-vector will be decremented (however, the latter case does not occur in this tutorial module).
+# 
+# ### Table of Contents:
+# 
+# 1. Preliminaries
+#     1. [Steps 1.0-1.2](#steps0to2): Set up the basic NRPy+ infrastructure we need 
+#         * This part imports the core NRPy+ modules that we need, sets the dimensionality of the grid with parameter $\text{grid::DIM}$, and declares the basic gridfunctions
+#     1. [Step 1.3](#step3): Build the spatial derivatives of the four metric
+# 1. $T^{\mu\nu}_{\rm EM}$ and its derivatives
+#     1. [Step 2.0](#step4): $u^i$ and $b^i$ and related quantities
+#     1. [Step 2.1](#step5): Construct the electromagnetic stress-energy tensor
+#     1. [Step 2.2](#step6): Derivatives of the electromagnetic stress-energy tensor
+# 1. Evolution equation for $\tilde{S}_i$ (depends on quantities defined in previous steps)
+#     1. [Step 3.0](#step7): Construct the evolution equation for $\tilde{S}_i$
+# 1. Evolution equations for $A_i$ and $\Phi$ (depends on quantities defined in previous steps)
+#     1. [Step 4.0](#step8): Construct the evolution equations for $A_i$ and $\sqrt{\gamma}\Phi$
+# 1. Setting the initial $\tilde{S}_i$ from initial data
+#     1. [Step 5.0](#step9): Build the expression for $\tilde{S}_i$
+#         * Initial data require only that the spatial vector potential $A_i$, the densitized zeroth-component of the vector potential $[\sqrt{\gamma}\Phi]$, and the Valencia 3-velocity $v^i_{(n)}$ be set. However, the velocity is not an evolved quantity; $\tilde{S}_i$ is the evolved quantity. We can set $\tilde{S}_i$ initially based on the given initial data via $\tilde{S}_i=\gamma_{ij} \frac{v^i_{(n)} \sqrt{\gamma}B^2}{4 \pi}$.
+# 1. Code Validation
+#     1. [Step 6.0](#step10): NRPy+ Module Code Validation
 
-# Our ultimate goal here will be to code the evolution equation (from eq. 13 of the [original paper](https://arxiv.org/pdf/1704.00599.pdf)):
-# \begin{equation}
-# \partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu},
-# \end{equation}
-# where the densitized spatial Poynting flux one-form $\tilde{S}_i = \sqrt{\gamma} S_i$ (and $S_i$ comes from $S_{\mu} -n_{\nu} T^{\nu}_{{\rm EM} \mu}$) and
-# \begin{align}
-# T^{\mu \nu}_{\rm EM} &= b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}, \\
-# \sqrt{4\pi} b^0 &= B^0_{\rm (u)} = \frac{u_j B^j}{\alpha}, \\
-# \sqrt{4\pi} b^i &= B^i_{\rm (u)} = \frac{B^i + (u_j B^j) u^i}{\alpha u^0}, \\
-# \end{align}
-# and 
-# $$B^i = \frac{\tilde{B}^i}{\sqrt{\gamma}}.$$
-# Furthermore, the four-metric $g_{\mu\nu}$ is related to the three-metric $\gamma_{ij}$, lapse $\beta_i$, and shift $\alpha$ by
-# $$
-# g_{\mu\nu} = \begin{pmatrix} 
-# -\alpha^2 + \beta^k \beta_k & \beta_j \\
-# \beta_i & \gamma_{ij}
-# \end{pmatrix}.
-# $$
-# Most of these are computed in the module u0_smallb_Poynting__Cartesian.py, and we will import that module to save effort.
-# Note that as usual, Greek indices refer to four-dimensional quantities where the zeroth component indicates $t$ components, while Latin indices refer to three-dimensional quantities. Since Python always indexes its lists from 0, however, the zeroth component will indicate a spatial direction, and any expressions involving mixed Greek and Latin indices will need to offset one set of indices by one.
-
-# ## Preliminaries
-# First, we will import the core modules of NRPy that we will need and specify the main gridfunctions we will need. The metric quantities $\alpha$, $\beta^i$, and $\gamma_{ij}$ will be initially set by the $\text{ShiftedKerrSchild}$ thorn, while the Valencia 3-velocity $v^i_{(n)}$ and vector potential $A_i$ will initially be set in the separate thorn $\text{GiRaFFEfood_HO}$.
-
-# In[1]:
+# # Preliminaries
+# 
+# First, we will import the core modules of NRPy that we will need and specify the main gridfunctions we will need. 
+# 
+# <a id='steps0to2'></a>
+# 
+# ## Steps 1.0-1.1: Set up the needed NRPy+ infrastructure and declare core gridfunctions used by $\texttt{GiRaFFE}$
+# 
+# $$\label{steps0to2}$$
+# 
+# \[Back to [top](#top)\]
+# 
+# 1. Set some basic NRPy+ parameters. E.g., set the spatial dimension parameter to 3 and the finite differencing order to 4.
+# 1. Next, declare some gridfunctions that are provided as input to the equations:
+#     1. $\alpha$, $\beta^i$, and $\gamma_{ij}$: These ADM 3+1 metric quantities are declared in the ADMBase Einstein Toolkit thorn, and are assumed to be made available to $\texttt{GiRaFFE}$ at this stage.
+#     1. The Valencia 3-velocity $v^i_{(n)}$ and vector potential $A_i$: Declared by $\texttt{GiRaFFE}$, and will have their initial values set in the separate thorn **GiRaFFEfood_HO**.
+#     1. The magnetic field as measured by a normal observer $B^i$: The quantities evolved forward in time in $\texttt{GiRaFFE}$ do not include the Valencia 3-velocity, so this quantity is not automatically updated. Instead, we compute it based on the evolved quantity $\tilde{S}_i$ and $B^i = \epsilon^{ijk} \partial_j A_k$ (where $A_k$ is another evolved quantity and $\epsilon^{ijk}$ is the Levi-Civita tensor). $B^i$ is evaluated using finite differences of $A_k$ in a separate function, though it can only be evaluated consistently 
 
 
 import NRPy_param_funcs as par
@@ -42,70 +78,55 @@ import finite_difference as fin
 from outputC import *
 
 def GiRaFFE_Higher_Order():
-    #Step 0: Set the spatial dimension parameter to 3.
+    #Step 1.0: Set the spatial dimension parameter to 3.
     par.set_parval_from_str("grid::DIM", 3)
     DIM = par.parval_from_str("grid::DIM")
 
-    # Step 1: Set the finite differencing order to 4.
+    # Step 1.1: Set the finite differencing order to 4.
     par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
 
     thismodule = "GiRaFFE_NRPy"
 
     # M_PI will allow the C code to substitute the correct value
     M_PI = par.Cparameters("REAL",thismodule,"M_PI")
-    # Here, we declare the 3-metric, shift, and lapse as usual
+    # ADMBase defines the 4-metric in terms of the 3+1 spacetime metric quantities gamma_{ij}, beta^i, and alpha
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
     betaU   = ixp.register_gridfunctions_for_single_rank1("AUX","betaU",DIM=3)
     alpha   = gri.register_gridfunctions("AUX","alpha")
-    # These two gridfunctions are the basic inputs into StildeD_rhs
+    # GiRaFFE uses the Valencia 3-velocity and A_i, which are defined in the initial data module(GiRaFFEfood)
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU",DIM=3)
     AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD",DIM=3)
-
-    # Step 2: Import the four metric
-    global gammaUU,gammadet
-    gammaUU = ixp.register_gridfunctions_for_single_rank2("AUX","gammaUU","sym01")
-    gammadet = gri.register_gridfunctions("AUX","gammadet")
-    gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
+    # B^i must be computed at each timestep within GiRaFFE so that the Valencia 3-velocity can be evaluated
+    BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU",DIM=3)
 
 
-    # Then, we will declare the gridfunctions related to the metric and build the four metric using code from [Tutorial-smallb2_Poynting_vector-Cartesian.ipynb](Tutorial-smallb2_Poynting_vector-Cartesian.ipynb), which requires the magnetic field $B^i$. So, we will also define the magnetic field as in [eq. 18](https://arxiv.org/pdf/1704.00599.pdf):
-    # $$B^i = \epsilon^{ijk} \partial_j A_k,$$
-    # where $\epsilon^{ijk}$ the rank-3 Levi-Civita tensor, related to the rank-3 Levi-Civita symbol $[ijk]$ and determinant of the three-metric $\gamma$ by $$\epsilon^{ijk} = [ijk]/\sqrt{\gamma}.$$ 
-
-
-    # We already have a handy function to define the Levi-Civita symbol in WeylScalars
-    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
-    LeviCivitaUUU = ixp.zerorank3()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                LCijk = LeviCivitaDDD[i][j][k]
-                LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gammadet)
-                LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
-
-    AD_dD = ixp.declarerank2("AD_dD","nosym")
-    # With Levi-Civita and the derivative of A_i, we set B^i to the curl of A_i
-    BU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
-
-    # We use previous work to set u0 and smallb along with the four metric and its inverse
-    import u0_smallb_Poynting__Cartesian.u0_smallb_Poynting__Cartesian as u0b
-    u0b.compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU)
-
-
-    # Recall that the four-metric $g_{\mu\nu}$ is related to the three-metric $\gamma_{ij}$, lapse $\beta_i$, and shift $\alpha$ by  
+    # <a id='step3'></a>
+    # 
+    # ## Step 1.2: Build the four metric $g_{\mu\nu}$, its inverse $g^{\mu\nu}$ and spatial derivatives $g_{\mu\nu,i}$ from ADM 3+1 quantities $\gamma_{ij}$, $\beta^i$, and $\alpha$
+    # 
+    # $$\label{step3}$$
+    # \[Back to [top](#top)\]
+    # 
+    # Notice that the time evolution equation for $\tilde{S}_i$
+    # $$
+    # \partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}
+    # $$
+    # contains $\partial_i g_{\mu \nu} = g_{\mu\nu,i}$. We will now focus on evaluating this term.
+    # 
+    # The four-metric $g_{\mu\nu}$ is related to the three-metric $\gamma_{ij}$, index-lowered shift $\beta_i$, and lapse $\alpha$ by  
     # $$
     # g_{\mu\nu} = \begin{pmatrix} 
     # -\alpha^2 + \beta^k \beta_k & \beta_j \\
     # \beta_i & \gamma_{ij}
     # \end{pmatrix}.
     # $$
-    # This tensor and its inverse have already been built by the u0_smallb_Poynting__Cartesian.py module, so we can simply import the variables.
+    # This tensor and its inverse have already been built by the u0_smallb_Poynting__Cartesian.py module ([documented here](Tutorial-u0_smallb_Poynting-Cartesian.ipynb)), so we can simply load the module and import the variables.
 
+
+    # Step 1.2: import u0_smallb_Poynting__Cartesian.py to set 
+    #           the four metric and its inverse. This module also sets b^2 and u^0.
+    import u0_smallb_Poynting__Cartesian.u0_smallb_Poynting__Cartesian as u0b
+    u0b.compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU)
 
     betaD = ixp.zerorank1()
     for i in range(DIM):
@@ -121,15 +142,7 @@ def GiRaFFE_Higher_Order():
             g4UU[mu][nu] = u0b.g4UU[mu][nu]
 
 
-    # We will also need spatial derivatives of the metric, $\partial_i g_{\mu\nu} = g_{\mu\nu,i}$. To do this, we will need derivatives of the shift with its indexed lowered, $\beta_{i,j} = \partial_j \beta_i$. This becomes 
-    # \begin{align}
-    # \beta_{i,j} &= \partial_j \beta_i \\
-    #             &= \partial_j (\gamma_{ik} \beta^k) \\
-    #             &= \gamma_{ik} \partial_j\beta^k + \beta^k \partial_j \gamma_{ik} \\
-    # \beta_{i,j} &= \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j} \\
-    # \end{align}
-    # 
-    # In terms of the three-metric, lapse, and shift, we find
+    # Next we compute spatial derivatives of the metric, $\partial_i g_{\mu\nu} = g_{\mu\nu,i}$, written in terms of the three-metric, shift, and lapse. Simply taking the derivative of the expression for $g_{\mu\nu}$ above, we find
     # $$
     # g_{\mu\nu,l} = \begin{pmatrix} 
     # -2\alpha \alpha_{,l} + \beta^k_{\ ,l} \beta_k + \beta^k \beta_{k,l} & \beta_{i,l} \\
@@ -137,47 +150,50 @@ def GiRaFFE_Higher_Order():
     # \end{pmatrix}.
     # $$
     # 
-    # Since this expression mixes Greek and Latin indices, we will need to store the expressions for each of the three spatial derivatives as separate variables. 
-    # Also, consider the term $\beta_{i,j} = \partial_j \beta_i = \partial_j (\gamma_{ik} \beta^k) =  \gamma_{ik} \partial_j\beta^k + \beta^k \partial_j \gamma_{ik} = \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j}$, that is, 
+    # Notice the derivatives of the shift vector with its indexed lowered, $\beta_{i,j} = \partial_j \beta_i$. This can be easily computed in terms of the given ADMBase quantities $\beta^i$ and $\gamma_{ij}$ via:
     # \begin{align}
-    # \beta_{i,j} &= \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j}. \\
+    # \beta_{i,j} &= \partial_j \beta_i \\
+    #             &= \partial_j (\gamma_{ik} \beta^k) \\
+    #             &= \gamma_{ik} \partial_j\beta^k + \beta^k \partial_j \gamma_{ik} \\
+    # \beta_{i,j} &= \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j}.
     # \end{align}
+    # 
+    # Since this expression mixes Greek and Latin indices, we will need to store the expressions for each of the three spatial derivatives as separate variables. 
     # 
     # So, we will first set 
     # $$ g_{00,l} = \underbrace{-2\alpha \alpha_{,l}}_{\rm Term\ 1} + \underbrace{\beta^k_{\ ,l} \beta_k}_{\rm Term\ 2} + \underbrace{\beta^k \beta_{k,l}}_{\rm Term\ 3} $$
 
 
-    # Step 3: Build the spatial derivative of the four metric
-    # Step 3a: Declare derivatives of grid functions. These will be handled by FD_outputC
+    # Step 1.2, cont'd: Build spatial derivatives of the four metric
+    # Step 1.2.a: Declare derivatives of grid functions. These will be handled by FD_outputC
     alpha_dD   = ixp.declarerank1("alpha_dD")
     betaU_dD   = ixp.declarerank2("betaU_dD","nosym")
     gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
 
-    # Step 3b: These derivatives will be constructed analytically.
+    # Step 1.2.b: These derivatives will be constructed analytically.
     betaDdD    = ixp.zerorank2()
-
     g4DDdD     = ixp.zerorank3(DIM=4)
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
+                # \gamma_{ik} \beta^k_{,j} + \beta^k \gamma_{ik,j}
                 betaDdD[i][j] = gammaDD[i][k] * betaU_dD[k][j] + betaU[k] * gammaDD_dD[i][k][j]
 
-    # Step 3c: Set the 00 components
-    # Step 3c.i: Term 1: -2\alpha \alpha_{,l}
+    # Step 1.2.c: Set the 00 components
+    # Step 1.2.c.i: Term 1: -2\alpha \alpha_{,l}
     for l in range(DIM):
         g4DDdD[0][0][l+1] = -2*alpha*alpha_dD[l]
 
-    # Step 3c.ii: Term 2: \beta^k_{\ ,l} \beta_k
+    # Step 1.2.c.ii: Term 2: \beta^k_{\ ,l} \beta_k
     for l in range(DIM):
         for k in range(DIM):
             g4DDdD[0][0][l+1] += betaU_dD[k][l] * betaD[k]
 
-    # Step 3c.iii: Term 3: \beta^k \beta_{k,l}
+    # Step 1.2.c.iii: Term 3: \beta^k \beta_{k,l}
     for l in range(DIM):
         for k in range(DIM):
             g4DDdD[0][0][l+1] += betaU[k] * betaDdD[k][l]
-
 
 
     # Now we will contruct the other components of $g_{\mu\nu,l}$. We will first construct 
@@ -186,34 +202,63 @@ def GiRaFFE_Higher_Order():
     # $$ g_{ij,l} = \gamma_{ij,l} $$
 
 
-    # Step 3d: Set the i0 and 0j components
+    # Step 1.2.d: Set the i0 and 0j components
     for l in range(DIM):
         for i in range(DIM):
+            # \beta_{i,l}
             g4DDdD[i+1][0][l+1] = g4DDdD[0][i+1][l+1] = betaDdD[i][l]
 
-    #Step 3e: Set the ij components
+    #Step 1.2.e: Set the ij components
     for l in range(DIM):
         for i in range(DIM):
             for j in range(DIM):
+                # \gamma_{ij,l}
                 g4DDdD[i+1][j+1][l+1] = gammaDD_dD[i][j][l]
 
 
-    # ## $T^{\mu\nu}_{\rm EM}$ and its derivatives
+    # <a id='step4'></a>
     # 
-    # Now that the metric and its derivatives are out of the way, we will return our attention to the electromagnetic stress-energy tensor, drawn from eq. 27 of [this paper](https://arxiv.org/pdf/1310.3274.pdf):
-    # $$T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.$$
-    # We will need the four-velocity $u^\mu$, where 
+    # # $T^{\mu\nu}_{\rm EM}$ and its derivatives
+    # 
+    # Now that the metric and its derivatives are out of the way, let's return to the evolution equation for $\tilde{S}_i$,
+    # $$
+    # \partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}.
+    # $$ 
+    # We turn our focus now to $T^j_{{\rm EM} i}$ and its derivatives. To this end, we start by computing $T^{\mu \nu}_{\rm EM}$ (from eq. 27 of [Paschalidis & Shapiro's paper on their GRFFE code](https://arxiv.org/pdf/1310.3274.pdf)):
+    # 
+    # $$\boxed{T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.}$$
+    # 
+    # Notice that $T^{\mu\nu}_{\rm EM}$ is written in terms of
+    # 
+    # * $b^\mu$, the 4-component magnetic field vector, related to the comoving magnetic field vector $B^i_{(u)}$
+    # * $u^\mu$, the 4-velocity
+    # * $g^{\mu \nu}$, the inverse 4-metric
+    # 
+    # However, $\texttt{GiRaFFE}$ has access to only the following quantities, requiring in the following sections that we write the above quantities in terms of the following ones:
+    # 
+    # * $\gamma_{ij}$, the 3-metric
+    # * $\alpha$, the lapse
+    # * $\beta^i$, the shift
+    # * $A_i$, the vector potential
+    # * $B^i$, the magnetic field (we assume only in the grid interior, not the ghost zones)
+    # * $\left[\sqrt{\gamma}\Phi\right]$, the zero-component of the vector potential $A_\mu$, times the square root of the determinant of the 3-metric
+    # * $v_{(n)}^i$, the Valencia 3-velocity
+    # * $u^0$, the zero-component of the 4-velocity
+    # 
+    # ## Step 2.0: $u^i$ and $b^i$ and related quantities
+    # $$\label{step4}$$
+    # \[Back to [top](#top)\]
+    # 
+    # We begin by importing what we can from u0_smallb_Poynting__Cartesian.py. We will need the four-velocity $u^\mu$, which is related to the Valencia 3-velocity $v^i_{(n)}$ used directly by $\texttt{GiRaFFE}$ (see also [Duez, et al, eqs. 53 and 56](https://arxiv.org/pdf/astro-ph/0503420.pdf))
     # \begin{align}
     # u^i &= u^0 (\alpha v^i_{(n)} - \beta^i), \\
-    # u_j &= \alpha u^0 \gamma_{ij} v^i_{(n)}, \\
+    # u_j &= \alpha u^0 \gamma_{ij} v^i_{(n)},
     # \end{align}
-    # and $v^i_{(n)}$ is the Valencia three-velocity, as shown in [Duez, et al, eqs. 53 and 56](https://arxiv.org/pdf/astro-ph/0503420.pdf). These have already been built by the u0_smallb_Poynting__Cartesian.py module, so we can simply import the variables.
-    # 
+    # and $v^i_{(n)}$ is the Valencia three-velocity. These have already been constructed in terms of the Valencia 3-velocity and other 3+1 ADM quantities by the u0_smallb_Poynting__Cartesian.py module, so we can simply import these variables:
 
 
-    # Step 4a: import the four-velocity terms
-    #u0 = par.Cparameters("REAL",thismodule,"u0")
-    #u0 = gri.register_gridfunctions("AUX","u0")
+    # Step 2.0: u^i, b^i, and related quantities
+    # Step 2.0.a: import the four-velocity, as written in terms of the Valencia 3-velocity
     global uD,uU
     uD = ixp.register_gridfunctions_for_single_rank1("AUX","uD")
     uU = ixp.register_gridfunctions_for_single_rank1("AUX","uU")
@@ -224,17 +269,18 @@ def GiRaFFE_Higher_Order():
         uU[i] = u0b.uU[i]
 
 
-    # We also need the vector $b^{\mu}$ before we can compute this, which is related to the magnetic field by 
+    # We also need the magnetic field 4-vector $b^{\mu}$, which is related to the magnetic field by **Zach says: Add citation!**
     # \begin{align}
     # b^0 &= \frac{1}{\sqrt{4\pi}} B^0_{\rm (u)} = \frac{u_j B^j}{\sqrt{4\pi}\alpha}, \\
     # b^i &= \frac{1}{\sqrt{4\pi}} B^i_{\rm (u)} = \frac{B^i + (u_j B^j) u^i}{\sqrt{4\pi}\alpha u^0}, \\
     # \end{align} and \begin{align}
     # B^i &= \frac{\tilde{B}^i}{\sqrt{\gamma}},
     # \end{align}
-    # where $B^i$ is the variable tracked by the HydroBase thorn in the Einstein Toolkit. These have already been built by the u0_smallb_Poynting__Cartesian.py module, so we can simply import the variables.
+    # **Zach says: What is $\tilde{B}^i$ doing here?**
+    # where $B^i$ is the variable tracked by the HydroBase thorn in the Einstein Toolkit. Again, these have already been built by the u0_smallb_Poynting__Cartesian.py module, so we can simply import the variables.
 
 
-    # Step 4b: import the small b terms
+    # Step 2.0.b: import the small b terms
     smallb4U = ixp.zerorank1(DIM=4)
     smallb4D = ixp.zerorank1(DIM=4)
     for mu in range(4):
@@ -244,6 +290,13 @@ def GiRaFFE_Higher_Order():
     smallb2 = u0b.smallb2
 
 
+    # <a id='step5'></a>
+    # 
+    # ## Step 2.1: Construct all components of the electromagnetic stress-energy tensor $T^{\mu \nu}_{\rm EM}$
+    # $$\label{step5}$$
+    # 
+    # \[Back to [top](#top)\]
+    # 
     # We now have all the pieces to calculate the stress-energy tensor,
     # $$T^{\mu \nu}_{\rm EM} = \underbrace{b^2 u^{\mu} u^{\nu}}_{\rm Term\ 1} + 
     # \underbrace{\frac{b^2}{2} g^{\mu \nu}}_{\rm Term\ 2}
@@ -251,131 +304,117 @@ def GiRaFFE_Higher_Order():
     # Because $u^0$ is a separate variable, we could build the $00$ component separately, then the $\mu0$ and $0\nu$ components, and finally the $\mu\nu$ components. Alternatively, for clarity, we could create a temporary variable $u^\mu=\left( u^0, u^i \right)$
 
 
-    # Step 5: Construct the electromagnetic stress-energy tensor
-    # Step 5a: Set up the four-velocity vector
+    # Step 2.1: Construct the electromagnetic stress-energy tensor
+    # Step 2.1.a: Set up the four-velocity vector
     u4U = ixp.zerorank1(DIM=4)
     u4U[0] = u0
     for i in range(DIM):
         u4U[i+1] = uU[i]
 
-    # Step 5b: Build T4EMUU itself
+    # Step 2.1.b: Build T4EMUU itself
     T4EMUU = ixp.zerorank2(DIM=4)
     for mu in range(4):
         for nu in range(4):
-            # Term 1: \underbrace{b^2 u^{\mu} u^{\nu}}
+            # Term 1: b^2 u^{\mu} u^{\nu}
             T4EMUU[mu][nu] = smallb2*u4U[mu]*u4U[nu]
 
     for mu in range(4):
         for nu in range(4):
-            # Term 2: \frac{b^2}{2} g^{\mu \nu}
+            # Term 2: b^2 / 2 g^{\mu \nu}
             T4EMUU[mu][nu] += smallb2*g4UU[mu][nu]/2
 
     for mu in range(4):
         for nu in range(4):
-            # Term 3: b^{\mu} b^{\nu}
+            # Term 3: -b^{\mu} b^{\nu}
             T4EMUU[mu][nu] += -smallb4U[mu]*smallb4U[nu]
 
 
-    # If we look at the evolution equation, we see that we will need spatial  derivatives of $T^{\mu\nu}_{\rm EM}$. In previous tutorials, when confronted with derivatives of complicated expressions, we have declared those expressions as gridfunctions themselves, thus allowing NRPy+ to take finite-difference derivatives of the expressions. This generally reduces the error, because the alternative is to use a function of several finite-difference derivatives, allowing more error to accumulate than the extra gridfunction will introduce. While we will use that technique for some of the subexpressions of $T^{\mu\nu}_{\rm EM}$, we don't want to rely on it for the whole expression; doing so would require us to take the derivative of the magnetic field $B^i$, which is itself found by finite-differencing the vector potential $A_i$. It requires some finesse, then, to find $B^i$ inside the ghost zones, and those values of $B^i$ are necessarily less accurate; taking another derivative from them would only compound the problem. Instead, we will take analytic derivatives of $T^{\mu\nu}_{\rm EM}$.
+    # <a id='step6'></a>
     # 
-    # We will now now take these spatial  derivatives of $T^{\mu\nu}_{\rm EM}$, applying the chain rule until it is only in terms of basic gridfunctions: $\alpha$, $\beta^i$, $\gamma_{ij}$, $A_i$, and the Valencia 3-velocity, $v^i_{(n)}$. We will need the definitions of $\tilde{B}^i$ and $B^i$ in terms of $B^i$ and $A_i$:
-    # \begin{align}
-    # \tilde{B}^i &= \sqrt{\gamma} B^i \\
-    # B^i &= \epsilon^{ijk} \partial_j A_k \\
-    # \end{align}
+    # # Step 2.2: Derivatives of the electromagnetic stress-energy tensor
+    # $$\label{step6}$$
+    # 
+    # \[Back to [top](#top)\]
+    # 
+    # If we look at the evolution equation, we see that we will need spatial  derivatives of $T^{\mu\nu}_{\rm EM}$. When confronted with derivatives of complicated expressions, it is generally convenient to declare those expressions as gridfunctions themselves, allowing NRPy+ to take finite-difference derivatives of the expressions. This might even reduce the truncation error associated with the finite differences, because the alternative is to use a function of several finite-difference derivatives, allowing more error to accumulate than the extra gridfunction will introduce. While we will use that technique for some of the subexpressions of $T^{\mu\nu}_{\rm EM}$, we don't want to rely on it for the whole expression; doing so would require us to take the derivative of the magnetic field $B^i$, which is itself found by finite-differencing the vector potential $A_i$. Thus $B^i$ cannot be *consistently* defined in ghost zones. To potentially reduce numerical errors induced by inconsistent finite differencing, we will differentiate $T^{\mu\nu}_{\rm EM}$ term-by-term so that finite-difference derivatives of $A_i$ appear.
+    # 
+    # We will now now take these spatial derivatives of $T^{\mu\nu}_{\rm EM}$, applying the chain rule until it is only in terms of basic gridfunctions and their derivatives: $\alpha$, $\beta^i$, $\gamma_{ij}$, $A_i$, and the four-velocity $u^i$. Along the way, we will also set up useful temporary variables representing the steps of the chain rule. (Notably, *all* of these quantities will be written in terms of $A_i$ and its derivatives):
+    # 
+    # * $B^i$ (already computed in terms of $A_k$, via $B^i = \epsilon^{ijk} \partial_j A_k$), 
+    # * $B^i_{,l}$, 
+    # * $b^i$ and $b_i$ (already computed), 
+    # * $b^i_{,k}$, 
+    # * $b^2$ (already computed), 
+    # * and $\left(b^2\right)_{,j}$. 
+    # 
+    # (The variables not already computed will not be seen by the ETK, as they are written in terms of $A_i$ and its derivatives; they simply help to organize the NRPy+ code.)
+    # 
     # So then, 
     # \begin{align}
     # \partial_j T^{j}_{{\rm EM} i} &= \partial_j (\gamma_{ki} T^{kj}_{\rm EM}) \\
-    # &= \partial_j [\gamma_{ki} (b^2 u^j u^k + \frac{b^2}{2} g^{jk} - b^j b^k)] \\
-    # &= \underbrace{\gamma_{ki,j} T^{kj}_{\rm EM}}_{\rm Term\ 1} + \gamma_{ki} \left( \underbrace{\partial_j \left(b^2 u^j u^k\right)}_{\rm Term\ 2} + \underbrace{\partial_j \left(\frac{b^2}{2} g^{jk}\right)}_{\rm Term\ 3} - \underbrace{\partial_j \left(b^j b^k\right)}_{\rm Term\ 4} \right) \\
+    # &= \partial_j \left[\gamma_{ki} \left(b^2 u^j u^k + \frac{b^2}{2} g^{jk} - b^j b^k\right)\right] \\
+    # &= \underbrace{\gamma_{ki,j} T^{kj}_{\rm EM}}_{\rm Term\ A} + \gamma_{ki} \left( \underbrace{\partial_j \left(b^2 u^j u^k\right)}_{\rm Term\ B} + \underbrace{\partial_j \left(\frac{b^2}{2} g^{jk}\right)}_{\rm Term\ C} - \underbrace{\partial_j \left(b^j b^k\right)}_{\rm Term\ D} \right) \\
     # \end{align}
-    # Following the product and chain rules for each term (and recalling that $b^2 = \gamma_{ij} b^i b^j$, so $\partial_k b^2 = \gamma_{ij,k} b^i b^j + \gamma_{ij} b^i_{,k} b^j + \gamma_{ij} b^i b^j_{,k} = \gamma_{ij,k} b^i b^j + 2 b_j b^j_{,k}$), we find that 
+    # Following the product and chain rules for each term, we find that 
     # \begin{align}
-    # {\rm Term\ 2} &= \partial_j (b^2 u^j u^k) \\
+    # {\rm Term\ B} &= \partial_j (b^2 u^j u^k) \\
     #               &= \partial_j b^2 u^j u^k + b^2 \partial_j u^j u^k + b^2 u^j \partial_j u_k \\
-    #               &= \left(\gamma_{lm,j} b^l b^m + 2 b_l b^l_{,j}\right) u^k u^k + b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} \\
-    # {\rm Term\ 3} &= \partial_j \left(\frac{b^2}{2} g^{jk}\right) \\
+    #               &= \underbrace{\left(b^2\right)_{,j} u^j u^k + b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j}}_{\rm To\ Term\ 2\ below} \\
+    # {\rm Term\ C} &= \partial_j \left(\frac{b^2}{2} g^{jk}\right) \\
     #               &= \frac{1}{2} \left( \partial_j b^2 g^{jk} + b^2 \partial_j g^{jk} \right) \\
-    #               &= \frac{1}{2}\left(\gamma_{lm,j} b^l b^m + 2 b_l b^l_{,j}\right)g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} \\
-    # {\rm Term\ 4} &= \partial_j (b^j b^k) \\
-    #               &= b^j_{,j} b^k + b^j b^k_{,j}\\
+    #               &= \underbrace{\frac{1}{2} \left(b^2\right)_{,j} g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j}}_{\rm To\ Term\ 3\ below} \\
+    # {\rm Term\ D} &= \partial_j (b^j b^k) \\
+    #               &= \underbrace{b^j_{,j} b^k + b^j b^k_{,j}}_{\rm To\ Term\ 2\ below}\\
     # \end{align}
     # 
     # So, 
     # \begin{align}
     # \partial_j T^{j}_{{\rm EM} i} &= \gamma_{ki,j} T^{kj}_{\rm EM} \\
-    # &+ \gamma_{ki} \left(\left(\gamma_{lm,j} b^l b^m + 2 b_l b^l_{,j}\right) u^j u^k +b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{1}{2}\left(\gamma_{lm,j} b^l b^m + 2 b_l b^l_{,j}\right)g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j}\right),
+    # &+ \gamma_{ki} \left(\left(b^2\right)_{,j} u^j u^k +b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{1}{2}\left(b^2\right)_{,j} g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j}\right);
     # \end{align}
-    # where 
+    # We will rearrange this once more, collecting the $b^2$ terms together, noting that Term A will become Term 1:
     # \begin{align}
-    # %u^i_{,j} &= u^0_{,j} (\alpha v^i_{(n)} - \beta^i) + u^0 (\alpha_{,j} v^i_{(n)} + \alpha v^i_{(n),j} - \beta^i_{,j}) \\
-    # %u_{j,k} &= \alpha_{,k} u^0 \gamma_{ij} v^i_{(n)} + \alpha u^0_{,k} \gamma_{ij} v^i_{(n)} + \alpha u^0 \gamma_{ij,k} v^i_{(n)} + \alpha u^0 \gamma_{ij} v^i_{(n),k} \\
-    # b^i_{,k} &= \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2} \\
-    # B^i_{,i} &= -\frac{\gamma_{,i} B^i}{2\gamma} \\
-    # B^i_{,l} &= -\frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, i \neq l, \\
+    # \partial_j  T^{j}_{{\rm EM} i} =& \ 
+    # \underbrace{\gamma_{ki,j} T^{kj}_{\rm EM}}_{\rm Term\ 1} \\
+    # & + \underbrace{\gamma_{ki} \left( b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j} \right)}_{\rm Term\ 2} \\
+    # & + \underbrace{\gamma_{ki} \left( \left(b^2\right)_{,j} u^j u^k + \frac{1}{2} \left(b^2\right)_{,j} g^{jk} \right).}_{\rm Term\ 3} \\
     # \end{align}
     # 
-    # First, we will handle the derivatives of the velocity $u^i$ and its lowered form. We will simply use finite-difference derivatives here by setting $u^i$ and $u_i$ as gridfunctions (done above). This will reduce the chances for finite differencing errors to accumulate, because the alternative is to use a function of several finite-difference derivatives.
-
-
-    # Step 6: Derivatives of the electromagnetic stress-energy tensor
-    # Step 6a: Declare gridfunctions and their derivatives that will be useful for TEMUD_dD
-    # We already handled the ADMBase variables' derivatives when we built g4DDdD.
-    # That leaves the valencia 3 velocity and tilde B field.
-    ValenciavU_dD = ixp.declarerank2("ValenciavU_dD","nosym")
-    #BtildeU_dD    = ixp.declarerank2("BtildeU_dD",   "nosym")
-    global alphau0
-    alphau0 = gri.register_gridfunctions("AUX","alphau0")
-    alphau0 = alpha * u0
-    alphau0_dD = ixp.declarerank1("alphau0_dD")
-
-    # We'll let these be handled by finite differencing.
-    uU_dD = ixp.declarerank2("uU_dD","nosym")
-    #for i in range(DIM):
-    #     for j in range(DIM):
-    #            uU_dD[i][j] = u0_dD[j]*(alpha*ValenciavU[i]-betaU[i]) + u0*(alpha_dD[j]*ValenciavU[i]\
-    #                                                                        +alpha*ValenciavU_dD[i][j]\
-    #                                                                        +betaU_dD[i][j])
-
-    uD_dD = ixp.declarerank2("uD_dD","nosym")
-    #for i in range(DIM):
-    #    for j in range(DIM):
-    #        for k in range(DIM):
-    #            uD_dD[j][k] =  alpha_dD[k]*u0*gammaDD[i][j]*ValenciavU[i]\
-    #                         + alpha*u0_dD[k]*gammaDD[i][j]*ValenciavU[i]\
-    #                         + alpha*u0*gammaDD_dD[i][j][k]*ValenciavU[i]\
-    #                         + alpha*u0*gammaDD[i][j]*ValenciavU_dD[i][k]\
-
-
-    # Now, we will build the derivatives of the magnetic field. We will build one expression for the divergence of $b^i$, $b^i_{,i}$ (reducing to functions of $\tilde{B}^i$ (which is itself a function of $B^i$) since $\tilde{B}^i$ is divergenceless) and another for $b^i_{,l}$, reducing to functions of second derivatives of the vector potential $A_i$. That is, since 
-    # $$
-    # b^i_{,k} = \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2},
-    # $$
+    # <a id='table2'></a>
     # 
-    # we will need to define $B^i_{,i}$ and $B^i_{,l}$. For the divergence $B^i_{,i}$, since $B^i = \tilde{B}^i/\sqrt{\gamma}$,
-    # the quotient rule tells us that 
-    # \begin{align}
-    # B^i_{,i} &= \frac{\sqrt{\gamma}\tilde{B}^i_{,i} - \tilde{B}^i \partial_i \sqrt{\gamma}}{\sqrt{\gamma}^2} \\
-    #          &= \frac{\sqrt{\gamma}\tilde{B}^i_{,i} - \tilde{B}^i \frac{1}{2\sqrt{\gamma}} \gamma_{,i}}{\gamma}. \\
-    # \end{align}
-    # Since we have defined the divergence $\tilde{B}^i_{,i} = 0$, the first term in the numerator vanishes, and we are left with
-    # \begin{align}
-    # B^i_{,i} &= \frac{-\tilde{B}^i \frac{1}{2\sqrt{\gamma}} \gamma_{,i}}{\gamma} \\
-    #          &= \frac{-\gamma_{,i} \tilde{B}^i}{2\gamma^{3/2}} \\
-    #          &= \frac{-\gamma_{,i} B^i}{2\gamma}, \\
-    # \end{align}
-    # because we have defined $\tilde{B}^i = \sqrt{\gamma} B^i$. Let us now give a similar treatment to the derivative $B^i_{,l}$; we will start from the definition of $B^i$ in terms of $A_i$, $B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k$. We will first apply the product rule, noting that the symbol $[ijk]$ consists purely of the integers $-1, 0, 1$ and thus can be treated as a constant in this process.
+    # **List of Derivatives**
+    # $$\label{table2}$$
+    # 
+    # Note that this is in terms of the derivatives of several other quantities:
+    # 
+    # * [Step 2.2.a](#capitalBideriv): $B^i_{,l}$: Since $b^i$ is itself a function of $B^i$, we will first need the derivatives $B^i_{,l}$ in terms of the evolved quantity $A_i$ (the vector potential).
+    # * [Step 2.2.b](#bideriv): $b^i_{,k}$: Once we have $B^i_{,l}$ we can evaluate derivatives of $b^i$, $b^i_{,k}$
+    # * [Step 2.2.c](#b2deriv): The derivative of $b^2 = g_{\mu\nu} b^\mu b^\nu$, $\left(b^2\right)_{,j}$
+    # * [Step 2.2.d](#gupijderiv): Derivatives of $g^{ij}$, $g^{ij}_{\ ,k}$
+    # * [Step 2.2.e](#alltogether): Putting it together: $\partial_j T^{j}_{{\rm EM} i}$
+    #     * [Step 2.2.e.i](#alltogether1): Putting it together: Term 1
+    #     * [Step 2.2.e.ii](#alltogether2): Putting it together: Term 2
+    #     * [Step 2.2.e.iii](#alltogether3): Putting it together: Term 3
+
+    # <a id='capitalBideriv'></a>
+    # 
+    # ## Step 2.2.a: Derivatives of $B^i$
+    # 
+    # $$\label{capitalbideriv}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
+    # First, we will build the derivatives of the magnetic field. Since $b^i$ is a function of $B^i$, we will start from the definition of $B^i$ in terms of $A_i$, $B^i = \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k$. We will first apply the product rule, noting that the symbol $[ijk]$ consists purely of the integers $-1, 0, 1$ and thus can be treated as a constant in this process.
     # \begin{align}
     # B^i_{,l} &= \partial_l \left( \frac{[ijk]}{\sqrt{\gamma}} \partial_j A_k \right)  \\
     #          &= [ijk] \partial_l \left( \frac{1}{\sqrt{\gamma}}\right) \partial_j A_k + \frac{[ijk]}{\sqrt{\gamma}} \partial_l \partial_j A_k \\
     #          &= [ijk]\left(-\frac{\gamma_{,l}}{2\gamma^{3/2}}\right) \partial_j A_k + \frac{[ijk]}{\sqrt{\gamma}} \partial_l \partial_j A_k \\
     # \end{align}
-    # Now, we will substitute back in for the definition of the Levi-Civita tensor: $\epsilon^{ijk} = [ijk] / \sqrt{\gamma}$. Then will substitute the magnetic field $B^i$ back in.
+    # Now, we will substitute back in for the definition of the Levi-Civita tensor: $\epsilon^{ijk} = [ijk] / \sqrt{\gamma}$. Then we will substitute the magnetic field $B^i$ back in.
     # \begin{align}
     # B^i_{,l} &= -\frac{\gamma_{,l}}{2\gamma} \epsilon^{ijk} \partial_j A_k + \epsilon^{ijk} \partial_l \partial_j A_k \\
-    #          &= -\frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, i \neq l, \\
+    #          &= -\frac{\gamma_{,l}}{2\gamma} B^i + \epsilon^{ijk} A_{k,jl}, \\
     # \end{align}
-    # Note that the first term here is identical to the divergence-like terms $B^i_{,i}$, so these expressions are consistent given that the divergence of a curl must be zero. Thus, we will not need to code up those terms separately.
     # 
     # Thus, the expression we are left with for the derivatives of the magnetic field is:
     # \begin{align}
@@ -385,36 +424,67 @@ def GiRaFFE_Higher_Order():
     # 
 
 
-    #Step 6b: Construct the derivatives of the magnetic field.
+    # Step 2.2: Derivatives of the electromagnetic stress-energy tensor
+
+    # We already have a handy function to define the Levi-Civita symbol in WeylScalars
+    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
+    # Initialize the Levi-Civita tensor by setting it equal to the Levi-Civita symbol
+    LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
+    LeviCivitaTensorDDD = ixp.zerorank3()
+    LeviCivitaTensorUUU = ixp.zerorank3()
+
+    gammaUU = ixp.register_gridfunctions_for_single_rank2("AUX","gammaUU","sym01")
+    gammadet = gri.register_gridfunctions("AUX","gammadet")
+    gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+    #            LeviCivitaTensorDDD[i][j][k] = LeviCivitaSymbolDDD[i][j][k] * sp.sqrt(gammadet)
+                LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
+
+    AD_dD = ixp.declarerank2("AD_dD","nosym")
+
+    # Step 2.2.a: Construct the derivatives of the magnetic field.
     gammadet_dD = ixp.declarerank1("gammadet_dD")
 
     AD_dDD = ixp.declarerank3("AD_dDD","sym12")           
     # The other partial derivatives of B^i
-    BU_dD = ixp.zerorank2()
+    BUdD = ixp.zerorank2()
     for i in range(DIM):
         for l in range(DIM):
-            # Term 1: -\frac{\gamma_{,l}}{2\gamma} B^i
-            BU_dD[i][l] = -gammadet_dD[l]*BU[i]/(2*gammadet)
+            # Term 1: -\gamma_{,l} / (2\gamma) B^i
+            BUdD[i][l] = -gammadet_dD[l]*BU[i]/(2*gammadet)
 
     for i in range(DIM):
         for l in range(DIM):
             for j in range(DIM):
                 for k in range(DIM):
                     # Term 2: \epsilon^{ijk} A_{k,jl}
-                    BU_dD[i][l] += LeviCivitaUUU[i][j][k] * AD_dDD[k][j][l]
+                    BUdD[i][l] += LeviCivitaTensorUUU[i][j][k] * AD_dDD[k][j][l]
 
 
-    # Now, we will code the derivatives of the spatial components of $b^{\mu}$, $b^i$.
+    # <a id='bideriv'></a>
+    # 
+    # ## Step 2.2.b: Derivatives of $b^i$
+    # $$\label{bideriv}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
+    # Now, we will code the derivatives of the spatial components of $b^{\mu}$, $b^i$:
     # $$
-    # b^i_{,k} = \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2} 
+    # b^i_{,k} = \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2}. 
     # $$
     # 
-    # Let's go into a little more detail on where this comes from. We start from the definition $$b^i = \frac{B^i + (u_j B^j) u^i}{\sqrt{4\pi}\alpha u^0};$$ We then apply the quotient rule: 
+    # We should note that while $b^\mu$ is a four-vector (and the code reflects this: $\text{smallb4U}$ and $\text{smallb4U}$ have $\text{DIM=4}$), we only need the spatial components. We will only focus on the spatial components for the moment.
+    # 
+    # 
+    # Let's go into a little more detail on where this comes from. We start from the definition $$b^i = \frac{B^i + (u_j B^j) u^i}{\sqrt{4\pi}\alpha u^0};$$ we then apply the quotient rule: 
     # \begin{align}
     # b^i_{,k} &= \frac{\left(\sqrt{4\pi}\alpha u^0\right) \partial_k \left(B^i + (u_j B^j) u^i\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\sqrt{4\pi}\alpha u^0\right)}{\left(\sqrt{4\pi}\alpha u^0\right)^2} \\
     # &= \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right) \partial_k \left(B^i + (u_j B^j) u^i\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2} \\
     # \end{align}
-    # Note that $\left( \alpha u^0 \right)$ is being used as its own gridfunction, so we can be done with that term. We will now apply the product rule to the term $\partial_k \left(B^i + (u_j B^j) u^i\right) = B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}$. So, 
+    # Note that $\left( \alpha u^0 \right)$ is being used as its own gridfunction, so $\partial_k \left(a u^0\right)$ will be finite-differenced by NRPy+ directly. We will also apply the product rule to the term $\partial_k \left(B^i + (u_j B^j) u^i\right) = B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}$. So, 
     # $$ b^i_{,k} = \frac{1}{\sqrt{4 \pi}} \frac{\left(\alpha u^0\right)  \left(B^i_{,k} + u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k}\right) - \left(B^i + (u_j B^j) u^i\right) \partial_k \left(\alpha u^0\right)}{\left(\alpha u^0\right)^2}. $$
     # 
     # It will be easier to code this up if we rearrange these terms to group together the terms that involve contractions over $j$. Doing that, we find
@@ -422,61 +492,104 @@ def GiRaFFE_Higher_Order():
     # b^i_{,k} = \frac{\overbrace{\alpha u^0 B^i_{,k} - B^i \partial_k (\alpha u^0)}^{\rm Term\ Num1} + \overbrace{\left( \alpha u^0 \right) \left( u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k} \right)}^{\rm Term\ Num2.a} - \overbrace{\left( u_j B^j u^i \right) \partial_k \left( \alpha u^0 \right) }^{\rm Term\ Num2.b}}{\underbrace{\sqrt{4 \pi} \left( \alpha u^0 \right)^2}_{\rm Term\ Denom}}.
     # $$
 
+    global alphau0
+    alphau0 = gri.register_gridfunctions("AUX","alphau0")
+    alphau0 = alpha * u0
+    alphau0_dD = ixp.declarerank1("alphau0_dD")
+    uU_dD = ixp.declarerank2("uU_dD","nosym")
+    uD_dD = ixp.declarerank2("uD_dD","nosym")
 
-    # Step 6c: Construct derivatives of the small b vector
-    smallbU_dD = ixp.zerorank2()
+    # Step 2.2.b: Construct derivatives of the small b vector
+    # smallbUdD represents the derivative of smallb4U
+    smallbUdD = ixp.zerorank2()
     for i in range(DIM):
         for k in range(DIM):
             # Term Num1: \alpha u^0 B^i_{,k} - B^i \partial_k (\alpha u^0)
-            smallbU_dD[i][k] += alphau0*BU_dD[i][k]-BU[i]*alphau0_dD[k]
+            smallbUdD[i][k] += alphau0*BUdD[i][k]-BU[i]*alphau0_dD[k]
 
     for i in range(DIM):
         for k in range(DIM):
             for j in range(DIM):
                 # Term Num2.a: terms that require contractions over k, and thus an extra loop.
-                # \left( \alpha u^0 \right) \left( u_{j,k} B^j u^i + u_j B^j_{,k} u^i + u_j B^j u^i_{,k} \right)
-                smallbU_dD[i][k] += alphau0*(uD_dD[j][k]*BU[j]*uU[i]+uD[j]*BU_dD[j][k]*uU[i]+uD[j]*BU[j]*uU_dD[i][k])
+                # ( \alpha u^0 ) (  u_{j,k} B^j u^i 
+                #                 + u_j B^j_{,k} u^i 
+                #                 + u_j B^j u^i_{,k} )
+                smallbUdD[i][k] += alphau0*(uD_dD[j][k]*BU[j]*uU[i]                                         +uD[j]*BUdD[j][k]*uU[i]                                         +uD[j]*BU[j]*uU_dD[i][k])
 
     for i in range(DIM):
         for k in range(DIM):
             for j in range(DIM):
-                #Term 2.b (More contractions over k): \left( u_j B^j u^i \right) \partial_k \left( \alpha u^0 \right)
-                smallbU_dD[i][k] += -(uD[j]*BU[j]*uU[i])*alphau0_dD[k]
+                #Term 2.b (More contractions over k): ( u_j B^j u^i ) \partial_k ( \alpha u^0 )
+                smallbUdD[i][k] += -(uD[j]*BU[j]*uU[i])*alphau0_dD[k]
 
     for i in range(DIM):
         for k in range(DIM):
             # Term Denom requires us to divide the whole expressions through by sqrt(4 pi) * (alpha u^0)^2
-            smallbU_dD[i][k] /= sp.sqrt(4*M_PI) * alphau0 * alphau0
+            smallbUdD[i][k] /= sp.sqrt(4*M_PI) * alphau0 * alphau0
 
+
+    # <a id='b2deriv'></a>
+    # 
+    # ## Step 2.2.c: Derivative of $b^2$
+    # $$\label{b2deriv}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
+    # Here, we will take the derivative of $b^2 = g_{\mu\nu} b^\mu b^\nu$. Using the product rule,
+    # \begin{align}
+    # \left(b^2\right)_{,j} &= \partial_j \left( g_{\mu\nu} b^\mu b^\nu \right) \\
+    #                       &= g_{\mu\nu,j} b^\mu b^\nu + g_{\mu\nu} b^\mu_{,j} b^\nu + g_{\mu\nu} b^\mu b^\nu_{,j} \\
+    #                       &= g_{\mu\nu,j} b^\mu b^\nu + 2 g_{\mu\nu} b^\mu_{,j} b^\nu.
+    # \end{align}
+    # We have already defined the derivatives of the four-metric $g_{\mu\nu,j}$; we have also defined the derivatives of spatial components of $b^\mu$, $b^i_{,k}$. Now, however, we will need  the take derivatives of the temporal component: $b^0_{,j}$. Starting with the definition, and using the quotient rule:
+    # \begin{align}
+    # b^0 &= \frac{u_k B^k}{\sqrt{4\pi}\alpha}, \\
+    # \rightarrow b^0_{,j} &= \frac{1}{\sqrt{4\pi}} \frac{\alpha \left( u_{k,j} B^k + u_k B^k_{,j} \right) - u_k B^k \alpha_{,j}}{\alpha^2} \\
+    #     &= \frac{\alpha u_{k,j} B^k + \alpha u_k B^k_{,j} - \alpha_{,j} u_k B^k}{\sqrt{4\pi} \alpha^2}.
+    # \end{align}
+    # We will first code the numerator, and then divide through by the denominator.
+
+
+    # Step 2.2.c: Construct the derivative of b^2
     # First construct the derivative b^0_{,j}
     # This four-vector will make b^2 simpler:
-    smallb4U_dD = ixp.zerorank2(DIM=4)
+    smallb4UdD = ixp.zerorank2(DIM=4)
     # Fill in the zeroth component
     for j in range(DIM):
-        # The numerator:  \alpha u_{k,j} B^k 
-        #               + \alpha u_k B^k_{,j} 
-        #               - \alpha_{,j} u_k B^k
-        smallb4U_dD[0][j+1] =   alpha*uD_dD[k][j]*BU[k] \
-                              + alpha*uD[k]*BU_dD[k][j] \
-                              - alpha_dD[j]*uD[k]*BU[k]
+        for k in range(DIM):
+            # The numerator:  \alpha u_{k,j} B^k 
+            #               + \alpha u_k B^k_{,j} 
+            #               - \alpha_{,j} u_k B^k
+            smallb4UdD[0][j+1] +=   alpha*uD_dD[k][j]*BU[k]                                + alpha*uD[k]*BUdD[k][j]                                - alpha_dD[j]*uD[k]*BU[k]
     for j in range(DIM):
         # Divide through by the denominator: \sqrt{4\pi} \alpha^2
-        smallb4U_dD[0][j+1] /= sp.sqrt(4*M_PI)*alpha*alpha
+        smallb4UdD[0][j+1] /= sp.sqrt(4*M_PI)*alpha*alpha
 
     # Now, we'll fill out the rest of the four-vector with b^i_{,j} that we derived above.
     for i in range(DIM):
         for j in range(DIM):
-            smallb4U_dD[i+1][j+1] = smallbU_dD[i][j]
+            smallb4UdD[i+1][j+1] = smallbUdD[i][j]
+
+
+    # Now we can calculate $$\left(b^2\right)_{,j} = g_{\mu\nu,j} b^\mu b^\nu + 2 g_{\mu\nu} b^\mu_{,j} b^\nu.$$
+
 
     smallb2_dD = ixp.zerorank1()
     for j in range(DIM):
         for mu in range(4):
             for nu in range(4):
-                # g_{\mu\nu,j} b^\mu b^\nu
+                #   g_{\mu\nu,j} b^\mu b^\nu
                 # + 2 g_{\mu\nu} b^\mu_{,j} b^\nu
-                smallb2_dD[j] =   g4DDdD[mu][nu][j+1]*smallb4U[mu]*smallb4U[nu] \
-                                + 2*g4DD[mu][nu]*smallb4U_dD[mu][j+1]*smallb4U[nu]
+                smallb2_dD[j] +=   g4DDdD[mu][nu][j+1]*smallb4U[mu]*smallb4U[nu]                              + 2*g4DD[mu][nu]*smallb4UdD[mu][j+1]*smallb4U[nu]
 
+
+    # <a id='gupijderiv'></a>
+    # 
+    # ## Step 2.2.d: Derivatives of $g^{ij}$
+    # $$\label{gupijderiv}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
     # We will also need derivatives of the spatial part of the inverse four-metric: since $g^{ij} = \gamma^{ij} - \frac{\beta^i \beta^j}{\alpha^2}$ ([Gourgoulhon, eq. 4.49](https://arxiv.org/pdf/gr-qc/0703035.pdf)), 
     # \begin{align}
     # g^{ij}_{\ ,k} &= \gamma^{ij}_{\ ,k} - \frac{\alpha^2 \partial_k (\beta^i \beta^j) - \beta^i \beta^j \partial_k \alpha^2}{(\alpha^2)^2} \\
@@ -487,7 +600,7 @@ def GiRaFFE_Higher_Order():
     # 
 
 
-    # Step 6d: Construct derivatives of the spatial components of g^{ij}
+    # Step 2.2.d: Construct derivatives of the spatial components of g^{ij}
     gammaUU_dD = ixp.declarerank3("gammaUU_dD","sym01")
 
     # The spatial derivatives of the spatial components of the four metric:
@@ -498,121 +611,150 @@ def GiRaFFE_Higher_Order():
             for k in range(DIM):
                 gSpatialUU_dD[i][j][k] = gammaUU_dD[i][j][k]
 
-    # Term 2: - \frac{\beta^i \beta^j_{,k}}{\alpha^2}
+    # Term 2: - \beta^i \beta^j_{,k} / \alpha^2
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 gSpatialUU_dD[i][j][k] += -betaU[i]*betaU_dD[j][k]/alpha**2
 
-    # Term 3: - \frac{\beta^i_{,k} \beta^j}{\alpha^2}
+    # Term 3: - \beta^i_{,k} \beta^j / \alpha^2
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 gSpatialUU_dD[i][j][k] += -betaU_dD[i][k]*betaU[j]/alpha**2
 
-    # Term 4: \frac{2\beta^i \beta^j \alpha_{,k}}{\alpha^3}
+    # Term 4: 2\beta^i \beta^j \alpha_{,k}\alpha^3
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 gSpatialUU_dD[i][j][k] += 2*betaU[i]*betaU[j]*alpha_dD[k]/alpha**3
 
 
+    # <a id='alltogether'></a>
+    # 
+    # ## Step 2.2.e: Putting it together:
+    # $$\label{alltogether}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
     # So, we can now put it all together:
     # \begin{align}
-    # \partial_j  T^{j}_{{\rm EM} i} &= \gamma_{ki,j} T^{kj}_{\rm EM} + \gamma_{ki} \left(\left(\gamma_{lm,j} b^l b^m + 2 b_l b^l_{,j}\right) u^j u^k +b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{1}{2}\left(\gamma_{lm,j} b^l b^m + 2 b_l b^l_{,j}\right)g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j}\right).
+    # \partial_j  T^{j}_{{\rm EM} i} &= \gamma_{ki,j} T^{kj}_{\rm EM} + \gamma_{ki} \left(\left(b^2\right)_{,j} u^j u^k + b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{1}{2} \left(b^2\right)_{,j} g^{jk} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j}\right).
     # \end{align}
-    # It should be noted that due to the way our indexing conventions have have fallen, the Python indices for $T^{ij}_{\rm EM}$, $g^{ij}$, $b^i$ and $b_i$ will need to be incremented to correctly use the spatial components. We will also quickly rearrange the terms of the expression to better mimic the loop structure we will need to create:
-    # \begin{align}
-    # \partial_j  T^{j}_{{\rm EM} i} =& \ \gamma_{ki,j} T^{kj}_{\rm EM} \\
-    # & + \gamma_{ki} \left( b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j} \right) \\
-    # & + \gamma_{ki} \left( 2b_l b^l_{,j} u^j u^k + 2 b_l b^l_{,j} g^{jk} \right) \\
-    # & + \gamma_{ki} \left( \gamma_{lm,j} b^l b^m u^j u^k + \frac{1}{2} \gamma_{lm,j} b^l b^m g^{jk} \right). \\
-    # \end{align}
-    # 
-    # However, we can simplify this a bit more and pull out some common factors, leaving us with 
+    # It should be noted that due to the way our indexing conventions have have fallen, the Python indices for $T^{ij}_{\rm EM}$, $g^{ij}$, $b^i$ and $b_i$ will need to be incremented to correctly use the spatial components. We will also quickly rearrange the terms of the expression to better mimic the loop structure we will create:
     # \begin{align}
     # \partial_j  T^{j}_{{\rm EM} i} =& \ 
     # \underbrace{\gamma_{ki,j} T^{kj}_{\rm EM}}_{\rm Term\ 1} \\
     # & + \underbrace{\gamma_{ki} \left( b^2 u^j_{,j} u^k + b^2 u^j u^k_{,j} + \frac{b^2}{2} g^{jk}_{\ ,j} + b^j_{,j} b^k + b^j b^k_{,j} \right)}_{\rm Term\ 2} \\
-    # & + \underbrace{2 b_l b^l_{,j} \gamma_{ki} \left( u^j u^k +  g^{jk} \right)}_{\rm Term\ 3} \\
-    # & + \underbrace{\gamma_{ki} \gamma_{lm,j} b^l b^m \left( u^j u^k + \frac{1}{2} g^{jk} \right)}_{\rm Term\ 4}. \\
+    # & + \underbrace{\gamma_{ki} \left( \left(b^2\right)_{,j} u^j u^k + \frac{1}{2} \left(b^2\right)_{,j} g^{jk} \right).}_{\rm Term\ 3} \\
     # \end{align}
+    # 
+    # <a id='alltogether1'></a>
+    # 
+    # ### Step 2.2.e.i: Putting it together: Term 1
+    # $$\label{alltogether1}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
     # We will now construct this term by term. Term 1 is straightforward: $${\rm Term\ 1} = \gamma_{ki,j} T^{kj}_{\rm EM}.$$
 
 
-    # Step 6e: Construct TEMUD_dD itself
-    # We will only set the divergence-like components that we need.
-    TEMUD_dD_contracted = ixp.zerorank1()
+    # Step 2.2.e: Construct TEMUDdD_contracted itself
+    # Step 2.2.e.i
+    TEMUDdD_contracted = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                TEMUD_dD_contracted[i] += gammaDD_dD[k][i][j] * T4EMUU[k+1][j+1]
+                TEMUDdD_contracted[i] += gammaDD_dD[k][i][j] * T4EMUU[k+1][j+1]
 
 
+    # <a id='alltogether2'></a>
+    # 
+    # ### Step 2.2.e.ii: Putting it together: Term 2
+    # $$\label{alltogether2}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
     # We will now add $${\rm Term\ 2} = \gamma_{ki} \left( \underbrace{b^2 u^j_{,j} u^k}_{\rm Term\ 2a} + \underbrace{b^2 u^j u^k_{,j}}_{\rm Term\ 2b} + \underbrace{\frac{b^2}{2} g^{jk}_{\ ,j}}_{\rm Term\ 2c} + \underbrace{b^j_{,j} b^k}_{\rm Term\ 2d} + \underbrace{b^j b^k_{,j}}_{\rm Term\ 2e} \right)$$ to $\partial_j  T^{j}_{{\rm EM} i}$. These are the terms that involve contractions over $k$ (but no metric derivatives like Term 1 had). 
     # 
 
 
+    # Step 2.2.e.ii
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 # Term 2a: \gamma_{ki} b^2 u^j_{,j} u^k
-                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2*uU_dD[j][j]*uU[k]
+                TEMUDdD_contracted[i] += gammaDD[k][i]*smallb2*uU_dD[j][j]*uU[k]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 # Term 2b: \gamma_{ki} b^2 u^j u^k_{,j}
-                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2*uU[j]*uU_dD[k][j]
+                TEMUDdD_contracted[i] += gammaDD[k][i]*smallb2*uU[j]*uU_dD[k][j]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                # Term 2c: \gamma_{ki} \frac{b^2}{2} g^{jk}_{\ ,j}
-                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2*gSpatialUU_dD[j][k][j]/2
+                # Term 2c: \gamma_{ki} b^2 / 2 g^{jk}_{,j}
+                TEMUDdD_contracted[i] += gammaDD[k][i]*smallb2*gSpatialUU_dD[j][k][j]/2
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 # Term 2d: \gamma_{ki} b^j_{,j} b^k
-                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallbU_dD[j][j]*smallb4U[k+1]
+                TEMUDdD_contracted[i] += gammaDD[k][i]*smallbUdD[j][j]*smallb4U[k+1]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 # Term 2e: \gamma_{ki} b^j b^k_{,j}
-                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb4U[j+1]*smallbU_dD[k][j]
+                TEMUDdD_contracted[i] += gammaDD[k][i]*smallb4U[j+1]*smallbUdD[k][j]
 
 
+    # <a id='alltogether3'></a>
+    # 
+    # ### Step 2.2.e.iii: Putting it together: Term 3
+    # $$\label{alltogether3}$$
+    # 
+    # \[Back to [List of Derivatives](#table2)\]
+    # 
     # Now, we will add $${\rm Term\ 3} = \gamma_{ki} \left( \underbrace{\left(b^2\right)_{,j} u^j u^k}_{\rm Term\ 3a} + \underbrace{\frac{1}{2} \left(b^2\right)_{,j} g^{jk}}_{\rm Term\ 3b} \right).$$ 
 
 
-    # Step 6e.iii
+    # Step 2.2.e.iii
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 # Term 3a: \gamma_{ki} ( b^2 )_{,j} u^j u^k
-                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*uU[j]*uU[k]
+                TEMUDdD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*uU[j]*uU[k]
 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 # Term 3b: \gamma_{ki} ( b^2 )_{,j} g^{jk} / 2
-                TEMUD_dD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*g4DD[j][k]/2
+                TEMUDdD_contracted[i] += gammaDD[k][i]*smallb2_dD[j]*g4DD[j][k]/2
 
 
-    # ## Evolution equation for $\tilde{S}_i$
+    # 
+    # # Evolution equation for $\tilde{S}_i$
+    # <a id='step7'></a>
+    # 
+    # ## Step 3.0: Construct the evolution equation for $\tilde{S}_i$
+    # $$\label{step7}$$
+    # 
+    # \[Back to [top](#top)\]
+    # 
     # Finally, we will return our attention to the time evolution equation (from eq. 13 of the [original paper](https://arxiv.org/pdf/1704.00599.pdf)),
     # \begin{align}
     # \partial_t \tilde{S}_i &= - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} \\
     #                        &= -T^j_{{\rm EM} i} \partial_j (\alpha \sqrt{\gamma}) - \alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i} + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} \\
-    #                        &= \underbrace{\frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}}_{\rm Term\ 1} - \underbrace{\alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i}}_{\rm Term\ 2} - \underbrace{T^j_{{\rm EM} i} \partial_j (\alpha \sqrt{\gamma})}_{\rm Term\ 3} .
+    #                        &= \underbrace{\frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}}_{\rm Term\ 1} - \underbrace{\alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i}}_{\rm Term\ 2} - \underbrace{\gamma_{ik} T^{kj}_{\rm EM} \partial_j (\alpha \sqrt{\gamma})}_{\rm Term\ 3} .
     # \end{align}
     # We construct the first term separately at first, to reduce the complication of dealing with mixed Greek and Latin indices.
     # Then we will take derivatives of $\alpha \sqrt{\gamma}$.
 
 
-    # Step 7: Construct the evolution equation for \tilde{S}_i
+    # Step 3.0: Construct the evolution equation for \tilde{S}_i
     # Here, we set up the necessary machinery to take FD derivatives of alpha * sqrt(gamma)
     global alpsqrtgam
     alpsqrtgam = gri.register_gridfunctions("AUX","alpsqrtgam")
@@ -621,7 +763,7 @@ def GiRaFFE_Higher_Order():
 
     global Stilde_rhsD
     Stilde_rhsD = ixp.zerorank1()
-    # The first term: \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}
+    # The first term: \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} / 2
     for i in range(DIM):
         for mu in range(4):
             for nu in range(4):
@@ -629,37 +771,49 @@ def GiRaFFE_Higher_Order():
 
     # The second term: \alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i}
     for i in range(DIM):
-        Stilde_rhsD[i] += -alpsqrtgam * TEMUD_dD_contracted[i]
+        Stilde_rhsD[i] += -alpsqrtgam * TEMUDdD_contracted[i]
 
-    # The third term: T^j_{{\rm EM} i} \partial_j (\alpha \sqrt{\gamma})
+    # The third term: \gamma_{ik} T^{kj}_{\rm EM} \partial_j (\alpha \sqrt{\gamma})
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 Stilde_rhsD[i] += -gammaDD[i][k]*T4EMUU[k+1][j+1]*alpsqrtgam_dD[j]
 
 
-    # ## Evolution equations for $A_i$ and $\Phi$
+    # # Evolution equations for $A_i$ and $\Phi$
+    # <a id='step8'></a>
     # 
-    # We will also need to evolve the vector potential $A_i$. This evolution is given as eq. 17 in the [$\giraffe$](https://arxiv.org/pdf/1704.00599.pdf) paper:
-    # $$\partial_t A_i = \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j),$$
-    # where $\epsilon_{ijk} = [ijk] \sqrt{\gamma}$ is the antisymmetric Levi-Civita tensor, the drift velocity $v^i = u^i/u^0$, and $\gamma$ is the determinant of the three metric. 
+    # ## Step 4.0: Construct the evolution equations for $A_i$ and $[\sqrt{\gamma}\Phi]$
+    # $$\label{step8}$$
+    # 
+    # \[Back to [top](#top)\]
+    # 
+    # We will also need to evolve the vector potential $A_i$. This evolution is given as eq. 17 in the [$\texttt{GiRaFFE}$](https://arxiv.org/pdf/1704.00599.pdf) paper:
+    # $$\boxed{\partial_t A_i = \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j),}$$
+    # where $\epsilon_{ijk} = [ijk] \sqrt{\gamma}$ is the antisymmetric Levi-Civita tensor, the drift velocity $v^i = u^i/u^0$, $\gamma$ is the determinant of the three metric, $B^k$ is the magnetic field, $\alpha$ is the lapse, and $\beta$ is the shift.
     # The scalar electric potential $\Phi$ is also evolved by eq. 19:
-    # $$\partial_t [\sqrt{\gamma} \Phi] = -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi],$$
+    # $$\boxed{\partial_t [\sqrt{\gamma} \Phi] = -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi],}$$
     # with $\xi$ chosen as a damping factor. 
     # 
-    # After declaring a  some needed quantities, we will also define the parenthetical terms that we need to take derivatives of. For $A_i$, we will define $${\rm AevolParen} = \alpha \Phi - \beta^j A_j,$$ and for $\sqrt{\gamma} \Phi$, we will define $${\rm PevolParenU[j]} = \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi].$$
+    # ### Step 4.0.a: Construct some useful auxiliary gridfunctions for the other evolution equations
+    # After declaring a  some needed quantities, we will also define the parenthetical terms that we need to take derivatives of. For $A_i$, we will define $${\rm AevolParen} = \alpha \Phi - \beta^j A_j$$ and for $[\sqrt{\gamma} \Phi]$, we will define 
+    # \begin{align}
+    # {\rm PevolParenU[j]} &= \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi] \\
+    # &= \alpha\sqrt{\gamma\ } \gamma^{ij} A_i - \beta^j [\sqrt{\gamma} \Phi]. \\
+    # \end{align}
 
 
-    #Step 8: Construct some useful auxiliary gridfunctions for the other evolution equations
+    # Step 4.0: Construct the evolution equations for A_i and sqrt(gamma)Phi
+    # Step 4.0.a: Construct some useful auxiliary gridfunctions for the other evolution equations
     xi = par.Cparameters("REAL",thismodule,"xi") # The damping factor
 
-    # Call sqrt(gamma)Phi psi6Phi
+    # Define sqrt(gamma)Phi as psi6Phi
     psi6Phi = gri.register_gridfunctions("AUX","psi6Phi")
     Phi = psi6Phi / sp.sqrt(gammadet)
 
     # We'll define a few extra gridfunctions to avoid complicated derivatives
     global AevolParen,PevolParenU
-    AevolParen = gri.register_gridfunctions("AUX","AevolParen")
+    AevolParen  = gri.register_gridfunctions("AUX","AevolParen")
     PevolParenU = ixp.register_gridfunctions_for_single_rank1("AUX","PevolParenU")
 
     # {\rm AevolParen} = \alpha \Phi - \beta^j A_j
@@ -667,26 +821,27 @@ def GiRaFFE_Higher_Order():
     for j in range(DIM):
         AevolParen    += -betaU[j] * AD[j]
 
-    # {\rm PevolParenU[j]} = \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]
+    # {\rm PevolParenU[j]} = \alpha\sqrt{\gamma} \gamma^{ij} A_i - \beta^j [\sqrt{\gamma} \Phi]
     for j in range(DIM):
         PevolParenU[j] = -betaU[j] * psi6Phi
         for i in range(DIM):
             PevolParenU[j] += alpha * sp.sqrt(gammadet) * gammaUU[i][j] * AD[i]
 
-    AevolParen_dD = ixp.declarerank1("AevolParen_dD")
+    AevolParen_dD  = ixp.declarerank1("AevolParen_dD")
     PevolParenU_dD = ixp.declarerank2("PevolParenU_dD","nosym")
 
 
-    # Now to set the evolution equations ([eqs. 17 and 19](https://arxiv.org/pdf/1704.00599.pdf)):
+    # ### Step 4.0.b: Construct the actual evolution equations for $A_i$ and $[\sqrt{\gamma}\Phi]$
+    # Now to set the evolution equations ([eqs. 17 and 19](https://arxiv.org/pdf/1704.00599.pdf)), recalling that the drift velocity $v^i = u^i/u^0$:
     # \begin{align}
     # \partial_t A_i &= \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j) \\
-    #                &= \epsilon_{ijk} v^j B^k - {\rm AevolParen\_dD[i]} \\
+    #                &= \epsilon_{ijk} \frac{u^j}{u^0} B^k - {\rm AevolParen\_dD[i]} \\
     # \partial_t [\sqrt{\gamma} \Phi] &= -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi] \\
-    #                                 &= {\rm PevolParenU\_dD[j][j]} - \xi \alpha [\sqrt{\gamma} \Phi]. \\
+    #                                 &= -{\rm PevolParenU\_dD[j][j]} - \xi \alpha [\sqrt{\gamma} \Phi]. \\
     # \end{align}
 
 
-    # Step 8b: Construct the evolution equations for A_i and sqrt(gamma)Phi
+    # Step 4.0.b: Construct the actual evolution equations for A_i and sqrt(gamma)Phi
     global A_rhsD,psi6Phi_rhs
     A_rhsD = ixp.zerorank1()
     psi6Phi_rhs = sp.sympify(0)
@@ -695,21 +850,26 @@ def GiRaFFE_Higher_Order():
         A_rhsD[i] = -AevolParen_dD[i]
         for j in range(DIM):
             for k in range(DIM):
-                A_rhsD[i] += LeviCivitaDDD[i][j][k]*(uU[j]/u0)*BU[k]
+                A_rhsD[i] += LeviCivitaTensorDDD[i][j][k]*(uU[j]/u0)*BU[k]
 
     psi6Phi_rhs = -xi*alpha*psi6Phi
     for j in range(DIM):
         psi6Phi_rhs += -PevolParenU_dD[j][j]
 
 
-    # ## Setting the initial $\tilde{S}_i$ from initial data
-    # We will now find the densitized Poynting flux given by equation 21 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), $$\tilde{S}_i = \gamma_{ij} \frac{(v^j+\beta^j)\sqrt{\gamma}B^2}{4 \pi \alpha}.$$ This is needed to set initial data for $\tilde{S}_i$ after $B^i$ is set from the initial $A_i$. Note, however, that this expression uses the drift velocity $v^i = \alpha v^i_{(n)} - \beta^i$; substituting this into the definition of $\tilde{S}_i$ yields an expression in terms of the Valencia velocity: $$\tilde{S}_i = \gamma_{ij} \frac{v^i_{(n)} \sqrt{\gamma}B^2}{4 \pi}.$$
+    # <a id='step9'></a>
+    # 
+    # # Step 5.0: Build the expression for $\tilde{S}_i$
+    # $$\label{step9}$$
+    # 
+    # \[Back to [top](#top)\]
+    # 
+    # We will now find the densitized Poynting flux given by equation 21 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), $$\boxed{\tilde{S}_i = \gamma_{ij} \frac{(v^j+\beta^j)\sqrt{\gamma}B^2}{4 \pi \alpha}.}$$ This is needed to set initial data for $\tilde{S}_i$ after $B^i$ is set from the initial $A_i$. Note, however, that this expression uses the drift velocity $v^i = \alpha v^i_{(n)} - \beta^i$; substituting this into the definition of $\tilde{S}_i$ yields an expression in terms of the Valencia velocity: $$\tilde{S}_i = \gamma_{ij} \frac{v^i_{(n)} \sqrt{\gamma}B^2}{4 \pi}.$$
 
 
-    # Step 9: Build the expression for \tilde{S}_i
+    # Step 5.0: Build the expression for \tilde{S}_i
     global StildeD
     StildeD = ixp.zerorank1()
-    BU = ixp.declarerank1("BU") # Reset the values in BU so that the C code accesses the gridfunctions directly
     B2 = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
