@@ -164,7 +164,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     # Step 3: If outCparams.verbose = True, then output the original SymPy
     #         expression(s) in code comments prior to actual C code
     if outCparams.outCverbose == "True":
-        commentblock += preindent+"/*\n *  Original SymPy expression"
+        commentblock += preindent+"/*\n"+preindent+" *  Original SymPy expression"
         if len(output_varname_str)>1:
             commentblock += "s"
         commentblock += ":\n"
