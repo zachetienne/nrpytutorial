@@ -216,6 +216,7 @@ def GiRaFFEfood_HO():
     global StildeD
     StildeD = ixp.zerorank1()
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU") # Reset so that NRPy will access stored values of BU
+    ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU") # Reset so that NRPy will access stored values of ValenciavU
     B2 = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
