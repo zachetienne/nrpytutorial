@@ -215,6 +215,7 @@ def GiRaFFEfood_HO():
     # Step 5: Build the expression for \tilde{S}_i
     global StildeD
     StildeD = ixp.zerorank1()
+    BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU") # Reset so that NRPy will access stored values of BU
     B2 = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):

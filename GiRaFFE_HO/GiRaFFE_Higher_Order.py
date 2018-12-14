@@ -261,11 +261,11 @@ def GiRaFFE_Higher_Order():
     global uD,uU
     uD = ixp.register_gridfunctions_for_single_rank1("AUX","uD")
     uU = ixp.register_gridfunctions_for_single_rank1("AUX","uU")
-    u4U0 = gri.register_gridfunctions("AUX","u4U0")
+    u4upper0 = gri.register_gridfunctions("AUX","u4upper0")
 
     for i in range(DIM):
-        uD[i] = u0b.uD[i]
-        uU[i] = u0b.uU[i]
+        uD[i] = u0b.uD[i].subs(u0b.u0,u4upper0)
+        uU[i] = u0b.uU[i].subs(u0b.u0,u4upper0)
 
 
     # We also need the magnetic field 4-vector $b^{\mu}$, which is related to the magnetic field by [eqs. 23, 24, and 31 in Duez, et al](https://arxiv.org/pdf/astro-ph/0503420.pdf):
@@ -280,10 +280,10 @@ def GiRaFFE_Higher_Order():
     smallb4U = ixp.zerorank1(DIM=4)
     smallb4D = ixp.zerorank1(DIM=4)
     for mu in range(4):
-        smallb4U[mu] = u0b.smallb4U[mu]
-        smallb4D[mu] = u0b.smallb4D[mu]
+        smallb4U[mu] = u0b.smallb4U[mu].subs(u0b.u0,u4upper0)
+        smallb4D[mu] = u0b.smallb4D[mu].subs(u0b.u0,u4upper0)
 
-    smallb2 = u0b.smallb2
+    smallb2 = u0b.smallb2.subs(u0b.u0,u4upper0)
 
 
     # <a id='step5'></a>
@@ -303,7 +303,7 @@ def GiRaFFE_Higher_Order():
     # Step 2.1: Construct the electromagnetic stress-energy tensor
     # Step 2.1.a: Set up the four-velocity vector
     u4U = ixp.zerorank1(DIM=4)
-    u4U[0] = u4U0
+    u4U[0] = u4upper0
     for i in range(DIM):
         u4U[i+1] = uU[i]
 
@@ -492,7 +492,7 @@ def GiRaFFE_Higher_Order():
 
     global alphau0
     alphau0 = gri.register_gridfunctions("AUX","alphau0")
-    alphau0 = alpha * u4U0
+    alphau0 = alpha * u4upper0
     alphau0_dD = ixp.declarerank1("alphau0_dD")
     uU_dD = ixp.declarerank2("uU_dD","nosym")
     uD_dD = ixp.declarerank2("uD_dD","nosym")
@@ -698,9 +698,9 @@ def GiRaFFE_Higher_Order():
 
     # We'll need derivatives of u4U for the next part: 
     u4UdD = ixp.zerorank2(DIM=4)
-    u4U0_dD = ixp.declarerank1("u4U0_dD") # Note that derivatives can't be done in 4-D with the current version of NRPy
+    u4upper0_dD = ixp.declarerank1("u4upper0_dD") # Note that derivatives can't be done in 4-D with the current version of NRPy
     for i in range(DIM):
-        u4UdD[0][i+1] = u4U0_dD[i]
+        u4UdD[0][i+1] = u4upper0_dD[i]
     for i in range(DIM):
         for j in range(DIM):
             u4UdD[i+1][j+1] = uU_dD[i][j]
@@ -886,7 +886,7 @@ def GiRaFFE_Higher_Order():
         A_rhsD[i] = -AevolParen_dD[i]
         for j in range(DIM):
             for k in range(DIM):
-                A_rhsD[i] += LeviCivitaTensorDDD[i][j][k]*(uU[j]/u4U0)*BU[k]
+                A_rhsD[i] += LeviCivitaTensorDDD[i][j][k]*(uU[j]/u4upper0)*BU[k]
 
     psi6Phi_rhs = -xi*alpha*psi6Phi
     for j in range(DIM):
