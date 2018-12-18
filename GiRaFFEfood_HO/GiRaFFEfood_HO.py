@@ -46,19 +46,19 @@ import reference_metric as rfm
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
+# Step 1a: Set commonly used parameters.
+thismodule = "GiRaFFEfood_HO"
+# Set the spatial dimension parameter to 3.
+par.set_parval_from_str("grid::DIM", 3)
+DIM = par.parval_from_str("grid::DIM")
+
+# Create a parameter to control the initial data choice. For now, this will only have Exact Wald as an option.
+par.initialize_param(par.glb_param("char", thismodule, "IDchoice", "Exact_Wald"))
+
+# Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
+M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
+
 def GiRaFFEfood_HO():
-    # Step 1a: Set commonly used parameters.
-    thismodule = "GiRaFFEfood_HO"
-    # Set the spatial dimension parameter to 3.
-    par.set_parval_from_str("grid::DIM", 3)
-    DIM = par.parval_from_str("grid::DIM")
-
-    # Create a parameter to control the initial data choice. For now, this will only have Exact Wald as an option.
-    par.initialize_param(par.glb_param("char", thismodule, "IDchoice", "Exact_Wald"))
-
-    # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
-    M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
-
 
     # <a id='step2'></a>
     # 
@@ -212,6 +212,9 @@ def GiRaFFEfood_HO():
     # 
 
 
+def GiRaFFEfood_HO_ID_converter():
+    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
+    gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
     # Step 5: Build the expression for \tilde{S}_i
     global StildeD
     StildeD = ixp.zerorank1()
