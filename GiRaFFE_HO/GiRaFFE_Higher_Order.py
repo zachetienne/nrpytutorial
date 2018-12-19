@@ -130,7 +130,7 @@ def GiRaFFE_Higher_Order():
     betaD = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
-            betaD[i] = gammaDD[i][j] * betaU[j]
+            betaD[i] += gammaDD[i][j] * betaU[j]
 
     # We will now pull in the four metric and its inverse.
     g4DD = ixp.zerorank2(DIM=4)
@@ -177,7 +177,7 @@ def GiRaFFE_Higher_Order():
         for j in range(DIM):
             for k in range(DIM):
                 # \gamma_{ik} \beta^k_{,j} + \beta^k \gamma_{ik,j}
-                betaDdD[i][j] = gammaDD[i][k] * betaU_dD[k][j] + betaU[k] * gammaDD_dD[i][k][j]
+                betaDdD[i][j] += gammaDD[i][k] * betaU_dD[k][j] + betaU[k] * gammaDD_dD[i][k][j]
 
     # Step 1.2.c: Set the 00 components
     # Step 1.2.c.i: Term 1: -2\alpha \alpha_{,l}
@@ -437,7 +437,7 @@ def GiRaFFE_Higher_Order():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-    #            LeviCivitaTensorDDD[i][j][k] = LeviCivitaSymbolDDD[i][j][k] * sp.sqrt(gammadet)
+                LeviCivitaTensorDDD[i][j][k] = LeviCivitaSymbolDDD[i][j][k] * sp.sqrt(gammadet)
                 LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
 
     AD_dD = ixp.declarerank2("AD_dD","nosym")
@@ -620,8 +620,9 @@ def GiRaFFE_Higher_Order():
 
     for k in range(DIM):
         for i in range(DIM):
-            # Term 1:                                    2 \beta^i \alpha_{,k} / \alpha^3
-            g4UUdD[i+1][0][k+1] = g4UUdD[0][i+1][k+1] = 2 * betaU[i] * alpha * alpha_dD[k] / alpha**3
+            # Term 2:              -2 \beta^i \alpha_{,k} / \alpha^3
+            g4UUdD[i+1][0][k+1] += -2 * betaU[i] * alpha_dD[k] / alpha**3
+            g4UUdD[0][i+1][k+1] += -2 * betaU[i] * alpha_dD[k] / alpha**3
 
 
     # We will also need derivatives of the spatial part of the inverse four-metric: since $g^{ij} = \gamma^{ij} - \frac{\beta^i \beta^j}{\alpha^2}$ ([Gourgoulhon, eq. 4.49](https://arxiv.org/pdf/gr-qc/0703035.pdf)), 
@@ -746,7 +747,7 @@ def GiRaFFE_Higher_Order():
         for j in range(DIM):
             for mu in range(4):
                 # Term 2e: g_{\mu i} b^j b^\mu_{,j}
-                TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb4U[j+1]*smallb4UdD[k][j]
+                TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb4U[j+1]*smallb4UdD[mu][j+1]
 
 
     # <a id='alltogether3'></a>
