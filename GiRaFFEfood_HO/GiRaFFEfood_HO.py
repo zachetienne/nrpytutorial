@@ -149,27 +149,26 @@ def GiRaFFEfood_HO():
     # Step 4: Calculate v^i from A_i and E_i
     # Step 4a: Calculate the magnetic field B^i
     # Here, we build the Levi-Civita tensor from the Levi-Civita symbol.
+    # Here, we build the Levi-Civita tensor from the Levi-Civita symbol.
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
-    LeviCivitaUUU = ixp.zerorank3()
+    LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
+    LeviCivitaTensorUUU = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                LCijk = LeviCivitaDDD[i][j][k]
-                #LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gammadet)
-                LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
+                LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
 
     # For the initial data, we can analytically take the derivatives of A_i
-    AD_dD = ixp.zerorank2()
+    ADdD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            AD_dD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
+            ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
 
     BU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
+                BU[i] += LeviCivitaTensorUUU[i][j][k] * ADdD[k][j]
 
 
     # We will now build the initial velocity using equation 152 in [this paper,](https://arxiv.org/pdf/1310.3274v2.pdf) cited in the original $\texttt{GiRaFFE}$ code: $$ v^i = \alpha \frac{\epsilon^{ijk} E_j B_k}{B^2} -\beta^i. $$ 
@@ -196,7 +195,7 @@ def GiRaFFEfood_HO():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                ValenciavU[i] += LeviCivitaUUU[i][j][k]*ED[j]*BD[k]/B2
+                ValenciavU[i] += LeviCivitaTensorUUU[i][j][k]*ED[j]*BD[k]/B2
 
 
     # <a id='step5'></a>
