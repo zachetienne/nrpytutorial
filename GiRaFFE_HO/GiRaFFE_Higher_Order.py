@@ -805,7 +805,7 @@ def GiRaFFE_Higher_Order():
     # The first term: g_{i\mu} T^{\mu j}_{\rm EM} \partial_j (\alpha \sqrt{\gamma})
     for i in range(DIM):
         for j in range(DIM):
-            for mu in range(DIM):
+            for mu in range(4):
                 Stilde_rhsD[i] += -g4DD[i+1][mu]*T4EMUU[mu][j+1]*alpsqrtgam_dD[j]
 
     # The second term: \alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i}
