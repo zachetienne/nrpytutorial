@@ -40,14 +40,10 @@ import sympy as sp
 import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
-import reference_metric as rfm
 import BSSN.CartesianADMID_to_BSSNCurvilinearID as ctob
 import BSSN.BSSN_ID_function_string as bIDf
 
 def BrillLindquist():
-    # Step P1b: Set up needed reference metric quantities
-    rfm.reference_metric()
-
     thismodule = "Brill-Lindquist"
     BH1_posn_x,BH1_posn_y,BH1_posn_z = par.Cparameters("REAL", thismodule, ["BH1_posn_x","BH1_posn_y","BH1_posn_z"])
     BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"])

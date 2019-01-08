@@ -182,7 +182,12 @@ def Convert_Cartesian_ADM_to_BSSN_curvilinear(Cartxyz, gammaCartDD, KCartDD, alp
     # \mathcal{B}^i &= B^i/\text{ReU[i]}\\
 
     # Step 6: Rescale all tensorial quantities.
-
+    
+    if rfm.have_already_called_reference_metric_function == False:
+        print("Error. Called Convert_Cartesian_ADM_to_BSSN_curvilinear() without")
+        print("       first setting up reference metric, by calling rfm.reference_metric().")
+        exit(1)
+    
     hDD = ixp.zerorank2()
     aDD = ixp.zerorank2()
     lambdaU = ixp.zerorank1()

@@ -26,8 +26,12 @@ Cartx,Carty,Cartz = sp.symbols("Cartx Carty Cartz", real=True)
 Cart = [Cartx,Carty,Cartz]
 xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
+have_already_called_reference_metric_function = False
 
 def reference_metric():
+    global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
+    have_already_called_reference_metric_function = True
+
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
     M_PI = par.Cparameters("REAL",thismodule,"M_PI")
 
