@@ -22,7 +22,7 @@ def Convert_Cartesian_ADM_to_BSSN_curvilinear(Cartxyz, gammaCartDD, KCartDD, alp
 
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
     #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
-    #    the relevant angular directions to zero.
+    #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
     # Step 0: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
 
@@ -46,8 +46,8 @@ def Convert_Cartesian_ADM_to_BSSN_curvilinear(Cartxyz, gammaCartDD, KCartDD, alp
     #
     # \begin{align}
     # K &= \gamma^{ij} K_{ij} \\
-    # \bar{A}_{ij} &= \left(\frac{\gamma}{\bar{\gamma}}\right)^{1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)\\
-    # &= \gamma^{1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)
+    # \bar{A}_{ij} &= \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)\\
+    # &= \gamma^{-1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)
     # \end{align}
 
     # Step 2: Convert ADM $K_{ij}$ to $\bar{A}_{ij}$ and $K$,
@@ -60,7 +60,7 @@ def Convert_Cartesian_ADM_to_BSSN_curvilinear(Cartxyz, gammaCartDD, KCartDD, alp
     ACartbarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            ACartbarDD[i][j] = gammaCartDET ** (sp.Rational(1, 3)) * (
+            ACartbarDD[i][j] = gammaCartDET ** (-sp.Rational(1, 3)) * (
                     KCartDD[i][j] - sp.Rational(1, 3) * gammaCartDD[i][j] * trKCart)
 
     # Third, we define $\bar{\Lambda}^i$ (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
