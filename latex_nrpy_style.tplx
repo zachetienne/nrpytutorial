@@ -5,11 +5,27 @@
     \documentclass[landscape,letterpaper,10pt,english]{article}
 ((* endblock docclass *))
 
-%((* block author *))
-%\author{Zachariah Etienne}
-%((* endblock author *))
+% ((* block Xauthor *))
+% \author{Zachariah Etienne}
+% ((* endblock Xauthor *))
 
-% ((* block bibliography *))
+% ((* block Xbibliography *))
 % \bibliographystyle{unsrt}
 % \bibliography{ipython}
-% ((* endblock bibliography *))
+% ((* endblock Xbibliography *))
+
+((* block commands *))
+    % Prevent overflowing lines due to hard-to-break entities
+    \sloppy 
+    % Setup hyperref package
+    \hypersetup{
+      breaklinks=true,  % so long urls are correctly broken across lines
+      colorlinks=true,
+      urlcolor=urlcolor,
+      linkcolor=linkcolor,
+      citecolor=citecolor,
+      }
+      
+    % Slightly bigger margins than the latex defaults
+    \geometry{verbose,tmargin=0.5in,bmargin=0.5in,lmargin=0.5in,rmargin=0.5in}
+((* endblock commands *))
