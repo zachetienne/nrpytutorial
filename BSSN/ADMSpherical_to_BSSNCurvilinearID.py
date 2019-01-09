@@ -13,7 +13,7 @@ import indexedexp as ixp
 import reference_metric as rfm
 import BSSN.BSSN_RHSs as bssnrhs # The ConformalFactor parameter is used below
 
-def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU):
+def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD_in, alphaSph_in, betaSphU_in, BSphU_in):
     # This routine convert the ADM variables
     # $$\left\{\gamma_{ij}, K_{ij}, \alpha, \beta^i\right\}$$
     # in Spherical coordinates to the BSSN variables
@@ -28,6 +28,22 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD, KSphDD, a
     # Step 0: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
 
+    # First copy gammaSphDD_in to gammaSphDD, KSphDD_in to KSphDD, etc.
+    #    This ensures that the input arrays are not modified below;
+    #    modifying them would result in unexpected effects outside
+    #    this function.
+    alphaSph = alphaSph_in
+    betaSphU = ixp.zerorank1()
+    BSphU = ixp.zerorank1()
+    gammaSphDD = ixp.zerorank2()
+    KSphDD = ixp.zerorank2()
+    for i in range(DIM):
+        betaSphU[i] = betaSphU_in[i]
+        BSphU[i]    = BSphU_in[i]
+        for j in range(DIM):
+            gammaSphDD[i][j] = gammaSphDD_in[i][j]
+            KSphDD[i][j]     = KSphDD_in[i][j]
+
     # All input quantities are in terms of r,th,ph. We want them in terms of xx0,xx1,xx2:
     # WARNING: Substitution only works when the variable is not an integer. Hence the if not isinstance(...,...) stuff.
     def sympify_integers__replace_rthph(obj, Sph_r_th_ph, r_th_ph_of_xx):
@@ -37,14 +53,14 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD, KSphDD, a
             return obj.subs(Sph_r_th_ph[0], r_th_ph_of_xx[0]).subs(Sph_r_th_ph[1], r_th_ph_of_xx[1]).subs(Sph_r_th_ph[2], r_th_ph_of_xx[2])
 
     alphaSph = sympify_integers__replace_rthph(alphaSph, Sph_r_th_ph,rfm.xxSph)
-    print(gammaSphDD[0][0])
+    # print(gammaSphDD[0][0])
     for i in range(DIM):
         betaSphU[i] = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph,rfm.xxSph)
         BSphU[i]    = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph, rfm.xxSph)
         for j in range(DIM):
             gammaSphDD[i][j] = sympify_integers__replace_rthph(gammaSphDD[i][j], Sph_r_th_ph,rfm.xxSph)
             KSphDD[i][j]     = sympify_integers__replace_rthph(KSphDD[i][j], Sph_r_th_ph, rfm.xxSph)
-    print(gammaSphDD[0][0])
+    # print(gammaSphDD[0][0])
 
     # Temporarily set the source reference metric to Spherical, so
     #     we can use some of the CoordSystem==Spherical reference_metric
