@@ -30,7 +30,7 @@ import sympy as sp
 import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
-import BSSN.CartesianADMID_to_BSSNCurvilinearID as ctob
+import BSSN.ADMCartesian_to_BSSNCurvilinearID as ctob
 import BSSN.BSSN_ID_function_string as bIDf
 
 def BrillLindquist():
