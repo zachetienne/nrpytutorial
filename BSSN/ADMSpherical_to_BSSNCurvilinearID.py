@@ -21,6 +21,31 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD, KSphDD, a
     # to the rescaled variables
     # $$\left\{h_{i j},a_{i j},\phi, K, \lambda^{i}, \alpha, \mathcal{V}^i, \mathcal{B}^i\right\}.$$
 
+
+    # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
+    #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
+    #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
+    # Step 0: Set spatial dimension (must be 3 for BSSN)
+    DIM = 3
+
+    # All input quantities are in terms of r,th,ph. We want them in terms of xx0,xx1,xx2:
+    # WARNING: Substitution only works when the variable is not an integer. Hence the if not isinstance(...,...) stuff.
+    def sympify_integers__replace_rthph(obj, Sph_r_th_ph, r_th_ph_of_xx):
+        if isinstance(obj, int):
+            return sp.sympify(obj)
+        else:
+            return obj.subs(Sph_r_th_ph[0], r_th_ph_of_xx[0]).subs(Sph_r_th_ph[1], r_th_ph_of_xx[1]).subs(Sph_r_th_ph[2], r_th_ph_of_xx[2])
+
+    alphaSph = sympify_integers__replace_rthph(alphaSph, Sph_r_th_ph,rfm.xxSph)
+    print(gammaSphDD[0][0])
+    for i in range(DIM):
+        betaSphU[i] = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph,rfm.xxSph)
+        BSphU[i]    = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph, rfm.xxSph)
+        for j in range(DIM):
+            gammaSphDD[i][j] = sympify_integers__replace_rthph(gammaSphDD[i][j], Sph_r_th_ph,rfm.xxSph)
+            KSphDD[i][j]     = sympify_integers__replace_rthph(KSphDD[i][j], Sph_r_th_ph, rfm.xxSph)
+    print(gammaSphDD[0][0])
+
     # Temporarily set the source reference metric to Spherical, so
     #     we can use some of the CoordSystem==Spherical reference_metric
     #     functionality.
@@ -28,14 +53,9 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD, KSphDD, a
     #     BSSNCurvilinear output:
     CoordSystem_dest = par.parval_from_str("reference_metric::CoordSystem")
 
+
     par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
     rfm.reference_metric()
-
-    # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
-    #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
-    #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
-    # Step 0: Set spatial dimension (must be 3 for BSSN)
-    DIM = 3
 
     # Step 1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{\gamma}_{ij}$
     # We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
