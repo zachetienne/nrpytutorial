@@ -30,9 +30,11 @@ import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
 import reference_metric as rfm
+import BSSN.ADMSpherical_to_BSSNCurvilinearID as ctob
+import BSSN.BSSN_ID_function_string as bIDf
 
 def UIUCBlackHole():
-    global r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
+    global Sph_r_th_ph,r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
     
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
     r,th,ph = sp.symbols('r th ph', real=True)
@@ -90,8 +92,9 @@ def UIUCBlackHole():
     # Validated against original SENR: KSphDD[0][2], KSphDD[1][2], gammaSphDD[2][2], gammaSphDD[0][0], gammaSphDD[1][1]
     #print(sp.mathematica_code(gammaSphDD[1][1]))
 
+    Sph_r_th_ph = [r,th,ph]
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        ctob.Convert_Spherical_ADM_to_BSSN_curvilinear(Sphxyz, gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
+        ctob.Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
     global returnfunction
     returnfunction = bIDf.BSSN_ID_function_string(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU)

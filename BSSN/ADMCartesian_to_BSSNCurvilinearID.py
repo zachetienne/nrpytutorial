@@ -1,6 +1,7 @@
-# This module converts Cartesian ADM initial data to BSSN
-# curvilinear initial data in terms of the variables used
-# in BSSN_RHSs.py
+# This module performs the conversion between ADM
+# spacetime variables in Cartesian coordinates to
+# rescaled BSSN-in-curvilinear coordinate quantities,
+# as defined in BSSN_RHSs.py
 
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
