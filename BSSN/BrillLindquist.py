@@ -4,19 +4,9 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-# # Start-to-Finish Example: Setting up Two Black Hole Initial Data, in Curvilinear Coordinates
+# # Setting up Two Black Hole Initial Data, in Curvilinear Coordinates
 # 
-# ## This module sets up initial data for a merging black hole system in *spherical coordinates*
-# 
-# <font color='green'>**This module has been validated to exhibit convergence to zero of the Hamiltonian constraint violation at the expected order to the exact solution (see plot at bottom), and all quantities have been validated against the [original SENR code](https://bitbucket.org/zach_etienne/nrpy).**</font>
-# 
-# ### NRPy+ Source Code for this module: [BSSN/BSSN_RHSs.py](../edit/BSSN/BSSN_RHSs.py), [BSSN/BSSN_Constraints.py](../edit/BSSN/BSSNConstraints.py)
-# 
-# 
-# Here we use NRPy+ to generate initial data for two black holes (Brill-Lindquist, [Brill & Lindquist, Phys. Rev. 131, 471, 1963](https://journals.aps.org/pr/abstract/10.1103/PhysRev.131.471); see also Eq. 1 of [Brandt & Br\"ugmann, arXiv:gr-qc/9711015v1](https://arxiv.org/pdf/gr-qc/9711015v1.pdf)).
-#
-
-# ## Setting up the initial data
+# ## This module sets up initial data for two black holes at rest in spherical coordinates, converts the initial data/basis to the desired CoordSystem, and then rescales all quantities according to the BSSNCurvilinear prescription.
 # 
 # ### Brill-Lindquist initial data ([Brill & Lindquist, Phys. Rev. 131, 471, 1963](https://journals.aps.org/pr/abstract/10.1103/PhysRev.131.471); see also Eq. 1 of [Brandt & Br\"ugmann, arXiv:gr-qc/9711015v1](https://arxiv.org/pdf/gr-qc/9711015v1.pdf)) may be written in terms of the BSSN conformal factor and ADM extrinsic curvature as
 # 
