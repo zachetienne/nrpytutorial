@@ -30,8 +30,6 @@ import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
 import reference_metric as rfm
-#import BSSN.SphericalADMID_to_BSSNCurvilinearID as ctob
-#import BSSN.BSSN_ID_function_string as bIDf
 
 def UIUCBlackHole():
     global r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
