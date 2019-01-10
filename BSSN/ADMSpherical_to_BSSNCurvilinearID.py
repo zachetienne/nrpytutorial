@@ -55,9 +55,9 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
     alphaSph = sympify_integers__replace_rthph(alphaSph, Sph_r_th_ph, rfm.xxSph)
     for i in range(DIM):
         betaSphU[i] = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph, rfm.xxSph)
-        BSphU[i]    = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph, rfm.xxSph)
+        BSphU[i]    = sympify_integers__replace_rthph(BSphU[i],    Sph_r_th_ph, rfm.xxSph)
         for j in range(DIM):
-            gammaSphDD[i][j] = sympify_integers__replace_rthph(gammaSphDD[i][j], Sph_r_th_ph,rfm.xxSph)
+            gammaSphDD[i][j] = sympify_integers__replace_rthph(gammaSphDD[i][j], Sph_r_th_ph, rfm.xxSph)
             KSphDD[i][j]     = sympify_integers__replace_rthph(KSphDD[i][j],     Sph_r_th_ph, rfm.xxSph)
 
     # trK and alpha are scalars, so no Jacobian transformations are necessary.
@@ -82,17 +82,6 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
                 for l in range(DIM):
                     gammaDD[i][j] += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j] * gammaSphDD[k][l]
                     KDD[i][j]     += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j] *     KSphDD[k][l]
-
-
-    # Temporarily set the source reference metric to Spherical, so
-    #     we can use some of the CoordSystem==Spherical reference_metric
-    #     functionality.
-    # First backup the desired destination coordinate system for
-    #     BSSNCurvilinear output:
-#     CoordSystem_dest = par.parval_from_str("reference_metric::CoordSystem")
-
-#     par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
-#     rfm.reference_metric()
 
     # Step 1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{\gamma}_{ij}$
     # We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
@@ -160,7 +149,6 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
     # \end{align}
 
     # Step 3: Define $\bar{\Lambda}^i$ from Eqs. 4 and 5 of Baumgarte et al.: https://arxiv.org/pdf/1211.6632.pdf
-    LambdabarU = ixp.zerorank1()
     # Need to compute \bar{\gamma}^{ij} from \bar{\gamma}_{ij}:
     gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
 
@@ -169,14 +157,14 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
-                    GammabarUDD[i][j][k] += \
-                        sp.Rational(1,2)*gammabarUU[i][l]*( sp.diff(gammabarDD[l][j],rfm.xx[k]) +
-                                                            sp.diff(gammabarDD[l][k],rfm.xx[j]) -
-                                                            sp.diff(gammabarDD[j][k],rfm.xx[l]) )
+                    GammabarUDD[i][j][k] += sp.Rational(1,2)*gammabarUU[i][l]*( sp.diff(gammabarDD[l][j],rfm.xx[k]) +
+                                                                                sp.diff(gammabarDD[l][k],rfm.xx[j]) -
+                                                                                sp.diff(gammabarDD[j][k],rfm.xx[l]) )
+    LambdabarU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                LambdabarU[i] += gammabarUU[j][k]* (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
+                LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
 
 
     # Step 4: Convert BSSN tensors to destination basis specified by CoordSystem_dest variable above.
@@ -209,9 +197,6 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
 
     # Step 5: Set the conformal factor variable according to the parameter BSSN_RHSs::ConformalFactor
     cf = sp.sympify(0)
-
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
-    gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
 
     if par.parval_from_str("ConformalFactor") == "phi":
         cf = sp.Rational(1,12)*sp.log(gammaDET/gammabarDET)

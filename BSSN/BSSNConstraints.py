@@ -71,7 +71,7 @@ def BSSNConstraints():
     # Term 3b: -8 \bar{\gamma}^{ij} \bar{D}_i \phi \bar{D}_j \phi = -8*phi_dBar_times_phi_dBar
     # Term 3c: -8 \bar{\gamma}^{ij} \bar{D}_i \bar{D}_j \phi      = -8*phi_dBarDD_contraction
     phi_dBar_times_phi_dBar = sp.sympify(0) # Term 3b
-    phi_dBarDD_contraction = sp.sympify(0)  # Term 3c
+    phi_dBarDD_contraction  = sp.sympify(0) # Term 3c
     for i in range(DIM):
         for j in range(DIM):
             phi_dBar_times_phi_dBar += bssnrhs.gammabarUU[i][j]*bssnrhs.phi_dBarD[i]*bssnrhs.phi_dBarD[j]
