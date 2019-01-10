@@ -33,10 +33,10 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
     #    modifying them would result in unexpected effects outside
     #    this function.
     alphaSph = alphaSph_in
-    betaSphU = ixp.zerorank1()
-    BSphU = ixp.zerorank1()
+    betaSphU   = ixp.zerorank1()
+    BSphU      = ixp.zerorank1()
     gammaSphDD = ixp.zerorank2()
-    KSphDD = ixp.zerorank2()
+    KSphDD     = ixp.zerorank2()
     for i in range(DIM):
         betaSphU[i] = betaSphU_in[i]
         BSphU[i]    = BSphU_in[i]
@@ -52,26 +52,47 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
         else:
             return obj.subs(Sph_r_th_ph[0], r_th_ph_of_xx[0]).subs(Sph_r_th_ph[1], r_th_ph_of_xx[1]).subs(Sph_r_th_ph[2], r_th_ph_of_xx[2])
 
-    alphaSph = sympify_integers__replace_rthph(alphaSph, Sph_r_th_ph,rfm.xxSph)
-    # print(gammaSphDD[0][0])
+    alphaSph = sympify_integers__replace_rthph(alphaSph, Sph_r_th_ph, rfm.xxSph)
     for i in range(DIM):
-        betaSphU[i] = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph,rfm.xxSph)
+        betaSphU[i] = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph, rfm.xxSph)
         BSphU[i]    = sympify_integers__replace_rthph(betaSphU[i], Sph_r_th_ph, rfm.xxSph)
         for j in range(DIM):
             gammaSphDD[i][j] = sympify_integers__replace_rthph(gammaSphDD[i][j], Sph_r_th_ph,rfm.xxSph)
-            KSphDD[i][j]     = sympify_integers__replace_rthph(KSphDD[i][j], Sph_r_th_ph, rfm.xxSph)
-    # print(gammaSphDD[0][0])
+            KSphDD[i][j]     = sympify_integers__replace_rthph(KSphDD[i][j],     Sph_r_th_ph, rfm.xxSph)
+
+    # trK and alpha are scalars, so no Jacobian transformations are necessary.
+    alpha = alphaSph
+
+    Jac_dUSph_dDrfmUD = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            Jac_dUSph_dDrfmUD[i][j] = sp.diff(rfm.xxSph[i],rfm.xx[j])
+
+    Jac_dUrfm_dDSphUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUSph_dDrfmUD)
+
+    betaU   = ixp.zerorank1()
+    BU      = ixp.zerorank1()
+    gammaDD = ixp.zerorank2()
+    KDD     = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            betaU[i] += Jac_dUrfm_dDSphUD[i][j] * betaSphU[j]
+            BU[i]    += Jac_dUrfm_dDSphUD[i][j] * BSphU[j]
+            for k in range(DIM):
+                for l in range(DIM):
+                    gammaDD[i][j] += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j] * gammaSphDD[k][l]
+                    KDD[i][j]     += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j] *     KSphDD[k][l]
+
 
     # Temporarily set the source reference metric to Spherical, so
     #     we can use some of the CoordSystem==Spherical reference_metric
     #     functionality.
     # First backup the desired destination coordinate system for
     #     BSSNCurvilinear output:
-    CoordSystem_dest = par.parval_from_str("reference_metric::CoordSystem")
+#     CoordSystem_dest = par.parval_from_str("reference_metric::CoordSystem")
 
-
-    par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
-    rfm.reference_metric()
+#     par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
+#     rfm.reference_metric()
 
     # Step 1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{\gamma}_{ij}$
     # We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
@@ -81,11 +102,11 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
     #
     # We choose $\bar{\gamma}=\hat{\gamma}$, which in spherical coordinates implies $\bar{\gamma}=\hat{\gamma}=r^4 \sin^2\theta$. Instead of manually setting the determinant, we instead call rfm.reference_metric(), which automatically sets up the metric based on the chosen reference_metric::CoordSystem parameter.
 
-    gammaSphUU, gammaSphDET = ixp.symm_matrix_inverter3x3(gammaSphDD)
-    gammaSphbarDD = ixp.zerorank2()
+    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    gammabarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            gammaSphbarDD[i][j] = (rfm.detgammahat/gammaSphDET)**(sp.Rational(1,3))*gammaSphDD[i][j]
+            gammabarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*gammaDD[i][j]
 
 
     # Second, we convert the extrinsic curvature $K_{ij}$ to the trace-free extrinsic curvature $\bar{A}_{ij}$, plus the trace of the extrinsic curvature $K$, where (Eq. 3 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
@@ -97,15 +118,15 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
 
     # Step 2: Convert ADM $K_{ij}$ to $\bar{A}_{ij}$ and $K$,
     #          where (Eq. 3 of Baumgarte et al.: https://arxiv.org/pdf/1211.6632.pdf)
-    trKSph = sp.sympify(0)
+    trK = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
-            trKSph += gammaSphUU[i][j]*KSphDD[i][j]
+            trK += gammaUU[i][j]*KDD[i][j]
 
-    ASphbarDD = ixp.zerorank2()
+    AbarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            ASphbarDD[i][j] = (rfm.detgammahat/gammaSphDET)**(sp.Rational(1,3))*          (KSphDD[i][j] - sp.Rational(1,3)*gammaSphDD[i][j]*trKSph)
+            AbarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*(KDD[i][j] - sp.Rational(1,3)*gammaDD[i][j]*trK)
 
 
     # Third, we define $\bar{\Lambda}^i$ (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
@@ -139,9 +160,9 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
     # \end{align}
 
     # Step 3: Define $\bar{\Lambda}^i$ from Eqs. 4 and 5 of Baumgarte et al.: https://arxiv.org/pdf/1211.6632.pdf
-    LambdaSphbarU = ixp.zerorank1()
+    LambdabarU = ixp.zerorank1()
     # Need to compute \bar{\gamma}^{ij} from \bar{\gamma}_{ij}:
-    gammaSphbarUU, gammaSphbarDET = ixp.symm_matrix_inverter3x3(gammaSphbarDD)
+    gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
 
     GammabarUDD = ixp.zerorank3()
     for i in range(DIM):
@@ -149,14 +170,13 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
             for k in range(DIM):
                 for l in range(DIM):
                     GammabarUDD[i][j][k] += \
-                        sp.Rational(1,2)*gammaSphbarUU[i][l]*( sp.diff(gammaSphbarUU[l][j],Sph_r_th_ph[k]) +
-                                                               sp.diff(gammaSphbarUU[l][k],Sph_r_th_ph[j]) -
-                                                               sp.diff(gammaSphbarUU[j][k],Sph_r_th_ph[l]) )
-
+                        sp.Rational(1,2)*gammabarUU[i][l]*( sp.diff(gammabarDD[l][j],rfm.xx[k]) +
+                                                            sp.diff(gammabarDD[l][k],rfm.xx[j]) -
+                                                            sp.diff(gammabarDD[j][k],rfm.xx[l]) )
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                LambdaSphbarU[i] += gammaSphbarUU[j][k]* (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
+                LambdabarU[i] += gammabarUU[j][k]* (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
 
 
     # Step 4: Convert BSSN tensors to destination basis specified by CoordSystem_dest variable above.
@@ -165,37 +185,8 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
     #           CoordSystem_dest, and call rfm.reference_metric(),
     #           so that all hatted quantities are updated to
     #           CoordSystem_dest.
-    par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem_dest)
-    rfm.reference_metric()
-
-    # trK and alpha are scalars, so no Jacobian transformations are necessary.
-    trK   = trKSph
-    alpha = alphaSph
-
-    Jac_dUSph_dDrfmUD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            Jac_dUSph_dDrfmUD[i][j] = sp.diff(rfm.xxSph[i],rfm.xx[j])
-
-    Jac_dUrfm_dDSphUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUSph_dDrfmUD)
-
-    gammaDD    = ixp.zerorank2()
-    gammabarDD = ixp.zerorank2()
-    AbarDD     = ixp.zerorank2()
-    LambdabarU = ixp.zerorank1()
-    betaU      = ixp.zerorank1()
-    BU         = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            LambdabarU[i] += Jac_dUrfm_dDSphUD[i][j]*LambdaSphbarU[j]
-            betaU[i]      += Jac_dUrfm_dDSphUD[i][j]*betaSphU[j]
-            BU[i]         += Jac_dUrfm_dDSphUD[i][j]*BSphU[j]
-            for k in range(DIM):
-                for l in range(DIM):
-                    gammaDD[i][j]    += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j]*   gammaSphDD[k][l]
-                    gammabarDD[i][j] += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j]*gammaSphbarDD[k][l]
-                    AbarDD[i][j]     += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j]*    ASphbarDD[k][l]
-
+#     par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem_dest)
+#     rfm.reference_metric()
 
     # Next we set the conformal factor variable $\texttt{cf}$, which is set by the "BSSN_RHSs::ConformalFactor" parameter. For example if "ConformalFactor" is set to "phi", we can use Eq. 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf), which in arbitrary coordinates is written:
     #

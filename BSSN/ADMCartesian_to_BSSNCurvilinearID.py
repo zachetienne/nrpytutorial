@@ -87,9 +87,9 @@ def Convert_Cartesian_ADM_to_BSSN_curvilinear(Cartxyz, gammaCartDD, KCartDD, alp
             for k in range(DIM):
                 for l in range(DIM):
                     LambdaCartbarU[i] += sp.Rational(1, 2) * gammaCartbarUU[j][k] * gammaCartbarUU[i][l] * (
-                            sp.diff(gammaCartbarUU[l][j], Cartxyz[k]) +
-                            sp.diff(gammaCartbarUU[l][k], Cartxyz[j]) -
-                            sp.diff(gammaCartbarUU[j][k], Cartxyz[l]))
+                            sp.diff(gammaCartbarDD[l][j], Cartxyz[k]) +
+                            sp.diff(gammaCartbarDD[l][k], Cartxyz[j]) -
+                            sp.diff(gammaCartbarDD[j][k], Cartxyz[l]))
 
     # All BSSN tensors and vectors are in Cartesian coordinates $x^i_{\rm Cart} = (x,y,z)$, but we need them in the curvilinear coordinate system $x^i_{\rm rfm}= ({\rm xx0},{\rm xx1},{\rm xx2})$ set by the "reference_metric::CoordSystem" variable. Empirically speaking, it is far easier to write $(x({\rm xx0},{\rm xx1},{\rm xx2}),y({\rm xx0},{\rm xx1},{\rm xx2}),z({\rm xx0},{\rm xx1},{\rm xx2}))$ than the inverse, so we will compute the Jacobian matrix
     #
