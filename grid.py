@@ -126,7 +126,11 @@ def register_gridfunctions(gf_type,gf_names):
 # Given output directory "outdir" as input, the 
 #   following function outputs a file called
 #   "outdir/gridfunction_defines.h", which
-#   #define's all the gridfunction aliases, as follows:
+#   #define's all the gridfunction aliases, and 
+#   returns two lists, corresponding to the
+#   names (strings) of the evolved and auxiliary 
+#   gridfunction names respectively.
+#   
 # For example, if we define only two gridfunctions uu and vv,
 #   which are evolved quantities (i.e., represent
 #   the solution of the PDEs we are solving and are
@@ -142,14 +146,21 @@ def register_gridfunctions(gf_type,gf_names):
 # |
 # | /* AUXILIARY VARIABLES: */
 # | #define NUM_AUX_GFS 0
-def output__gridfunction_defines_h(outdir):
+#
+# The function will return two lists: the lists of 
+#    EVOL and AUX gridfunction names, respectively. 
+#    For this example, the first list (all gridfunctions 
+#    registered as EVOL) will be ["uu","vv"], and the 
+#    second (all gridfunctions registered as AUX) will
+#    be the empty list: []
+def output__gridfunction_defines_h__return_gf_alias_lists(outdir):
     evolved_variables_list   = []
     auxiliary_variables_list = []
-    for i in range(len(gri.glb_gridfcs_list)):
-        if gri.glb_gridfcs_list[i].gftype == "EVOL":
-            evolved_variables_list.append(gri.glb_gridfcs_list[i].name)
-        if gri.glb_gridfcs_list[i].gftype == "AUX":
-            auxiliary_variables_list.append(gri.glb_gridfcs_list[i].name)
+    for i in range(len(glb_gridfcs_list)):
+        if glb_gridfcs_list[i].gftype == "EVOL":
+            evolved_variables_list.append(glb_gridfcs_list[i].name)
+        if glb_gridfcs_list[i].gftype == "AUX":
+            auxiliary_variables_list.append(glb_gridfcs_list[i].name)
 
     # Next we alphabetize the lists
     evolved_variables_list.sort()
@@ -166,3 +177,4 @@ def output__gridfunction_defines_h(outdir):
         file.write("#define NUM_AUX_GFS "+str(len(auxiliary_variables_list))+"\n")
         for i in range(len(auxiliary_variables_list)):
             file.write("#define "+auxiliary_variables_list[i].upper()+"GF\t"+str(i)+"\n")
+    return evolved_variables_list,auxiliary_variables_list
