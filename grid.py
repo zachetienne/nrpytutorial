@@ -75,26 +75,51 @@ def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
         retstring += ijklstring
     return retstring + ")]"
 
+# Gridfunction basenames cannot end in integers.
+#    For example, rank-1 gridfunction vecU1 has
+#    basename "vecU". Thus this gridfunction has
+#    a valid basename. If we instead defined a
+#    scalar gridfunction "u2", this would have a
+#    basename of "u2" -- not a valid basename.
+#    Being so strict enables us to determine
+#    quickly what a gridfunction is by its name
+#    alone, which is useful, e.g., when setting
+#    up parity boundary conditions.
+def verify_gridfunction_basename_is_valid(gf_basename):
+    # First check for zero-length basenames:
+    if len(gf_basename) == 0:
+        print("Error: tried to register gridfunction without a name!")
+        exit(1)
+    
+    # https://stackoverflow.com/questions/1303243/how-to-find-out-if-a-python-object-is-a-string
+    if sys.version_info[0] < 3:
+        if not isinstance(gf_basename,basestring):
+            print("ERROR: gf_names must be strings")
+            exit(1)
+    else:
+        if not isinstance(gf_basename, str):
+            print("ERROR: gf_names must be strings")
+            exit(1)
+
+    if len(gf_basename) > 0 and gf_basename[-1].isdigit():
+        print("Error: tried to register gridfunction with base name: "+gf_basename)
+        print(" Gridfunctions with base names ending in an integer is forbidden; pick a new name.")
+        exit(1)
 
 import sys
-def register_gridfunctions(gf_type,gf_names):
+def register_gridfunctions(gf_type,gf_names,is_indexed=False):
     # Step 1: convert gf_names to a list if it's not already a list
     if type(gf_names) is not list:
         gf_namestmp = [gf_names]
         gf_names = gf_namestmp
 
-    # Step 2: check that all gridfunction names are strings. Python3 & Python2 have different behavior here:
-    for i in range(len(gf_names)):
-        # https://stackoverflow.com/questions/1303243/how-to-find-out-if-a-python-object-is-a-string
-        if sys.version_info[0] < 3:
-            if not isinstance(gf_names[i],basestring):
-                print("ERROR: gf_names must be strings")
-                exit(1)
-        else:
-            if not isinstance(gf_names[i], str):
-                print("ERROR: gf_names must be strings")
-                exit(1)
-
+    # Step 2: if the gridfunction is not indexed, then
+    #         gf_names == base names. Check that the
+    #         gridfunction basenames are valid:
+    if is_indexed==False:
+        for i in range(len(gf_names)):
+            verify_gridfunction_basename_is_valid(gf_names[i])
+                
     # Step 3: Verify that gridfunction type is valid.
     if not (gf_type == "EVOL" or gf_type == "AUX" or gf_type == "COORDARRAY"):
         print("Error in registering gridfunction(s) with unsupported type "+gf_type+".")
@@ -153,7 +178,7 @@ def register_gridfunctions(gf_type,gf_names):
 #    registered as EVOL) will be ["uu","vv"], and the 
 #    second (all gridfunctions registered as AUX) will
 #    be the empty list: []
-def output__gridfunction_defines_h__return_gf_alias_lists(outdir):
+def output__gridfunction_defines_h__return_gf_lists(outdir):
     evolved_variables_list   = []
     auxiliary_variables_list = []
     for i in range(len(glb_gridfcs_list)):
