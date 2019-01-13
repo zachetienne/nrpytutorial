@@ -2,6 +2,10 @@
 < #include "Logo.c"
 ---
 >   //#include "Logo.c"
+16c16
+<   printf("\x1B[32mID: %s, Evol: %s, Coords: %s, FD order: %d\x1B[0m\n", params.ID_scheme,params.Evol_scheme,params.CoordSystem, params.FDCENTERDERIVS_FDORDER);
+---
+>   //  printf("\x1B[32mID: %s, Evol: %s, Coords: %s, FD order: %d\x1B[0m\n", params.ID_scheme,params.Evol_scheme,params.CoordSystem, params.FDCENTERDERIVS_FDORDER);
 189a190,205
 >   LOOP_GZFILL(ii,jj,kk) {
 >     int which_gf = 0;
@@ -39,4 +43,3 @@
 >   }
 >   exit(0);
 >   
-
