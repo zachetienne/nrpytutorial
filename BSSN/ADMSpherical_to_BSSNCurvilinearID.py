@@ -28,7 +28,7 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
     # Step 0: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
 
-    # First copy gammaSphDD_in to gammaSphDD, KSphDD_in to KSphDD, etc.
+    # Step 0: Copy gammaSphDD_in to gammaSphDD, KSphDD_in to KSphDD, etc.
     #    This ensures that the input arrays are not modified below;
     #    modifying them would result in unexpected effects outside
     #    this function.
@@ -44,8 +44,12 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
             gammaSphDD[i][j] = gammaSphDD_in[i][j]
             KSphDD[i][j]     = KSphDD_in[i][j]
 
-    # All input quantities are in terms of r,th,ph. We want them in terms of xx0,xx1,xx2:
-    # WARNING: Substitution only works when the variable is not an integer. Hence the if not isinstance(...,...) stuff.
+    # Step 1: All input quantities are in terms of r,th,ph. We want them in terms of xx0,xx1,xx2,
+    #         so here we call sympify_integers__replace_rthph() to replace r,th,ph with the 
+    #         appropriate functions of xx0,xx1,xx2 as defined for this particular reference
+    #         metric in reference_metric.py's xxSph[] list:
+    # Note that substitution only works when the variable is not an integer. Hence the 
+    #         if isinstance(...,...) stuff:
     def sympify_integers__replace_rthph(obj, Sph_r_th_ph, r_th_ph_of_xx):
         if isinstance(obj, int):
             return sp.sympify(obj)
@@ -60,7 +64,11 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
             gammaSphDD[i][j] = sympify_integers__replace_rthph(gammaSphDD[i][j], Sph_r_th_ph, rfm.xxSph)
             KSphDD[i][j]     = sympify_integers__replace_rthph(KSphDD[i][j],     Sph_r_th_ph, rfm.xxSph)
 
-    # trK and alpha are scalars, so no Jacobian transformations are necessary.
+    # Step 2: All ADM initial data quantities are now functions of xx0,xx1,xx2, but
+    #         we they are still in the Spherical basis. We can now directly apply 
+    #         Jacobian transformations to get them in the correct xx0,xx1,xx2 basis:
+
+    # alpha is a scalar, so no Jacobian transformation is necessary.
     alpha = alphaSph
 
     Jac_dUSph_dDrfmUD = ixp.zerorank2()
@@ -83,30 +91,26 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
                     gammaDD[i][j] += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j] * gammaSphDD[k][l]
                     KDD[i][j]     += Jac_dUSph_dDrfmUD[k][i]*Jac_dUSph_dDrfmUD[l][j] *     KSphDD[k][l]
 
-    # Step 1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{\gamma}_{ij}$
-    # We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
-    # $$
+    # Step 3: All ADM quantities were input into this function in the Spherical basis, 
+    #         as functions of r,th,ph. In Steps 1 and 2 above, we have converted them
+    #         to the xx0,xx1,xx2 basis, and as functions of xx0,xx1,xx2.
+    #         Here we convert ADM quantities to their BSSN Curvilinear counterparts:
+    
+    # Step 3.1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{\gamma}_{ij}$:
+    #   We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
     # \bar{\gamma}_{i j} = \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \gamma_{ij}.
-    # $$
-    #
-    # We choose $\bar{\gamma}=\hat{\gamma}$, which in spherical coordinates implies $\bar{\gamma}=\hat{\gamma}=r^4 \sin^2\theta$. Instead of manually setting the determinant, we instead call rfm.reference_metric(), which automatically sets up the metric based on the chosen reference_metric::CoordSystem parameter.
-
     gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
     gammabarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
             gammabarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*gammaDD[i][j]
 
+    # Step 3.2: Convert the extrinsic curvature $K_{ij}$ to the trace-free extrinsic 
+    #           curvature $\bar{A}_{ij}$, plus the trace of the extrinsic curvature $K$, 
+    #           where (Eq. 3 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
 
-    # Second, we convert the extrinsic curvature $K_{ij}$ to the trace-free extrinsic curvature $\bar{A}_{ij}$, plus the trace of the extrinsic curvature $K$, where (Eq. 3 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
-    #
-    # \begin{align}
-    # K &= \gamma^{ij} K_{ij} \\
-        # \bar{A}_{ij} &= \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)
-    # \end{align}
-
-    # Step 2: Convert ADM $K_{ij}$ to $\bar{A}_{ij}$ and $K$,
-    #          where (Eq. 3 of Baumgarte et al.: https://arxiv.org/pdf/1211.6632.pdf)
+    # K = \gamma^{ij} K_{ij}, and
+    # \bar{A}_{ij} &= \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)
     trK = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
@@ -118,40 +122,12 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
             AbarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*(KDD[i][j] - sp.Rational(1,3)*gammaDD[i][j]*trK)
 
 
-    # Third, we define $\bar{\Lambda}^i$ (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
-    #
-    # $$
+    # Step 3.3: Define $\bar{\Lambda}^i$ (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
+
     # \bar{\Lambda}^i = \bar{\gamma}^{jk}\left(\bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk}\right).
-    # $$
-
-    # All BSSN tensors and vectors are in Spherical coordinates $x^i_{\rm Sph} = (r,\theta,\phi)$, but we need them in the curvilinear coordinate system $x^i_{\rm rfm}= ({\rm xx0},{\rm xx1},{\rm xx2})$ set by the "reference_metric::CoordSystem" variable. Empirically speaking, it is far easier to write $(x({\rm xx0},{\rm xx1},{\rm xx2}),y({\rm xx0},{\rm xx1},{\rm xx2}),z({\rm xx0},{\rm xx1},{\rm xx2}))$ than the inverse, so we will compute the Jacobian matrix
-    #
-    # $$
-    # {\rm Jac\_dUSph\_dDrfmUD[i][j]} = \frac{\partial x^i_{\rm Sph}}{\partial x^j_{\rm rfm}},
-    # $$
-    #
-    # via exact differentiation (courtesy SymPy), and the inverse Jacobian
-    # $$
-    # {\rm Jac\_dUrfm\_dDSphUD[i][j]} = \frac{\partial x^i_{\rm rfm}}{\partial x^j_{\rm Sph}},
-    # $$
-    #
-    # using NRPy+'s ${\rm generic\_matrix\_inverter3x3()}$ function. In terms of these, the transformation of BSSN tensors from Spherical to "reference_metric::CoordSystem" coordinates may be written:
-    #
-    # \begin{align}
-    # \bar{\gamma}^{\rm rfm}_{ij} &=
-    # \frac{\partial x^\ell_{\rm Sph}}{\partial x^i_{\rm rfm}}
-    # \frac{\partial x^m_{\rm Sph}}{\partial x^j_{\rm rfm}} \bar{\gamma}^{\rm Sph}_{\ell m}\\
-        # \bar{A}^{\rm rfm}_{ij} &=
-    # \frac{\partial x^\ell_{\rm Sph}}{\partial x^i_{\rm rfm}}
-    # \frac{\partial x^m_{\rm Sph}}{\partial x^j_{\rm rfm}} \bar{A}^{\rm Sph}_{\ell m}\\
-        # \bar{\Lambda}^i_{\rm rfm} &= \frac{\partial x^i_{\rm rfm}}{\partial x^\ell_{\rm Sph}} \bar{\Lambda}^\ell_{\rm Sph} \\
-        # \beta^i_{\rm rfm} &= \frac{\partial x^i_{\rm rfm}}{\partial x^\ell_{\rm Sph}} \beta^\ell_{\rm Sph}
-    # \end{align}
-
-    # Step 3: Define $\bar{\Lambda}^i$ from Eqs. 4 and 5 of Baumgarte et al.: https://arxiv.org/pdf/1211.6632.pdf
-    # Need to compute \bar{\gamma}^{ij} from \bar{\gamma}_{ij}:
     gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
 
+    # First compute \bar{\Gamma}^i_{jk}:
     GammabarUDD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
@@ -160,6 +136,8 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
                     GammabarUDD[i][j][k] += sp.Rational(1,2)*gammabarUU[i][l]*( sp.diff(gammabarDD[l][j],rfm.xx[k]) +
                                                                                 sp.diff(gammabarDD[l][k],rfm.xx[j]) -
                                                                                 sp.diff(gammabarDD[j][k],rfm.xx[l]) )
+    # Next evaluate \bar{\Lambda}^i, based on GammabarUDD above and GammahatUDD 
+    #       (from the reference metric):
     LambdabarU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
@@ -167,35 +145,25 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
                 LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
 
 
-    # Step 4: Convert BSSN tensors to destination basis specified by CoordSystem_dest variable above.
+    # Step 3.4: Set the conformal factor variable $\texttt{cf}$, which is set 
+    #           by the "BSSN_RHSs::ConformalFactor" parameter. For example if 
+    #           "ConformalFactor" is set to "phi", we can use Eq. 3 of 
+    #           [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf), 
+    #           which in arbitrary coordinates is written:
 
-    # Step 4.1: First restore reference_metric::CoordSystem to
-    #           CoordSystem_dest, and call rfm.reference_metric(),
-    #           so that all hatted quantities are updated to
-    #           CoordSystem_dest.
-#     par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem_dest)
-#     rfm.reference_metric()
-
-    # Next we set the conformal factor variable $\texttt{cf}$, which is set by the "BSSN_RHSs::ConformalFactor" parameter. For example if "ConformalFactor" is set to "phi", we can use Eq. 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf), which in arbitrary coordinates is written:
-    #
-    # $$
     # \phi = \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right).
-    # $$
-    #
+
     # Alternatively if "BSSN_RHSs::ConformalFactor" is set to "chi", then
-    # $$
+
     # \chi = e^{-4 \phi} = \exp\left(-4 \frac{1}{12} \left(\frac{\gamma}{\bar{\gamma}}\right)\right)
-    # = \exp\left(-\frac{1}{3} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) = \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/3}.
-    # $$
+    #      = \exp\left(-\frac{1}{3} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) = \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/3}.
     #
     # Finally if "BSSN_RHSs::ConformalFactor" is set to "W", then
-    # $$
+
     # W = e^{-2 \phi} = \exp\left(-2 \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
     # \exp\left(-\frac{1}{6} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
     # \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/6}.
-    # $$
 
-    # Step 5: Set the conformal factor variable according to the parameter BSSN_RHSs::ConformalFactor
     cf = sp.sympify(0)
 
     if par.parval_from_str("ConformalFactor") == "phi":
@@ -209,15 +177,15 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
         exit(1)
 
 
-    # Finally, we rescale tensorial quantities according to the prescription described in the [BSSN in curvilinear coordinates tutorial module](Tutorial-BSSNCurvilinear.ipynb) (also [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
+    # Step 4: Rescale tensorial quantities according to the prescription described in 
+    #         the [BSSN in curvilinear coordinates tutorial module](Tutorial-BSSNCurvilinear.ipynb) 
+    #         (also [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
     #
     # h_{ij} &= (\bar{\gamma}_{ij} - \hat{\gamma}_{ij})/\text{ReDD[i][j]}\\
     # a_{ij} &= \bar{A}_{ij}/\text{ReDD[i][j]}\\
     # \lambda^i &= \bar{\Lambda}^i/\text{ReU[i]}\\
     # \mathcal{V}^i &= \beta^i/\text{ReU[i]}\\
     # \mathcal{B}^i &= B^i/\text{ReU[i]}\\
-
-    # Step 6: Rescale all tensorial quantities.
 
     if rfm.have_already_called_reference_metric_function == False:
         print("Error. Called Convert_Spherical_ADM_to_BSSN_curvilinear() without")
@@ -238,4 +206,6 @@ def Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD_in, KSphDD
             aDD[i][j] =                          AbarDD[i][j] / rfm.ReDD[i][j]
     #print(sp.mathematica_code(hDD[0][0]))
 
+    # Step 5: Return the BSSN Curvilinear variables in the desired xx0,xx1,xx2
+    #         basis, and as functions of the consistent xx0,xx1,xx2 coordinates.
     return cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU
