@@ -14,7 +14,7 @@ import reference_metric as rfm
 import BSSN.BSSN_RHSs as bssnrhs # The ConformalFactor parameter is used below
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_th_ph_or_Cart_xyz,
-    gammaDD_inSphorCart, KDD_inSphorCart, alpha_inSphorCart, betaU_inSphorCart, BU_inSphorCart):
+        gammaDD_inSphorCart, KDD_inSphorCart, alpha_inSphorCart, betaU_inSphorCart, BU_inSphorCart):
     # This routine converts the ADM variables
     #    $$\left\{\gamma_{ij}, K_{ij}, \alpha, \beta^i\right\}$$
     #    in Spherical or Cartesian basis+coordinates, first to the BSSN variables
@@ -45,10 +45,18 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
             gammaSphorCartDD[i][j] = gammaDD_inSphorCart[i][j]
             KSphorCartDD[i][j]     = KDD_inSphorCart[i][j]
 
-    # Step 1: All input quantities are in terms of r,th,ph. We want them in terms of xx0,xx1,xx2,
-    #         so here we call sympify_integers__replace_rthph() to replace r,th,ph with the 
-    #         appropriate functions of xx0,xx1,xx2 as defined for this particular reference
-    #         metric in reference_metric.py's xxSph[] list:
+    # Make sure that rfm.reference_metric() has been called.
+    #    We'll need the variables it defines throughout this module.
+    if rfm.have_already_called_reference_metric_function == False:
+        print("Error. Called Convert_Spherical_ADM_to_BSSN_curvilinear() without")
+        print("       first setting up reference metric, by calling rfm.reference_metric().")
+        exit(1)
+    
+    # Step 1: All input quantities are in terms of r,th,ph or x,y,z. We want them in terms 
+    #         of xx0,xx1,xx2, so here we call sympify_integers__replace_rthph() to replace
+    #         r,th,ph or x,y,z, respectively, with the appropriate functions of xx0,xx1,xx2
+    #         as defined for this particular reference metric in reference_metric.py's 
+    #         xxSph[] or xxCart[], respectively:
     # Note that substitution only works when the variable is not an integer. Hence the 
     #         if isinstance(...,...) stuff:
     def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
@@ -68,16 +76,21 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
         print("Error: Can only convert ADM Cartesian or Spherical initial data to BSSN Curvilinear coords.")
         exit(1)
 
-    alphaSphorCart = sympify_integers__replace_rthph_or_Cartxyz(alphaSphorCart, Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
+    alphaSphorCart = sympify_integers__replace_rthph_or_Cartxyz(
+        alphaSphorCart, Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
     for i in range(DIM):
-        betaSphorCartU[i] = sympify_integers__replace_rthph_or_Cartxyz(betaSphorCartU[i], Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
-        BSphorCartU[i]    = sympify_integers__replace_rthph_or_Cartxyz(BSphorCartU[i],    Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
+        betaSphorCartU[i] = sympify_integers__replace_rthph_or_Cartxyz(
+            betaSphorCartU[i], Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
+        BSphorCartU[i]    = sympify_integers__replace_rthph_or_Cartxyz(
+            BSphorCartU[i],    Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
         for j in range(DIM):
-            gammaSphorCartDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(gammaSphorCartDD[i][j], Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
-            KSphorCartDD[i][j]     = sympify_integers__replace_rthph_or_Cartxyz(KSphorCartDD[i][j],     Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
+            gammaSphorCartDD[i][j] = sympify_integers__replace_rthph_or_Cartxyz(
+                gammaSphorCartDD[i][j], Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
+            KSphorCartDD[i][j]     = sympify_integers__replace_rthph_or_Cartxyz(
+                KSphorCartDD[i][j],     Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
 
     # Step 2: All ADM initial data quantities are now functions of xx0,xx1,xx2, but
-    #         we they are still in the Spherical or Cartesian basis. We can now directly apply
+    #         they are still in the Spherical or Cartesian basis. We can now directly apply
     #         Jacobian transformations to get them in the correct xx0,xx1,xx2 basis:
 
     # alpha is a scalar, so no Jacobian transformation is necessary.
@@ -199,12 +212,6 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     # \lambda^i &= \bar{\Lambda}^i/\text{ReU[i]}\\
     # \mathcal{V}^i &= \beta^i/\text{ReU[i]}\\
     # \mathcal{B}^i &= B^i/\text{ReU[i]}\\
-
-    if rfm.have_already_called_reference_metric_function == False:
-        print("Error. Called Convert_Spherical_ADM_to_BSSN_curvilinear() without")
-        print("       first setting up reference metric, by calling rfm.reference_metric().")
-        exit(1)
-
     hDD     = ixp.zerorank2()
     aDD     = ixp.zerorank2()
     lambdaU = ixp.zerorank1()

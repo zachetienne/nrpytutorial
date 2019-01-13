@@ -30,7 +30,7 @@ import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
 import reference_metric as rfm
-import BSSN.ADMSpherical_to_BSSNCurvilinearID as ctob
+import BSSN.ADMSpherical_or_Cartesian_to_BSSNCurvilinear as ctob
 import BSSN.BSSN_ID_function_string as bIDf
 
 def UIUCBlackHole():
@@ -94,7 +94,8 @@ def UIUCBlackHole():
 
     Sph_r_th_ph = [r,th,ph]
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        ctob.Convert_Spherical_ADM_to_BSSN_curvilinear(Sph_r_th_ph, gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
+        ctob.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
+                                                                    gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
     global returnfunction
     returnfunction = bIDf.BSSN_ID_function_string(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU)
