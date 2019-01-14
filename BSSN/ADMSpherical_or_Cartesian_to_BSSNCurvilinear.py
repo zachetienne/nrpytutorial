@@ -1,7 +1,8 @@
 # This module performs the conversion between ADM
-# spacetime variables in Spherical coordinates to
-# rescaled BSSN-in-curvilinear coordinate quantities,
-# as defined in BSSN_RHSs.py
+# spacetime variables in Spherical or Cartesian coordinates
+# given as *exact* SymPy expressions (i.e., direct functions
+# of r,th,ph or x,y,z), to rescaled BSSN-in-curvilinear
+# coordinate quantities, as defined in BSSN_RHSs.py
 
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com

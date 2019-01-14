@@ -33,7 +33,9 @@ import reference_metric as rfm
 import BSSN.ADMSpherical_or_Cartesian_to_BSSNCurvilinear as ctob
 import BSSN.BSSN_ID_function_string as bIDf
 
-def UIUCBlackHole():
+# ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
+#                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
+def UIUCBlackHole(ComputeADMGlobalsOnly = False):
     global Sph_r_th_ph,r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
     
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
@@ -89,6 +91,9 @@ def UIUCBlackHole():
     betaSphU = ixp.zerorank1() # We generally choose \beta^i = 0 for these initial data
     BSphU    = ixp.zerorank1() # We generally choose B^i = 0 for these initial data
 
+    if ComputeADMGlobalsOnly == True:
+        return
+    
     # Validated against original SENR: KSphDD[0][2], KSphDD[1][2], gammaSphDD[2][2], gammaSphDD[0][0], gammaSphDD[1][1]
     #print(sp.mathematica_code(gammaSphDD[1][1]))
 

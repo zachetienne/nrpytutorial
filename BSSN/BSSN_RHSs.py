@@ -165,6 +165,7 @@ def BSSN_RHSs():
 
     # Step 7a: Define \bar{\gamma}_{ij,k} = gammabarDDdD[i][j][k]
     #          = h_{ij,k} \text{ReDD[i][j]} + h_{ij} \text{ReDDdD[i][j][k]} + \hat{\gamma}_{ij,k}.
+    global gammabarDD_dD # Needed for computation of lambda^i via finite differences in initial data converter routine.
     gammabarDD_dD = ixp.zerorank3()
     hDD_dupD = ixp.declarerank3("hDD_dupD","sym01") # Needed for \bar{\gamma}_{ij} RHS
     gammabarDD_dupD = ixp.zerorank3()  # Needed for \bar{\gamma}_{ij} RHS
