@@ -30,7 +30,7 @@ import sympy as sp
 import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
-import BSSN.ADMSpherical_or_Cartesian_to_BSSNCurvilinear as ctob
+import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
 import BSSN.BSSN_ID_function_string as bIDf
 
 # ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
@@ -68,7 +68,7 @@ def BrillLindquist(ComputeADMGlobalsOnly = False):
         return
     
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        ctob.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian",Cartxyz, 
+        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian",Cartxyz, 
                                                                     gammaCartDD,KCartDD,alphaCart,betaCartU,BCartU)
 
     global returnfunction

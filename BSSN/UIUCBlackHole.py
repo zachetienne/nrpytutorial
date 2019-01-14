@@ -4,7 +4,7 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-# ## This module sets up initial data for a merging black hole system in spherical coordinates. We can convert from spherical to any coordinate system defined in [reference_metric.py](../edit/reference_metric.py) (e.g., SinhSpherical, Cylindrical, Cartesian, etc.) using the [ADMSpherical-to-BSSNCurvilinear converter module](Tutorial-ADM_Initial_Data-Converting_ADMSpherical_to_BSSNCurvilinear)
+# ## This module sets up initial data for a merging black hole system in spherical coordinates. We can convert from spherical to any coordinate system defined in [reference_metric.py](../edit/reference_metric.py) (e.g., SinhSpherical, Cylindrical, Cartesian, etc.) using the [Exact ADM Spherical-to-BSSNCurvilinear converter module](Tutorial-ADM_Initial_Data-Converting_Exact_ADM_Spherical_or_Cartesian_to_BSSNCurvilinear.ipynb)
 # 
 # ### NRPy+ Source Code for this module: [BSSN/BrillLindquist.py](../edit/BSSN/BrillLindquist.py)
 # 
@@ -30,7 +30,7 @@ import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
 import reference_metric as rfm
-import BSSN.ADMSpherical_or_Cartesian_to_BSSNCurvilinear as ctob
+import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
 import BSSN.BSSN_ID_function_string as bIDf
 
 # ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
@@ -99,7 +99,7 @@ def UIUCBlackHole(ComputeADMGlobalsOnly = False):
 
     Sph_r_th_ph = [r,th,ph]
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        ctob.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
+        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
                                                                     gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
     global returnfunction
