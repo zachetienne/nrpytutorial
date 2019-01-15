@@ -16,6 +16,7 @@ int count_num_lines_in_file(FILE *in1Dpolytrope) {
   }
   rewind(in1Dpolytrope);
 
+  free(line);
   return numlines_in_file;
 }
 
@@ -46,6 +47,7 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_arr,REAL *rho_arr,REA
 
     which_line++;
   }
+  free(line);
   return 0;
 }
 
@@ -53,6 +55,7 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_arr,REAL *rho_arr,REA
 void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_order,
                     const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
                     REAL *rho,REAL *P,REAL *M,REAL *expnu) {
+  // Find interpolation index using Bisection root-finding algorithm:
   int bisection_idx_finder(const REAL rr, const int numlines_in_file, const REAL *r_arr) {
     int x1 = 0;
     int x2 = numlines_in_file-1;
@@ -92,8 +95,10 @@ void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_or
     return;
   }
 
+  // If we're inside the star, first find the central interpolation stencil index:
   int idx = bisection_idx_finder(rr,numlines_in_file,r_arr);
 
+  // Do not allow the interpolation stencil to cross the star's surface!
   const int MAX_INTERP_IDX = R_idx;
   
 #ifdef MAX
@@ -112,8 +117,11 @@ void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_or
   //  -> idxmin at most can be R_idx - poly_order + 1
   idxmin = MIN(idxmin,MAX_INTERP_IDX - poly_order + 1);
   idx = MAX(0,idx-poly_order/2-1);
+
+  // Now perform the Lagrange polynomial interpolation:
+
+  // First set the interpolation coefficients:
   REAL r_sample[poly_order];
-  REAL f_sample[poly_order];
   for(int i=idxmin;i<idxmin+poly_order;i++) {
     r_sample[i-idxmin] = r_arr[i];
   }
@@ -131,7 +139,8 @@ void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_or
     }
     l_i_of_r[i] = numer/denom;
   }
-  
+
+  // Then perform the interpolation:
   *rho = 0.0;
   *P = 0.0;
   *M = 0.0;
@@ -143,7 +152,6 @@ void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_or
     *M     += l_i_of_r[i-idxmin] * M_arr[i];
     *expnu += l_i_of_r[i-idxmin] * expnu_arr[i];
   }
-//printf("%d %e %e %e\n", idx, r_arr[idx-1],rr,r_arr[idx]);
 }
 
 int main() {
@@ -199,7 +207,8 @@ int main() {
     interpolate_1D(rr,R,R_idx,4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
     printf("%e %e %e %e %e\n",rr,rho,P,M,expnu);
   }
-  
+
+  // Free the malloc()'s!
   free(r_arr);
   free(rho_arr);
   free(P_arr);
