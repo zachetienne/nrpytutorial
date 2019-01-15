@@ -36,6 +36,11 @@ def variable_type(var):
     if var_is_gf:
         return "gridfunction"
 
+def find_gftype(varname):
+    for gf in glb_gridfcs_list:
+        if gf.name == varname:
+            return gf.gftype
+    
 def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
     found_registered_gf = False
     for gf in glb_gridfcs_list:
@@ -48,13 +53,20 @@ def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
     if not found_registered_gf:
         print("Error: gridfunction \""+varname+"\" is not registered!")
         exit(1)
-       
+
+    gftype = find_gftype(varname)
+
     DIM = par.parval_from_str("DIM")
     retstring = ""
     if par.parval_from_str("GridFuncMemAccess") == "SENRlike":
         if gfarrayname == "":
             print("Error: GridFuncMemAccess = SENRlike requires gfarrayname be passed to gfaccess()")
             exit(1)
+        # FIXME: if gftype == "AUX" then override gfarrayname to aux_gfs[].
+        #        This enables expressions containing a mixture of AUX and EVOL
+        #        gridfunctions, though in a hacky way.
+        if gftype == "AUX":
+            gfarrayname = "aux_gfs"
         # Return gfarrayname[IDX3(varname,i0)] for DIM=1, gfarrayname[IDX3(varname,i0,i1)] for DIM=2, etc.
         retstring += gfarrayname + "[IDX" + str(DIM+1) + "(" + varname.upper()+"GF" + ", "
     elif par.parval_from_str("GridFuncMemAccess") == "ETK":
