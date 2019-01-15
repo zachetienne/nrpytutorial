@@ -60,8 +60,8 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_arr,REAL *rho_arr,REA
 }
 
 
-void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int interp_stencil_size,
-                    const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
+void TOV_interpolate1D(const REAL rr,const REAL R,const int R_idx,const int interp_stencil_size,
+                        const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
                     REAL *rho,REAL *P,REAL *M,REAL *expnu) {
   // Find interpolation index using Bisection root-finding algorithm:
   int bisection_idx_finder(const REAL rr, const int numlines_in_file, const REAL *r_arr) {
@@ -213,7 +213,7 @@ int main() {
     drand48_r(&randBuffer,&rr);
     rr *= 10.; //r_arr[numlines_in_file-1];
     REAL rho,P,M,expnu;
-    interpolate_1D(rr,R,R_idx,4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
+    TOV_interpolate1D(rr,R,R_idx,4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
     printf("%e %e %e %e %e\n",rr,rho,P,M,expnu);
   }
 
