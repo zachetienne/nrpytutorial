@@ -50,7 +50,7 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_arr,REAL *rho_arr,REA
 }
 
 
-void interpolate_1D(const REAL rr, const int poly_order,
+void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_order,
                     const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
                     REAL *rho,REAL *P,REAL *M,REAL *expnu) {
   int bisection_idx_finder(const REAL rr, const int numlines_in_file, const REAL *r_arr) {
@@ -83,8 +83,19 @@ void interpolate_1D(const REAL rr, const int poly_order,
     exit(1);
   }
 
+  // If we're outside the star, set return quantities to "exact" values instead of interpolating
+  if(rr > R) {
+    *rho   = 0;
+    *P     = 0;
+    *M     = M_arr[R_idx+1];
+    *expnu = 1. - 2.*(*M) / rr;
+    return;
+  }
+
   int idx = bisection_idx_finder(rr,numlines_in_file,r_arr);
 
+  const int MAX_INTERP_IDX = R_idx;
+  
 #ifdef MAX
 #undef MAX
 #endif
@@ -97,9 +108,9 @@ void interpolate_1D(const REAL rr, const int poly_order,
 #endif
 #define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
 
-  // max index is when idxmin + (poly_order-1) = numlines_in_file-1
-  //  -> idxmin at most can be numlines_in_file - poly_order
-  idxmin = MIN(idxmin,numlines_in_file - poly_order);
+  // max index is when idxmin + (poly_order-1) = R_idx
+  //  -> idxmin at most can be R_idx - poly_order + 1
+  idxmin = MIN(idxmin,MAX_INTERP_IDX - poly_order + 1);
   idx = MAX(0,idx-poly_order/2-1);
   REAL r_sample[poly_order];
   REAL f_sample[poly_order];
@@ -163,6 +174,16 @@ int main() {
   }
   fclose(in1Dpolytrope);
 
+  REAL R = -100;
+  int R_idx = -100;
+  for(int i=1;i<numlines_in_file;i++) {
+    if(rho_arr[i-1]>0 && rho_arr[i]==0) { R = r_arr[i-1]; R_idx = i-1; }
+  }
+  if(R<0) {
+    fprintf(stderr,"Error: could not find r=R from data file.\n");
+    exit(1);
+  }
+      
   // Next, interpolate!
   // Create trial radius array:
   int num_r_pts = 100000;
@@ -175,7 +196,7 @@ int main() {
     drand48_r(&randBuffer,&rr);
     rr *= 10.; //r_arr[numlines_in_file-1];
     REAL rho,P,M,expnu;
-    interpolate_1D(rr, 4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
+    interpolate_1D(rr,R,R_idx,4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
     printf("%e %e %e %e %e\n",rr,rho,P,M,expnu);
   }
   
