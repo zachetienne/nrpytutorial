@@ -11,7 +11,7 @@
 
 #define REAL double
 
-#define STANDALONE_UNIT_TEST
+//#define STANDALONE_UNIT_TEST
 
 int count_num_lines_in_file(FILE *in1Dpolytrope) {
   int numlines_in_file = 0;
@@ -60,7 +60,7 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_arr,REAL *rho_arr,REA
 }
 
 
-void TOV_interpolate1D(const REAL rr,const REAL R,const int R_idx,const int interp_stencil_size,
+void TOV_interpolate_1D(REAL rr,const REAL R,const int R_idx,const int interp_stencil_size,
                         const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
                     REAL *rho,REAL *P,REAL *M,REAL *expnu) {
   // Find interpolation index using Bisection root-finding algorithm:
@@ -94,6 +94,9 @@ void TOV_interpolate1D(const REAL rr,const REAL R,const int R_idx,const int inte
     exit(1);
   }
 
+  // For this case, we know that for all functions, f(r) = f(-r)
+  if(rr < 0) rr = -rr;
+    
   // If we're outside the star, set return quantities to "exact" values instead of interpolating
   if(rr > R) {
     *rho   = 0;
@@ -213,7 +216,7 @@ int main() {
     drand48_r(&randBuffer,&rr);
     rr *= 10.; //r_arr[numlines_in_file-1];
     REAL rho,P,M,expnu;
-    TOV_interpolate1D(rr,R,R_idx,4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
+    TOV_interpolate_1D(rr,R,R_idx,4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
     printf("%e %e %e %e %e\n",rr,rho,P,M,expnu);
   }
 
