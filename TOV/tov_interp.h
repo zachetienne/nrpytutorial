@@ -1,9 +1,17 @@
+// This C header file reads a TOV solution from data file and performs
+//    1D interpolation of the solution to a desired radius.
+
+// Author: Zachariah B. Etienne
+//         zachetie **at** gmail **dot* com
+
 #include "stdio.h"
 #include "stdlib.h"
 #include "math.h"
 #include "string.h"
 
 #define REAL double
+
+#define STANDALONE_UNIT_TEST
 
 int count_num_lines_in_file(FILE *in1Dpolytrope) {
   int numlines_in_file = 0;
@@ -52,7 +60,7 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_arr,REAL *rho_arr,REA
 }
 
 
-void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_order,
+void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int interp_stencil_size,
                     const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
                     REAL *rho,REAL *P,REAL *M,REAL *expnu) {
   // Find interpolation index using Bisection root-finding algorithm:
@@ -106,34 +114,34 @@ void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_or
 #endif
 #define MAX(A, B) ( ((A) > (B)) ? (A) : (B) )
 
-  int idxmin = MAX(0,idx-poly_order/2-1);
+  int idxmin = MAX(0,idx-interp_stencil_size/2-1);
 
 #ifdef MIN
 #undef MIN
 #endif
 #define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
 
-  // max index is when idxmin + (poly_order-1) = R_idx
-  //  -> idxmin at most can be R_idx - poly_order + 1
-  idxmin = MIN(idxmin,MAX_INTERP_IDX - poly_order + 1);
-  idx = MAX(0,idx-poly_order/2-1);
+  // max index is when idxmin + (interp_stencil_size-1) = R_idx
+  //  -> idxmin at most can be R_idx - interp_stencil_size + 1
+  idxmin = MIN(idxmin,MAX_INTERP_IDX - interp_stencil_size + 1);
+  idx = MAX(0,idx-interp_stencil_size/2-1);
 
   // Now perform the Lagrange polynomial interpolation:
 
   // First set the interpolation coefficients:
-  REAL r_sample[poly_order];
-  for(int i=idxmin;i<idxmin+poly_order;i++) {
+  REAL r_sample[interp_stencil_size];
+  for(int i=idxmin;i<idxmin+interp_stencil_size;i++) {
     r_sample[i-idxmin] = r_arr[i];
   }
-  REAL l_i_of_r[poly_order];
-  for(int i=0;i<poly_order;i++) {
+  REAL l_i_of_r[interp_stencil_size];
+  for(int i=0;i<interp_stencil_size;i++) {
     REAL numer = 1.0;
     REAL denom = 1.0;
     for(int j=0;j<i;j++) {
       numer *= rr - r_sample[j];
       denom *= r_sample[i] - r_sample[j];
     }
-    for(int j=i+1;j<poly_order;j++) {
+    for(int j=i+1;j<interp_stencil_size;j++) {
       numer *= rr - r_sample[j];
       denom *= r_sample[i] - r_sample[j];
     }
@@ -146,7 +154,7 @@ void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_or
   *M = 0.0;
   *expnu = 0.0;
 
-  for(int i=idxmin;i<idxmin+poly_order;i++) {
+  for(int i=idxmin;i<idxmin+interp_stencil_size;i++) {
     *rho   += l_i_of_r[i-idxmin] * rho_arr[i];
     *P     += l_i_of_r[i-idxmin] * P_arr[i];
     *M     += l_i_of_r[i-idxmin] * M_arr[i];
@@ -154,6 +162,7 @@ void interpolate_1D(const REAL rr,const REAL R,const int R_idx,const int poly_or
   }
 }
 
+#ifdef STANDALONE_UNIT_TEST
 int main() {
 
   // Open the data file:
@@ -217,3 +226,4 @@ int main() {
   
   return 0;
 }
+#endif
