@@ -50,7 +50,8 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_arr,REAL *rho_arr,REA
 }
 
 
-void interpolate_1D(const REAL rr,  const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
+void interpolate_1D(const REAL rr, const int poly_order,
+                    const int numlines_in_file,const REAL *r_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,
                     REAL *rho,REAL *P,REAL *M,REAL *expnu) {
   int bisection_idx_finder(const REAL rr, const int numlines_in_file, const REAL *r_arr) {
     int x1 = 0;
@@ -83,7 +84,55 @@ void interpolate_1D(const REAL rr,  const int numlines_in_file,const REAL *r_arr
   }
 
   int idx = bisection_idx_finder(rr,numlines_in_file,r_arr);
-  //printf("%d %e %e %e\n", idx, r_arr[idx-1],rr,r_arr[idx]);
+
+#ifdef MAX
+#undef MAX
+#endif
+#define MAX(A, B) ( ((A) > (B)) ? (A) : (B) )
+
+  int idxmin = MAX(0,idx-poly_order/2-1);
+
+#ifdef MIN
+#undef MIN
+#endif
+#define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
+
+  // max index is when idxmin + (poly_order-1) = numlines_in_file-1
+  //  -> idxmin at most can be numlines_in_file - poly_order
+  idxmin = MIN(idxmin,numlines_in_file - poly_order);
+  idx = MAX(0,idx-poly_order/2-1);
+  REAL r_sample[poly_order];
+  REAL f_sample[poly_order];
+  for(int i=idxmin;i<idxmin+poly_order;i++) {
+    r_sample[i-idxmin] = r_arr[i];
+  }
+  REAL l_i_of_r[poly_order];
+  for(int i=0;i<poly_order;i++) {
+    REAL numer = 1.0;
+    REAL denom = 1.0;
+    for(int j=0;j<i;j++) {
+      numer *= rr - r_sample[j];
+      denom *= r_sample[i] - r_sample[j];
+    }
+    for(int j=i+1;j<poly_order;j++) {
+      numer *= rr - r_sample[j];
+      denom *= r_sample[i] - r_sample[j];
+    }
+    l_i_of_r[i] = numer/denom;
+  }
+  
+  *rho = 0.0;
+  *P = 0.0;
+  *M = 0.0;
+  *expnu = 0.0;
+
+  for(int i=idxmin;i<idxmin+poly_order;i++) {
+    *rho   += l_i_of_r[i-idxmin] * rho_arr[i];
+    *P     += l_i_of_r[i-idxmin] * P_arr[i];
+    *M     += l_i_of_r[i-idxmin] * M_arr[i];
+    *expnu += l_i_of_r[i-idxmin] * expnu_arr[i];
+  }
+//printf("%d %e %e %e\n", idx, r_arr[idx-1],rr,r_arr[idx]);
 }
 
 int main() {
@@ -116,7 +165,7 @@ int main() {
 
   // Next, interpolate!
   // Create trial radius array:
-  int num_r_pts = 100000000;
+  int num_r_pts = 100000;
   //REAL *r_out_arr = (REAL *)malloc(sizeof(REAL)*num_r_pts);
   struct drand48_data randBuffer;
   srand48_r(1313, &randBuffer);
@@ -124,9 +173,10 @@ int main() {
   for(int i=0;i<num_r_pts;i++) {
     REAL rr;
     drand48_r(&randBuffer,&rr);
-    rr *= r_arr[numlines_in_file-1];
+    rr *= 10.; //r_arr[numlines_in_file-1];
     REAL rho,P,M,expnu;
-    interpolate_1D(rr,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
+    interpolate_1D(rr, 4,  numlines_in_file,r_arr,rho_arr,P_arr,M_arr,expnu_arr,  &rho,&P,&M,&expnu);
+    printf("%e %e %e %e %e\n",rr,rho,P,M,expnu);
   }
   
   free(r_arr);
