@@ -584,6 +584,20 @@ def BSSN_RHSs():
         alpha_dupD = ixp.declarerank1("alpha_dupD")
         for i in range(DIM):
             alpha_rhs += betaU[i]*alpha_dupD[i]
+    if par.parval_from_str("BSSN.BSSN_RHSs::LapseEvolutionOption") == "MaximalSlicing":
+        # As defined on Pg 2 of https://arxiv.org/pdf/gr-qc/9902024.pdf , this is given by
+        #   \partial_t \alpha = \partial_t e^{6 \phi} = 6 e^{6 \phi} \partial_t \phi
+        # If cf = W = e^{-2 phi}, then
+        #  6 e^{6 \phi} \partial_t \phi = 6 W^(-3) \partial_t \phi
+        # But \partial_t phi = -\partial_t cf / (2 cf)  (as described above), so
+        #   alpha_rhs = 6 e^{6 \phi} \partial_t \phi
+        #             = 6 W^(-3) (-\partial_t W / (2 W))
+        #             = -3 cf^(-4) cf_rhs
+        if par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "W":
+            alpha_rhs = -3*cf_rhs/(cf*cf*cf*cf)
+        else:
+            print("Error LapseEvolutionOption==MaximalSlicing unsupported for ConformalFactor!=W")
+            exit(1)
     if par.parval_from_str("BSSN.BSSN_RHSs::LapseEvolutionOption") == "Frozen":
         alpha_rhs = sp.sympify(0)
             
