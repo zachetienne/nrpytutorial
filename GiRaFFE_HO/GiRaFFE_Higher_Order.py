@@ -261,11 +261,11 @@ def GiRaFFE_Higher_Order():
     global uD,uU
     uD = ixp.register_gridfunctions_for_single_rank1("AUX","uD")
     uU = ixp.register_gridfunctions_for_single_rank1("AUX","uU")
-    u4upper0 = gri.register_gridfunctions("AUX","u4upper0")
+    u4upperZero = gri.register_gridfunctions("AUX","u4upperZero")
 
     for i in range(DIM):
-        uD[i] = u0b.uD[i].subs(u0b.u0,u4upper0)
-        uU[i] = u0b.uU[i].subs(u0b.u0,u4upper0)
+        uD[i] = u0b.uD[i].subs(u0b.u0,u4upperZero)
+        uU[i] = u0b.uU[i].subs(u0b.u0,u4upperZero)
 
 
     # We also need the magnetic field 4-vector $b^{\mu}$, which is related to the magnetic field by [eqs. 23, 24, and 31 in Duez, et al](https://arxiv.org/pdf/astro-ph/0503420.pdf):
@@ -280,10 +280,10 @@ def GiRaFFE_Higher_Order():
     smallb4U = ixp.zerorank1(DIM=4)
     smallb4D = ixp.zerorank1(DIM=4)
     for mu in range(4):
-        smallb4U[mu] = u0b.smallb4U[mu].subs(u0b.u0,u4upper0)
-        smallb4D[mu] = u0b.smallb4D[mu].subs(u0b.u0,u4upper0)
+        smallb4U[mu] = u0b.smallb4U[mu].subs(u0b.u0,u4upperZero)
+        smallb4D[mu] = u0b.smallb4D[mu].subs(u0b.u0,u4upperZero)
 
-    smallb2 = u0b.smallb2.subs(u0b.u0,u4upper0)
+    smallb2 = u0b.smallb2.subs(u0b.u0,u4upperZero)
 
 
     # <a id='step5'></a>
@@ -303,7 +303,7 @@ def GiRaFFE_Higher_Order():
     # Step 2.1: Construct the electromagnetic stress-energy tensor
     # Step 2.1.a: Set up the four-velocity vector
     u4U = ixp.zerorank1(DIM=4)
-    u4U[0] = u4upper0
+    u4U[0] = u4upperZero
     for i in range(DIM):
         u4U[i+1] = uU[i]
 
@@ -490,10 +490,10 @@ def GiRaFFE_Higher_Order():
     # $$
 
 
-    global alphau0
-    alphau0 = gri.register_gridfunctions("AUX","alphau0")
-    alphau0 = alpha * u4upper0
-    alphau0_dD = ixp.declarerank1("alphau0_dD")
+    global u0alpha
+    u0alpha = gri.register_gridfunctions("AUX","u0alpha")
+    u0alpha = alpha * u4upperZero
+    u0alpha_dD = ixp.declarerank1("u0alpha_dD")
     uU_dD = ixp.declarerank2("uU_dD","nosym")
     uD_dD = ixp.declarerank2("uD_dD","nosym")
 
@@ -503,7 +503,7 @@ def GiRaFFE_Higher_Order():
     for i in range(DIM):
         for k in range(DIM):
             # Term Num1: \alpha u^0 B^i_{,k} - B^i \partial_k (\alpha u^0)
-            smallbUdD[i][k] += alphau0*BUdD[i][k]-BU[i]*alphau0_dD[k]
+            smallbUdD[i][k] += u0alpha*BUdD[i][k]-BU[i]*u0alpha_dD[k]
 
     for i in range(DIM):
         for k in range(DIM):
@@ -512,18 +512,18 @@ def GiRaFFE_Higher_Order():
                 # ( \alpha u^0 ) (  u_{j,k} B^j u^i 
                 #                 + u_j B^j_{,k} u^i 
                 #                 + u_j B^j u^i_{,k} )
-                smallbUdD[i][k] += alphau0*(uD_dD[j][k]*BU[j]*uU[i]                                         +uD[j]*BUdD[j][k]*uU[i]                                         +uD[j]*BU[j]*uU_dD[i][k])
+                smallbUdD[i][k] += u0alpha*(uD_dD[j][k]*BU[j]*uU[i]                                         +uD[j]*BUdD[j][k]*uU[i]                                         +uD[j]*BU[j]*uU_dD[i][k])
 
     for i in range(DIM):
         for k in range(DIM):
             for j in range(DIM):
                 #Term 2.b (More contractions over k): ( u_j B^j u^i ) ( \alpha u^0 ),k
-                smallbUdD[i][k] += -(uD[j]*BU[j]*uU[i])*alphau0_dD[k]
+                smallbUdD[i][k] += -(uD[j]*BU[j]*uU[i])*u0alpha_dD[k]
 
     for i in range(DIM):
         for k in range(DIM):
             # Term Denom: Divide the numerator by sqrt(4 pi) * (alpha u^0)^2
-            smallbUdD[i][k] /= sp.sqrt(4*M_PI) * alphau0 * alphau0
+            smallbUdD[i][k] /= sp.sqrt(4*M_PI) * u0alpha * u0alpha
 
 
     # <a id='b2deriv'></a>
@@ -699,9 +699,9 @@ def GiRaFFE_Higher_Order():
 
     # We'll need derivatives of u4U for the next part: 
     u4UdD = ixp.zerorank2(DIM=4)
-    u4upper0_dD = ixp.declarerank1("u4upper0_dD") # Note that derivatives can't be done in 4-D with the current version of NRPy
+    u4upperZero_dD = ixp.declarerank1("u4upperZero_dD") # Note that derivatives can't be done in 4-D with the current version of NRPy
     for i in range(DIM):
-        u4UdD[0][i+1] = u4upper0_dD[i]
+        u4UdD[0][i+1] = u4upperZero_dD[i]
     for i in range(DIM):
         for j in range(DIM):
             u4UdD[i+1][j+1] = uU_dD[i][j]
@@ -887,7 +887,7 @@ def GiRaFFE_Higher_Order():
         A_rhsD[i] = -AevolParen_dD[i]
         for j in range(DIM):
             for k in range(DIM):
-                A_rhsD[i] += LeviCivitaTensorDDD[i][j][k]*(uU[j]/u4upper0)*BU[k]
+                A_rhsD[i] += LeviCivitaTensorDDD[i][j][k]*(uU[j]/u4upperZero)*BU[k]
 
     psi6Phi_rhs = -xi*alpha*psi6Phi
     for j in range(DIM):

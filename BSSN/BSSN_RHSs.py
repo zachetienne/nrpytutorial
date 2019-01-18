@@ -16,6 +16,7 @@ from outputC import *
 # Step P2: Initialize BSSN_RHS parameters
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "ConformalFactor", "W"))
+par.initialize_param(par.glb_param("char", thismodule, "LapseEvolutionOption", "UsualOnePluslog"))
 par.initialize_param(par.glb_param("char", thismodule, "ShiftEvolutionOption", "GammaDriving2ndOrder_NoCovariant"))
 par.initialize_param(par.glb_param("bool", thismodule, "detgbarOverdetghat_equals_one", "True"))
 
@@ -165,6 +166,7 @@ def BSSN_RHSs():
 
     # Step 7a: Define \bar{\gamma}_{ij,k} = gammabarDDdD[i][j][k]
     #          = h_{ij,k} \text{ReDD[i][j]} + h_{ij} \text{ReDDdD[i][j][k]} + \hat{\gamma}_{ij,k}.
+    global gammabarDD_dD # Needed for computation of lambda^i via finite differences in initial data converter routine.
     gammabarDD_dD = ixp.zerorank3()
     hDD_dupD = ixp.declarerank3("hDD_dupD","sym01") # Needed for \bar{\gamma}_{ij} RHS
     gammabarDD_dupD = ixp.zerorank3()  # Needed for \bar{\gamma}_{ij} RHS
@@ -577,11 +579,28 @@ def BSSN_RHSs():
 
     # Step 13: \partial_t \alpha = \beta^i \alpha_{,i} - 2*\alpha*K
     global alpha_rhs
-    alpha_rhs = -2*alpha*trK
-    alpha_dupD = ixp.declarerank1("alpha_dupD")
-    for i in range(DIM):
-        alpha_rhs += betaU[i]*alpha_dupD[i]
-
+    if par.parval_from_str("BSSN.BSSN_RHSs::LapseEvolutionOption") == "UsualOnePluslog":
+        alpha_rhs = -2*alpha*trK
+        alpha_dupD = ixp.declarerank1("alpha_dupD")
+        for i in range(DIM):
+            alpha_rhs += betaU[i]*alpha_dupD[i]
+    if par.parval_from_str("BSSN.BSSN_RHSs::LapseEvolutionOption") == "MaximalSlicing":
+        # As defined on Pg 2 of https://arxiv.org/pdf/gr-qc/9902024.pdf , this is given by
+        #   \partial_t \alpha = \partial_t e^{6 \phi} = 6 e^{6 \phi} \partial_t \phi
+        # If cf = W = e^{-2 phi}, then
+        #  6 e^{6 \phi} \partial_t \phi = 6 W^(-3) \partial_t \phi
+        # But \partial_t phi = -\partial_t cf / (2 cf)  (as described above), so
+        #   alpha_rhs = 6 e^{6 \phi} \partial_t \phi
+        #             = 6 W^(-3) (-\partial_t W / (2 W))
+        #             = -3 cf^(-4) cf_rhs
+        if par.parval_from_str("BSSN.BSSN_RHSs::ConformalFactor") == "W":
+            alpha_rhs = -3*cf_rhs/(cf*cf*cf*cf)
+        else:
+            print("Error LapseEvolutionOption==MaximalSlicing unsupported for ConformalFactor!=W")
+            exit(1)
+    if par.parval_from_str("BSSN.BSSN_RHSs::LapseEvolutionOption") == "Frozen":
+        alpha_rhs = sp.sympify(0)
+            
     # Step 14: Set \partial_t \beta^i
     beta_rhsU = ixp.zerorank1()
     if par.parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
@@ -617,6 +636,10 @@ def BSSN_RHSs():
         # Term 3: B^i
         for i in range(DIM):
             beta_rhsU[i] += BU[i]
+    if par.parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption") == "Frozen":
+        # Step 14 Option 3: \partial_t \beta^i = 0
+        for i in range(DIM):
+            beta_rhsU[i] = sp.sympify(0)
         
     # Step 15: Evaluate \partial_t B^i
 
@@ -688,6 +711,11 @@ def BSSN_RHSs():
         # Term 6: - \eta B^i
         for i in range(DIM):
             B_rhsU[i] += -eta*BU[i]
+
+    if par.parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption") == "Frozen":
+        # Step 14 Option 3: \partial_t B^i = 0
+        for i in range(DIM):
+            B_rhsU[i] = sp.sympify(0)
 
     # Step 16: Rescale the RHS quantities so that the evolved
     #          variables are smooth across coord singularities

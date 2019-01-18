@@ -1,0 +1,45 @@
+7c7
+< #include "Logo.c"
+---
+>   //#include "Logo.c"
+16c16
+<   printf("\x1B[32mID: %s, Evol: %s, Coords: %s, FD order: %d\x1B[0m\n", params.ID_scheme,params.Evol_scheme,params.CoordSystem, params.FDCENTERDERIVS_FDORDER);
+---
+>   //  printf("\x1B[32mID: %s, Evol: %s, Coords: %s, FD order: %d\x1B[0m\n", params.ID_scheme,params.Evol_scheme,params.CoordSystem, params.FDCENTERDERIVS_FDORDER);
+189a190,205
+>   LOOP_GZFILL(ii,jj,kk) {
+>     int which_gf = 0;
+>     gfs_n[IDX4(VET1,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>     gfs_n[IDX4(VET2,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>     gfs_n[IDX4(VET3,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+> 
+>     gfs_n[IDX4(A11,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>     gfs_n[IDX4(A12,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>     gfs_n[IDX4(A13,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>     gfs_n[IDX4(A22,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>     gfs_n[IDX4(A23,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>     gfs_n[IDX4(A33,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+> 
+>     gfs_n[IDX4(CF,ii,jj,kk)] = (REAL)IDX4(which_gf,ii,jj,kk); which_gf++;
+>   }
+>   
+195a212,230
+>   LOOP_GZFILL(ii,jj,kk) {
+>     int which_gf = 0;
+>     printf("%d %d %d | ",ii,jj,kk);
+>     printf("%d ",(int)gfs_n[IDX4(VET1,ii,jj,kk)]);
+>     printf("%d ",(int)gfs_n[IDX4(VET2,ii,jj,kk)]);
+>     printf("%d ",(int)gfs_n[IDX4(VET3,ii,jj,kk)]);
+> 
+>     printf("%d ",(int)gfs_n[IDX4(A11,ii,jj,kk)]);
+>     printf("%d ",(int)gfs_n[IDX4(A12,ii,jj,kk)]);
+>     printf("%d ",(int)gfs_n[IDX4(A13,ii,jj,kk)]);
+>     printf("%d ",(int)gfs_n[IDX4(A22,ii,jj,kk)]);
+>     printf("%d ",(int)gfs_n[IDX4(A23,ii,jj,kk)]);
+>     printf("%d ",(int)gfs_n[IDX4(A33,ii,jj,kk)]);
+> 
+>     printf("%d ",(int)gfs_n[IDX4(CF,ii,jj,kk)]);
+>     printf("\n");
+>   }
+>   exit(0);
+>   

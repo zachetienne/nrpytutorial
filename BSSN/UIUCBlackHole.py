@@ -4,7 +4,7 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-# ## This module sets up initial data for a merging black hole system in spherical coordinates. We can convert from spherical to any coordinate system defined in [reference_metric.py](../edit/reference_metric.py) (e.g., SinhSpherical, Cylindrical, Cartesian, etc.) using the [ADMSpherical-to-BSSNCurvilinear converter module](Tutorial-ADM_Initial_Data-Converting_ADMSpherical_to_BSSNCurvilinear)
+# ## This module sets up initial data for a merging black hole system in spherical coordinates. We can convert from spherical to any coordinate system defined in [reference_metric.py](../edit/reference_metric.py) (e.g., SinhSpherical, Cylindrical, Cartesian, etc.) using the [Exact ADM Spherical-to-BSSNCurvilinear converter module](Tutorial-ADM_Initial_Data-Converting_Exact_ADM_Spherical_or_Cartesian_to_BSSNCurvilinear.ipynb)
 # 
 # ### NRPy+ Source Code for this module: [BSSN/BrillLindquist.py](../edit/BSSN/BrillLindquist.py)
 # 
@@ -30,11 +30,13 @@ import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
 import reference_metric as rfm
-#import BSSN.SphericalADMID_to_BSSNCurvilinearID as ctob
-#import BSSN.BSSN_ID_function_string as bIDf
+import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
+import BSSN.BSSN_ID_function_string as bIDf
 
-def UIUCBlackHole():
-    global r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
+# ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
+#                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
+def UIUCBlackHole(ComputeADMGlobalsOnly = False):
+    global Sph_r_th_ph,r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
     
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
     r,th,ph = sp.symbols('r th ph', real=True)
@@ -89,11 +91,16 @@ def UIUCBlackHole():
     betaSphU = ixp.zerorank1() # We generally choose \beta^i = 0 for these initial data
     BSphU    = ixp.zerorank1() # We generally choose B^i = 0 for these initial data
 
+    if ComputeADMGlobalsOnly == True:
+        return
+    
     # Validated against original SENR: KSphDD[0][2], KSphDD[1][2], gammaSphDD[2][2], gammaSphDD[0][0], gammaSphDD[1][1]
     #print(sp.mathematica_code(gammaSphDD[1][1]))
 
+    Sph_r_th_ph = [r,th,ph]
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        ctob.Convert_Spherical_ADM_to_BSSN_curvilinear(Sphxyz, gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
+        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
+                                                                    gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
     global returnfunction
     returnfunction = bIDf.BSSN_ID_function_string(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU)

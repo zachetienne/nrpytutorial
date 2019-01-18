@@ -30,10 +30,12 @@ import sympy as sp
 import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
-import BSSN.CartesianADMID_to_BSSNCurvilinearID as ctob
+import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
 import BSSN.BSSN_ID_function_string as bIDf
 
-def BrillLindquist():
+# ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
+#                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
+def BrillLindquist(ComputeADMGlobalsOnly = False):
     thismodule = "Brill-Lindquist"
     BH1_posn_x,BH1_posn_y,BH1_posn_z = par.Cparameters("REAL", thismodule, ["BH1_posn_x","BH1_posn_y","BH1_posn_z"])
     BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"])
@@ -62,8 +64,12 @@ def BrillLindquist():
     betaCartU = ixp.zerorank1() # We generally choose \beta^i = 0 for these initial data
     BCartU    = ixp.zerorank1() # We generally choose B^i = 0 for these initial data
 
+    if ComputeADMGlobalsOnly == True:
+        return
+    
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        ctob.Convert_Cartesian_ADM_to_BSSN_curvilinear(Cartxyz, gammaCartDD,KCartDD,alphaCart,betaCartU,BCartU)
+        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian",Cartxyz, 
+                                                                    gammaCartDD,KCartDD,alphaCart,betaCartU,BCartU)
 
     global returnfunction
     returnfunction = bIDf.BSSN_ID_function_string(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU)

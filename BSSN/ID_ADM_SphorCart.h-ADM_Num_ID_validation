@@ -1,0 +1,55 @@
+
+// This function takes as input either (x,y,z) or (r,th,ph) and outputs
+//   all ADM quantities in the Cartesian or Spherical basis, respectively.
+void ID_ADM_SphorCart(const REAL xyz_or_rthph[3], 
+                     REAL *gammaDD00,REAL *gammaDD01,REAL *gammaDD02,REAL *gammaDD11,REAL *gammaDD12,REAL *gammaDD22,
+                     REAL *KDD00,REAL *KDD01,REAL *KDD02,REAL *KDD11,REAL *KDD12,REAL *KDD22,
+                     REAL *alpha,
+                     REAL *betaU0,REAL *betaU1,REAL *betaU2,
+                     REAL *BU0,REAL *BU1,REAL *BU2) {
+      const REAL r  = xyz_or_rthph[0];
+      const REAL th = xyz_or_rthph[1];
+      const REAL ph = xyz_or_rthph[2];
+      const double tmp0 = (1.0/4.0)*M;
+      const double tmp1 = pow(M, 2);
+      const double tmp2 = pow(chi, 2)*tmp1;
+      const double tmp3 = -tmp2;
+      const double tmp4 = sqrt(tmp1 + tmp3);
+      const double tmp5 = (1.0/4.0)*tmp4;
+      const double tmp6 = cos(th);
+      const double tmp7 = 1.0/r;
+      const double tmp8 = (1.0/4.0)*tmp7*(M + tmp4) + 1;
+      const double tmp9 = pow(r, 2)*pow(tmp8, 4);
+      const double tmp10 = tmp2*pow(tmp6, 2) + tmp9;
+      const double tmp11 = r*pow(tmp8, 2);
+      const double tmp12 = -M + tmp11 + tmp4;
+      const double tmp13 = tmp2 + tmp9;
+      const double tmp14 = 2*tmp11;
+      const double tmp15 = sin(th);
+      const double tmp16 = pow(tmp15, 2);
+      const double tmp17 = tmp16*tmp2;
+      const double tmp18 = pow(tmp13, 2) - tmp17*(-M*tmp14 + tmp13);
+      const double tmp19 = 1.0/tmp10;
+      const double tmp20 = tmp16*tmp19;
+      const double tmp21 = pow(tmp10*tmp18, -1.0/2.0);
+      const double tmp22 = pow(M, 4);
+      *gammaDD00 = tmp10*pow(r + tmp0 + tmp5, 2)/(pow(r, 3)*tmp12);
+      *gammaDD01 = 0;
+      *gammaDD02 = 0;
+      *gammaDD11 = tmp10;
+      *gammaDD12 = 0;
+      *gammaDD22 = tmp18*tmp20;
+      *KDD00 = 0;
+      *KDD01 = 0;
+      *KDD02 = chi*tmp1*tmp20*tmp21*tmp8*(-pow(chi, 4)*tmp22 + 3*pow(r, 4)*pow(tmp8, 8) - tmp17*(tmp3 + tmp9) + 2*tmp2*tmp9)/sqrt(r*tmp12);
+      *KDD11 = 0;
+      *KDD12 = -pow(chi, 3)*tmp14*pow(tmp15, 3)*tmp19*tmp21*tmp22*tmp6*sqrt(tmp12*tmp7)*(r - tmp0 - tmp5);
+      *KDD22 = 0;
+      *alpha = 1;
+      *betaU0 = 0;
+      *betaU1 = 0;
+      *betaU2 = 0;
+      *BU0 = 0;
+      *BU1 = 0;
+      *BU2 = 0;
+}

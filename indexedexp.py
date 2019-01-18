@@ -102,6 +102,9 @@ def declarerank1(objname, DIM=-1):
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
+    # Step 0: Verify the gridfunction basename is valid:
+    gri.verify_gridfunction_basename_is_valid(gf_basename)
+    
     # Step 1: Declare a list of SymPy variables, 
     #         where IDX_OBJ_TMP[i] = gf_basename+str(i)
     IDX_OBJ_TMP = declarerank1(gf_basename, DIM)
@@ -112,7 +115,7 @@ def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     gf_list = []
     for i in range(DIM):
         gf_list.append(str(IDX_OBJ_TMP[i]))
-    gri.register_gridfunctions(gf_type, gf_list)
+    gri.register_gridfunctions(gf_type, gf_list, is_indexed=True)
 
     # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP
@@ -137,6 +140,9 @@ def declarerank2(objname, symmetry_option, DIM=-1):
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option, DIM=-1):
+    # Step 0: Verify the gridfunction basename is valid:
+    gri.verify_gridfunction_basename_is_valid(gf_basename)
+
     # Step 1: Declare a list of lists of SymPy variables, 
     #         where IDX_OBJ_TMP[i][j] = gf_basename+str(i)+str(j)
     IDX_OBJ_TMP = declarerank2(gf_basename,symmetry_option, DIM)
@@ -156,7 +162,7 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
                     save = False
             if save == True:
                 gf_list.append(str(IDX_OBJ_TMP[i][j]))
-    gri.register_gridfunctions(gf_type,gf_list)
+    gri.register_gridfunctions(gf_type,gf_list, is_indexed=True)
 
     # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP

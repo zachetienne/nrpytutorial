@@ -555,9 +555,14 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         return Coutput+'\n'
     else:
         # Output to the file specified by outCfilename
-        with open(filename, "w") as file:
+        with open(filename, outCparams.outCfileaccess) as file:
             file.write(Coutput)
-        print("Wrote to file \"" + filename + "\"")
+        successstr = ""
+        if outCparams.outCfileaccess == "a":
+            successstr = "Appended "
+        elif outCparams.outCfileaccess == "w":
+            successstr = "Wrote "
+        print(successstr + "to file \"" + filename + "\"")
 #    print(gri.glb_gridfcs_list[1].name,list_of_points_read_from_memory[1])
 
 
