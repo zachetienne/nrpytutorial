@@ -42,9 +42,6 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
     betaSphorCartU = ixp.declarerank1("betaSphorCartU")
     BSphorCartU = ixp.declarerank1("BSphorCartU")
 
-    # UIUC Black Hole initial data are given in Spherical coordinates.
-    CoordType_in = "Spherical"
-
     # Make sure that rfm.reference_metric() has been called.
     #    We'll need the variables it defines throughout this module.
     if rfm.have_already_called_reference_metric_function == False:
