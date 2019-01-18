@@ -18,7 +18,7 @@ import grid as gri
 import finite_difference as fin
 import BSSN.BSSN_RHSs as bssnrhs  # The ConformalFactor parameter is used below
 
-def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name):
+def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name, pointer_to_ID_inputs=False):
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
     #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
     #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
@@ -175,8 +175,12 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
     #         BSSNCurvilinear initial data, *except* $\lambda^i$, which must be
     #         computed from numerical data using finite-difference derivatives.
     with open("BSSN/ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h", "w") as file:
+        file.write("void ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(const REAL xx0xx1xx2[3],")
+        if pointer_to_ID_inputs == True:
+            file.write("ID_inputs *other_inputs,")
+        else:
+            file.write("ID_inputs other_inputs,")
         file.write("""
-void ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(const REAL xx0xx1xx2[3],const ID_inputs other_inputs,
                     REAL *hDD00,REAL *hDD01,REAL *hDD02,REAL *hDD11,REAL *hDD12,REAL *hDD22,
                     REAL *aDD00,REAL *aDD01,REAL *aDD02,REAL *aDD11,REAL *aDD12,REAL *aDD22,
                     REAL *trK, 
@@ -197,8 +201,7 @@ void ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(const REAL xx0xx1xx2[3]
     outputC(r_th_ph_or_Cart_xyz_oID_xx[0:3], ["xyz_or_rthph[0]", "xyz_or_rthph[1]", "xyz_or_rthph[2]"],
             "BSSN/ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h", outCparams + ",CSE_enable=False")
     with open("BSSN/ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h", "a") as file:
-        file.write(ADM_input_function_name+"""(xyz_or_rthph, 
-                      other_inputs,
+        file.write("      "+ADM_input_function_name+"""(xyz_or_rthph, other_inputs,
                       &gammaSphorCartDD00,&gammaSphorCartDD01,&gammaSphorCartDD02,
                       &gammaSphorCartDD11,&gammaSphorCartDD12,&gammaSphorCartDD22,
                       &KSphorCartDD00,&KSphorCartDD01,&KSphorCartDD02,
@@ -223,7 +226,12 @@ void ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(const REAL xx0xx1xx2[3]
     #           function ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs()
     # Next write the driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs():
     with open("BSSN/ID_BSSN__ALL_BUT_LAMBDAs.h", "w") as file:
-        file.write("void ID_BSSN__ALL_BUT_LAMBDAs(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],const ID_inputs other_inputs, REAL *in_gfs) {\n")
+        file.write("void ID_BSSN__ALL_BUT_LAMBDAs(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],")
+        if pointer_to_ID_inputs == True:
+            file.write("ID_inputs *other_inputs,")
+        else:
+            file.write("ID_inputs other_inputs,")
+        file.write("REAL *in_gfs) {\n")
         file.write(lp.loop(["i2", "i1", "i0"], ["0", "0", "0"],
                            ["Nxx_plus_2NGHOSTS[2]", "Nxx_plus_2NGHOSTS[1]", "Nxx_plus_2NGHOSTS[0]"],
                            ["1", "1", "1"], ["#pragma omp parallel for",
