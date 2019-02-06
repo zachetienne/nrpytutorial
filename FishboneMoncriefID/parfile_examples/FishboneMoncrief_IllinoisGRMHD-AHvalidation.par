@@ -1,0 +1,316 @@
+ActiveThorns = "Time MoL"
+ActiveThorns = "Coordbase CartGrid3d Boundary StaticConformal"
+ActiveThorns = "SymBase ADMBase TmunuBase HydroBase InitBase ADMCoupling ADMMacros"
+ActiveThorns = "IOUtil"
+#ActiveThorns = "Formaline"
+ActiveThorns = "SpaceMask CoordGauge Constants LocalReduce aeilocalinterp LoopControl"
+ActiveThorns = "Carpet CarpetLib CarpetReduce CarpetRegrid2 CarpetInterp"
+ActiveThorns = "CarpetIOASCII CarpetIOScalar CarpetIOHDF5 CarpetIOBasic"
+
+# Parameters of thorn AHFinderDirect (implementing AHFinderDirect)
+ActiveThorns = "AHFinderDirect"
+AHFinderDirect::find_every                             = 1
+AHFinderDirect::geometry_interpolator_name             = "Lagrange polynomial interpolation"
+AHFinderDirect::geometry_interpolator_pars             = "order=4"
+AHFinderDirect::initial_guess__coord_sphere__radius[1] = 1.7
+AHFinderDirect::initial_guess_method[1]                = "coordinate sphere"
+#AHFinderDirect::initial_guess_method[1]                = "Kerr/Kerr-Schild" #"coordinate sphere"
+AHFinderDirect::max_Newton_iterations__initial         = 500
+AHFinderDirect::max_Newton_iterations__subsequent      = 10
+AHFinderDirect::N_horizons                             = 1
+AHFinderDirect::output_BH_diagnostics                  = "yes"
+AHFinderDirect::reset_horizon_after_not_finding[1]     = "no"
+AHFinderDirect::set_mask_for_individual_horizon[1]     = "no"
+AHFinderDirect::surface_interpolator_name              = "Lagrange polynomial interpolation"
+AHFinderDirect::surface_interpolator_pars              = "order=4"
+AHFinderDirect::verbose_level                          = "algorithm details"
+AHFinderDirect::which_surface_to_store_info[1]         = 0
+
+
+
+ActiveThorns = "IllinoisGRMHD"
+ActiveThorns = "ID_converter_ILGRMHD Convert_to_HydroBase Seed_Magnetic_Fields"
+
+# ActiveThorns = "interp_sph_grid__ET_thorn"
+# interp_sph_grid__ET_thorn::interp_out_every = 10 # approximately every 1M
+# # Shifted Kerr-Schild with r_shift = 1.0:
+# #interp_sph_grid__ET_thorn::interp_r_min = 0.347981006 # r_AH (apparent horizon radius) for 0.9375 spin BH
+# interp_sph_grid__ET_thorn::interp_r_min = 0.847981006 # r_AH (apparent horizon radius) for 0.9375 spin BH
+# interp_sph_grid__ET_thorn::interp_r_max = 50.0
+# interp_sph_grid__ET_thorn::interp_th_min = 0.0
+# interp_sph_grid__ET_thorn::interp_th_max = 3.141592653589793116
+# interp_sph_grid__ET_thorn::interp_ph_min = 0.0
+# interp_sph_grid__ET_thorn::interp_ph_max = 6.283185307179586232
+
+# #interp_sph_grid__ET_thorn::interp_Nr  = 150
+# #interp_sph_grid__ET_thorn::interp_Nth =  75
+# #interp_sph_grid__ET_thorn::interp_Nph = 150
+
+# interp_sph_grid__ET_thorn::interp_Nr  = 188
+# interp_sph_grid__ET_thorn::interp_Nth =  94
+# interp_sph_grid__ET_thorn::interp_Nph = 188
+
+# interp_sph_grid__ET_thorn::interpolator_name = "Lagrange polynomial interpolation"
+# interp_sph_grid__ET_thorn::interpolator_pars = "order=1"
+
+#ActiveThorns = "smallbPoynET"
+#Convert_to_Hydrobase::Convert_to_HydroBase_every = 1
+#smallbPoynET::smallbPoynET_compute_every = 1
+
+Seed_Magnetic_Fields::enable_IllinoisGRMHD_staggered_A_fields = "true"
+Seed_Magnetic_Fields::Afield_type = "Density_prescription"
+Seed_Magnetic_Fields::enable_varpi_squared_multiplication = "false"
+Seed_Magnetic_Fields::rho_cut = 0.2
+Seed_Magnetic_Fields::A_b     = 0.9162655225 #= 0.25847373177922*sqrt(4*pi) . Due to how we define b^\mu, this yields 2*max(P)/max(b^2) = 100, where max P and b^2 do not necessarily occur at same point.
+####Seed_Magnetic_Fields::A_b     = 0.0 # Try no B-fields!
+#ID_converter_ILGRMHD::random_pert = 1e-15
+
+#Carpet::veryverbose = "yes"
+
+# init parameters
+InitBase::initial_data_setup_method = "init_some_levels"
+
+ActiveThorns = "FishboneMoncriefID"
+FishboneMoncriefID::a = 0.9375
+FishboneMoncriefID::M = 1.0
+FishboneMoncriefID::random_min = -0.02
+FishboneMoncriefID::random_max = +0.02
+FishboneMoncriefID::r_in             =  6.0 # Inner radius of disk
+FishboneMoncriefID::r_at_max_density = 12.0 # Radius at which disk reaches max density in equatorial plane
+
+
+#STORAGE: ADMBase::metric[metric_timelevels], ADMBase::curv[metric_timelevels], ADMBase::lapse[lapse_timelevels], ADMBase::shift[shift_timelevels]
+# Need 3 timelevels to do prolongation/restriction, even though metric is static:
+ADMBase::metric_timelevels = 3
+ADMBase::lapse_timelevels  = 3
+ADMBase::shift_timelevels  = 3
+ADMBase::initial_data            = "FishboneMoncriefID"
+ADMBase::initial_lapse           = "FishboneMoncriefID"
+ADMBase::initial_shift           = "FishboneMoncriefID"
+ADMBase::initial_dtlapse         = "zero"
+ADMBase::initial_dtshift         = "zero"
+
+# Equation of State parameters
+FishboneMoncriefID::kappa = 1.0e-3
+FishboneMoncriefID::gamma = 1.333333333333333333333333333
+
+ID_converter_ILGRMHD::K_Initial     = 1.0e-3
+ID_converter_ILGRMHD::Gamma_Initial = 1.33333333333333333333333333
+
+IllinoisGRMHD::neos=1
+IllinoisGRMHD::K_poly = 1.0e-3
+IllinoisGRMHD::gamma_th=1.3333333333333333333333333333333
+
+# IllinoisGRMHD evolution parameters:
+CarpetLib::support_staggered_operators = "yes"
+IllinoisGRMHD::conserv_to_prims_debug = 0
+IllinoisGRMHD::Psi6threshold = 1e100 #2.0 # 20.
+
+# May need to tune:
+IllinoisGRMHD::damp_lorenz = 0.20571428571429  #0.13714285714286 ## 1.5/Delta t_max. Here, Delta t_max = 10.9375
+
+IllinoisGRMHD::tau_atm   = 5.0e-12    #4.876083025795607e-17
+IllinoisGRMHD::rho_b_atm = 1.0e-10 #1.292852735094440e-15
+
+# grid parameters
+driver::ghost_size = 3
+CoordBase::boundary_size_x_lower = 3
+CoordBase::boundary_size_y_lower = 3
+CoordBase::boundary_size_z_lower = 3
+CoordBase::boundary_size_x_upper = 3
+CoordBase::boundary_size_y_upper = 3
+CoordBase::boundary_size_z_upper = 3
+#CoordBase::boundary_shiftout_z_lower = 1
+
+#grid::domain = "bitant"
+#grid::bitant_plane = "xy"
+grid::avoid_origin = "no"
+CartGrid3D::type         = "coordbase"
+CoordBase::domainsize = "minmax"
+CoordBase::xmin = -2.05
+CoordBase::ymin = -2.05
+CoordBase::zmin = -2.05
+CoordBase::xmax =  1.95
+CoordBase::ymax =  1.95
+CoordBase::zmax =  1.95
+CoordBase::dx   =  0.1
+CoordBase::dy   =  0.1
+CoordBase::dz   =  0.1
+
+TmunuBase::stress_energy_storage = yes
+TmunuBase::stress_energy_at_RHS  = yes
+TmunuBase::timelevels            =  1
+TmunuBase::prolongation_type     = none
+
+HydroBase::timelevels            = 1
+HydroBase::initial_Avec = "zero"
+HydroBase::initial_Aphi = "zero"
+HydroBase::initial_hydro = "FishboneMoncriefID"
+
+ADMMacros::spatial_order = 4
+
+ADMBase::metric_type     = "physical"
+
+SpaceMask::use_mask      = "yes"
+
+#cactus::cctk_itlast = 2
+Cactus::terminate           = "time"
+Cactus::cctk_final_time     = 10000
+
+Carpet::domain_from_coordbase = "yes"
+Carpet::enable_all_storage       = no
+Carpet::use_buffer_zones         = "yes"
+
+Carpet::poison_new_timelevels    = "yes"
+Carpet::check_for_poison         = "no"
+
+Carpet::init_3_timelevels        = no
+Carpet::init_fill_timelevels     = "yes"
+
+CarpetLib::poison_new_memory = "yes"
+CarpetLib::poison_value      = 114
+
+# system specific Carpet paramters
+Carpet::max_refinement_levels    = 1
+Carpet::prolongation_order_space = 5
+Carpet::prolongation_order_time  = 2
+
+CarpetRegrid2::regrid_every = 0
+CarpetRegrid2::num_centres  = 1
+
+CarpetRegrid2::num_levels_1 = 1
+#CarpetRegrid2::position_x_1 = 25.0
+#CarpetRegrid2::position_y_1 = 25.0
+#CarpetRegrid2::radius_1[1]  = 875.0
+#CarpetRegrid2::radius_1[2]  = 437.5
+#CarpetRegrid2::radius_1[3]  = 218.75
+#CarpetRegrid2::radius_1[4]  = 109.375
+#CarpetRegrid2::radius_1[5]  =  54.6875
+#CarpetRegrid2::radius_1[6]  =  27.34375
+
+CarpetRegrid2::num_levels_2 = 7
+CarpetRegrid2::position_x_2 =-25.0
+CarpetRegrid2::position_y_2 = 25.0
+CarpetRegrid2::radius_2[1]  = 875.0
+CarpetRegrid2::radius_2[2]  = 437.5
+CarpetRegrid2::radius_2[3]  = 218.75
+CarpetRegrid2::radius_2[4]  = 109.375
+CarpetRegrid2::radius_2[5]  =  54.6875
+CarpetRegrid2::radius_2[6]  =  27.34375
+
+CarpetRegrid2::num_levels_3 = 7
+CarpetRegrid2::position_x_3 = 25.0
+CarpetRegrid2::position_y_3 =-25.0
+CarpetRegrid2::radius_3[1]  = 875.0
+CarpetRegrid2::radius_3[2]  = 437.5
+CarpetRegrid2::radius_3[3]  = 218.75
+CarpetRegrid2::radius_3[4]  = 109.375
+CarpetRegrid2::radius_3[5]  =  54.6875
+CarpetRegrid2::radius_3[6]  =  27.34375
+
+CarpetRegrid2::num_levels_4 = 7
+CarpetRegrid2::position_x_4 =-25.0
+CarpetRegrid2::position_y_4 =-25.0
+CarpetRegrid2::radius_4[1]  = 875.0
+CarpetRegrid2::radius_4[2]  = 437.5
+CarpetRegrid2::radius_4[3]  = 218.75
+CarpetRegrid2::radius_4[4]  = 109.375
+CarpetRegrid2::radius_4[5]  =  54.6875
+CarpetRegrid2::radius_4[6]  =  27.34375
+
+CarpetRegrid2::num_levels_5 = 7
+CarpetRegrid2::radius_5[1]  = 875.0
+CarpetRegrid2::radius_5[2]  = 437.5
+CarpetRegrid2::radius_5[3]  = 218.75
+CarpetRegrid2::radius_5[4]  = 109.375
+CarpetRegrid2::radius_5[5]  =  54.6875
+CarpetRegrid2::radius_5[6]  =  27.34375
+#CarpetRegrid2::radius_5[7]  =  13.671875
+#CarpetRegrid2::radius_5[7]  =  6.8359375
+#CarpetRegrid2::radius_5[7]  =  3.41796875
+
+
+time::dtfac = 0.5
+MoL::ODE_Method             = "rk4"
+MoL::MoL_Intermediate_Steps = 4
+MoL::MoL_Num_Scratch_Levels = 1
+
+# check all physical variables for NaNs
+#ActiveThorns = "NaNChecker"
+#NaNChecker::check_every = 1
+#NaNChecker::action_if_found = "just warn" #"terminate", "just warn", "abort"
+#NaNChecker::check_vars = "ADMBase::metric ADMBase::lapse ADMBase::shift"
+
+## Lapse Condition:  \partial_t alpha = - alpha K
+## Shift Condition:  \partial_t beta^i = 0
+
+#ActiveThorns = "GenericFD NewRad"
+ADMBase::evolution_method        = "static"
+ADMBase::lapse_evolution_method  = "static"
+ADMBase::shift_evolution_method  = "static"
+ADMBase::dtlapse_evolution_method= "static"
+ADMBase::dtshift_evolution_method= "static"
+
+
+ActiveThorns = "SphericalSurface"
+
+SphericalSurface::nsurfaces = 1
+SphericalSurface::maxntheta = 79
+SphericalSurface::maxnphi = 146
+
+SphericalSurface::ntheta      [0] = 79
+SphericalSurface::nphi        [0] = 146
+SphericalSurface::nghoststheta[0] = 2
+SphericalSurface::nghostsphi  [0] = 2
+
+# I/O
+CarpetIOHDF5::checkpoint                    = "yes"
+CarpetIOHDF5::compression_level             = 0
+CarpetIOHDF5::one_file_per_group            = "no"
+CarpetIOHDF5::open_one_input_file_at_a_time = "yes"
+
+IOUtil::checkpoint_dir          = ABE-checkpoint
+IOUtil::checkpoint_every_walltime_hours = 12.0
+#IOUtil::checkpoint_keep         = 2
+IOUtil::checkpoint_on_terminate = "no"
+IOUtil::out_dir                 = ABE-checkpoint
+#IOUtil::out_fileinfo            = "none"
+IOUtil::parfile_write           = "generate"
+IOUtil::recover                 = "autoprobe"
+IOUtil::recover_dir             = ABE-checkpoint
+
+IOBasic::outInfo_every = 2
+#IOBasic::outInfo_vars  = "Carpet::physical_time_per_hour HydroBase::rho"
+IOBasic::outInfo_vars  = "Carpet::physical_time_per_hour IllinoisGRMHD::rho_b"
+
+IOScalar::outScalar_every    = 64
+CarpetIOScalar::outScalar_reductions = "maximum"
+IOScalar::one_file_per_group = no
+IOScalar::outScalar_vars     = "
+ IllinoisGRMHD::rho_b
+"
+
+#CarpetIOASCII::out0D_every            = 2
+#CarpetIOASCII::out0D_vars             = "
+#  Carpet::physical_time_per_hour
+#"
+
+IOASCII::out1D_every        = 256
+IOASCII::one_file_per_group = no
+IOASCII::output_symmetry_points = no
+IOASCII::out3D_ghosts           = no
+IOASCII::out3D_outer_ghosts     = no
+IOASCII::out1D_vars         = "
+ ADMBase::gxx
+ ADMBase::gxy
+ ADMBase::kxx
+ IllinoisGRMHD::rho_b
+ IllinoisGRMHD::P
+ IllinoisGRMHD::psi6phi
+ IllinoisGRMHD::Ax
+ IllinoisGRMHD::Ay
+ IllinoisGRMHD::Az
+ IllinoisGRMHD::Bx
+ IllinoisGRMHD::By
+ IllinoisGRMHD::Bz
+"
