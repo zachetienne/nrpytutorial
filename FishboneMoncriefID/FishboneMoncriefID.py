@@ -74,16 +74,16 @@ def FishboneMoncriefID():
     global hm1
     hm1 = sp.exp(ln_h + mln_h_in) - 1
 
-    global rho0
-    rho0,Pressure0 = gri.register_gridfunctions("AUX",["rho0","Pressure0"])
+    global rho_initial
+    rho_initial,Pressure_initial = gri.register_gridfunctions("AUX",["rho_initial","Pressure_initial"])
 
     # Python 3.4 + sympy 1.0.0 has a serious problem taking the power here, hangs forever.
     # so instead we use the identity x^{1/y} = exp( [1/y] * log(x) )
     # Original expression (works with Python 2.7 + sympy 0.7.4.1):
-    # rho0 = ( hm1*(gamma-1)/(kappa*gamma) )**(1/(gamma - 1))
+    # rho_initial = ( hm1*(gamma-1)/(kappa*gamma) )**(1/(gamma - 1))
     # New expression (workaround):
-    rho0 = sp.exp( (1/(gamma-1)) * sp.log( hm1*(gamma-1)/(kappa*gamma) ))
-    Pressure0 = kappa * rho0**gamma
+    rho_initial = sp.exp( (1/(gamma-1)) * sp.log( hm1*(gamma-1)/(kappa*gamma) ))
+    Pressure_initial = kappa * rho_initial**gamma
     # Eq 3.3: First compute exp(-2 chi), assuming Boyer-Lindquist coordinates
     #    Eq 2.16: chi = psi - nu, so
     #    Eq 3.5 -> exp(-2 chi) = exp(-2 (psi - nu)) = exp(2 nu)/exp(2 psi)
@@ -182,8 +182,8 @@ def FishboneMoncriefID():
     A_b = par.Cparameters("REAL",thismodule,"A_b")
 
     A_3vecpotentialD = ixp.zerorank1()
-    # Set A_phi = A_b*rho0 FIXME: why is there a sign error?
-    A_3vecpotentialD[2] = -A_b * rho0
+    # Set A_phi = A_b*rho_initial FIXME: why is there a sign error?
+    A_3vecpotentialD[2] = -A_b * rho_initial
 
     BtildeU = ixp.register_gridfunctions_for_single_rank1("EVOL","BtildeU")
     # Eq 15 of https://arxiv.org/pdf/1501.07276.pdf:
@@ -284,8 +284,8 @@ def FishboneMoncriefID():
     # GRMHD variables:
     # Density and pressure:
     hm1           = hm1.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
-    rho0          = rho0.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
-    Pressure0     = Pressure0.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
+    rho_initial          = rho_initial.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
+    Pressure_initial     = Pressure_initial.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
     LorentzFactor = LorentzFactor.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
 
     # "Valencia" three-velocity
