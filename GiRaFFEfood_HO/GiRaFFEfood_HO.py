@@ -57,6 +57,7 @@ par.initialize_param(par.glb_param("char", thismodule, "IDchoice", "Exact_Wald")
 
 # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
 M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
+KerrSchild_radial_shift = par.Cparameters("REAL",thismodule,"KerrSchild_radial_shift")
 
 def GiRaFFEfood_HO():
 
@@ -77,7 +78,7 @@ def GiRaFFEfood_HO():
 
     # Step 2: Set the vectors A and E in Spherical coordinates
 
-    r     = rfm.xxSph[0]
+    r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
     theta = rfm.xxSph[1]
 
     IDchoice = par.parval_from_str("IDchoice")
@@ -123,9 +124,6 @@ def GiRaFFEfood_HO():
 
     for i in range(DIM):
         for j in range(DIM):
-            #print(j,i,drrefmetric__dx_0UDmatrix[(j,i)])
-            if ASphD[j] != 0:
-                print("Multiplying ASphD["+str(j)+"] by "+str(drrefmetric__dx_0UDmatrix[(j,i)])+" to set AD["+str(i)+"]")
             AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ASphD[j]
             ED[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ESphD[j]
 
