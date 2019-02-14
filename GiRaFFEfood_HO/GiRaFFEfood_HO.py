@@ -185,7 +185,7 @@ def GiRaFFEfood_HO():
     BD = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
-            BD[i] = gammaDD[i][j] * BU[j]
+            BD[i] += gammaDD[i][j] * BU[j]
 
     # Step 4c: Calculate the Valencia 3-velocity 
     global ValenciavU
