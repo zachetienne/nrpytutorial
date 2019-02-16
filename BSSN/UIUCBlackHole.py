@@ -1,15 +1,12 @@
 # This module sets up UIUC Black Hole initial data in terms of
 # the variables used in BSSN_RHSs.py
 
-# Author: Zachariah B. Etienne
-#         zachetie **at** gmail **dot* com
+# Authors: Zachariah B. Etienne, zachetie **at** gmail **dot** com
+#          Terrence Pierre Jacques, terrencepierrej **at** gmail **dot** com   
+#          Ian Ruchlin
 
 # ## This module sets up initial data for a merging black hole system in spherical coordinates. We can convert from spherical to any coordinate system defined in [reference_metric.py](../edit/reference_metric.py) (e.g., SinhSpherical, Cylindrical, Cartesian, etc.) using the [Exact ADM Spherical-to-BSSNCurvilinear converter module](Tutorial-ADM_Initial_Data-Converting_Exact_ADM_Spherical_or_Cartesian_to_BSSNCurvilinear.ipynb)
 # 
-# ### NRPy+ Source Code for this module: [BSSN/BrillLindquist.py](../edit/BSSN/BrillLindquist.py)
-# 
-# <font color='green'>**All quantities have been validated against the [original SENR code](https://bitbucket.org/zach_etienne/nrpy).**</font>
-
 # ### Here we set up UIUC Black Hole initial data ([Liu, Etienne, & Shapiro, PRD 80 121503, 2009](https://arxiv.org/abs/1001.4077)):
 # 
 # UIUC black holes have the advantage of finite coordinate radius in the maximal spin limit. It is therefore excellent for studying very highly spinning black holes. This module sets the UIUC black hole at the origin. 
@@ -60,32 +57,62 @@ def UIUCBlackHole(ComputeADMGlobalsOnly = False):
     # Spin per unit mass
     a = M*chi
 
+    # Defined under equation 1 in Liu, Etienne, & Shapiro (2009) https://arxiv.org/pdf/1001.4077.pdf
     # Boyer - Lindquist outer horizon
     rp = M + sp.sqrt(M**2 - a**2)
     # Boyer - Lindquist inner horizon
     rm = M - sp.sqrt(M**2 - a**2)
-
+    
     # Boyer - Lindquist radius in terms of UIUC radius
+    # Eq. 11
+    # r_{BL} = r * ( 1 + r_+ / 4r )^2
     rBL = r*(1 + rp / (4*r))**2
-
-    # UIUC definitions (Just below Eq 2)
+    
+    # Expressions found below Eq. 2
+    # Sigma = r_{BL}^2 + a^2 cos^2 theta
     SIG = rBL**2 + a**2*sp.cos(th)**2
+
+    # Delta = r_{BL}^2 - 2Mr_{BL} + a^2
     DEL = rBL**2 - 2*M*rBL + a**2
+
+    # A = (r_{BL}^2 + a^2)^2 - Delta a^2 sin^2 theta
     AA = (rBL**2 + a**2)**2 - DEL*a**2*sp.sin(th)**2
 
     # *** The ADM 3-metric in spherical basis ***
     gammaSphDD = ixp.zerorank2()
-    # Declare the nonzero components of the 3-metric (Eq 2):
+    # Declare the nonzero components of the 3-metric 
+    # (Eq. 13 of Liu, Etienne, & Shapiro, https://arxiv.org/pdf/1001.4077.pdf):
+
+    # ds^2 = Sigma (r + r_+/4)^2 / ( r^3 (r_{BL} - r_- ) * dr^2 + 
+                # Sigma d theta^2  +  (A sin^2 theta) / Sigma  *  d\phi^2
+
     gammaSphDD[0][0] = ((SIG*(r + rp/4)**2)/(r**3*(rBL - rm)))
     gammaSphDD[1][1] = SIG
     gammaSphDD[2][2] = AA/SIG*sp.sin(th)**2
 
     # *** The physical trace-free extrinsic curvature in spherical basis ***
-    # Declare the nonzero components of the extrinsic curvature (Eqs 14-15):
-    KSphDD     = ixp.zerorank2() # K_{ij} = 0 for these initial data
+    # Nonzero components of the extrinsic curvature K, given by
+    # Eq. 14 of Liu, Etienne, & Shapiro, https://arxiv.org/pdf/1001.4077.pdf:
+    KSphDD     = ixp.zerorank2()
+
+
+    # K_{r phi} = K_{phi r} = (Ma sin^2 theta) / (Sigma sqrt{A Sigma}) *
+    #     [3r^4_{BL} + 2a^2 r^2_{BL} - a^4 - a^2 (r^2_{BL} - a^2) sin^2 theta] *
+    #     (1 + r_+ / 4r) (1 / sqrt{r(r_{BL} - r_-)})
+
     KSphDD[0][2] = KSphDD[2][0] = (M*a*sp.sin(th)**2)/(SIG*sp.sqrt(AA*SIG))*\
-                    (3*rBL**4 + 2*a**2*rBL**2 - a**4- a**2*(rBL**2 - a**2)*sp.sin(th)**2)*(1 + rp/(4*r))*1/sp.sqrt(r*(rBL - rm))
-    KSphDD[1][2] = KSphDD[2][1] = -((2*a**3*M*rBL*sp.cos(th)*sp.sin(th)**3)/(SIG*sp.sqrt(AA*SIG)))*(r - rp/4)*sp.sqrt((rBL - rm)/r)
+                    (3*rBL**4 + 2*a**2*rBL**2 - a**4- a**2*(rBL**2 - a**2)*\
+                     sp.sin(th)**2)*(1 + rp/(4*r))*1/sp.sqrt(r*(rBL - rm))
+    
+    # Components of the extrinsic curvature K, given by
+    # Eq. 15 of Liu, Etienne, & Shapiro, https://arxiv.org/pdf/1001.4077.pdf:
+
+    # K_{theta phi} = K_{phi theta} = -(2a^3 Mr_{BL} cos theta sin^3 theta) / 
+    #         (Sigma sqrt{A Sigma}) x (r - r_+ / 4) sqrt{(r_{BL} - r_-) / r }
+
+    KSphDD[1][2] = KSphDD[2][1] = -((2*a**3*M*rBL*sp.cos(th)*sp.sin(th)**3)/ \
+                    (SIG*sp.sqrt(AA*SIG)))*(r - rp/4)*sp.sqrt((rBL - rm)/r)
+
 
     alphaSph = sp.sympify(1)   # We generally choose alpha = 1/psi**2 (psi = BSSN conformal factor) for these initial data
     betaSphU = ixp.zerorank1() # We generally choose \beta^i = 0 for these initial data
