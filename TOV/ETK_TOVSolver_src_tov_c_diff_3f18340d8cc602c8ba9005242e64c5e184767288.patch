@@ -1,0 +1,13 @@
+@@ -343,3 +346,12 @@ void TOV_C_Integrate_RHS(CCTK_ARGUMENTS)
+         TOV_m_1d[i]     = Surface_Mass;
+         TOV_phi_1d[i]   = 0.5 * log( 1.0 - 2.0 * Surface_Mass / TOV_r_1d[i]);
+         TOV_mbary_1d[i] = TOV_mbary_1d[TOV_Surface_Index];
++
++
++      }
++      if(i < (int)(TOV_Surface_Index*1.2) && i%5==0) {
++        // rho = pow(press / K, 1.0 / Gamma);
++        // eps = press / (Gamma - 1.0) / rho;
++        // mu  = rho * (1.0 + eps); // -> mu  = rho + press/(Gamma - 1.0) = total mass-energy density
++        printf("%.15e %.15e %.15e %.15e %.15e %.15e %.15e TOVV\n",TOV_r_1d[i],pow(TOV_press_1d[i+1]/TOV_K,1.0 / TOV_Gamma) + TOV_press_1d[i+1]/(TOV_Gamma - 1.0),
++               TOV_press_1d[i], TOV_m_1d[i], TOV_phi_1d[i],TOV_r_1d[i]/TOV_rbar_1d[i], TOV_rbar_1d[i]);
