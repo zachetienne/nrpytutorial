@@ -102,8 +102,6 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
   // First find the central interpolation stencil index:
   int idx = bisection_idx_finder(rrbar,numlines_in_file,rbar_arr);
 
-  // Do not allow the interpolation stencil to cross the star's surface!
-  const int MAX_INTERP_IDX = numlines_in_file; //Rbar_idx;
   
 #ifdef MAX
 #undef MAX
@@ -117,11 +115,15 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
 #endif
 #define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
 
+  // -= Do not allow the interpolation stencil to cross the star's surface =-
   // max index is when idxmin + (interp_stencil_size-1) = Rbar_idx
   //  -> idxmin at most can be Rbar_idx - interp_stencil_size + 1
-  idxmin = MIN(idxmin,MAX_INTERP_IDX - interp_stencil_size + 1);
-  idx = MAX(0,idx-interp_stencil_size/2-1);
-
+  if(rrbar < Rbar) {
+    idxmin = MIN(idxmin,Rbar_idx - interp_stencil_size + 1);
+  } else {
+    idxmin = MAX(idxmin,Rbar_idx+1);
+    idxmin = MIN(idxmin,numlines_in_file - interp_stencil_size + 1);
+  }
   // Now perform the Lagrange polynomial interpolation:
 
   // First set the interpolation coefficients:
@@ -153,7 +155,7 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
 
   REAL r_Schw = 0.0;
   for(int i=idxmin;i<idxmin+interp_stencil_size;i++) {
-    r_Schw  += l_i_of_r[i-idxmin] * r_Schw_arr[i];
+    r_Schw   += l_i_of_r[i-idxmin] * r_Schw_arr[i];
     *rho     += l_i_of_r[i-idxmin] * rho_arr[i];
     *P       += l_i_of_r[i-idxmin] * P_arr[i];
     *M       += l_i_of_r[i-idxmin] * M_arr[i];
@@ -221,7 +223,8 @@ int main() {
   for(int i=0;i<num_r_pts;i++) {
     REAL rrbar;
     drand48_r(&randBuffer,&rrbar);
-    rrbar *= 10.; //rbar_arr[numlines_in_file-1];
+    //rrbar *= 10.; //rbar_arr[numlines_in_file-1];
+    rrbar = rrbar*0.1 + 0.8; //rbar_arr[numlines_in_file-1];
     REAL rho,P,M,expnu,exp4phi;
     TOV_interpolate_1D(rrbar,Rbar,Rbar_idx,4,  numlines_in_file,r_Schw_arr,rho_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,rbar_arr,  &rho,&P,&M,&expnu,&exp4phi);
     printf("%e %e %e %e %e %e\n",rrbar,rho,P,M,expnu,exp4phi);
