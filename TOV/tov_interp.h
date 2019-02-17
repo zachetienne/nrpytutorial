@@ -28,7 +28,7 @@ int count_num_lines_in_file(FILE *in1Dpolytrope) {
   return numlines_in_file;
 }
 
-int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *rbar_arr,REAL *rho_arr,REAL *P_arr,REAL *M_arr,REAL *expnu_arr,REAL *exp4phi_arr) {
+int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_Schw_arr,REAL *rho_arr,REAL *P_arr,REAL *M_arr,REAL *expnu_arr,REAL *exp4phi_arr,REAL *rbar_arr) {
   char * line = NULL;
 
   size_t len = 0;
@@ -47,7 +47,7 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *rbar_arr,REAL *rho_arr,
     //     the originally defined character array, as pointed to by token.
 
     token=strtok(line, delimiters); if(token==NULL) { printf("BADDDD\n"); return 1; }
-    REAL dummy_r_Schw       = strtod(token, NULL); token = strtok( NULL, delimiters );
+    r_Schw_arr[which_line]  = strtod(token, NULL); token = strtok( NULL, delimiters );
     rho_arr[which_line]     = strtod(token, NULL); token = strtok( NULL, delimiters );
     P_arr[which_line]       = strtod(token, NULL); token = strtok( NULL, delimiters );
     M_arr[which_line]       = strtod(token, NULL); token = strtok( NULL, delimiters );
@@ -63,7 +63,7 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *rbar_arr,REAL *rho_arr,
 
 
 void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int interp_stencil_size,
-                        const int numlines_in_file,const REAL *rbar_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,const REAL *exp4phi_arr,
+                        const int numlines_in_file,const REAL *r_Schw_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,const REAL *exp4phi_arr,const REAL *rbar_arr,
                         REAL *rho,REAL *P,REAL *M,REAL *expnu,REAL *exp4phi) {
   // Find interpolation index using Bisection root-finding algorithm:
   int bisection_idx_finder(const REAL rr, const int numlines_in_file, const REAL *rbar_arr) {
@@ -151,7 +151,9 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
   *expnu = 0.0;
   *exp4phi = 0.0;
 
+  REAL r_Schw = 0.0;
   for(int i=idxmin;i<idxmin+interp_stencil_size;i++) {
+    r_Schw  += l_i_of_r[i-idxmin] * r_Schw_arr[i];
     *rho     += l_i_of_r[i-idxmin] * rho_arr[i];
     *P       += l_i_of_r[i-idxmin] * P_arr[i];
     *M       += l_i_of_r[i-idxmin] * M_arr[i];
@@ -163,6 +165,8 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
     *rho   = 0;
     *P     = 0;
     *M     = M_arr[Rbar_idx+1];
+    *expnu = 1. - 2.*(*M) / r_Schw;
+    *exp4phi = r_Schw / rrbar;
   }
 }
 
@@ -182,15 +186,16 @@ int main() {
   int numlines_in_file = count_num_lines_in_file(in1Dpolytrope);
 
   // Allocate space for all data arrays:
-  REAL *rbar_arr    = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *r_Schw_arr  = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
   REAL *rho_arr     = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
   REAL *P_arr       = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
   REAL *M_arr       = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
   REAL *expnu_arr   = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
   REAL *exp4phi_arr = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *rbar_arr    = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
 
   // Read from the data file, filling in arrays
-  if(read_datafile__set_arrays(in1Dpolytrope, rbar_arr,rho_arr,P_arr,M_arr,expnu_arr,exp4phi_arr) == 1) {
+  if(read_datafile__set_arrays(in1Dpolytrope, r_Schw_arr,rho_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,rbar_arr) == 1) {
     fprintf(stderr,"ERROR WHEN READING FILE %s!\n",filename);
     exit(1);
   }
@@ -218,17 +223,18 @@ int main() {
     drand48_r(&randBuffer,&rrbar);
     rrbar *= 10.; //rbar_arr[numlines_in_file-1];
     REAL rho,P,M,expnu,exp4phi;
-    TOV_interpolate_1D(rrbar,Rbar,Rbar_idx,4,  numlines_in_file,rbar_arr,rho_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,  &rho,&P,&M,&expnu,&exp4phi);
+    TOV_interpolate_1D(rrbar,Rbar,Rbar_idx,4,  numlines_in_file,r_Schw_arr,rho_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,rbar_arr,  &rho,&P,&M,&expnu,&exp4phi);
     printf("%e %e %e %e %e %e\n",rrbar,rho,P,M,expnu,exp4phi);
   }
 
   // Free the malloc()'s!
-  free(rbar_arr);
+  free(r_Schw_arr);
   free(rho_arr);
   free(P_arr);
   free(M_arr);
   free(expnu_arr);
   free(exp4phi_arr);
+  free(rbar_arr);
   
   return 0;
 }
