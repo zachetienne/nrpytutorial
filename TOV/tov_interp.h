@@ -168,7 +168,7 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
     *P     = 0;
     *M     = M_arr[Rbar_idx+1];
     *expnu = 1. - 2.*(*M) / r_Schw;
-    *exp4phi = r_Schw / rrbar;
+    *exp4phi = pow(r_Schw / rrbar,2.0);
   }
 }
 
