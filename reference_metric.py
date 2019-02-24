@@ -54,8 +54,8 @@ def reference_metric():
             RMAX = par.Cparameters("REAL", thismodule, ["RMAX"])
             global xxmin
             global xxmax
-            xxmin = [sp.sympify(0),sp.sympify(0),-M_PI]
-            xxmax = [         RMAX,         M_PI, M_PI]
+            xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
+            xxmax = [         RMAX,          M_PI,  M_PI]
 
             Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
             Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
@@ -63,15 +63,15 @@ def reference_metric():
         elif CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
             AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"])
     
-            xxmin = [0, 0, 0]
-            xxmax = [1, M_PI, 2*M_PI]
+            xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
+            xxmax = [sp.sympify(1),          M_PI,  M_PI]
     
             # Set SinhSpherical radial coordinate by default; overwrite later if CoordSystem == "SinhSphericalv2".
             r = AMPL * (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) / \
                        (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW))
 
             Cart_to_xx[0] = SINHW*sp.asinh(sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)*sp.sinh(1/SINHW)/AMPL)
-            Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
+            Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
             Cart_to_xx[2] = sp.atan2(Carty, Cartx)
 
             # SinhSphericalv2 adds the parameter "const_dr", which allows for a region near xx[0]=0 to have
@@ -82,7 +82,7 @@ def reference_metric():
                            (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW)) )
 
                 Cart_to_xx[0] = "NewtonRaphson"
-                Cart_to_xx[1] = "NewtonRaphson" #sp.acos(Cartz / Cart_to_xx[0])
+                Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
                 Cart_to_xx[2] = sp.atan2(Carty, Cartx)
 
         xxSph[0] = r
