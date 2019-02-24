@@ -19,7 +19,7 @@ import BSSN.T4UUmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as Tmun
 import reference_metric as rfm
 
 def TOV_ADM_T4UUmunu(ComputeADMT4UUmunuGlobalsOnly = False):
-    global Sph_r_th_ph,r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU,T4UU
+    global Sph_r_th_ph,r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU, T4UU
 
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
     r,th,ph = sp.symbols('r th ph', real=True)

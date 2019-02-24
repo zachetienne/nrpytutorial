@@ -7,7 +7,7 @@
 from outputC import *
 
 def BSSN_ID_function_string(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU):
-    returnstring = "void BSSN_ID(REAL xx0,REAL xx1,REAL xx2,REAL Cartxyz0,REAL Cartxyz1,REAL Cartxyz2,\n"
+    returnstring = "void BSSN_ID(REAL xx0,REAL xx1,REAL xx2,\n"
     returnstring += "\tREAL *hDD00,REAL *hDD01,REAL *hDD02,REAL *hDD11,REAL *hDD12,REAL *hDD22,\n"
     returnstring += "\tREAL *aDD00,REAL *aDD01,REAL *aDD02,REAL *aDD11,REAL *aDD12,REAL *aDD22,\n"
     returnstring += "\tREAL *trK,\n"
