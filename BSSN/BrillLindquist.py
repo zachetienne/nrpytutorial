@@ -36,6 +36,8 @@ import BSSN.BSSN_ID_function_string as bIDf
 # ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def BrillLindquist(ComputeADMGlobalsOnly = False):
+    global Cartxyz,gammaCartDD, KCartDD, alphaCart, betaCartU, BCartU
+
     thismodule = "Brill-Lindquist"
     BH1_posn_x,BH1_posn_y,BH1_posn_z = par.Cparameters("REAL", thismodule, ["BH1_posn_x","BH1_posn_y","BH1_posn_z"])
     BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"])
