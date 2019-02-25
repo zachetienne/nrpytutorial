@@ -179,6 +179,7 @@ def BSSN_RHSs():
                                          + rfm.ghatDDdD[i][j][k]
 
     # Step 7b: Define barred Christoffel symbol \bar{\Gamma}^{i}_{jk} = GammabarUDD[i][j][k]
+    global GammabarUDD # Needed for BSSN constraints, etc.
     GammabarUDD = ixp.zerorank3()
     for i in range(DIM):
         for k in range(DIM):
