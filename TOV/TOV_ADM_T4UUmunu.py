@@ -70,6 +70,8 @@ def TOV_ADM_T4UUmunu(ComputeADMT4UUmunuGlobalsOnly = False):
     cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU = \
         AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph,
                                                                     gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU)
-
+    sDD, sD, S, rho = \
+        AtoB.Convert_Spherical_or_Cartesian_T4UUmunu_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, T4UU)
+    
     global returnfunction
     returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
