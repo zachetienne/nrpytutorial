@@ -85,16 +85,9 @@ def BSSNConstraints():
     #  MOMENTUM CONSTRAINT
     ###############################
     ###############################
-    # Eq. 14 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf) for the momentum constraint is *allegedly* missing the
-    # term $e^{-4\phi} \bar{A}^{ik} \Delta\Gamma^j_{jk}$, which we include below:
-
-    # \mathcal{M}^i = e^{-4\phi} \left(
-    # {\underbrace {\textstyle \frac{1}{\sqrt{\bar{\gamma}}} \hat{D}_j\left(\sqrt{\bar{\gamma}}\bar{A}^{ij}\right)}_{\rm Term\ 1}} +
-    # {\underbrace {\textstyle 6 \bar{A}^{ij}\partial_j \phi}_{\rm Term\ 2}} -
-    # {\underbrace {\textstyle \frac{2}{3} \bar{\gamma}^{ij}\partial_j K}_{\rm Term\ 3}} +
-    # {\underbrace {\textstyle \bar{A}^{jk} \Delta\Gamma^i_{jk} {\color{red}{+ \bar{A}^{ik} \Delta\Gamma^j_{jk}}}}_{\rm Term\ 4}}\right)
-
-    # Let's first implement Terms 2-4 of the Momentum constraint:
+    # SEE Tutorial-BSSNConstraints.ipynb for full documentation.
+    
+    # Let's first implement Terms 2 & 3 of the Momentum constraint:
     global MU
     MU = ixp.zerorank1()
 
@@ -109,96 +102,38 @@ def BSSNConstraints():
         for j in range(DIM):
             MU[i] += -sp.Rational(2,3)*bssnrhs.gammabarUU[i][j]*trK_dD[j]
 
-    # Term 4: \bar{A}^{jk} \Delta\Gamma^i_{jk} + \bar{A}^{ik} \Delta\Gamma^j_{jk}
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                MU[i] += bssnrhs.AbarUU[j][k]*bssnrhs.DGammaUDD[i][j][k]
-                # Pending further investigation: + bssnrhs.AbarUU[i][k]*bssnrhs.DGammaUDD[j][j][k]
+    # Finally Term 1: Dbar_j Abar^{ij}
 
-    # Term 1: \frac{1}{\bar{\gamma}} \hat{D}_j ( \sqrt{\bar{\gamma}}\bar{A^{ij}} )
-
-    # \begin{align}
-    # \text{Term 1} &= \frac{1}{\sqrt{\bar{\gamma}}} \hat{D}_j\left(\sqrt{\bar{\gamma}}\bar{A}^{ij}\right)\\
-    # &= {\underbrace {\textstyle \hat{D}_j \bar{A}^{ij}}_{\rm Term\ 1a}} +
-    # {\underbrace {\textstyle \frac{1}{2} \bar{A}^{ij} \frac{\bar{\gamma}_{,j}}{\bar{\gamma}}}_{\rm Term\ 1b}}
-    # \end{align}
-    #
-    # Let's first implement Term 1a, $\hat{D}_j \bar{A}^{ij}$:
-    #
-    # Since the "up-up" tensor $\bar{A}^{ij}$ cannot be easily expressed in terms of the BSSN gridfunctions (i.e., the
-    # functions we actually sample to take derivatives), we must rewrite Term 1a in terms of derivatives of
-    # $\bar{A}_{ij}$:
-    # \begin{align}
-    # \hat{D}_j \bar{A}^{ij} &= \hat{D}_j \left(\bar{\gamma}^{i\ell}\bar{\gamma}^{jm} \bar{A}_{\ell m}\right)\\
-    # &=
-    # {\underbrace {\textstyle \bar{A}_{\ell m} \hat{D}_j \left(\bar{\gamma}^{i\ell}\bar{\gamma}^{jm}\right)}_{\rm Term\ 1a.i}} +
-    # {\underbrace {\textstyle \bar{\gamma}^{i\ell}\bar{\gamma}^{jm}\hat{D}_j \bar{A}_{\ell m}}_{\rm Term\ 1a.ii}}.
-    # \end{align}
-    #
-    # Similarly, the "up-up" tensor $\bar{\gamma}^{ij}$ cannot be easily expressed in terms of the BSSN gridfunctions,
-    # so we must express terms like $\hat{D}_j\bar{\gamma}^{i\ell}$ in terms of $\hat{D}_j \bar{\gamma}_{i\ell}$,
-    # as computed in the [BSSN RHS tutorial module (needed for $\bar{R}_{ij}$)](Tutorial-BSSNCurvilinear.ipynb).
-    # This is straightforward given the following identity:
-    # \begin{align}
-    # 0 &= \hat{D}_{k} \delta_{i}^{j} \\
-    # &= \hat{D}_{k} (\bar{\gamma}_{i l} \bar{\gamma}^{l j}) \\
-    # &= \bar{\gamma}^{l j} \hat{D}_{k} \bar{\gamma}_{i l} + \bar{\gamma}_{i l} \hat{D}_{k} \bar{\gamma}^{l j} \\
-    # \implies \bar{\gamma}_{i l} \hat{D}_{k} \bar{\gamma}^{l j} &= -\bar{\gamma}^{l j} \hat{D}_{k} \bar{\gamma}_{i l}\\
-    # \implies \bar{\gamma}^{i m} \bar{\gamma}_{i l} \hat{D}_{k} \bar{\gamma}^{l j}
-    # &= -\bar{\gamma}^{i m} \bar{\gamma}^{l j} \hat{D}_{k} \bar{\gamma}_{i l}\\
-    # \implies \hat{D}_{k} \bar{\gamma}^{m j} &= -\bar{\gamma}^{i m} \bar{\gamma}^{l j} \hat{D}_{k} \bar{\gamma}_{i l}.
-    # \end{align}
-    #
-    # Next, the covariant derivative $\hat{D}_j \bar{A}_{\ell m}$ is, by definition:
-
-    # \hat{D}_j \bar{A}_{\ell m} = \partial_j \bar{A}_{\ell m}
-    # - \hat{\Gamma}^k_{j\ell} \bar{A}_{km}
-    # - \hat{\Gamma}^k_{jm}    \bar{A}_{\ell k}.
-
-    # First we implement Term 1a.i:
-    gammabarUU_dHatD = ixp.zerorank3()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    for m in range(DIM):
-                        gammabarUU_dHatD[m][j][k] += \
-                            -bssnrhs.gammabarUU[i][m]*bssnrhs.gammabarUU[l][j]*bssnrhs.gammabarDD_dHatD[i][l][k]
-
-    # Next we implement Term 1a.ii:
-
+    # We first compute:
+    # \bar{D}_{k} \bar{A}_{i j} = \partial_{k} \bar{A}_{i j} - \bar{\Gamma}^{l}_{k i} \bar{A}_{l j} - \bar{\Gamma}^{l}_{k j} \bar{A}_{i l}
     # First define aDD_dD:
-    AbarDD_dD = ixp.zerorank3()
     aDD_dD = ixp.declarerank3("aDD_dD","sym01")
+
+    # Then define AbarDD_dD in terms of aDD_dD and other derivatives
+    AbarDD_dD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 AbarDD_dD[i][j][k] += aDD_dD[i][j][k]*rfm.ReDD[i][j] + bssnrhs.aDD[i][j]*rfm.ReDDdD[i][j][k]
 
-    # Then evaluate \hat{D}_j \bar{A}_{lm}
-    AbarDD_dHatD = ixp.zerorank3()
-    for j in range(DIM):
-        for l in range(DIM):
-            for m in range(DIM):
-                AbarDD_dHatD[l][m][j] = AbarDD_dD[l][m][j]
-                for k in range(DIM):
-                    AbarDD_dHatD[l][m][j] += -rfm.GammahatUDD[k][j][l]*bssnrhs.AbarDD[k][m]
-                    AbarDD_dHatD[l][m][j] += -rfm.GammahatUDD[k][j][m]*bssnrhs.AbarDD[l][k]
-
-
+    # Then evaluate the conformal covariant derivative \bar{D}_j \bar{A}_{lm}
+    AbarDD_dBarD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
-            for l in range(DIM):
-                for m in range(DIM):
-                    MU[i] += bssnrhs.AbarDD[l][m]*(gammabarUU_dHatD[i][l][j]*bssnrhs.gammabarUU[j][m] +
-                                                   bssnrhs.gammabarUU[i][l]*gammabarUU_dHatD[j][m][j]) # Term 1a.i
-                    MU[i] += bssnrhs.gammabarUU[i][l]*bssnrhs.gammabarUU[j][m]*AbarDD_dHatD[l][m][j]   # Term 1a.ii
+            for k in range(DIM):
+                AbarDD_dBarD[i][j][k] = AbarDD_dD[i][j][k]
+                for l in range(DIM):
+                    AbarDD_dBarD[i][j][k] += -bssnrhs.GammabarUDD[l][k][i]*bssnrhs.AbarDD[l][j]
+                    AbarDD_dBarD[i][j][k] += -bssnrhs.GammabarUDD[l][k][j]*bssnrhs.AbarDD[i][l]
 
-    # Next we implement Term 1b:
+    # We then apply two raising operators:
+    # \bar{D}_{k} \bar{A}^{i j} = gammabar^{ij} gammabar^{kl} \bar{D}_{k} \bar{A}^{k l}
+    # Contract twice with the metric to make \bar{D}_{j} \bar{A}^{ij}
     for i in range(DIM):
         for j in range(DIM):
-            MU[i] += sp.Rational(1,2)*bssnrhs.AbarUU[i][j]*bssnrhs.detgammabar_dD[j]/bssnrhs.detgammabar
+            for k in range(DIM):
+                for l in range(DIM):
+                    MU[i] += bssnrhs.gammabarUU[i][k]*bssnrhs.gammabarUU[j][l]*AbarDD_dBarD[k][l][j]
 
     # Finally, we multiply by e^{-4 phi} and the appropriate scale factor.
     for i in range(DIM):
