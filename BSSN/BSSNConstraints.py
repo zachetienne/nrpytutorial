@@ -22,19 +22,38 @@ import indexedexp as ixp
 import grid as gri
 import reference_metric as rfm
 from outputC import *
-import BSSN.BSSN_RHSs as bssnrhs
+import BSSN.BSSN_rescaled_vars as Brv
+import BSSN.BSSN_unrescaled_and_barred_vars as Bubv
+import finite_difference as fin
+import BSSN.BSSN_T4UUmunu_vars as BTmunu
 
-def BSSNConstraints():
-    # Step 2: Call BSSN_RHSs() to load needed quantities, but only
-    #         if it has not already been called; calling
-    #         BSSNConstraints() after a BSSN_RHSs() call will result
-    #         in a doubly-declared gridfunction error.
-    BSSN_RHSs_has_been_called = False
-    for i in range(len(gri.glb_gridfcs_list)):
-        if "hDD00" in gri.glb_gridfcs_list[i].name:
-            BSSN_RHSs_has_been_called = True
-    if BSSN_RHSs_has_been_called == False:
-        bssnrhs.BSSN_RHSs()
+thismodule = __name__
+
+def BSSNConstraints(add_T4UUmunu_source_terms=False):
+    # Step 0: Declare as globals all quantities computed in this function.
+    global H, MU
+
+    # Step 1: All barred quantities are defined in terms of BSSN rescaled gridfunctions,
+    #         which we declare here in case they haven't yet been declared elsewhere.
+    Brv.declare_BSSN_rescaled_gridfunctions_if_not_declared_already()
+    trK = Brv.trK
+    aDD = Brv.aDD
+
+    # Step 2: Evaluate all barred quantities in terms of BSSN rescaled gridfunctions.
+    Bubv.BSSN_barred_variables()
+    GammabarUDD = Bubv.GammabarUDD
+    gammabarUU  = Bubv.gammabarUU
+    AbarDD      = Bubv.AbarDD
+    AbarUU      = Bubv.AbarUU
+
+    Bubv.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
+    RbarDD      = Bubv.RbarDD
+
+    Bubv.phi_and_derivs()
+    phi_dD     = Bubv.phi_dD
+    exp_m4phi  = Bubv.exp_m4phi
+    phi_dBarD  = Bubv.phi_dBarD
+    phi_dBarDD = Bubv.phi_dBarDD
 
     # Step 3: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
@@ -54,19 +73,18 @@ def BSSNConstraints():
     # $$
 
     # Term 1: 2/3 K^2
-    global H
-    H = sp.Rational(2,3)*bssnrhs.trK**2
+    H = sp.Rational(2,3)*trK**2
 
     # Term 2: -A_{ij} A^{ij}
     for i in range(DIM):
         for j in range(DIM):
-            H += -bssnrhs.AbarDD[i][j]*bssnrhs.AbarUU[i][j]
+            H += -AbarDD[i][j]*AbarUU[i][j]
 
     # Term 3a: trace(Rbar)
     Rbartrace = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
-            Rbartrace += bssnrhs.gammabarUU[i][j]*bssnrhs.RbarDD[i][j]
+            Rbartrace += gammabarUU[i][j]*RbarDD[i][j]
 
     # Term 3b: -8 \bar{\gamma}^{ij} \bar{D}_i \phi \bar{D}_j \phi = -8*phi_dBar_times_phi_dBar
     # Term 3c: -8 \bar{\gamma}^{ij} \bar{D}_i \bar{D}_j \phi      = -8*phi_dBarDD_contraction
@@ -74,11 +92,19 @@ def BSSNConstraints():
     phi_dBarDD_contraction  = sp.sympify(0) # Term 3c
     for i in range(DIM):
         for j in range(DIM):
-            phi_dBar_times_phi_dBar += bssnrhs.gammabarUU[i][j]*bssnrhs.phi_dBarD[i]*bssnrhs.phi_dBarD[j]
-            phi_dBarDD_contraction  += bssnrhs.gammabarUU[i][j]*bssnrhs.phi_dBarDD[i][j]
+            phi_dBar_times_phi_dBar += gammabarUU[i][j]*phi_dBarD[i]*phi_dBarD[j]
+            phi_dBarDD_contraction  += gammabarUU[i][j]*phi_dBarDD[i][j]
 
     # Add Term 3:
-    H += bssnrhs.exp_m4phi*(Rbartrace - 8*(phi_dBar_times_phi_dBar + phi_dBarDD_contraction))
+    H += exp_m4phi*(Rbartrace - 8*(phi_dBar_times_phi_dBar + phi_dBarDD_contraction))
+
+    if add_T4UUmunu_source_terms:
+        M_PI = par.Cparameters("REAL", thismodule, "M_PI")  # M_PI is pi as defined in C
+        BTmunu.define_BSSN_T4UUmunu_rescaled_source_terms()
+        rho = BTmunu.rho
+        H += -16*M_PI*rho
+
+    # FIXME: ADD T4UUmunu SOURCE TERMS TO MOMENTUM CONSTRAINT!
 
     ###############################
     ###############################
@@ -88,19 +114,18 @@ def BSSNConstraints():
     # SEE Tutorial-BSSNConstraints.ipynb for full documentation.
     
     # Let's first implement Terms 2 & 3 of the Momentum constraint:
-    global MU
     MU = ixp.zerorank1()
 
     # Term 2: 6 A^{ij} \partial_j \phi:
     for i in range(DIM):
         for j in range(DIM):
-            MU[i] += 6*bssnrhs.AbarUU[i][j]*bssnrhs.phi_dD[j]
+            MU[i] += 6*AbarUU[i][j]*phi_dD[j]
 
     # Term 3: -2/3 \bar{\gamma}^{ij} K_{,j}
     trK_dD = ixp.declarerank1("trK_dD") # Not defined in BSSN_RHSs; only trK_dupD is defined there.
     for i in range(DIM):
         for j in range(DIM):
-            MU[i] += -sp.Rational(2,3)*bssnrhs.gammabarUU[i][j]*trK_dD[j]
+            MU[i] += -sp.Rational(2,3)*gammabarUU[i][j]*trK_dD[j]
 
     # Finally Term 1: Dbar_j Abar^{ij}
 
@@ -114,7 +139,7 @@ def BSSNConstraints():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                AbarDD_dD[i][j][k] += aDD_dD[i][j][k]*rfm.ReDD[i][j] + bssnrhs.aDD[i][j]*rfm.ReDDdD[i][j][k]
+                AbarDD_dD[i][j][k] += aDD_dD[i][j][k]*rfm.ReDD[i][j] + aDD[i][j]*rfm.ReDDdD[i][j][k]
 
     # Then evaluate the conformal covariant derivative \bar{D}_j \bar{A}_{lm}
     AbarDD_dBarD = ixp.zerorank3()
@@ -123,8 +148,8 @@ def BSSNConstraints():
             for k in range(DIM):
                 AbarDD_dBarD[i][j][k] = AbarDD_dD[i][j][k]
                 for l in range(DIM):
-                    AbarDD_dBarD[i][j][k] += -bssnrhs.GammabarUDD[l][k][i]*bssnrhs.AbarDD[l][j]
-                    AbarDD_dBarD[i][j][k] += -bssnrhs.GammabarUDD[l][k][j]*bssnrhs.AbarDD[i][l]
+                    AbarDD_dBarD[i][j][k] += -GammabarUDD[l][k][i]*AbarDD[l][j]
+                    AbarDD_dBarD[i][j][k] += -GammabarUDD[l][k][j]*AbarDD[i][l]
 
     # We then apply two raising operators:
     # \bar{D}_{k} \bar{A}^{i j} = gammabar^{ij} gammabar^{kl} \bar{D}_{k} \bar{A}^{k l}
@@ -133,8 +158,35 @@ def BSSNConstraints():
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
-                    MU[i] += bssnrhs.gammabarUU[i][k]*bssnrhs.gammabarUU[j][l]*AbarDD_dBarD[k][l][j]
+                    MU[i] += gammabarUU[i][k]*gammabarUU[j][l]*AbarDD_dBarD[k][l][j]
 
     # Finally, we multiply by e^{-4 phi} and the appropriate scale factor.
     for i in range(DIM):
-        MU[i] *= bssnrhs.exp_m4phi / rfm.ReU[i]
+        MU[i] *= exp_m4phi / rfm.ReU[i]
+
+def output_C__Hamiltonian_h(add_T4UUmunu_source_terms=False,enable_verbose=True):
+    # Calling BSSNConstraints() (defined above) computes H and MU:
+    BSSNConstraints(add_T4UUmunu_source_terms)
+
+    import time
+    start = time.time()
+    if enable_verbose:
+        print("Generating optimized C code for Hamiltonian constraint. May take a while, depending on CoordSystem.")
+    Hamiltonianstring = fin.FD_outputC("returnstring", lhrh(lhs=gri.gfaccess("aux_gfs", "H"), rhs=H),
+                                       params="outCverbose=False")
+    end = time.time()
+    if enable_verbose:
+        print("Finished in " + str(end - start) + " seconds.")
+
+    import loop as lp
+    with open("BSSN/Hamiltonian.h", "w") as file:
+        file.write(lp.loop(["i2", "i1", "i0"], ["NGHOSTS", "NGHOSTS", "NGHOSTS"],
+                           ["NGHOSTS+Nxx[2]", "NGHOSTS+Nxx[1]", "NGHOSTS+Nxx[0]"],
+                           ["1", "1", "1"], ["const REAL invdx0 = 1.0/dxx[0];\n" +
+                                             "const REAL invdx1 = 1.0/dxx[1];\n" +
+                                             "const REAL invdx2 = 1.0/dxx[2];\n" +
+                                             "#pragma omp parallel for",
+                                             "    const REAL xx2 = xx[2][i2];",
+                                             "        const REAL xx1 = xx[1][i1];"], "",
+                           "const REAL xx0 = xx[0][i0];\n" + Hamiltonianstring))
+    print("Output C implementation of Hamiltonian constraint to BSSN/Hamiltonian.h")

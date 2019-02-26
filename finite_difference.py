@@ -65,7 +65,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                    ("_ddnD" in str(var)):
                     pass
                 else:
-                    print("Error: Unregistered variable \""+str(var)+"\" in SymPy expression")
+                    print("Error: Unregistered variable \""+str(var)+"\" in SymPy expression for "+expr.lhs)
                     print("All variables in SymPy expressions passed to FD_outputC() must be registered")
                     print("in NRPy+ as either a gridfunction or Cparameter, by calling")
                     print(str(var)+" = register_gridfunctions...() (in ixp/grid) if \""+str(var)+"\" is a gridfunction, or")

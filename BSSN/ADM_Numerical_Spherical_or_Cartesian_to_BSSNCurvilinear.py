@@ -16,7 +16,7 @@ import reference_metric as rfm
 import loop as lp
 import grid as gri
 import finite_difference as fin
-import BSSN.BSSN_RHSs as bssnrhs  # The ConformalFactor parameter is used below
+import BSSN.BSSN_unrescaled_and_barred_vars as Bubv
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name, pointer_to_ID_inputs=False):
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
@@ -69,7 +69,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
             Jac_dUSphorCart_dDrfmUD[i][j] = sp.diff(r_th_ph_or_Cart_xyz_oID_xx[i], rfm.xx[j])
 
     Jac_dUrfm_dDSphorCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUSphorCart_dDrfmUD)
-
+    
     betaU = ixp.zerorank1()
     BU = ixp.zerorank1()
     gammaDD = ixp.zerorank2()
@@ -116,19 +116,19 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
                         KDD[i][j] - sp.Rational(1, 3) * gammaDD[i][j] * trK)
 
     # Step 3.3: Set the conformal factor variable $\texttt{cf}$, which is set
-    #           by the "BSSN_RHSs::ConformalFactor" parameter. For example if
+    #           by the "BSSN_unrescaled_and_barred_vars::ConformalFactor" parameter. For example if
     #           "ConformalFactor" is set to "phi", we can use Eq. 3 of
     #           [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf),
     #           which in arbitrary coordinates is written:
 
     # \phi = \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right).
 
-    # Alternatively if "BSSN_RHSs::ConformalFactor" is set to "chi", then
+    # Alternatively if "BSSN_unrescaled_and_barred_vars::ConformalFactor" is set to "chi", then
 
     # \chi = e^{-4 \phi} = \exp\left(-4 \frac{1}{12} \left(\frac{\gamma}{\bar{\gamma}}\right)\right)
     #      = \exp\left(-\frac{1}{3} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) = \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/3}.
     #
-    # Finally if "BSSN_RHSs::ConformalFactor" is set to "W", then
+    # Finally if "BSSN_unrescaled_and_barred_vars::ConformalFactor" is set to "W", then
 
     # W = e^{-2 \phi} = \exp\left(-2 \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
     # \exp\left(-\frac{1}{6} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
@@ -270,37 +270,19 @@ ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(xx0xx1xx2,other_inputs,
 
         # and then output the result to a C file using the NRPy+
         #         finite-difference C output routine.
+
         # We will need all BSSN gridfunctions to be defined, as well as
         #     expressions for gammabarDD_dD in terms of exact derivatives of
         #     the rescaling matrix and finite-difference derivatives of
-        #     hDD's.
+        #     hDD's. This functionality is provided by BSSN.BSSN_unrescaled_and_barred_vars,
+        #     which we call here to overwrite above definitions of gammabarDD,gammabarUU, etc.
+        import BSSN.BSSN_unrescaled_and_barred_vars as Bubv
+        Bubv.BSSN_barred_variables()
+        gammabarDD    = Bubv.gammabarDD
+        gammabarUU    = Bubv.gammabarUU
+        gammabarDD_dD = Bubv.gammabarDD_dD
+        GammabarUDD   = Bubv.GammabarUDD
 
-        # First reset gammabarDD and then evaluate symbolic expressions for gammabarDET:
-        # Call BSSN_RHSs() to load needed quantities, but only
-        #         if it has not already been called; calling
-        #         BSSNConstraints() after a BSSN_RHSs() call will result
-        #         in a doubly-declared gridfunction error.
-        BSSN_RHSs_has_been_called = False
-        for i in range(len(gri.glb_gridfcs_list)):
-            if "hDD00" in gri.glb_gridfcs_list[i].name:
-                BSSN_RHSs_has_been_called = True
-        if BSSN_RHSs_has_been_called == False:
-            bssnrhs.BSSN_RHSs()
-
-        gammabarDD = bssnrhs.gammabarDD
-        gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
-
-        gammabarDD_dD = bssnrhs.gammabarDD_dD
-
-        # Next compute Christoffel symbols \bar{\Gamma}^i_{jk}:
-        GammabarUDD = ixp.zerorank3()
-        for i in range(DIM):
-            for j in range(DIM):
-                for k in range(DIM):
-                    for l in range(DIM):
-                        GammabarUDD[i][j][k] += sp.Rational(1, 2) * gammabarUU[i][l] * (gammabarDD_dD[l][j][k] +
-                                                                                        gammabarDD_dD[l][k][j] -
-                                                                                        gammabarDD_dD[j][k][l])
         # Next evaluate \bar{\Lambda}^i, based on GammabarUDD above and GammahatUDD
         #       (from the reference metric):
         LambdabarU = ixp.zerorank1()
@@ -316,21 +298,21 @@ ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(xx0xx1xx2,other_inputs,
             lambdaU[i] = LambdabarU[i] / rfm.ReU[i]
 
         outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
-        lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs", "lambdaU0"), rhs=lambdaU[0]),
-                               lhrh(lhs=gri.gfaccess("in_gfs", "lambdaU1"), rhs=lambdaU[1]),
-                               lhrh(lhs=gri.gfaccess("in_gfs", "lambdaU2"), rhs=lambdaU[2])]
-        lambdaU_expressions_FDout = fin.FD_outputC("returnstring", lambdaU_expressions, outCparams)
+        lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs","lambdaU0"),rhs=lambdaU[0]),
+                               lhrh(lhs=gri.gfaccess("in_gfs","lambdaU1"),rhs=lambdaU[1]),
+                               lhrh(lhs=gri.gfaccess("in_gfs","lambdaU2"),rhs=lambdaU[2])]
+        lambdaU_expressions_FDout = fin.FD_outputC("returnstring",lambdaU_expressions, outCparams)
 
         with open("BSSN/ID_BSSN_lambdas.h", "w") as file:
             file.write("""
 void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],const REAL dxx[3],REAL *in_gfs) {\n""")
-            file.write(lp.loop(["i2", "i1", "i0"], ["NGHOSTS", "NGHOSTS", "NGHOSTS"],
-                               ["NGHOSTS+Nxx[2]", "NGHOSTS+Nxx[1]", "NGHOSTS+Nxx[0]"],
-                               ["1", "1", "1"], ["const REAL invdx0 = 1.0/dxx[0];\n" +
-                                                 "const REAL invdx1 = 1.0/dxx[1];\n" +
-                                                 "const REAL invdx2 = 1.0/dxx[2];\n" +
-                                                 "#pragma omp parallel for",
-                                                 "    const REAL xx2 = xx[2][i2];",
-                                                 "        const REAL xx1 = xx[1][i1];"], "",
-                               "const REAL xx0 = xx[0][i0];\n" + lambdaU_expressions_FDout))
+            file.write(lp.loop(["i2","i1","i0"],["NGHOSTS","NGHOSTS","NGHOSTS"],
+                               ["NGHOSTS+Nxx[2]","NGHOSTS+Nxx[1]","NGHOSTS+Nxx[0]"],
+                               ["1","1","1"],["const REAL invdx0 = 1.0/dxx[0];\n"+
+                                              "const REAL invdx1 = 1.0/dxx[1];\n"+
+                                              "const REAL invdx2 = 1.0/dxx[2];\n"+
+                                              "#pragma omp parallel for",
+                                              "    const REAL xx2 = xx[2][i2];",
+                                              "        const REAL xx1 = xx[1][i1];"],"",
+                                             "const REAL xx0 = xx[0][i0];\n"+lambdaU_expressions_FDout))
             file.write("}\n")

@@ -29,6 +29,7 @@
 import numpy as np
 import scipy.integrate as si
 import math
+import sys
 
 def TOV_Solver(outfile = "outputTOVpolytrope.txt",
                rho_baryon_central=0.129285, n_Polytrope=1.0, K_Polytrope=1.0,
@@ -128,10 +129,14 @@ def TOV_Solver(outfile = "outputTOVpolytrope.txt",
             rhoArr_np.append(rho_baryonArr_np[i] + PArr_np[i] / (gamma - 1.))
 
         #print(len(r_SchwArr_np), len(rhoArr_np), len(PArr_np), len(mArr_np), len(exp2phiArr_np))
-        np.savetxt(outfile,
-                   zip(r_SchwArr_np, rhoArr_np, PArr_np, mArr_np, exp2phiArr_np, confFactor_exp4phi_np, rbarArr_np),
-                   fmt="%.15e")
-
+        # Special thanks to Leonardo Werneck for pointing out this issue with zip()
+        if sys.version_info[0] < 3:
+            np.savetxt(outfile,zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np), 
+                       fmt="%.15e")
+        else:
+            np.savetxt(outfile,
+                       list(zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)), 
+                       fmt="%.15e")
         return R_Schw, M
 
     R_Schw_TOV, M_TOV = integrateStar(TOV_pressure(rho_baryon_central), True)

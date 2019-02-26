@@ -32,11 +32,11 @@ def WeylScalarInvariants_Cartesian():
     psi0 = psi0r + sp.I * psi0i
 
     # We declare the variants as global to access them from other codes. We will also declare them as gridfunctions.
-    global curvIr,curvIi,curvJr,curvJi,curvJ1,curvJ2,curvJ3,curvJ4
-    curvIr, curvIi, curvJr, curvJi, curvJ1, curvJ2, curvJ3, curvJ4 = gri.register_gridfunctions("AUX",["curvIr","curvIi",\
+    global curvIr,curvIi,curvJr,curvJi,J1curv,J2curv,J3curv,J4curv
+    curvIr, curvIi, curvJr, curvJi, J1curv, J2curv, J3curv, J4curv = gri.register_gridfunctions("AUX",["curvIr","curvIi",\
                                                                                                        "curvJr","curvJi",\
-                                                                                                       "curvJ1","curvJ2",\
-                                                                                                       "curvJ3","curvJ4"])
+                                                                                                       "J1curv","J2curv",\
+                                                                                                       "J3curv","J4curv"])
 
     # The equations for the real and complex parts of I and J, from arXiv:gr-qc/0407013, equations (2.2a) and (2.2b):
     # I &= 3 \psi_2^2 - 4 \psi_1 \psi_3 + \psi_4 \psi_0 \\
@@ -57,14 +57,14 @@ def WeylScalarInvariants_Cartesian():
     # These equations are based directly on those used in the Mathematica notebook that generates WeylScal4
     # (available at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src), modified so that Python can 
     # interpret them. Those equations were generated in turn using xTensor from equations B5-B8.
-    curvJ1 =-16*(3*psi2i**2-3*psi2r**2-4*psi1i*psi3i+4*psi1r*psi3r+psi0i*psi4i-psi0r*psi4r)
+    J1curv =-16*(3*psi2i**2-3*psi2r**2-4*psi1i*psi3i+4*psi1r*psi3r+psi0i*psi4i-psi0r*psi4r)
 
-    curvJ2 = 96*(-3*psi2i**2*psi2r+psi2r**3+2*psi1r*psi2i*psi3i+2*psi1i*psi2r*psi3i-psi0r*psi3i**2+\
+    J2curv = 96*(-3*psi2i**2*psi2r+psi2r**3+2*psi1r*psi2i*psi3i+2*psi1i*psi2r*psi3i-psi0r*psi3i**2+\
                 2*psi1i*psi2i*psi3r-2*psi1r*psi2r*psi3r-2*psi0i*psi3i*psi3r+psi0r*psi3r**2-\
                 2*psi1i*psi1r*psi4i+psi0r*psi2i*psi4i+psi0i*psi2r*psi4i-psi1i**2*psi4r+psi1r**2*psi4r+\
                 psi0i*psi2i*psi4r-psi0r*psi2r*psi4r)
 
-    curvJ3 = 64*(9*psi2i**4-54*psi2i**2*psi2r**2+9*psi2r**4-24*psi1i*psi2i**2*psi3i+48*psi1r*psi2i*psi2r*psi3i+\
+    J3curv = 64*(9*psi2i**4-54*psi2i**2*psi2r**2+9*psi2r**4-24*psi1i*psi2i**2*psi3i+48*psi1r*psi2i*psi2r*psi3i+\
                 24*psi1i*psi2r**2*psi3i+16*psi1i**2*psi3i**2-16*psi1r**2*psi3i**2+\
                 24*psi1r*psi2i**2*psi3r+48*psi1i*psi2i*psi2r*psi3r-24*psi1r*psi2r**2*psi3r-64*psi1i*psi1r*psi3i*psi3r-\
                 16*psi1i**2*psi3r**2+16*psi1r**2*psi3r**2+6*psi0i*psi2i**2*psi4i-12*psi0r*psi2i*psi2r*psi4i-\
@@ -74,7 +74,7 @@ def WeylScalarInvariants_Cartesian():
                 8*psi0i*psi1i*psi3r*psi4r-8*psi0r*psi1r*psi3r*psi4r-4*psi0i*psi0r*psi4i*psi4r-psi0i**2*psi4r**2+\
                 psi0r**2*psi4r**2)
 
-    curvJ4 = -640*(-15*psi2i**4*psi2r+30*psi2i**2*psi2r**3-3*psi2r**5+10*psi1r*psi2i**3*psi3i+\
+    J4curv = -640*(-15*psi2i**4*psi2r+30*psi2i**2*psi2r**3-3*psi2r**5+10*psi1r*psi2i**3*psi3i+\
                   30*psi1i*psi2i**2*psi2r*psi3i-30*psi1r*psi2i*psi2r**2*psi3i-10*psi1i*psi2r**3*psi3i-\
                   16*psi1i*psi1r*psi2i*psi3i**2-3*psi0r*psi2i**2*psi3i**2-8*psi1i**2*psi2r*psi3i**2+\
                   8*psi1r**2*psi2r*psi3i**2-6*psi0i*psi2i*psi2r*psi3i**2+3*psi0r*psi2r**2*psi3i**2+\

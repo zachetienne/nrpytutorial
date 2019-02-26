@@ -75,6 +75,7 @@ def Set_up_CurviBoundaryConditions():
             for i in range(len(auxiliary_variables_list) - 1):
                 file.write(str(aux_parity_type[i]) + ", ")
             file.write(str(aux_parity_type[len(auxiliary_variables_list) - 1]) + " };\n")
+    print("Wrote to file \"CurviBoundaryConditions/gridfunction_defines.h\"")
 
     # Step 2.B.2: Set up unit-vector dot products (=parity) for each of the 10 parity condition types
     parity = ixp.zerorank1(DIM=10)
@@ -127,6 +128,8 @@ def Set_up_CurviBoundaryConditions():
             "const REAL xxmin[3] = {" + str(rfm.xxmin[0]) + "," + str(rfm.xxmin[1]) + "," + str(rfm.xxmin[2]) + "};\n")
         file.write(
             "const REAL xxmax[3] = {" + str(rfm.xxmax[0]) + "," + str(rfm.xxmax[1]) + "," + str(rfm.xxmax[2]) + "};\n")
+    print("Wrote to file \"CurviBoundaryConditions/xxminmax.h\"")
+
     # Generic coordinate NRPy+ file output, Part 3: output the conversion from Cartesian (x,y,z) to interior/OB (x0,x1,x2)
     outputC([rfm.Cart_to_xx[0], rfm.Cart_to_xx[1], rfm.Cart_to_xx[2]],
             ["Cart_to_xx0_inbounds", "Cart_to_xx1_inbounds", "Cart_to_xx2_inbounds"],
