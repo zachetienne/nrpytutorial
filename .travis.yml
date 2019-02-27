@@ -1,25 +1,11 @@
-image: "pypy:3-slim"
-
-before_script:
-  - pip install -U virtualenv
-  - virtualenv -p /usr/local/bin/pypy3 virtpypy
-  - source virtpypy/bin/activate
-  - pip install -U pip setuptools
-  - pip install -U sympy
-  - pypy3 --version
-  - export PYTHONPATH=$PYTHONPATH:`pwd`/privatenrpy
-
-stages:
-  - test
-
-BrillLindquist_ID_test:
-  stage: test
-  script:
-  - pwd
-  - pypy3 BSSN/test/BSSN_ID_test.py
-
-BSSN_RHS_test:
-  stage: test
-  script:
-  - pypy3 BSSN/test/BSSN_RHS_test.py
-
+# from https://docs.travis-ci.com/user/languages/python/
+language: python
+python:
+  # PyPy versions
+  - "pypy3.5"
+# command to install dependencies
+install:
+  - pip install -r requirements.txt
+  - pip install .
+# command to run tests
+script: BSSN/test/run_BSSN_tests.sh
