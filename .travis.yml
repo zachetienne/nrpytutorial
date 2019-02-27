@@ -6,5 +6,7 @@ python:
 # command to install dependencies
 install:
   - pip install sympy
+# We generally don't need to install matplotlib for the test.
+#  - pip install -r requirements.txt
 # command to run tests
 script: BSSN/test/run_BSSN_tests.sh
