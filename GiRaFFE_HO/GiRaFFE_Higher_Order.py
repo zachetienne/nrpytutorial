@@ -283,7 +283,7 @@ def GiRaFFE_Higher_Order():
         smallb4U[mu] = u0b.smallb4U[mu].subs(u0b.u0,u4upperZero)
         smallb4D[mu] = u0b.smallb4D[mu].subs(u0b.u0,u4upperZero)
 
-    smallb2 = u0b.smallb2.subs(u0b.u0,u4upperZero)
+    smallb2 = u0b.smallb2etk.subs(u0b.u0,u4upperZero)
 
 
     # <a id='step5'></a>
