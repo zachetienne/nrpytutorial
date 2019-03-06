@@ -64,7 +64,7 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     gammaSphDD[0][0] = 1 + 2*M*r/rho2
 
     # gamma_{r phi} = -a*gammaDD{r r}*sin^2(theta)
-    gammaSphDD[0][2] = -a*gammaSphDD[0][0]*sp.sin(th)**2
+    gammaSphDD[0][2] = gammaSphDD[2][0] = -a*gammaSphDD[0][0]*sp.sin(th)**2
 
     #gamma_{thetatheta} = rho^2
     gammaSphDD[1][1] = rho2
@@ -95,16 +95,16 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
 
 
     # K_{r theta} = D/(AB)[8a^2*Mr*sin(theta)cos(theta)]
-    KSphDD[0][1] = D/(A*B)*(8*a*a*M*r*sp.sin(th)*sp.cos(th))
+    KSphDD[0][1] = KSphDD[1][0] = D/(A*B)*(8*a*a*M*r*sp.sin(th)*sp.cos(th))
 
     # K_{r phi} = D/A^2[-2aMsin^2(theta)(a^2cos(2theta)+a^2-2r^2)]
-    KSphDD[0][2] = D/(A*A)*(-2*a*M*sp.sin(th)**2*(a*a*sp.cos(2*th)+a*a-2*r*r))
+    KSphDD[0][2] = KSphDD[2][0] = D/(A*A)*(-2*a*M*sp.sin(th)**2*(a*a*sp.cos(2*th)+a*a-2*r*r))
 
     # K_{theta theta} = D/B[4Mr^2]
     KSphDD[1][1] = D/B*(4*M*r*r)
 
     # K_{theta phi} = D/(AB)*(-8*a^3*Mr*sin^3(theta)cos(theta))
-    KSphDD[1][2] = D/(A*B)*(-8*a**3*M*r*sp.sin(th)**3*sp.cos(th))
+    KSphDD[1][2] = KSphDD[2][1] = D/(A*B)*(-8*a**3*M*r*sp.sin(th)**3*sp.cos(th))
 
     # K_{phi phi} = D/(A^2*B)[2Mr*sin^2(theta)(a^4(M+3r)
     #   +4a^2r^2(2r-M)+4a^2r*cos(2theta)(a^2+r(M+2r))+8r^5)]
