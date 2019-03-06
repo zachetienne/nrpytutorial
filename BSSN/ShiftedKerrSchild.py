@@ -5,10 +5,9 @@
 #          Zachariah B. Etienne, zachetie **at** gmail **dot** com
 
 
-# ### NRPy+ Source Code for this module: [BSSN/BrillLindquist.py](../edit/BSSN/BrillLindquist.py)
+# ### NRPy+ Source Code for this module: [BSSN/ShiftedKerrSchild.py](../edit/BSSN/BrillLindquist.py)
 # 
-# <font color='green'>**All quantities have been validated against the [original SENR code](https://bitbucket.org/zach_etienne/nrpy).**</font>
-
+# WARNING: This module has not yet undergone code testing.
 
 # **Inputs for initial data**:
 # 
@@ -39,8 +38,7 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     par.set_parval_from_str("grid::DIM",DIM)
 
     # Input parameters:
-    M = par.Cparameters("REAL", thismodule, ["M"])
-    a = par.Cparameters("REAL", thismodule, ["a"])
+    M, a = par.Cparameters("REAL", thismodule, ["M", "a"])
 
     # Auxiliary variables:
     rho2 = sp.symbols('rho2', real=True)
@@ -51,25 +49,27 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     # alpha = 1/sqrt{1 + Mr/rho^2}
     alphaSph = 1/(sp.sqrt(1 + 2*M*r/rho2))
 
+    # Initialize the shift vector, \beta^i, to zero.
     betaSphU = ixp.zerorank1()
     #beta^r = alpha^2*2Mr/rho^2
     betaSphU[0] = alphaSph*alphaSph*2*M*r/rho2
 
-    # beta^{theta} = beta^{phi} = gamma_{r theta} = gamma_{theta phi}
+    # Time derivative of shift vector beta^i, B^i, is zero.
     BSphU = ixp.zerorank1()
 
+    # Initialize \gamma_{ij} to zero.
     gammaSphDD = ixp.zerorank2()
     
-    #gammaDDrr = 1 +2Mr/rho^2
+    #gamma_{rr} = 1 +2Mr/rho^2
     gammaSphDD[0][0] = 1 + 2*M*r/rho2
 
-    # gammaDD{r phi} = -a*gammaDD{r r}*sin^2(theta)
+    # gamma_{r phi} = -a*gammaDD{r r}*sin^2(theta)
     gammaSphDD[0][2] = -a*gammaSphDD[0][0]*sp.sin(th)**2
 
-    #gammaDDthetatheta = rho^2
+    #gamma_{thetatheta} = rho^2
     gammaSphDD[1][1] = rho2
 
-    # gammaDD{phi phi} = (r^2 + a^2 + 2Mr/rho^2*a^2*sin^2(theta))*sin^2(theta)
+    # gamma_{phi phi} = (r^2 + a^2 + 2Mr/rho^2*a^2*sin^2(theta))*sin^2(theta)
     gammaSphDD[2][2] = (r*r + a*a + 2*M*r*a*a*sp.sin(th)**2/rho2)*sp.sin(th)**2
     
     # *** Define Useful Quantities A, B, D ***
