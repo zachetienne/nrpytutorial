@@ -62,11 +62,11 @@ def GiRaFFEfood_HO_Aligned_Rotator():
     r     = rfm.xxSph[0]
     varpi = sp.sqrt(rfm.xxCart[0]**2 + rfm.xxCart[1]**2)
 
-    mu = B_p_aligned_rotator * R_NS_aligned_rotator / 2
+    mu = B_p_aligned_rotator * R_NS_aligned_rotator**3 / 2
 
     ASphD = ixp.zerorank1()
 
-    ASphD[2] = mu * varpi / (r**3) # The other components were already declared to be 0.
+    ASphD[2] = mu * varpi**2 / (r**3) # The other components were already declared to be 0.
 
 
     # <a id='step3'></a>
