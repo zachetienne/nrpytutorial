@@ -15,7 +15,9 @@
 % ((* endblock Xbibliography *))
 
 ((* block commands *))
-    % Prevent overflowing lines due to hard-to-break entities
+% Start the section counter at -1, so the Table of Contents is Section 0
+   \setcounter{section}{-2}
+% Prevent overflowing lines due to hard-to-break entities
     \sloppy 
     % Setup hyperref package
     \hypersetup{
