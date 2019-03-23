@@ -26,7 +26,13 @@ def declare_BSSN_gridfunctions_if_not_declared_already():
     #   If so, do not register the gridfunctions again!
     for i in range(len(gri.glb_gridfcs_list)):
         if "hDD00" in gri.glb_gridfcs_list[i].name:
-            return
+            hDD = ixp.declarerank2("hDD", "sym01")
+            aDD = ixp.declarerank2("aDD", "sym01")
+            lambdaU = ixp.declarerank1("lambdaU")
+            vetU = ixp.declarerank1("vetU")
+            betU = ixp.declarerank1("betU")
+            trK, cf, alpha = sp.symbols('trK cf alpha')
+            return hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha
 
     # Step 2.b: Register indexed quantities, using ixp.register_... functions
     hDD = ixp.register_gridfunctions_for_single_rank2("EVOL", "hDD", "sym01")
@@ -38,6 +44,8 @@ def declare_BSSN_gridfunctions_if_not_declared_already():
     # Step 2.c: Register scalar quantities, using gri.register_gridfunctions()
     trK, cf, alpha = gri.register_gridfunctions("EVOL", ["trK", "cf", "alpha"])
 
+    return hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha
+
 # Step 3: Define all basic conformal BSSN tensors
 #        gammabarDD,AbarDD,LambarU,betaU,BU
 #        in terms of BSSN gridfunctions.
@@ -46,8 +54,8 @@ def BSSN_basic_tensors():
     # Step 3.a: Declare as globals all variables that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global gammabarDD,AbarDD,LambarU,betaU,BU
-    declare_BSSN_gridfunctions_if_not_declared_already()
+    global gammabarDD,AbarDD,LambdabarU,betaU,BU
+    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     # Step 3.a.i: gammabarDD and AbarDD:
@@ -76,7 +84,7 @@ def gammabar__inverse_and_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global gammabarUU, gammabarDD_dD, gammabarDD_dupD, GammabarUDD
-    declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     # Step 4.a.i: gammabarUU:
@@ -133,7 +141,7 @@ def detgammabar_and_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global detgammabar,detgammabar_dD,detgammabar_dDD
-    declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     detgbarOverdetghat = sp.sympify(1)
@@ -172,7 +180,7 @@ def AbarUU_AbarUD_trAbar():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global AbarUU,AbarUD,trAbar
-    declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     # Define AbarDD and gammabarDD in terms of BSSN gridfunctions
@@ -212,7 +220,7 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global RbarDD,DGammaUDD,gammabarDD_dHatD,DGammaU
-    declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
     # GammabarUDD is used below, defined in
     #    gammabar__inverse_and_derivs()
@@ -369,7 +377,7 @@ def betaU_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global betaU_dD,betaU_dupD,betaU_dDD
-    declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     # Step 8.ii: Compute the unrescaled shift vector beta^i = ReU[i]*vet^i
@@ -396,7 +404,7 @@ def phi_and_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global phi_dD,phi_dupD,phi_dDD,exp_m4phi,phi_dBarD,phi_dBarDD
-    declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     # GammabarUDD is used below, defined in
