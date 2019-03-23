@@ -31,7 +31,7 @@ def declare_BSSN_gridfunctions_if_not_declared_already():
             lambdaU = ixp.declarerank1("lambdaU")
             vetU = ixp.declarerank1("vetU")
             betU = ixp.declarerank1("betU")
-            trK, cf, alpha = sp.symbols('trK cf alpha')
+            trK, cf, alpha = sp.symbols('trK cf alpha', real=True)
             return hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha
 
     # Step 2.b: Register indexed quantities, using ixp.register_... functions
