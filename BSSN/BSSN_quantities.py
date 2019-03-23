@@ -86,6 +86,8 @@ def gammabar__inverse_and_derivs():
     global gammabarUU, gammabarDD_dD, gammabarDD_dupD, GammabarUDD
     hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
+    # This function needs gammabarDD, defined in BSSN_basic_tensors()
+    BSSN_basic_tensors()
 
     # Step 4.a.i: gammabarUU:
     gammabarUU, dummydet = ixp.symm_matrix_inverter3x3(gammabarDD)
