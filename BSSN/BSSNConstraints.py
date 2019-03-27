@@ -190,3 +190,33 @@ def output_C__Hamiltonian_h(add_T4UUmunu_source_terms=False,enable_verbose=True)
                                              "        const REAL xx1 = xx[1][i1];"], "",
                            "const REAL xx0 = xx[0][i0];\n" + Hamiltonianstring))
     print("Output C implementation of Hamiltonian constraint to BSSN/Hamiltonian.h")
+    
+# WARNING: THIS PYTHON FUNCTION IS UNTESTED.
+def output_C__MomentumConstraint_h(add_T4UUmunu_source_terms=False,enable_verbose=True):
+    # Calling BSSNConstraints() (defined above) computes H and MU:
+    BSSNConstraints(add_T4UUmunu_source_terms)
+    print("ERROR: output_C__MomentumConstraint_h() is UNTESTED CODE. PLEASE REMOVE THIS ERROR WHEN YOU ARE DEBUGGING IT."); exit(1)
+    import time
+    start = time.time()
+    if enable_verbose:
+        print("Generating optimized C code for Momentum constraint. May take a while, depending on CoordSystem.")
+    MomentumConstraintString = fin.FD_outputC("returnstring", [lhrh(lhs=gri.gfaccess("aux_gfs", "MU0"), rhs=MU[0]),
+                                                               lhrh(lhs=gri.gfaccess("aux_gfs", "MU1"), rhs=MU[1]),
+                                                               lhrh(lhs=gri.gfaccess("aux_gfs", "MU2"), rhs=MU[2])],
+                                               params="outCverbose=False")
+    end = time.time()
+    if enable_verbose:
+        print("Finished in " + str(end - start) + " seconds.")
+
+    import loop as lp
+    with open("BSSN/MomentumConstraint.h", "w") as file:
+        file.write(lp.loop(["i2", "i1", "i0"], ["NGHOSTS", "NGHOSTS", "NGHOSTS"],
+                           ["NGHOSTS+Nxx[2]", "NGHOSTS+Nxx[1]", "NGHOSTS+Nxx[0]"],
+                           ["1", "1", "1"], ["const REAL invdx0 = 1.0/dxx[0];\n" +
+                                             "const REAL invdx1 = 1.0/dxx[1];\n" +
+                                             "const REAL invdx2 = 1.0/dxx[2];\n" +
+                                             "#pragma omp parallel for",
+                                             "    const REAL xx2 = xx[2][i2];",
+                                             "        const REAL xx1 = xx[1][i1];"], "",
+                           "const REAL xx0 = xx[0][i0];\n" + MomentumConstraintString))
+    print("Output C implementation of Momentum constraint to BSSN/MomentumConstraint.h")
