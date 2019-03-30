@@ -1,8 +1,7 @@
-# As documented in the NRPy+
+# As documented in the NRPy+ tutorial module
 #   Tutorial-BSSN_time_evolution-BSSN_RHSs.ipynb,
-#   this module will declare and set the right-hand sides (RHSs) of the
-#   time evolution equations in the BSSN formulation of Einstein's
-#   equations.
+#   this module will construct the right-hand sides (RHSs)
+#   expressions of the BSSN time evolution equations.
 #
 # Time-evolution equations for the BSSN gauge conditions are
 #   specified in the BSSN_gauge_RHSs module and documented in
