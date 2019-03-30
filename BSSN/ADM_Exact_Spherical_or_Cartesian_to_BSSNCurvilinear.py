@@ -12,7 +12,7 @@ import NRPy_param_funcs as par
 from outputC import *
 import indexedexp as ixp
 import reference_metric as rfm
-import BSSN.BSSN_RHSs as bssnrhs # The ConformalFactor parameter is used below
+import BSSN.BSSN_quantities as Bq # The ConformalFactor parameter is used below
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_th_ph_or_Cart_xyz,
         gammaDD_inSphorCart, KDD_inSphorCart, alpha_inSphorCart, betaU_inSphorCart, BU_inSphorCart):
@@ -173,19 +173,19 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
 
 
     # Step 3.4: Set the conformal factor variable $\texttt{cf}$, which is set 
-    #           by the "BSSN_RHSs::ConformalFactor" parameter. For example if 
+    #           by the "BSSN_quantities::ConformalFactor" parameter. For example if 
     #           "ConformalFactor" is set to "phi", we can use Eq. 3 of 
     #           [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf), 
     #           which in arbitrary coordinates is written:
 
     # \phi = \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right).
 
-    # Alternatively if "BSSN_RHSs::ConformalFactor" is set to "chi", then
+    # Alternatively if "BSSN_quantities::ConformalFactor" is set to "chi", then
 
     # \chi = e^{-4 \phi} = \exp\left(-4 \frac{1}{12} \left(\frac{\gamma}{\bar{\gamma}}\right)\right)
     #      = \exp\left(-\frac{1}{3} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) = \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/3}.
     #
-    # Finally if "BSSN_RHSs::ConformalFactor" is set to "W", then
+    # Finally if "BSSN_quantities::ConformalFactor" is set to "W", then
 
     # W = e^{-2 \phi} = \exp\left(-2 \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
     # \exp\left(-\frac{1}{6} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =

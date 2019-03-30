@@ -29,6 +29,7 @@ import BSSN.BSSN_RHSs_new as Brhs
 
 # Step 1.c: Declare/initialize parameters for this module
 thismodule = __name__
+par.initialize_param(par.glb_param("char", thismodule, "LapseEvolutionOption", "OnePlusLog"))
 par.initialize_param(par.glb_param("char", thismodule, "ShiftEvolutionOption", "GammaDriving2ndOrder_Covariant"))
 
 def BSSN_gauge_RHSs():
@@ -52,18 +53,42 @@ def BSSN_gauge_RHSs():
     # Declare BSSN_RHSs (excluding the time evolution equations for the gauge conditions)
     Brhs.BSSN_RHSs()
 
-    # Step 2: \partial_t \alpha = \beta^i \alpha_{,i} - 2*\alpha*K
+    # Step 2.a: The 1+log lapse condition:
+    #   \partial_t \alpha = \beta^i \alpha_{,i} - 2*\alpha*K
     # First import expressions from BSSN_quantities
-    alpha = Bq.alpha
+    cf = Bq.cf
     trK = Bq.trK
+    alpha = Bq.alpha
     betaU = Bq.betaU
 
-    # Define needed quantities
+    # Implement the 1+log lapse condition
     global alpha_rhs
-    alpha_rhs = -2 * alpha * trK
-    alpha_dupD = ixp.declarerank1("alpha_dupD")
-    for i in range(DIM):
-        alpha_rhs += betaU[i] * alpha_dupD[i]
+    alpha_rhs = sp.sympify(0)
+    if par.parval_from_str(thismodule + "::LapseEvolutionOption") == "OnePlusLog":
+        alpha_rhs = -2 * alpha * trK
+        alpha_dupD = ixp.declarerank1("alpha_dupD")
+        for i in range(DIM):
+            alpha_rhs += betaU[i] * alpha_dupD[i]
+
+    # Implement the harmonic slicing lapse condition
+    elif par.parval_from_str(thismodule + "::LapseEvolutionOption") == "HarmonicSlicing":
+        if par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "W":
+            alpha_rhs = -3 * cf ** (-4) * Brhs.cf_rhs
+        elif par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "phi":
+            alpha_rhs = 6 * sp.exp(6 * cf) * Brhs.cf_rhs
+        else:
+            print("Error LapseEvolutionOption==HarmonicSlicing unsupported for ConformalFactor!=(W or phi)")
+            exit(1)
+
+    # Step 2.c: Frozen lapse
+    #    \partial_t \alpha = 0
+    elif par.parval_from_str(thismodule + "::LapseEvolutionOption") == "Frozen":
+        alpha_rhs = sp.sympify(0)
+
+    else:
+        print("Error: "+thismodule + "::LapseEvolutionOption == "+
+              par.parval_from_str(thismodule + "::LapseEvolutionOption")+" not supported!")
+        exit(1)
 
     # Step 3.a: Set \partial_t \beta^i
     # First import expressions from BSSN_quantities

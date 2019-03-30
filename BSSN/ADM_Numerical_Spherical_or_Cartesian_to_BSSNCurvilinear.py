@@ -16,7 +16,7 @@ import reference_metric as rfm
 import loop as lp
 import grid as gri
 import finite_difference as fin
-import BSSN.BSSN_unrescaled_and_barred_vars as Bubv
+import BSSN.BSSN_quantities as Bq
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name, pointer_to_ID_inputs=False):
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
@@ -276,12 +276,9 @@ ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(xx0xx1xx2,other_inputs,
         #     the rescaling matrix and finite-difference derivatives of
         #     hDD's. This functionality is provided by BSSN.BSSN_unrescaled_and_barred_vars,
         #     which we call here to overwrite above definitions of gammabarDD,gammabarUU, etc.
-        import BSSN.BSSN_unrescaled_and_barred_vars as Bubv
-        Bubv.BSSN_barred_variables()
-        gammabarDD    = Bubv.gammabarDD
-        gammabarUU    = Bubv.gammabarUU
-        gammabarDD_dD = Bubv.gammabarDD_dD
-        GammabarUDD   = Bubv.GammabarUDD
+        Bq.gammabar__inverse_and_derivs() # Provides gammabarUU and GammabarUDD
+        gammabarUU    = Bq.gammabarUU
+        GammabarUDD   = Bq.GammabarUDD
 
         # Next evaluate \bar{\Lambda}^i, based on GammabarUDD above and GammahatUDD
         #       (from the reference metric):

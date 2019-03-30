@@ -95,7 +95,7 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
     #  MOMENTUM CONSTRAINT
     ###############################
     ###############################
-    # SEE Tutorial-BSSNConstraints.ipynb for full documentation.
+    # SEE Tutorial-BSSN_constraints.ipynb for full documentation.
     global MU
     MU = ixp.zerorank1()
 
@@ -143,7 +143,7 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
 
 
 def output_C__Hamiltonian_h(add_T4UUmunu_source_terms=False, enable_verbose=True):
-    # Calling BSSNConstraints() (defined above) computes H and MU:
+    # Calling BSSN_constraints() (defined above) computes H and MU:
     BSSN_constraints(add_T4UUmunu_source_terms)
 
     import time
@@ -172,7 +172,7 @@ def output_C__Hamiltonian_h(add_T4UUmunu_source_terms=False, enable_verbose=True
 
 # WARNING: THIS PYTHON FUNCTION IS UNTESTED.
 def output_C__MomentumConstraint_h(add_T4UUmunu_source_terms=False, enable_verbose=True):
-    # Calling BSSNConstraints() (defined above) computes H and MU:
+    # Calling BSSN_constraints() (defined above) computes H and MU:
     BSSN_constraints(add_T4UUmunu_source_terms)
     print(
         "ERROR: output_C__MomentumConstraint_h() is UNTESTED CODE. PLEASE REMOVE THIS ERROR WHEN YOU ARE DEBUGGING IT.")

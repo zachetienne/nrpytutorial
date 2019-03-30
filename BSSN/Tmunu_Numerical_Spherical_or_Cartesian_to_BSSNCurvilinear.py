@@ -364,18 +364,6 @@ ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(xx0xx1xx2,other_inputs,
         #     the rescaling matrix and finite-difference derivatives of
         #     hDD's.
 
-        # First reset gammabarDD and then evaluate symbolic expressions for gammabarDET:
-        # Call BSSN_RHSs() to load needed quantities, but only
-        #         if it has not already been called; calling
-        #         BSSNConstraints() after a BSSN_RHSs() call will result
-        #         in a doubly-declared gridfunction error.
-        BSSN_RHSs_has_been_called = False
-        for i in range(len(gri.glb_gridfcs_list)):
-            if "hDD00" in gri.glb_gridfcs_list[i].name:
-                BSSN_RHSs_has_been_called = True
-        if BSSN_RHSs_has_been_called == False:
-            bssnrhs.BSSN_RHSs()
-
         gammabarDD = bssnrhs.gammabarDD
         gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
 
