@@ -222,12 +222,14 @@ def BSSN_RHSs():
 
     # Step 6.a: Term 1 of \partial_t \bar{\Lambda}^i: \beta^k \partial_k \bar{\Lambda}^i - \partial_k \beta^i \bar{\Lambda}^k
     # First we declare \bar{\Lambda}^i and \bar{\Lambda}^i_{,j} in terms of \lambda^i and \lambda^i_{,j}
+    global LambdabarU_dupD # Used on the RHS of the Gamma-driving shift conditions
     LambdabarU_dupD = ixp.zerorank2()
     lambdaU_dupD = ixp.declarerank2("lambdaU_dupD", "nosym")
     for i in range(DIM):
         for j in range(DIM):
             LambdabarU_dupD[i][j] = lambdaU_dupD[i][j] * rfm.ReU[i] + lambdaU[i] * rfm.ReUdD[i][j]
 
+    global Lambdabar_rhsU # Used on the RHS of the Gamma-driving shift conditions
     Lambdabar_rhsU = ixp.zerorank1()
     for i in range(DIM):
         for k in range(DIM):
