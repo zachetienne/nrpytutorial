@@ -206,7 +206,7 @@ def AbarUU_AbarUD_trAbar():
         for j in range(DIM):
             for k in range(DIM):
                 # Abar^i_j = gammabar^{ik} Abar_{kj}
-                AbarUU[i][j] += gammabarUU[i][k] * AbarDD[k][j]
+                AbarUD[i][j] += gammabarUU[i][k] * AbarDD[k][j]
 
     # Step 6.iii: Compute Abar^k_k = trace of Abar:
     trAbar = sp.sympify(0)
