@@ -73,7 +73,7 @@ def BSSN_gauge_RHSs():
     # Define needed quantities
     beta_rhsU = ixp.zerorank1()
     B_rhsU = ixp.zerorank1()
-    if par.parval_from_str("BSSN_gauge_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
+    if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
         # Step 3.a.i: Compute right-hand side of beta^i
         # *  \partial_t \beta^i = \beta^j \beta^i_{,j} + B^i
         for i in range(DIM):
@@ -106,7 +106,7 @@ def BSSN_gauge_RHSs():
             for j in range(DIM):
                 B_rhsU[i] += betaU[j] * BU_dupD[i][j]
 
-    if par.parval_from_str("BSSN_gauge_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+    if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
         # Step 14 Option 2: \partial_t \beta^i = \left[\beta^j \bar{D}_j \beta^i\right] + B^{i}
         # First we need GammabarUDD, defined in Bq.gammabar__inverse_and_derivs()
         Bq.gammabar__inverse_and_derivs()
@@ -126,7 +126,7 @@ def BSSN_gauge_RHSs():
         for i in range(DIM):
             beta_rhsU[i] += BU[i]
 
-    if par.parval_from_str("BSSN_gauge_RHSs::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+    if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
         # Step 15: Covariant option:
         #  \partial_t B^i = \beta^j \bar{D}_j B^i
         #               + \frac{3}{4} ( \partial_t \bar{\Lambda}^{i} - \beta^j \bar{D}_j \bar{\Lambda}^{i} )

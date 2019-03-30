@@ -1,7 +1,8 @@
 import unittest
 import sympy as sp
 import NRPy_param_funcs as par
-import BSSN.BSSN_RHSs as rhs
+import BSSN.BSSN_RHSs_new as rhs
+import BSSN.BSSN_gauge_RHSs as gaugerhs
 import hashlib
 import sys
 
@@ -13,11 +14,12 @@ def get_md5sum(sympy_expr):
     sys.exit(1)
 
 class TestStringMethods(unittest.TestCase):
-    par.set_parval_from_str("BSSN.BSSN_RHSs::ShiftEvolutionOption", "GammaDriving2ndOrder_Covariant")
+    par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::ShiftEvolutionOption", "GammaDriving2ndOrder_Covariant")
     rhs.BSSN_RHSs()
+    gaugerhs.BSSN_gauge_RHSs()
 
     def test_BSSN_RHSs_scalars(self):
-        everyscalar = rhs.alpha_rhs + rhs.cf_rhs + rhs.trK_rhs
+        everyscalar = gaugerhs.alpha_rhs + rhs.cf_rhs + rhs.trK_rhs
         md5sum = get_md5sum(everyscalar)
 #        print(md5sum)
         self.assertEqual(md5sum, 'b7b76505a53a38a507f45417857ebb7c')
@@ -25,7 +27,7 @@ class TestStringMethods(unittest.TestCase):
     def test_BSSN_RHSs_vectors(self):
         everyvector = sp.sympify(0)
         for i in range(3):
-            everyvector += rhs.bet_rhsU[i] + rhs.vet_rhsU[i] + rhs.lambda_rhsU[i]
+            everyvector += gaugerhs.bet_rhsU[i] + gaugerhs.vet_rhsU[i] + rhs.lambda_rhsU[i]
         md5sum = get_md5sum(everyvector)
 #        print("vector: ",md5sum)
         self.assertEqual(md5sum, '24b47058967ebe5501790f3d813d6c84')
