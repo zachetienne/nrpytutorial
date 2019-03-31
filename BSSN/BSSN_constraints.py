@@ -38,7 +38,7 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
     Bq.declare_BSSN_gridfunctions_if_not_declared_already()  # Sets trK
     Bq.BSSN_basic_tensors()  # Sets AbarDD
     Bq.gammabar__inverse_and_derivs()  # Sets gammabarUU
-    Bq.AbarUU_AbarUD_trAbar()  # Sets AbarUU
+    Bq.AbarUU_AbarUD_trAbar_AbarDD_dD()  # Sets AbarUU and AbarDD_dD
     Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()  # Sets RbarDD
     Bq.phi_and_derivs()  # Sets phi_dBarD & phi_dBarDD
 
@@ -113,19 +113,12 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
     # First define aDD_dD:
     aDD_dD = ixp.declarerank3("aDD_dD", "sym01")
 
-    # Then define AbarDD_dD in terms of aDD_dD and other derivatives
-    AbarDD_dD = ixp.zerorank3()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                AbarDD_dD[i][j][k] += aDD_dD[i][j][k] * rfm.ReDD[i][j] + Bq.aDD[i][j] * rfm.ReDDdD[i][j][k]
-
     # Then evaluate the conformal covariant derivative \bar{D}_j \bar{A}_{lm}
     AbarDD_dBarD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                AbarDD_dBarD[i][j][k] = AbarDD_dD[i][j][k]
+                AbarDD_dBarD[i][j][k] = Bq.AbarDD_dD[i][j][k]
                 for l in range(DIM):
                     AbarDD_dBarD[i][j][k] += -Bq.GammabarUDD[l][k][i] * Bq.AbarDD[l][j]
                     AbarDD_dBarD[i][j][k] += -Bq.GammabarUDD[l][k][j] * Bq.AbarDD[i][l]

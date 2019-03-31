@@ -83,7 +83,7 @@ def gammabar__inverse_and_derivs():
     # Step 4.a: Declare as globals all expressions that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global gammabarUU, gammabarDD_dD, gammabarDD_dupD, GammabarUDD
+    global gammabarUU, gammabarDD_dD, gammabarDD_dupD, gammabarDD_dDD, GammabarUDD
     hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
     # This function needs gammabarDD, defined in BSSN_basic_tensors()
@@ -177,11 +177,11 @@ def detgammabar_and_derivs():
 # Step 6: Quantities related to conformal traceless
 #         extrinsic curvature AbarDD:
 #         AbarUU, AbarUD, and trAbar
-def AbarUU_AbarUD_trAbar():
+def AbarUU_AbarUD_trAbar_AbarDD_dD():
     # Step 6: Declare as globals all expressions that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global AbarUU,AbarUD,trAbar
+    global AbarUU,AbarUD,trAbar,AbarDD_dD,AbarDD_dupD
     hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
@@ -214,6 +214,17 @@ def AbarUU_AbarUD_trAbar():
         for j in range(DIM):
             # Abar^k_k = gammabar^{kj} Abar_{jk}
             trAbar += gammabarUU[k][j] * AbarDD[j][k]
+            
+    # Step 6.iv: Compute Abar_{ij,k}
+    AbarDD_dD = ixp.zerorank3()
+    AbarDD_dupD = ixp.zerorank3()
+    aDD_dD   = ixp.declarerank3("aDD_dD"  ,"sym01")
+    aDD_dupD = ixp.declarerank3("aDD_dupD","sym01")
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                AbarDD_dupD[i][j][k] = rfm.ReDDdD[i][j][k]*aDD[i][j] + rfm.ReDD[i][j]*aDD_dupD[i][j][k]
+                AbarDD_dD[i][j][k]   = rfm.ReDDdD[i][j][k]*aDD[i][j] + rfm.ReDD[i][j]*aDD_dD[  i][j][k]
 
 # Step 7: The conformal ("barred") Ricci tensor RbarDD
 #         and associated quantities

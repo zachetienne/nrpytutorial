@@ -67,7 +67,7 @@ def BSSN_RHSs():
 
     # Step 2.b.i: First import \bar{A}_{ij} = AbarDD[i][j], and its contraction trAbar = \bar{A}^k_k
     #           from BSSN.BSSN_quantities
-    Bq.AbarUU_AbarUD_trAbar()
+    Bq.AbarUU_AbarUD_trAbar_AbarDD_dD()
     trAbar = Bq.trAbar
 
     # Step 2.b.ii: Import detgammabar quantities from BSSN.BSSN_quantities:
@@ -95,13 +95,8 @@ def BSSN_RHSs():
     # Step 3.a: First term of \partial_t \bar{A}_{i j}:
     # \beta^k \partial_k \bar{A}_{ij} + \partial_i \beta^k \bar{A}_{kj} + \partial_j \beta^k \bar{A}_{ik}
 
-    # First define aDD_dupD:
-    AbarDD_dupD = ixp.zerorank3()
-    aDD_dupD = ixp.declarerank3("aDD_dupD", "sym01")
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                AbarDD_dupD[i][j][k] += aDD_dupD[i][j][k] * rfm.ReDD[i][j] + aDD[i][j] * rfm.ReDDdD[i][j][k]
+    # First define AbarDD_dupD:
+    AbarDD_dupD = Bq.AbarDD_dupD # From Bq.AbarUU_AbarUD_trAbar_AbarDD_dD()
 
     Abar_rhsDD = ixp.zerorank2()
     for i in range(DIM):
