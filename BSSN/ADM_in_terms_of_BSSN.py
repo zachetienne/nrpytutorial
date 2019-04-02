@@ -15,7 +15,7 @@ import finite_difference as fin
 import reference_metric as rfm
 
 def ADM_in_terms_of_BSSN():
-    global gammaDD, gammaDDdD, gammaDDdDD, KDD, KDDdD
+    global gammaDD, gammaDDdD, gammaDDdDD, gammaUU, GammaUDD, KDD, KDDdD
     # Step 1.c: Given the chosen coordinate system, set up
     #           corresponding reference metric and needed
     #           reference metric quantities
@@ -102,6 +102,19 @@ def ADM_in_terms_of_BSSN():
                                              exp4phidD[l] * gammabarDD_dD[i][j][k] + \
                                              exp4phi * gammabarDD_dDD[i][j][k][l]
 
+    # Step 2.c: 3-Christoffel symbols associated with ADM 3-metric gammaDD
+    # Step 2.c.i: First compute the inverse 3-metric gammaUU:
+    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+
+    GammaUDD = ixp.zerorank3()
+
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                for l in range(DIM):
+                    GammaUDD[i][j][k] += sp.Rational(1,2)*gammaUU[i][l]* \
+                                    (gammaDDdD[l][j][k] + gammaDDdD[l][k][j] - gammaDDdD[j][k][l])
+                    
     # Step 3: Define ADM extrinsic curvature KDD and
     #         its first spatial derivatives KDDdD
     #         in terms of BSSN quantities
