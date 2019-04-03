@@ -15,7 +15,7 @@ import finite_difference as fin
 import reference_metric as rfm
 
 def ADM_in_terms_of_BSSN():
-    global gammaDD, gammaDDdD, gammaDDdDD, gammaUU, GammaUDD, KDD, KDDdD
+    global gammaDD, gammaDDdD, gammaDDdDD, gammaUU, detgamma, GammaUDD, KDD, KDDdD
     # Step 1.c: Given the chosen coordinate system, set up
     #           corresponding reference metric and needed
     #           reference metric quantities
@@ -104,7 +104,7 @@ def ADM_in_terms_of_BSSN():
 
     # Step 2.c: 3-Christoffel symbols associated with ADM 3-metric gammaDD
     # Step 2.c.i: First compute the inverse 3-metric gammaUU:
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
 
     GammaUDD = ixp.zerorank3()
 
