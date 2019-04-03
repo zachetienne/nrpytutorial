@@ -3,8 +3,9 @@
 #   this module will construct a generic
 #   expression for \psi_4
 
-# Author: Zachariah B. Etienne
-#         zachetie **at** gmail **dot* com
+# Authors: Zachariah B. Etienne
+#          (zachetie **at** gmail **dot* com),
+#          and Patrick Nelson
 
 # Step 1.a: import all needed modules from NRPy+:
 import sympy as sp
@@ -50,14 +51,34 @@ def Psi4_tetrads():
     #           BSSN.ADM_in_terms_of_BSSN
     x, y, z = par.Cparameters("REAL", thismodule, ["x", "y", "z"])
 
-    v1U = ixp.zerorank1()
-    v2U = ixp.zerorank1()
-    v3U = ixp.zerorank1()
+    v1UCart = ixp.zerorank1()
+    v2UCart = ixp.zerorank1()
 
     detgamma = AB.detgamma
     gammaUU = AB.gammaUU
 
-    # Step 2.b: Define the rank-3 version of the Levi-Civita symbol. Amongst
+    # Step 2.b: Define v1U and v2U
+    v1UCart = [-y, x, sp.sympify(0)]
+    v2UCart = [x, y, z]
+
+    # Step 2.c: Construct the Jacobian d x_Cart^i / d xx^j
+    Jac_dUCart_dDrfmUD = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            Jac_dUCart_dDrfmUD[i][j] = sp.diff(rfm.xxCart[i], rfm.xx[j])
+
+    # Step 2.d: Invert above Jacobian to get needed d xx^j / d x_Cart^i
+    Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)
+
+    # Step 2.e: Transform v1U and v2U from the Cartesian to the xx^i basis
+    v1U = ixp.zerorank1()
+    v2U = ixp.zerorank1()
+    for i in range(DIM):
+        for j in range(DIM):
+            v1U[i] += Jac_dUrfm_dDCartUD[i][j] * v1UCart[j]
+            v2U[i] += Jac_dUrfm_dDCartUD[i][j] * v2UCart[j]
+
+    # Step 2.f: Define the rank-3 version of the Levi-Civita symbol. Amongst
     #         other uses, this is needed for the construction of the approximate
     #         quasi-Kinnersley tetrad.
     def define_LeviCivitaSymbol_rank3(DIM=-1):
@@ -73,11 +94,8 @@ def Psi4_tetrads():
                     LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) / 2
         return LeviCivitaSymbol
 
-    # Step 2.c: define v1U and v2U
-    v1U = [-y, x, sp.sympify(0)]
-    v2U = [x, y, z]
-
-    # Step 2.d: define v3U
+    # Step 2.g: Define v3U
+    v3U = ixp.zerorank1()
     LeviCivitaSymbolDDD = define_LeviCivitaSymbol_rank3(DIM=3)
     for a in range(DIM):
         for b in range(DIM):
@@ -85,9 +103,11 @@ def Psi4_tetrads():
                 for d in range(DIM):
                     v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
 
-    # Step 2.e: Define omega_{ij}
+
+    # Step 2.h: Define omega_{ij}
     omegaDD = ixp.zerorank2()
     gammaDD = AB.gammaDD
+
 
     def v_vectorDU(v1U, v2U, v3U, i, a):
         if i == 0:
@@ -100,13 +120,14 @@ def Psi4_tetrads():
             print("ERROR: unknown vector!")
             exit(1)
 
+
     for i in range(DIM):
         for j in range(DIM):
             for a in range(DIM):
                 for b in range(DIM):
                     omegaDD[i][j] += v_vectorDU(v1U, v2U, v3U, i, a) * v_vectorDU(v1U, v2U, v3U, j, b) * gammaDD[a][b]
 
-    # Step 2.f: Define e^a_i. Note that:
+    # Step 2.i: Define e^a_i. Note that:
     #           omegaDD[0][0] = \omega_{11} above;
     #           omegaDD[1][1] = \omega_{22} above, etc.
     e1U = ixp.zerorank1()
@@ -117,7 +138,7 @@ def Psi4_tetrads():
         e2U[a] = (v2U[a] - omegaDD[0][1] * e1U[a]) / omegaDD[1][1]
         e3U[a] = (v3U[a] - omegaDD[0][2] * e1U[a] - omegaDD[1][2] * e2U[a]) / omegaDD[2][2]
 
-    # Step 2.g: Construct l^a, n^a, and m^a
+    # Step 2.j: Construct l^a, n^a, and m^a
     isqrt2 = 1 / sp.sqrt(2)
     l4U = ixp.zerorank1(DIM=4)
     n4U = ixp.zerorank1(DIM=4)
