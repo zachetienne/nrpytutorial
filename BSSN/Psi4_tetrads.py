@@ -1,7 +1,8 @@
 # As documented in the NRPy+ tutorial module
 #   Tutorial-Psi4_tetrads.ipynb,
-#   this module will construct a generic
-#   expression for \psi_4
+#   this module will construct tetrads
+#   needed to compute \psi_4 (as well as other
+#   Weyl scalars and invariants in principle)
 
 # Authors: Zachariah B. Etienne
 #          (zachetie **at** gmail **dot* com),
