@@ -30,7 +30,7 @@ def Psi4_tetrads_Ccode_function(tetrad_Ccode_filename = "BSSN/Psi4_tetrad.h",Tet
     import BSSN.Psi4_tetrads as BP4T
     par.set_parval_from_str("BSSN.Psi4_tetrads::TetradChoice", TetradChoice)
 
-    # Step 2: Construct the C function header and
+    # Step 2: Construct the C function header and 
     #         convert (xx0,xx1,xx2) to the corresponding
     #         (x,y,z), as both are needed for the tetrad
     #         expressions.
@@ -40,15 +40,12 @@ def Psi4_tetrads_Ccode_function(tetrad_Ccode_filename = "BSSN/Psi4_tetrad.h",Tet
         file.write("""
 // Taking as input (xx0,xx1,xx2), this function outputs
 //   the chosen Psi4 tetrad in the (xx0,xx1,xx2) basis
-void Psi4_tetrad(REAL xx0xx1xx2[3], const REAL *in_gfs,
+void Psi4_tetrad(const REAL xx0,const REAL xx1,const REAL xx2, const REAL *in_gfs,
+                 const int i0,const int i1,const int i2,
                  REAL n4U[4],REAL mre4U[4],REAL mim4U[4]) {
-    const REAL xx0 = xx0xx1xx2[0];
-    const REAL xx1 = xx0xx1xx2[1];
-    const REAL xx2 = xx0xx1xx2[2];
 """)
-    outputC([rfm.xxCart[0], rfm.xxCart[1], rfm.xxCart[2]], ["REAL x", "REAL y", "REAL z"], tetrad_Ccode_filename,
-            outCparams)
-
+    outputC([rfm.xxCart[0],rfm.xxCart[1],rfm.xxCart[2]],["REAL x","REAL y","REAL z"],tetrad_Ccode_filename,
+            outCparams+",CSE_enable=False")    
     # Step 3: Output the tetrad in the reference-metric basis.
 
     # Step 3.a: BP4T.Psi4_tetrads() to construct the symbolic
