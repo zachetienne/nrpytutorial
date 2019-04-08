@@ -109,7 +109,6 @@ def Psi4_tetrads():
     omegaDD = ixp.zerorank2()
     gammaDD = AB.gammaDD
 
-
     def v_vectorDU(v1U, v2U, v3U, i, a):
         if i == 0:
             return v1U[a]
@@ -135,9 +134,9 @@ def Psi4_tetrads():
     e2U = ixp.zerorank1()
     e3U = ixp.zerorank1()
     for a in range(DIM):
-        e1U[a] = v1U[a] / omegaDD[0][0]
-        e2U[a] = (v2U[a] - omegaDD[0][1] * e1U[a]) / omegaDD[1][1]
-        e3U[a] = (v3U[a] - omegaDD[0][2] * e1U[a] - omegaDD[1][2] * e2U[a]) / omegaDD[2][2]
+        e1U[a] = v1U[a] / sp.sqrt(omegaDD[0][0])
+        e2U[a] = (v2U[a] - omegaDD[0][1] * e1U[a]) / sp.sqrt(omegaDD[1][1])
+        e3U[a] = (v3U[a] - omegaDD[0][2] * e1U[a] - omegaDD[1][2] * e2U[a]) / sp.sqrt(omegaDD[2][2])
 
     # Step 2.j: Construct l^a, n^a, and m^a
     isqrt2 = 1 / sp.sqrt(2)
