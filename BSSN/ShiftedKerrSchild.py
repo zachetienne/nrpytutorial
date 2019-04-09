@@ -38,79 +38,81 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     par.set_parval_from_str("grid::DIM",DIM)
 
     # Input parameters:
-    M, a = par.Cparameters("REAL", thismodule, ["M", "a"])
+    M, a, r0 = par.Cparameters("REAL", thismodule, ["M", "a", "r0"])
 
     # Auxiliary variables:
     rho2 = sp.symbols('rho2', real=True)
     
-    #rho^2 = r^2 + a^2*cos^2(theta)
-    rho2 = r*r + a*a*sp.cos(th)**2
+    # r_{KS} = r + r0
+    rKS = r+r0
 
-    # alpha = 1/sqrt{1 + Mr/rho^2}
-    alphaSph = 1/(sp.sqrt(1 + 2*M*r/rho2))
+    # rho^2 = rKS^2 + a^2*cos^2(theta)
+    rho2 = rKS*rKS + a*a*sp.cos(th)**2
+
+    # alpha = 1/sqrt{1 + M*rKS/rho^2}
+    alphaSph = 1/(sp.sqrt(1 + 2*M*rKS/rho2))
 
     # Initialize the shift vector, \beta^i, to zero.
     betaSphU = ixp.zerorank1()
-    #beta^r = alpha^2*2Mr/rho^2
-    betaSphU[0] = alphaSph*alphaSph*2*M*r/rho2
+    # beta^r = alpha^2*2Mr/rho^2
+    betaSphU[0] = alphaSph*alphaSph*2*M*rKS/rho2
 
     # Time derivative of shift vector beta^i, B^i, is zero.
     BSphU = ixp.zerorank1()
 
     # Initialize \gamma_{ij} to zero.
     gammaSphDD = ixp.zerorank2()
-    
-    #gamma_{rr} = 1 +2Mr/rho^2
-    gammaSphDD[0][0] = 1 + 2*M*r/rho2
 
-    # gamma_{r phi} = -a*gammaDD{r r}*sin^2(theta)
+    # gammaDD{rKS rKS} = 1 +2M*rKS/rho^2
+    gammaSphDD[0][0] = 1 + 2*M*rKS/rho2
+
+    # gammaDD{rKS phi} = -a*gammaDD{r r}*sin^2(theta)
     gammaSphDD[0][2] = gammaSphDD[2][0] = -a*gammaSphDD[0][0]*sp.sin(th)**2
 
-    #gamma_{thetatheta} = rho^2
+    # gammaDD{theta theta} = rho^2
     gammaSphDD[1][1] = rho2
 
-    # gamma_{phi phi} = (r^2 + a^2 + 2Mr/rho^2*a^2*sin^2(theta))*sin^2(theta)
-    gammaSphDD[2][2] = (r*r + a*a + 2*M*r*a*a*sp.sin(th)**2/rho2)*sp.sin(th)**2
+    # gammaDD{phi phi} = (rKS^2 + a^2 + 2Mr/rho^2*a^2*sin^2(theta))*sin^2(theta)
+    gammaSphDD[2][2] = (rKS*rKS + a*a + 2*M*rKS*a*a*sp.sin(th)**2/rho2)*sp.sin(th)**2
     
     # *** Define Useful Quantities A, B, D ***
     # A = (a^2*cos^2(2theta) + a^2 + 2r^2)
-    A = (a*a*sp.cos(2*th) + a*a + 2*r*r)
+    A = (a*a*sp.cos(2*th) + a*a + 2*rKS*rKS)
 
-    # B = A + 4Mr
-    B = A + 4*M*r
+    # B = A + 4M*rKS
+    B = A + 4*M*rKS
 
-    # D = \sqrt(2Mr/(a^2cos^2(theta) + r^2) + 1)
-    D = sp.sqrt(2*M*r/(a*a*sp.cos(th)**2 + r*r) + 1)
+    # D = \sqrt(2M*rKS/(a^2cos^2(theta) + rKS^2) + 1)
+    D = sp.sqrt(2*M*rKS/(a*a*sp.cos(th)**2 + rKS*rKS) + 1)
                 
     
     # *** The extrinsic curvature in spherical polar coordinates ***
-    
+
     # Establish the 3x3 zero-matrix
     KSphDD = ixp.zerorank2()
 
     # *** Fill in the nonzero components ***
     # *** This will create an upper-triangular matrix ***
     # K_{r r} = D(A+2Mr)/(A^2*B)[4M(a^2*cos(2theta) + a^2 - 2r^2)]
-    KSphDD[0][0] = D*(A+2*M*r)/(A*A*B)*(4*M*(a*a*sp.cos(2*th)+a*a-2*r*r))
-
+    KSphDD[0][0] = D*(A+2*M*rKS)/(A*A*B)*(4*M*(a*a*sp.cos(2*th)+a*a-2*rKS*rKS))
 
     # K_{r theta} = D/(AB)[8a^2*Mr*sin(theta)cos(theta)]
-    KSphDD[0][1] = KSphDD[1][0] = D/(A*B)*(8*a*a*M*r*sp.sin(th)*sp.cos(th))
+    KSphDD[0][1] = KSphDD[1][0] = D/(A*B)*(8*a*a*M*rKS*sp.sin(th)*sp.cos(th))
 
     # K_{r phi} = D/A^2[-2aMsin^2(theta)(a^2cos(2theta)+a^2-2r^2)]
-    KSphDD[0][2] = KSphDD[2][0] = D/(A*A)*(-2*a*M*sp.sin(th)**2*(a*a*sp.cos(2*th)+a*a-2*r*r))
+    KSphDD[0][2] = KSphDD[2][0] =  D/(A*A)*(-2*a*M*sp.sin(th)**2*(a*a*sp.cos(2*th)+a*a-2*rKS*rKS))
 
     # K_{theta theta} = D/B[4Mr^2]
-    KSphDD[1][1] = D/B*(4*M*r*r)
+    KSphDD[1][1] = D/B*(4*M*rKS*rKS)
 
     # K_{theta phi} = D/(AB)*(-8*a^3*Mr*sin^3(theta)cos(theta))
-    KSphDD[1][2] = KSphDD[2][1] = D/(A*B)*(-8*a**3*M*r*sp.sin(th)**3*sp.cos(th))
+    KSphDD[1][2] = KSphDD[2][1] = D/(A*B)*(-8*a**3*M*rKS*sp.sin(th)**3*sp.cos(th))
 
     # K_{phi phi} = D/(A^2*B)[2Mr*sin^2(theta)(a^4(M+3r)
     #   +4a^2r^2(2r-M)+4a^2r*cos(2theta)(a^2+r(M+2r))+8r^5)]
-    KSphDD[2][2] = D/(A*A*B)*(2*M*r*sp.sin(th)**2*(a**4*(r-M)*sp.cos(4*th)\
-                            + a**4*(M+3*r)+4*a*a*r*r*(2*r-M)\
-                            + 4*a*a*r*sp.cos(2*th)*(a*a + r*(M + 2*r)) + 8*r**5))           
+    KSphDD[2][2] = D/(A*A*B)*(2*M*rKS*sp.sin(th)**2*(a**4*(rKS-M)*sp.cos(4*th)\
+                            + a**4*(M+3*rKS)+4*a*a*rKS*rKS*(2*rKS-M)\
+                            + 4*a*a*rKS*sp.cos(2*th)*(a*a + rKS*(M + 2*rKS)) + 8*rKS**5))          
     
     
     if ComputeADMGlobalsOnly == True:

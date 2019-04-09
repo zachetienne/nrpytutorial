@@ -168,8 +168,8 @@ def output_C__MomentumConstraint_h(add_T4UUmunu_source_terms=False, enable_verbo
     # Calling BSSN_constraints() (defined above) computes H and MU:
     BSSN_constraints(add_T4UUmunu_source_terms)
     print(
-        "ERROR: output_C__MomentumConstraint_h() is UNTESTED CODE. PLEASE REMOVE THIS ERROR WHEN YOU ARE DEBUGGING IT.")
-    exit(1)
+        "WARNING: output_C__MomentumConstraint_h() is UNTESTED CODE. PLEASE REMOVE THIS WARNING AFTER DEBUGGING.")
+
     if add_T4UUmunu_source_terms == True:
         print("ERROR: MOMENTUM CONSTRAINT DOES NOT YET ADD T4UUmunu source terms.")
         exit(1)
