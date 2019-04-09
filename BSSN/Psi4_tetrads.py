@@ -138,18 +138,28 @@ def Psi4_tetrads():
         e2U[a] = (v2U[a] - omegaDD[0][1] * e1U[a]) / sp.sqrt(omegaDD[1][1])
         e3U[a] = (v3U[a] - omegaDD[0][2] * e1U[a] - omegaDD[1][2] * e2U[a]) / sp.sqrt(omegaDD[2][2])
 
-    # Step 2.j: Construct l^a, n^a, and m^a
-    isqrt2 = 1 / sp.sqrt(2)
+    # Step 2.j: Construct l^mu, n^mu, and m^mu, based on r^mu, theta^mu, phi^mu, and u^mu:
+    r4U     = ixp.zerorank1(DIM=4)
+    u4U     = ixp.zerorank1(DIM=4)
+    theta4U = ixp.zerorank1(DIM=4)
+    phi4U   = ixp.zerorank1(DIM=4)
+
+    for a in range(DIM):
+        r4U[    a+1] = e2U[a]
+        theta4U[a+1] = e3U[a]
+        phi4U[  a+1] = e1U[a]
+
+    # FIXME? assumes alpha=1, beta^i = 0
+    u4U[0] = 1
+
     l4U = ixp.zerorank1(DIM=4)
     n4U = ixp.zerorank1(DIM=4)
-    mre4U = ixp.zerorank1(DIM=4)
-    mim4U = ixp.zerorank1(DIM=4)
-    l4U[0] = isqrt2
-    n4U[0] = isqrt2
-    mre4U[0] = sp.sympify(0)
-    mim4U[0] = sp.sympify(0)
-    for a in range(DIM):
-        l4U[a + 1] = isqrt2 * e2U[a]
-        n4U[a + 1] = -isqrt2 * e2U[a]
-        mre4U[a + 1] = isqrt2 * e3U[a]
-        mim4U[a + 1] = isqrt2 * e1U[a]
+    mre4U  = ixp.zerorank1(DIM=4)
+    mim4U  = ixp.zerorank1(DIM=4)
+
+    isqrt2 = 1/sp.sqrt(2)
+    for mu in range(4):
+        l4U[mu]   = isqrt2*(u4U[mu] + r4U[mu])
+        n4U[mu]   = isqrt2*(u4U[mu] - r4U[mu])
+        mre4U[mu] = isqrt2*theta4U[mu]
+        mim4U[mu] = isqrt2*  phi4U[mu]
