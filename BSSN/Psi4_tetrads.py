@@ -20,6 +20,7 @@ import reference_metric as rfm
 thismodule = __name__
 # Current option: QuasiKinnersley = choice made in Baker, Campanelli, and Lousto. PRD 65, 044001 (2002)
 par.initialize_param(par.glb_param("char", thismodule, "TetradChoice", "QuasiKinnersley"))
+par.initialize_param(par.glb_param("char", thismodule, "UseCorrectUnitNormal", "False"))
 
 def Psi4_tetrads():
     global l4U, n4U, mre4U, mim4U
@@ -150,7 +151,17 @@ def Psi4_tetrads():
         phi4U[  a+1] = e1U[a]
 
     # FIXME? assumes alpha=1, beta^i = 0
-    u4U[0] = 1
+    if par.parval_from_str(thismodule+"::UseCorrectUnitNormal") == "False":
+        u4U[0] = 1
+    else:
+        # Eq. 2.116 in Baumgarte & Shapiro:
+        #  n^mu = {1/alpha, -beta^i/alpha}
+        import BSSN.BSSN_quantities as Bq
+        Bq.declare_BSSN_gridfunctions_if_not_declared_already()
+        Bq.BSSN_basic_tensors()
+        u4U[0] = 1/Bq.alpha
+        for i in range(DIM):
+            u4U[i+1] = -Bq.betaU[i]/Bq.alpha
 
     l4U = ixp.zerorank1(DIM=4)
     n4U = ixp.zerorank1(DIM=4)
