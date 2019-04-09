@@ -105,39 +105,45 @@ def Psi4_tetrads():
                 for d in range(DIM):
                     v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
 
-
     # Step 2.h: Define omega_{ij}
     omegaDD = ixp.zerorank2()
     gammaDD = AB.gammaDD
-
-    def v_vectorDU(v1U, v2U, v3U, i, a):
-        if i == 0:
+    def v_vectorDU(v1U,v2U,v3U,  i,a):
+        if i==0:
             return v1U[a]
-        elif i == 1:
+        elif i==1:
             return v2U[a]
-        elif i == 2:
+        elif i==2:
             return v3U[a]
         else:
             print("ERROR: unknown vector!")
             exit(1)
 
-
-    for i in range(DIM):
-        for j in range(DIM):
-            for a in range(DIM):
-                for b in range(DIM):
-                    omegaDD[i][j] += v_vectorDU(v1U, v2U, v3U, i, a) * v_vectorDU(v1U, v2U, v3U, j, b) * gammaDD[a][b]
+    def update_omega(omegaDD, v1U,v2U,v3U,gammaDD):
+        for i in range(DIM):
+            for j in range(DIM):
+                omegaDD[i][j] = sp.sympify(0)
+        for i in range(DIM):
+            for j in range(DIM):
+                for a in range(DIM):
+                    for b in range(DIM):
+                        omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaDD[a][b]
 
     # Step 2.i: Define e^a_i. Note that:
-    #           omegaDD[0][0] = \omega_{11} above;
+    #           omegaDD[0][0] = \omega_{11} above; 
     #           omegaDD[1][1] = \omega_{22} above, etc.
     e1U = ixp.zerorank1()
     e2U = ixp.zerorank1()
     e3U = ixp.zerorank1()
+    update_omega(omegaDD, v1U,v2U,v3U,gammaDD)
     for a in range(DIM):
-        e1U[a] = v1U[a] / sp.sqrt(omegaDD[0][0])
-        e2U[a] = (v2U[a] - omegaDD[0][1] * e1U[a]) / sp.sqrt(omegaDD[1][1])
-        e3U[a] = (v3U[a] - omegaDD[0][2] * e1U[a] - omegaDD[1][2] * e2U[a]) / sp.sqrt(omegaDD[2][2])
+        e1U[a] = v1U[a]/sp.sqrt(omegaDD[0][0])
+    update_omega(omegaDD, e1U,v2U,v3U,gammaDD)
+    for a in range(DIM):
+        e2U[a] = (v2U[a] - omegaDD[0][1]*e1U[a])/sp.sqrt(omegaDD[1][1])
+    update_omega(omegaDD, e1U,e2U,v3U,gammaDD)
+    for a in range(DIM):
+        e3U[a] = (v3U[a] - omegaDD[0][2]*e1U[a] - omegaDD[1][2]*e2U[a])/sp.sqrt(omegaDD[2][2])
 
     # Step 2.j: Construct l^mu, n^mu, and m^mu, based on r^mu, theta^mu, phi^mu, and u^mu:
     r4U     = ixp.zerorank1(DIM=4)
@@ -155,7 +161,7 @@ def Psi4_tetrads():
         u4U[0] = 1
     else:
         # Eq. 2.116 in Baumgarte & Shapiro:
-        #  n^mu = {1/alpha, -beta^i/alpha}
+        #  n^mu = {1/alpha, -beta^i/alpha}. Note that n_mu = {alpha,0}, so n^mu n_mu = -1.
         import BSSN.BSSN_quantities as Bq
         Bq.declare_BSSN_gridfunctions_if_not_declared_already()
         Bq.BSSN_basic_tensors()
