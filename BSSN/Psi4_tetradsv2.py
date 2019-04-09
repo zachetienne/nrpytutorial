@@ -22,6 +22,29 @@ thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "TetradChoice", "QuasiKinnersley"))
 par.initialize_param(par.glb_param("char", thismodule, "UseCorrectUnitNormal", "False"))
 
+def v_vectorDU(v1,v2,v3,  i,a):
+    if i==0:
+        return v1[a]
+    elif i==1:
+        return v2[a]
+    elif i==2:
+        return v3[a]
+    else:
+        print("ERROR: unknown vector!")
+        exit(1)
+
+
+def update_omega(omDD, v1,v2,v3,gDD):
+    DIM=3
+    for i in range(DIM):
+        for j in range(DIM):
+            omDD[i][j] = sp.sympify(0)
+    for i in range(DIM):
+        for j in range(DIM):
+            for a in range(DIM):
+                for b in range(DIM):
+                    omDD[i][j] += v_vectorDU(v1,v2,v3, i,a)*v_vectorDU(v1,v2,v3, j,b)*gDD[a][b]
+
 def Psi4_tetradsv2():
     global l4U, n4U, mre4U, mim4U
 
@@ -79,7 +102,7 @@ def Psi4_tetradsv2():
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
-                    gammaCartDD[i][j] += Jac_dUrfm_dDCartUD[k][i]*Jac_dUrfm_dDCartUD[l][j]*gammaDD[i][j]
+                    gammaCartDD[i][j] += Jac_dUrfm_dDCartUD[k][i]*Jac_dUrfm_dDCartUD[l][j]*gammaDD[k][l]
 
     gammaCartUU, detgammaCart = ixp.symm_matrix_inverter3x3(gammaCartDD)
 
@@ -121,26 +144,6 @@ def Psi4_tetradsv2():
 
     # Step 2.h: Define omega_{ij}
     omegaDD = ixp.zerorank2()
-    def v_vectorDU(v1U,v2U,v3U,  i,a):
-        if i==0:
-            return v1U[a]
-        elif i==1:
-            return v2U[a]
-        elif i==2:
-            return v3U[a]
-        else:
-            print("ERROR: unknown vector!")
-            exit(1)
-
-    def update_omega(omegaDD, v1U,v2U,v3U,gammaDD):
-        for i in range(DIM):
-            for j in range(DIM):
-                omegaDD[i][j] = sp.sympify(0)
-        for i in range(DIM):
-            for j in range(DIM):
-                for a in range(DIM):
-                    for b in range(DIM):
-                        omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaCartDD[a][b]
 
     # Step 2.i: Define e^a_i. Note that:
     #           omegaDD[0][0] = \omega_{11} above; 
@@ -148,13 +151,13 @@ def Psi4_tetradsv2():
     e1U = ixp.zerorank1()
     e2U = ixp.zerorank1()
     e3U = ixp.zerorank1()
-    update_omega(omegaDD, v1U,v2U,v3U,gammaDD)
+    update_omega(omegaDD, v1U,v2U,v3U,gammaCartDD)
     for a in range(DIM):
         e1U[a] = v1U[a]/sp.sqrt(omegaDD[0][0])
-    update_omega(omegaDD, e1U,v2U,v3U,gammaDD)
+    update_omega(omegaDD, e1U,v2U,v3U,gammaCartDD)
     for a in range(DIM):
         e2U[a] = (v2U[a] - omegaDD[0][1]*e1U[a])/sp.sqrt(omegaDD[1][1])
-    update_omega(omegaDD, e1U,e2U,v3U,gammaDD)
+    update_omega(omegaDD, e1U,e2U,v3U,gammaCartDD)
     for a in range(DIM):
         e3U[a] = (v3U[a] - omegaDD[0][2]*e1U[a] - omegaDD[1][2]*e2U[a])/sp.sqrt(omegaDD[2][2])
 
