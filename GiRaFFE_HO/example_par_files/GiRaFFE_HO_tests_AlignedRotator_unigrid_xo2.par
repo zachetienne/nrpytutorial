@@ -1,0 +1,192 @@
+ActiveThorns = "ADMBase ADMCoupling ADMMacros HydroBase InitBase StaticConformal TmunuBase SphericalSurface SummationByParts MoL CarpetIOASCII CarpetRegrid2 CarpetIOBasic CarpetReduce CarpetIOScalar Time SymBase ShiftedKerrSchild VolumeIntegrals_GRMHD"
+
+ActiveThorns = "GiRaFFE_HO GiRaFFEfood_HO"
+
+GiRaFFEfood_HO::initial_data = "AlignedRotator"
+GiRaFFEfood_HO::R_NS_aligned_rotator                                                      = 1.0 # Must be equal to parameter below.
+GiRaFFE_HO::min_radius_inside_of_which_conserv_to_prims_FFE_and_FFE_evolution_is_DISABLED = 1.0 # Must be equal to parameter above.
+GiRaFFEfood_HO::Omega_aligned_rotator = 0.2
+GiRaFFEfood_HO::B_p_aligned_rotator   = 1e-5
+GiRaFFE_HO::current_sheet_null_v  = "yes" 
+
+Time::dtfac = 0.5
+
+# Parameters of thorn CoordBase (implementing CoordBase)
+## GRID SETUP PARAMETERs
+CoordBase::boundary_size_x_lower = 1
+CoordBase::boundary_size_x_upper = 1
+CoordBase::boundary_size_y_lower = 1
+CoordBase::boundary_size_y_upper = 1
+CoordBase::boundary_size_z_lower = 1
+CoordBase::boundary_size_z_upper = 1
+CoordBase::domainsize            = "minmax"
+CoordBase::dx                    = 0.1318359375
+CoordBase::dy                    = 0.1318359375
+CoordBase::dz                    = 0.1318359375
+CoordBase::xmin                  =-19.70947265625
+CoordBase::ymin                  =-19.70947265625
+CoordBase::zmin                  =-19.70947265625
+CoordBase::xmax                  = 20.36865234375
+CoordBase::ymax                  = 20.36865234375
+CoordBase::zmax                  = 20.36865234375
+
+# Parameters of thorn ADMBase (implementing ADMBase)
+ADMBase::dtlapse_evolution_method = "static"
+ADMBase::dtshift_evolution_method = "static"
+ADMBase::evolution_method         = "static"
+ADMBase::initial_data             = "Cartesian Minkowski"
+ADMBase::initial_dtlapse          = "zero"
+ADMBase::initial_dtshift          = "zero"
+ADMBase::initial_lapse            = "one"
+ADMBase::initial_shift            = "zero"
+ADMBase::lapse_evolution_method   = "static"
+ADMBase::lapse_timelevels         = 3
+ADMBase::metric_timelevels        = 3
+ADMBase::shift_timelevels         = 3
+ADMBase::metric_type              = "physical"
+ADMBase::shift_evolution_method   = "static"
+
+# Parameters of thorn ADMMacros (implementing ADMMacros)
+ADMMacros::spatial_order = 4
+
+# Parameters of thorn Boundary (implementing boundary)
+Boundary::radpower = 2
+
+# Parameters of thorn Cactus (implementing Cactus)
+Cactus::cctk_itlast                = 2
+Cactus::cctk_full_warnings         = "yes"
+Cactus::cctk_run_title             = "GiRaFFEfood"
+Cactus::highlight_warning_messages = "no"
+
+# Parameters of thorn Carpet (implementing Driver)
+Carpet::convergence_level        = 0
+Carpet::domain_from_coordbase    = "yes"
+Carpet::ghost_size               = 1
+Carpet::init_fill_timelevels     = "yes"
+Carpet::init_3_timelevels        = "no"
+Carpet::max_refinement_levels    = 1
+Carpet::poison_new_timelevels    = "yes"
+Carpet::prolongation_order_space = 1
+Carpet::prolongation_order_time  = 2
+Carpet::schedule_barriers        = "no"
+Carpet::storage_verbose          = "no"
+Carpet::use_buffer_zones         = "yes"
+Carpet::verbose                  = "no"
+Carpet::veryverbose              = "no"
+
+CarpetIOScalar::outScalar_reductions = "maximum"
+IOScalar::outScalar_every            = 4
+IOScalar::one_file_per_group         = no
+#IOScalar::outScalar_vars             = "
+# GiRaFFE_HO::BU0 
+# GiRaFFE_HO::BU2
+#"
+
+CarpetIOASCII::out1D_every            = 2
+CarpetIOASCII::out1D_vars             = "
+  GiRaFFE_HO::AD0
+  GiRaFFE_HO::AD1
+  GiRaFFE_HO::AD2
+  GiRaFFE_HO::BU0
+  GiRaFFE_HO::BU1
+  GiRaFFE_HO::BU2
+  GiRaFFE_HO::BU0_init
+  GiRaFFE_HO::BU1_init
+  GiRaFFE_HO::BU2_init
+  GiRaFFE_HO::ValenciavU0
+  GiRaFFE_HO::ValenciavU1
+  GiRaFFE_HO::ValenciavU2
+  GiRaFFE_HO::StildeD0
+  GiRaFFE_HO::StildeD1
+  GiRaFFE_HO::StildeD2
+  GiRaFFE_HO::gammadet
+  GiRaFFE_HO::psi6Phi
+"
+
+CarpetIOASCII::out3D_ghosts           = "no"
+CarpetIOASCII::output_symmetry_points = "no"
+
+# Parameters of thorn CarpetIOBasic (implementing IOBasic)
+CarpetIOBasic::outInfo_every      = 4 
+CarpetIOBasic::outInfo_reductions = "norm2"
+CarpetIOBasic::outInfo_vars       = "carpet::physical_time_per_hour"
+
+IOUtil::out_dir = $parfile
+
+# Trim output file so that file info and parameter file is not written to output directory.
+IO::out_fileinfo = "none"
+IO::parfile_write = "no"
+# Also reduce clutter in CarpetIOASCII output
+CarpetIOASCII::compact_format = yes
+CarpetIOASCII::output_ghost_points = no
+
+# Parameters of thorn CarpetLib (implementing CarpetLib)
+CarpetLib::output_bboxes     = "no"
+CarpetLib::poison_new_memory = "yes"
+CarpetLib::support_staggered_operators = "yes"
+
+# Parameters of thorn CarpetRegrid2 (implementing CarpetRegrid2)
+## WE'LL MODIFY THESE IF WE WANT TO ENABLE AMR:
+CarpetRegrid2::freeze_unaligned_levels = "yes"
+CarpetRegrid2::num_centres             = 1
+CarpetRegrid2::num_levels_1            = 1
+#CarpetRegrid2::radius_1[1]             = 10.584
+#CarpetRegrid2::radius_1[2]             =  3.3075
+CarpetRegrid2::regrid_every            = -1
+CarpetRegrid2::snap_to_coarse          = "yes"
+CarpetRegrid2::verbose                 = "no"
+
+# Parameters of thorn CartGrid3D (implementing grid)
+CartGrid3D::type = "coordbase"
+
+# Parameters of thorn HydroBase (implementing HydroBase)
+HydroBase::timelevels   = 1
+HydroBase::initial_Avec = "zero"
+HydroBase::initial_Aphi = "zero"
+
+# Doesn't matter what value we set for equation of state:
+#GiRaFFE::gamma_th = 1.33333333333333333333 # 2.0
+#GiRaFFE::K_poly   = 100.0
+#GiRaFFE::neos     = 1
+#GiRaFFE::conserv_to_prims_MHD_debug = 0
+#GiRaFFE::Psi6threshold = 60.0 
+#GiRaFFE::damp_lorenz   = 1.8
+GiRaFFE_HO::xi = 1.8
+#GiRaFFE::Velocity_BC   = "outflow"
+#GiRaFFE::EM_BC         = "copy"
+#GiRaFFE::Symmetry      = "none"
+#GiRaFFE::update_Tmunu  = "no"
+
+# Parameters of thorn LoopControl (implementing LoopControl)
+LoopControl::statistics_filename = ""
+
+# Parameters of thorn MoL (implementing MethodOfLines)
+MoL::MoL_Intermediate_Steps = 1
+MoL::MoL_Num_Scratch_Levels = 1
+MoL::ODE_Method             = "Euler"
+
+# Parameters of thorn SphericalSurface (implementing SphericalSurface)
+SphericalSurface::maxnphi         = 78
+SphericalSurface::maxntheta       = 39
+SphericalSurface::nghostsphi[0]   = 3
+SphericalSurface::nghoststheta[0] = 3
+SphericalSurface::nphi[0]         = 78
+SphericalSurface::nsurfaces       = 1
+SphericalSurface::ntheta[0]       = 39
+
+# Parameters of thorn SummationByParts (implementing SummationByParts)
+SummationByParts::order = 4
+
+# Parameters of thorn TmunuBase (implementing TmunuBase)
+TmunuBase::prolongation_type     = "none"
+TmunuBase::stress_energy_at_RHS  = "yes"
+TmunuBase::stress_energy_storage = "yes"
+TmunuBase::timelevels            = 1
+
+# Parameters of thorn VolumeIntegrals_GRMHD
+VolumeIntegrals_GRMHD::NumIntegrals                          = 1
+VolumeIntegrals_GRMHD::VolIntegral_out_every                 = 2
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius[1]  = 15.0
+VolumeIntegrals_GRMHD::volintegral_outside_sphere__radius[1] = 5.0
+VolumeIntegrals_GRMHD::Integration_quantity_keyword[1]       = "GiRaFFE_error"
+VolumeIntegrals_GRMHD::verbose                               = 2
