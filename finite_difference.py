@@ -15,6 +15,7 @@ import NRPy_param_funcs as par
 modulename = __name__
 # Centered finite difference accuracy order
 par.initialize_param(par.glb_param("INT", modulename, "FD_CENTDERIVS_ORDER",  4))
+par.initialize_param(par.glb_param("INT", modulename, "FD_KO_ORDER__CENTDERIVS_PLUS", 2))
 
 def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     outCparams = parse_outCparams_string(params)
@@ -636,6 +637,9 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
     # Step 0: Set finite differencing order, stencil size, and up/downwinding
     if FDORDER == -1:
         FDORDER = par.parval_from_str("FD_CENTDERIVS_ORDER")
+        if "dKOD" in derivstring:
+            FDORDER += par.parval_from_str("FD_KO_ORDER__CENTDERIVS_PLUS")
+
     STENCILSIZE = FDORDER+1
     UPDOWNWIND = 0
     if "dupD" in derivstring:

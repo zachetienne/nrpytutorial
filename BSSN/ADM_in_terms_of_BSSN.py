@@ -64,29 +64,36 @@ def ADM_in_terms_of_BSSN():
             gammaDD[i][j] = exp4phi * gammabarDD[i][j]
 
     # Step 2.a: Derivatives of $e^{4\phi}$
-    exp4phidD = ixp.zerorank1()
-    exp4phidDD = ixp.zerorank2()
-    cf_dD = ixp.declarerank1("cf_dD")
-    cf_dDD = ixp.declarerank2("cf_dDD", "sym01")
+    phidD = ixp.zerorank1()
+    phidDD = ixp.zerorank2()
+    cf_dD  = ixp.declarerank1("cf_dD")
+    cf_dDD = ixp.declarerank2("cf_dDD","sym01")
     if par.parval_from_str("ConformalFactor") == "phi":
         for i in range(DIM):
-            exp4phidD[i] = cf_dD[i]
+            phidD[i]  = cf_dD[i]
             for j in range(DIM):
-                exp4phidDD[i][j] = cf_dDD[i][j]
+                phidDD[i][j] = cf_dDD[i][j]
     elif par.parval_from_str("ConformalFactor") == "chi":
         for i in range(DIM):
-            exp4phidD[i] = -sp.Rational(1, 4) * exp4phi * cf_dD[i]
+            phidD[i]  = -sp.Rational(1,4)*exp4phi*cf_dD[i]
             for j in range(DIM):
-                exp4phidDD[i][j] = sp.Rational(1, 4) * (exp4phi ** 2 * cf_dD[i] * cf_dD[j] - exp4phi * cf_dDD[i][j])
+                phidDD[i][j] = sp.Rational(1,4)*( exp4phi**2*cf_dD[i]*cf_dD[j] - exp4phi*cf_dDD[i][j] )
     elif par.parval_from_str("ConformalFactor") == "W":
         exp2phi = (1 / cf)
         for i in range(DIM):
-            exp4phidD[i] = -sp.Rational(1, 2) * exp2phi * cf_dD[i]
+            phidD[i]  = -sp.Rational(1,2)*exp2phi*cf_dD[i]
             for j in range(DIM):
-                exp4phidDD[i][j] = sp.Rational(1, 2) * (exp4phi * cf_dD[i] * cf_dD[j] - exp2phi * cf_dDD[i][j])
+                phidDD[i][j] = sp.Rational(1,2)*( exp4phi*cf_dD[i]*cf_dD[j] - exp2phi*cf_dDD[i][j] )
     else:
-        print("Error ConformalFactor type = \"" + par.parval_from_str("ConformalFactor") + "\" unknown.")
+        print("Error ConformalFactor type = \""+par.parval_from_str("ConformalFactor")+"\" unknown.")
         exit(1)
+
+    exp4phidD  = ixp.zerorank1()
+    exp4phidDD = ixp.zerorank2()
+    for i in range(DIM):
+        exp4phidD[i] = 4*exp4phi*phidD[i]
+        for j in range(DIM):
+            exp4phidDD[i][j] = 16*exp4phi*phidD[i]*phidD[j] + 4*exp4phi*phidDD[i][j]
 
     # Step 2.b: Derivatives of gammaDD, the ADM three-metric
     gammaDDdD = ixp.zerorank3()
