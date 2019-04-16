@@ -96,34 +96,44 @@ def Psi4():
             for l in range(DIM):
                 rank3term2[j][k][l] *= sp.sympify(-8)
 
-    # Step 5: Construct the (rank-2) tensor in term 3 of psi_4 (referring to Eq 5.1 in
+    # Step 5: Construct the (rank-2) tensor in term 3 of psi_4 (referring to Eq 5.1 in 
     #   Baker, Campanelli, Lousto (2001); https://arxiv.org/pdf/gr-qc/0104063.pdf
+
+    # Step 5.1: Construct 3-Ricci tensor R_{ij} = gamma^{im} R_{ijml}
+    RDD = ixp.zerorank2()
+    gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
+    for j in range(DIM):
+        for l in range(DIM):
+            for i in range(DIM):
+                for m in range(DIM):
+                    RDD[j][l] += gammaUU[i][m]*RDDDD[i][j][m][l]
+
+    # Step 5.2: Construct K^p_l = gamma^{pi} K_{il}
+    KUD = ixp.zerorank2()
+    for p in range(DIM):
+        for l in range(DIM):
+            for i in range(DIM):
+                KUD[p][l] += gammaUU[p][i]*KDD[i][l]
+
+    # Step 5.3: Construct trK = gamma^{ij} K_{ij}
+    trK = sp.sympify(0)
+    for i in range(DIM):
+        for j in range(DIM):
+            trK += gammaUU[i][j]*KDD[i][j]
+
+    # Next we put these terms together to construct the entire term in parentheses:
+    # +4 \left(R_{jl} - K_{jp} K^p_l + K K_{jl} \right),
     rank2term3 = ixp.zerorank2()
-    gammaUU = AB.gammaUU
-
     for j in range(DIM):
         for l in range(DIM):
-            for i in range(DIM):
-                for m in range(DIM):
-                    rank2term3[j][l] += gammaUU[i][m] * RDDDD[i][j][m][l]
-
-    # ... then we add on the second term in parentheses, where $K^p_l = \gamma^{mp} K_{ml}$
-    for j in range(DIM):
-        for l in range(DIM):
-            for m in range(DIM):
-                for p in range(DIM):
-                    rank2term3[j][l] += - KDD[j][p] * gammaUU[p][m] * KDD[m][l]
-
-    # Finally we add the third term in parentheses, and multiply all terms by $+4$:
-    for j in range(DIM):
-        for l in range(DIM):
-            for i in range(DIM):
-                for m in range(DIM):
-                    rank2term3[j][l] += gammaUU[i][m] * KDD[i][m] * KDD[j][l]
+            rank2term3[j][l] = RDD[j][l] + trK*KDD[j][l]
+            for p in range(DIM):
+                rank2term3[j][l] += - KDD[j][p]*KUD[p][l]
+    # Finally we multiply by +4:
     for j in range(DIM):
         for l in range(DIM):
             rank2term3[j][l] *= sp.sympify(4)
-
+        
     mre4U = ixp.declarerank1("mre4U", DIM=4)
     mim4U = ixp.declarerank1("mim4U", DIM=4)
     n4U = ixp.declarerank1("n4U", DIM=4)
