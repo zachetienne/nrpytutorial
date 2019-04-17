@@ -251,7 +251,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             else:
                 for i in range(len(SIMD_const_varnms)):
                     SIMD_decls += outCparams.preindent+indent+"const double " + outCparams.CSE_varprefix + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_decls += outCparams.preindent+indent+"const REAL_SIMD_ARRAY " + " = Set1SIMD("+ outCparams.CSE_varprefix + SIMD_const_varnms[i] + ");\n"
+                    SIMD_decls += outCparams.preindent+indent+"const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD("+ outCparams.CSE_varprefix + SIMD_const_varnms[i] + ");\n"
                     # if i != len(SIMD_const_varnms)-1:
                     #     SIMD_decls += "\n"
                 SIMD_decls += "\n"

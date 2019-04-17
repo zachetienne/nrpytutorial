@@ -79,6 +79,8 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
         if item.func == Pow:
             if item.args[1] == 0.5:
                 expr = expr.xreplace({item: SqrtSIMD(item.args[0])})
+            elif item.args[1] == -0.5:
+                expr = expr.xreplace({item: DivSIMD(1,SqrtSIMD(item.args[0]))})
             elif item.args[1] == Rational(1,3):
                 expr = expr.xreplace({item: CbrtSIMD(item.args[0])})
             elif item.args[1] == 2:

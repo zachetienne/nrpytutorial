@@ -49,14 +49,14 @@ def ADM_in_terms_of_BSSN():
     gammaDD = ixp.zerorank2()
 
     exp4phi = sp.sympify(0)
-    if par.parval_from_str("ConformalFactor") == "phi":
+    if par.parval_from_str("EvolvedConformalFactor_cf") == "phi":
         exp4phi = sp.exp(4 * cf)
-    elif par.parval_from_str("ConformalFactor") == "chi":
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "chi":
         exp4phi = (1 / cf)
-    elif par.parval_from_str("ConformalFactor") == "W":
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "W":
         exp4phi = (1 / cf ** 2)
     else:
-        print("Error ConformalFactor type = \"" + par.parval_from_str("ConformalFactor") + "\" unknown.")
+        print("Error EvolvedConformalFactor_cf type = \"" + par.parval_from_str("EvolvedConformalFactor_cf") + "\" unknown.")
         exit(1)
 
     for i in range(DIM):
@@ -68,24 +68,24 @@ def ADM_in_terms_of_BSSN():
     phidDD = ixp.zerorank2()
     cf_dD  = ixp.declarerank1("cf_dD")
     cf_dDD = ixp.declarerank2("cf_dDD","sym01")
-    if par.parval_from_str("ConformalFactor") == "phi":
+    if par.parval_from_str("EvolvedConformalFactor_cf") == "phi":
         for i in range(DIM):
             phidD[i]  = cf_dD[i]
             for j in range(DIM):
                 phidDD[i][j] = cf_dDD[i][j]
-    elif par.parval_from_str("ConformalFactor") == "chi":
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "chi":
         for i in range(DIM):
             phidD[i]  = -sp.Rational(1,4)*exp4phi*cf_dD[i]
             for j in range(DIM):
                 phidDD[i][j] = sp.Rational(1,4)*( exp4phi**2*cf_dD[i]*cf_dD[j] - exp4phi*cf_dDD[i][j] )
-    elif par.parval_from_str("ConformalFactor") == "W":
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "W":
         exp2phi = (1 / cf)
         for i in range(DIM):
             phidD[i]  = -sp.Rational(1,2)*exp2phi*cf_dD[i]
             for j in range(DIM):
                 phidDD[i][j] = sp.Rational(1,2)*( exp4phi*cf_dD[i]*cf_dD[j] - exp2phi*cf_dDD[i][j] )
     else:
-        print("Error ConformalFactor type = \""+par.parval_from_str("ConformalFactor")+"\" unknown.")
+        print("Error EvolvedConformalFactor_cf type = \""+par.parval_from_str("EvolvedConformalFactor_cf")+"\" unknown.")
         exit(1)
 
     exp4phidD  = ixp.zerorank1()

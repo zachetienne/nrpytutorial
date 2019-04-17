@@ -172,15 +172,15 @@ def BSSN_RHSs():
         cf_rhs += betaU[k] * phi_dupD[k]  # Term 1
 
     # Next multiply to convert phi_rhs to cf_rhs.
-    if par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "phi":
+    if par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "phi":
         pass  # do nothing; cf_rhs = phi_rhs
-    elif par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "W":
+    elif par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "W":
         cf_rhs *= -2 * cf  # cf_rhs = -2*cf*phi_rhs
-    elif par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "chi":
+    elif par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "chi":
         cf_rhs *= -4 * cf  # cf_rhs = -4*cf*phi_rhs
     else:
-        print("Error: ConformalFactor == " +
-              par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") + " unsupported!")
+        print("Error: EvolvedConformalFactor_cf == " +
+              par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") + " unsupported!")
         exit(1)
 
     # Step 5: right-hand side of trK (trace of extrinsic curvature):

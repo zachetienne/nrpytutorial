@@ -12,7 +12,7 @@ import reference_metric as rfm
 
 # Step 1.b: Declare/initialize parameters for this module
 thismodule = __name__
-par.initialize_param(par.glb_param("char", thismodule, "ConformalFactor", "W"))
+par.initialize_param(par.glb_param("char", thismodule, "EvolvedConformalFactor_cf", "W"))
 par.initialize_param(par.glb_param("bool", thismodule, "detgbarOverdetghat_equals_one", "True"))
 
 def declare_BSSN_gridfunctions_if_not_declared_already():
@@ -435,7 +435,7 @@ def phi_and_derivs():
 
     # Step 9.a.ii: Assuming cf=phi, define exp_m4phi, phi_dD,
     #              phi_dupD (upwind finite-difference version of phi_dD), and phi_DD
-    if par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "phi":
+    if par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "phi":
         for i in range(DIM):
             phi_dD[i] = cf_dD[i]
             phi_dupD[i] = cf_dupD[i]
@@ -445,7 +445,7 @@ def phi_and_derivs():
 
     # Step 9.a.iii: Assuming cf=W=e^{-2 phi}, define exp_m4phi, phi_dD,
     #               phi_dupD (upwind finite-difference version of phi_dD), and phi_DD
-    if par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "W":
+    if par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "W":
         # \partial_i W = \partial_i (e^{-2 phi}) = -2 e^{-2 phi} \partial_i phi
         # -> \partial_i phi = -\partial_i cf / (2 cf)
         for i in range(DIM):
@@ -459,7 +459,7 @@ def phi_and_derivs():
 
     # Step 9.a.iv: Assuming cf=chi=e^{-4 phi}, define exp_m4phi, phi_dD,
     #              phi_dupD (upwind finite-difference version of phi_dD), and phi_DD
-    if par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "chi":
+    if par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "chi":
         # \partial_i chi = \partial_i (e^{-4 phi}) = -4 e^{-4 phi} \partial_i phi
         # -> \partial_i phi = -\partial_i cf / (4 cf)
         for i in range(DIM):
@@ -471,10 +471,10 @@ def phi_and_derivs():
                 phi_dDD[i][j] = (- cf_dDD[i][j] + cf_dD[i] * cf_dD[j] / cf) / (4 * cf)
         exp_m4phi = cf
 
-    # Step 9.a.v: Error out if unsupported ConformalFactor choice is made:
-    cf_choice = par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor")
+    # Step 9.a.v: Error out if unsupported EvolvedConformalFactor_cf choice is made:
+    cf_choice = par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf")
     if not (cf_choice == "phi" or cf_choice == "W" or cf_choice == "chi"):
-        print("Error: ConformalFactor == " + par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") + " unsupported!")
+        print("Error: EvolvedConformalFactor_cf == " + par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") + " unsupported!")
         exit(1)
 
     # Step 9.b: Define phi_dBarD = phi_dD (since phi is a scalar) and phi_dBarDD (covariant derivative)

@@ -17,7 +17,7 @@ import reference_metric as rfm
 import loop as lp
 import grid as gri
 import finite_difference as fin
-import BSSN.BSSN_RHSs as bssnrhs  # The ConformalFactor parameter is used below
+import BSSN.BSSN_RHSs as bssnrhs  # The EvolvedConformalFactor_cf parameter is used below
 
 def Tmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
                                                               Tmunu_input_function_name,
@@ -205,19 +205,19 @@ def Tmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
                         KDD[i][j] - sp.Rational(1, 3) * gammaSphorCartDD[i][j] * trK)
 
     # Step 3.3: Set the conformal factor variable $\texttt{cf}$, which is set
-    #           by the "BSSN_RHSs::ConformalFactor" parameter. For example if
-    #           "ConformalFactor" is set to "phi", we can use Eq. 3 of
+    #           by the "BSSN_RHSs::EvolvedConformalFactor_cf" parameter. For example if
+    #           "EvolvedConformalFactor_cf" is set to "phi", we can use Eq. 3 of
     #           [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf),
     #           which in arbitrary coordinates is written:
 
     # \phi = \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right).
 
-    # Alternatively if "BSSN_RHSs::ConformalFactor" is set to "chi", then
+    # Alternatively if "BSSN_RHSs::EvolvedConformalFactor_cf" is set to "chi", then
 
     # \chi = e^{-4 \phi} = \exp\left(-4 \frac{1}{12} \left(\frac{\gamma}{\bar{\gamma}}\right)\right)
     #      = \exp\left(-\frac{1}{3} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) = \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/3}.
     #
-    # Finally if "BSSN_RHSs::ConformalFactor" is set to "W", then
+    # Finally if "BSSN_RHSs::EvolvedConformalFactor_cf" is set to "W", then
 
     # W = e^{-2 \phi} = \exp\left(-2 \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
     # \exp\left(-\frac{1}{6} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
@@ -228,14 +228,14 @@ def Tmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
 
     cf = sp.sympify(0)
 
-    if par.parval_from_str("ConformalFactor") == "phi":
+    if par.parval_from_str("EvolvedConformalFactor_cf") == "phi":
         cf = sp.Rational(1, 12) * sp.log(gammaDET / gammabarDET)
-    elif par.parval_from_str("ConformalFactor") == "chi":
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "chi":
         cf = (gammaDET / gammabarDET) ** (-sp.Rational(1, 3))
-    elif par.parval_from_str("ConformalFactor") == "W":
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "W":
         cf = (gammaDET / gammabarDET) ** (-sp.Rational(1, 6))
     else:
-        print("Error ConformalFactor type = \"" + par.parval_from_str("ConformalFactor") + "\" unknown.")
+        print("Error EvolvedConformalFactor_cf type = \"" + par.parval_from_str("EvolvedConformalFactor_cf") + "\" unknown.")
         exit(1)
 
     # Step 4: Rescale tensorial quantities according to the prescription described in

@@ -72,12 +72,12 @@ def BSSN_gauge_RHSs():
 
     # Implement the harmonic slicing lapse condition
     elif par.parval_from_str(thismodule + "::LapseEvolutionOption") == "HarmonicSlicing":
-        if par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "W":
+        if par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "W":
             alpha_rhs = -3 * cf ** (-4) * Brhs.cf_rhs
-        elif par.parval_from_str("BSSN.BSSN_quantities::ConformalFactor") == "phi":
+        elif par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "phi":
             alpha_rhs = 6 * sp.exp(6 * cf) * Brhs.cf_rhs
         else:
-            print("Error LapseEvolutionOption==HarmonicSlicing unsupported for ConformalFactor!=(W or phi)")
+            print("Error LapseEvolutionOption==HarmonicSlicing unsupported for EvolvedConformalFactor_cf!=(W or phi)")
             exit(1)
 
     # Step 2.c: Frozen lapse

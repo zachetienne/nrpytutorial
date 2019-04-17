@@ -101,7 +101,7 @@ def Psi4():
 
     # Step 5.1: Construct 3-Ricci tensor R_{ij} = gamma^{im} R_{ijml}
     RDD = ixp.zerorank2()
-    gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
+    gammaUU = AB.gammaUU
     for j in range(DIM):
         for l in range(DIM):
             for i in range(DIM):
