@@ -17,7 +17,7 @@ import grid as gri
 import finite_difference as fin
 import reference_metric as rfm
 
-def Psi4_tetrads_Ccode_function(tetrad_Ccode_filename = "BSSN/Psi4_tetrad.h",TetradChoice="QuasiKinnersley",version=2):
+def Psi4_tetrads_Ccode_function(tetrad_Ccode_filename = "BSSN/Psi4_tetrad.h",TetradChoice="QuasiKinnersley"):
     # Step 1.b: Given the chosen coordinate system, set up
     #           corresponding reference metric and needed
     #           reference metric quantities
@@ -27,12 +27,8 @@ def Psi4_tetrads_Ccode_function(tetrad_Ccode_filename = "BSSN/Psi4_tetrad.h",Tet
     rfm.reference_metric()
 
     # Step 1.c: Import the tetrad module
-    if version==1:
-        import BSSN.Psi4_tetrads as BP4T
-        par.set_parval_from_str("BSSN.Psi4_tetrads::TetradChoice", TetradChoice)
-    else:
-        import BSSN.Psi4_tetradsv2 as BP4T
-        par.set_parval_from_str("BSSN.Psi4_tetradsv2::TetradChoice", TetradChoice)
+    import BSSN.Psi4_tetrads as BP4T
+    par.set_parval_from_str("BSSN.Psi4_tetrads::TetradChoice", TetradChoice)
 
     # Step 2: Construct the C function header and 
     #         convert (xx0,xx1,xx2) to the corresponding
@@ -56,11 +52,7 @@ void Psi4_tetrad(const REAL xx0,const REAL xx1,const REAL xx2, const REAL *in_gf
     #           expressions for the tetrad vectors $n^\mu$,
     #           $\Re m^\mu$, and $\Im m^\mu$, which are needed
     #           to construct $\Psi_4$.
-
-    if version==1:
-        BP4T.Psi4_tetrads()
-    else:
-        BP4T.Psi4_tetradsv2()
+    BP4T.Psi4_tetrads()
     Psi4_tetrad_vecs = []
 
     # Step 3.b: As the tetrad expressions depend on BSSN
