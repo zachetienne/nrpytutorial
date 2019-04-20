@@ -119,31 +119,41 @@ def Psi4_tetrads():
             print("ERROR: unknown vector!")
             exit(1)
 
-    def update_omega(omegaDD, v1U,v2U,v3U,gammaDD):
-        for i in range(DIM):
-            for j in range(DIM):
-                omegaDD[i][j] = sp.sympify(0)
-        for i in range(DIM):
-            for j in range(DIM):
-                for a in range(DIM):
-                    for b in range(DIM):
-                        omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaDD[a][b]
+    def update_omega(omegaDD, i,j, v1U,v2U,v3U,gammaDD):
+        omegaDD[i][j] = sp.sympify(0)
+        for a in range(DIM):
+            for b in range(DIM):
+                omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaDD[a][b]
 
     # Step 2.i: Define e^a_i. Note that:
     #           omegaDD[0][0] = \omega_{11} above; 
     #           omegaDD[1][1] = \omega_{22} above, etc.
+    # First e_1^a: Orthogonalize & normalize:
     e1U = ixp.zerorank1()
-    e2U = ixp.zerorank1()
-    e3U = ixp.zerorank1()
-    update_omega(omegaDD, v1U,v2U,v3U,gammaDD)
+    update_omega(omegaDD, 0,0, v1U,v2U,v3U,gammaDD)
     for a in range(DIM):
         e1U[a] = v1U[a]/sp.sqrt(omegaDD[0][0])
-    update_omega(omegaDD, e1U,v2U,v3U,gammaDD)
+
+    # Next e_2^a: First orthogonalize:
+    e2U = ixp.zerorank1()
+    update_omega(omegaDD, 0,1, e1U,v2U,v3U,gammaDD)
     for a in range(DIM):
-        e2U[a] = (v2U[a] - omegaDD[0][1]*e1U[a])/sp.sqrt(omegaDD[1][1])
-    update_omega(omegaDD, e1U,e2U,v3U,gammaDD)
+        e2U[a] = (v2U[a] - omegaDD[0][1]*e1U[a])
+    # Then normalize:
+    update_omega(omegaDD, 1,1, e1U,e2U,v3U,gammaDD)
     for a in range(DIM):
-        e3U[a] = (v3U[a] - omegaDD[0][2]*e1U[a] - omegaDD[1][2]*e2U[a])/sp.sqrt(omegaDD[2][2])
+        e2U[a] /= sp.sqrt(omegaDD[1][1])
+
+    # Next e_3^a: First orthogonalize:
+    e3U = ixp.zerorank1()
+    update_omega(omegaDD, 0,2, e1U,e2U,v3U,gammaDD)
+    update_omega(omegaDD, 1,2, e1U,e2U,v3U,gammaDD)
+    for a in range(DIM):
+        e3U[a] = (v3U[a] - omegaDD[0][2]*e1U[a] - omegaDD[1][2]*e2U[a])
+    # Then normalize:
+    update_omega(omegaDD, 2,2, e1U,e2U,e3U,gammaDD)
+    for a in range(DIM):
+        e3U[a] /= sp.sqrt(omegaDD[2][2])
 
     # Step 2.j: Construct l^mu, n^mu, and m^mu, based on r^mu, theta^mu, phi^mu, and u^mu:
     r4U     = ixp.zerorank1(DIM=4)
