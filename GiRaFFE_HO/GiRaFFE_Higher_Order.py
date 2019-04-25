@@ -94,7 +94,7 @@ def GiRaFFE_Higher_Order():
     alpha   = gri.register_gridfunctions("AUX","alpha")
     # GiRaFFE uses the Valencia 3-velocity and A_i, which are defined in the initial data module(GiRaFFEfood)
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU",DIM=3)
-    AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD",DIM=3)
+    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD",DIM=3)
     # B^i must be computed at each timestep within GiRaFFE so that the Valencia 3-velocity can be evaluated
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU",DIM=3)
 
@@ -691,11 +691,11 @@ def GiRaFFE_Higher_Order():
     # Step 2.2.e: Construct TEMUDdD_contracted itself
     # Step 2.2.e.i
     TEMUDdD_contracted = ixp.zerorank1()
-    #for i in range(DIM):
-    #    for j in range(DIM):
-    #        for mu in range(4):
-    #            # Term 1:                g_{\mu i,j} T^{\mu j}_{\rm EM}
-    #            TEMUDdD_contracted[i] += g4DDdD[mu][i+1][j+1] * T4EMUU[mu][j+1]
+    for i in range(DIM):
+        for j in range(DIM):
+            for mu in range(4):
+                # Term 1:                g_{\mu i,j} T^{\mu j}_{\rm EM}
+                TEMUDdD_contracted[i] += g4DDdD[mu][i+1][j+1] * T4EMUU[mu][j+1]
 
     # We'll need derivatives of u4U for the next part: 
     u4UdD = ixp.zerorank2(DIM=4)
@@ -719,23 +719,23 @@ def GiRaFFE_Higher_Order():
 
 
     # Step 2.2.e.ii
-#     for i in range(DIM):
-#         for j in range(DIM):
-#             for mu in range(4):
-#                 # Term 2a: g_{\mu i} b^2 u^j_{,j} u^\mu
-#                 TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2*uU_dD[j][j]*u4U[mu]
+    for i in range(DIM):
+        for j in range(DIM):
+            for mu in range(4):
+                # Term 2a: g_{\mu i} b^2 u^j_{,j} u^\mu
+                TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2*uU_dD[j][j]*u4U[mu]
 
-#     for i in range(DIM):
-#         for j in range(DIM):
-#             for mu in range(4):
-#                 # Term 2b: g_{\mu i} b^2 u^j u^\mu_{,j}
-#                 TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2*uU[j]*u4UdD[mu][j+1]
+    for i in range(DIM):
+        for j in range(DIM):
+            for mu in range(4):
+                # Term 2b: g_{\mu i} b^2 u^j u^\mu_{,j}
+                TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2*uU[j]*u4UdD[mu][j+1]
 
-#     for i in range(DIM):
-#         for j in range(DIM):
-#             for mu in range(4):
-#                 # Term 2c: g_{\mu i} b^2 g^{j \mu}_{,j} / 2
-#                 TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2*g4UUdD[j+1][mu][j+1]/2
+    for i in range(DIM):
+        for j in range(DIM):
+            for mu in range(4):
+                # Term 2c: g_{\mu i} b^2 g^{j \mu}_{,j} / 2
+                TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2*g4UUdD[j+1][mu][j+1]/2
 
     for i in range(DIM):
         for j in range(DIM):
@@ -761,11 +761,11 @@ def GiRaFFE_Higher_Order():
 
 
     # Step 2.2.e.iii
-#     for i in range(DIM):
-#         for j in range(DIM):
-#             for mu in range(4):
-#                 # Term 3a: g_{\mu i} ( b^2 )_{,j} u^j u^\mu
-#                 TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2_dD[j]*uU[j]*u4U[mu]
+    for i in range(DIM):
+        for j in range(DIM):
+            for mu in range(4):
+                # Term 3a: g_{\mu i} ( b^2 )_{,j} u^j u^\mu
+                TEMUDdD_contracted[i] += g4DD[mu][i+1]*smallb2_dD[j]*uU[j]*u4U[mu]
 
     for i in range(DIM):
         for j in range(DIM):
@@ -844,7 +844,7 @@ def GiRaFFE_Higher_Order():
     xi = par.Cparameters("REAL",thismodule,"xi") # The damping factor
 
     # Define sqrt(gamma)Phi as psi6Phi
-    psi6Phi = gri.register_gridfunctions("AUX","psi6Phi")
+    psi6Phi = gri.register_gridfunctions("EVOL","psi6Phi")
     Phi = psi6Phi / sp.sqrt(gammadet)
 
     # We'll define a few extra gridfunctions to avoid complicated derivatives
