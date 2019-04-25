@@ -47,7 +47,7 @@ def declare_BSSN_gridfunctions_if_not_declared_already():
     return hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha
 
 # Step 3: Define all basic conformal BSSN tensors
-#        gammabarDD,AbarDD,LambarU,betaU,BU
+#        gammabarDD,AbarDD,LambdabarU,betaU,BU
 #        in terms of BSSN gridfunctions.
 def BSSN_basic_tensors():
 
