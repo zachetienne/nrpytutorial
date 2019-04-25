@@ -94,7 +94,7 @@ def GiRaFFEfood_HO_Aligned_Rotator():
     #dx__drrefmetric_0UDmatrix = drrefmetric__dx_0UDmatrix.inv() # We don't actually need this in this case.
 
     global AD
-    AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD")
+    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
     for i in range(DIM):
         for j in range(DIM):
             AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ASphD[j]

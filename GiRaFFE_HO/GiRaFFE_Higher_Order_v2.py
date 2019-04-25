@@ -93,7 +93,7 @@ def GiRaFFE_Higher_Order_v2():
     alpha   = gri.register_gridfunctions("AUX","alpha")
     # GiRaFFE uses the Valencia 3-velocity and A_i, which are defined in the initial data module(GiRaFFEfood)
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU",DIM=3)
-    AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD",DIM=3)
+    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD",DIM=3)
     # B^i must be computed at each timestep within GiRaFFE so that the Valencia 3-velocity can be evaluated
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU",DIM=3)
 
@@ -395,7 +395,7 @@ def GiRaFFE_Higher_Order_v2():
     xi = par.Cparameters("REAL",thismodule,"xi") # The damping factor
 
     # Define sqrt(gamma)Phi as psi6Phi
-    psi6Phi = gri.register_gridfunctions("AUX","psi6Phi")
+    psi6Phi = gri.register_gridfunctions("EVOL","psi6Phi")
     Phi = psi6Phi / sp.sqrt(gammadet)
 
     # We'll define a few extra gridfunctions to avoid complicated derivatives

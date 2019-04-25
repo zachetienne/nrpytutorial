@@ -119,7 +119,7 @@ def GiRaFFEfood_HO():
     #dx__drrefmetric_0UDmatrix = drrefmetric__dx_0UDmatrix.inv() # We don't actually need this in this case.
 
     global AD
-    AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD")
+    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
     ED = ixp.zerorank1()
 
     for i in range(DIM):
@@ -162,6 +162,7 @@ def GiRaFFEfood_HO():
         for j in range(DIM):
             ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
 
+    #global BU
     BU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
@@ -216,13 +217,42 @@ def GiRaFFEfood_HO_ID_converter():
     global StildeD
     StildeD = ixp.zerorank1()
     BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU") # Reset so that NRPy will access stored values of BU
+    ###########################################################
+    #r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
+    #theta = rfm.xxSph[1]
+    #ASphD = ixp.zerorank1()
+    #ASphD[2] = (r * r * sp.sin(theta)**2)/2
+    #AD = ixp.zerorank1()
+    #drrefmetric__dx_0UDmatrix = sp.Matrix([[sp.diff(rfm.xxSph[0],rfm.xx[0]), sp.diff(rfm.xxSph[0],rfm.xx[1]), sp.diff(rfm.xxSph[0],rfm.xx[2])],
+    #                                       [sp.diff(rfm.xxSph[1],rfm.xx[0]), sp.diff(rfm.xxSph[1],rfm.xx[1]), sp.diff(rfm.xxSph[1],rfm.xx[2])],
+    #                                       [sp.diff(rfm.xxSph[2],rfm.xx[0]), sp.diff(rfm.xxSph[2],rfm.xx[1]), sp.diff(rfm.xxSph[2],rfm.xx[2])]])
+    #for i in range(DIM):
+    #    for j in range(DIM):
+    #        AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ASphD[j]
+    #import WeylScal4NRPy.WeylScalars_Cartesian as weyl
+    #LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
+    #LeviCivitaTensorUUU = ixp.zerorank3()
+    #for i in range(DIM):
+    #    for j in range(DIM):
+    #        for k in range(DIM):
+    #            LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
+    ## For the initial data, we can analytically take the derivatives of A_i
+    #ADdD = ixp.zerorank2()
+    #for i in range(DIM):
+    #    for j in range(DIM):
+    #        ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
+    #BU = ixp.zerorank1()
+    #for i in range(DIM):
+    #    for j in range(DIM):
+    #        for k in range(DIM):
+    #            BU[i] += LeviCivitaTensorUUU[i][j][k] * ADdD[k][j]
+    ###########################################################
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU") # Reset so that NRPy will access stored values of ValenciavU
     B2 = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
             B2 += gammaDD[i][j] * BU[i] * BU[j]
     for i in range(DIM):
-        StildeD[i] = 0
         for j in range(DIM):
             StildeD[i] += gammaDD[i][j] * (ValenciavU[j])*sp.sqrt(gammadet)*B2/4/M_PI
 
