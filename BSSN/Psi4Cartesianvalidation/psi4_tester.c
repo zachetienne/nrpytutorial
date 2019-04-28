@@ -114,7 +114,7 @@ int main(int argc, const char *argv[]) {
 
     REAL psi4_real;
 #include "Psi4_new.h"
-    if(i0==6 && i1==6 && i2==6) {
+    if(i0==Nxx_plus_2NGHOSTS[0]/2 && i1==Nxx_plus_2NGHOSTS[1]/2 && i2==Nxx_plus_2NGHOSTS[2]/2) {
       //printf("%.15e\n",psi4_real);
       psi4_real_new = psi4_real;
     }
@@ -130,7 +130,7 @@ int main(int argc, const char *argv[]) {
 
     REAL psi4_real;
 #include "Psi4_old.h"
-    if(i0==6 && i1==6 && i2==6) {
+    if(i0==Nxx_plus_2NGHOSTS[0]/2 && i1==Nxx_plus_2NGHOSTS[1]/2 && i2==Nxx_plus_2NGHOSTS[2]/2) {
       psi4_real_old = psi4_real;
       //printf("%.15e\n",psi4_real);
     }
