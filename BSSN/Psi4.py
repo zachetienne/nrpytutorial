@@ -35,6 +35,13 @@ def Psi4():
     import BSSN.ADM_in_terms_of_BSSN as AB
     AB.ADM_in_terms_of_BSSN()
 
+    # Step 1.e: Set up tetrad vectors
+    import BSSN.Psi4_tetrads as BP4t
+    BP4t.Psi4_tetrads()
+    mre4U = BP4t.mre4U
+    mim4U = BP4t.mim4U
+    n4U   = BP4t.n4U
+
     # Step 2: Construct the (rank-4) Riemann curvature tensor associated with the ADM 3-metric:
     RDDDD = ixp.zerorank4()
     gammaDDdDD = AB.gammaDDdDD
@@ -133,10 +140,10 @@ def Psi4():
     for j in range(DIM):
         for l in range(DIM):
             rank2term3[j][l] *= sp.sympify(4)
-        
-    mre4U = ixp.declarerank1("mre4U", DIM=4)
-    mim4U = ixp.declarerank1("mim4U", DIM=4)
-    n4U = ixp.declarerank1("n4U", DIM=4)
+
+    # Step 6: Construct real & imaginary parts of psi_4
+    #         by contracting constituent rank 2, 3, and 4
+    #         tensors with input tetrads mre4U, mim4U, & n4U.
 
     def tetrad_product__Real_psi4(n, Mre, Mim, mu, nu, eta, delta):
         return +n[mu] * Mre[nu] * n[eta] * Mre[delta] - n[mu] * Mim[nu] * n[eta] * Mim[delta]

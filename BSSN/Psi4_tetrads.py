@@ -47,32 +47,35 @@ def Psi4_tetrads():
     import BSSN.ADM_in_terms_of_BSSN as AB
     AB.ADM_in_terms_of_BSSN()
 
-    # Step 2.a: Declare the Cartesian x,y,z as input parameters
-    #           and v_1^a, v_2^a, and v_3^a tetrads,
+    # Step 2.a: Declare the Cartesian x,y,z in terms of
+    #           xx0,xx1,xx2.
+    x = rfm.xxCart[0]
+    y = rfm.xxCart[1]
+    z = rfm.xxCart[2]
+
+    # Step 2.b: Declare v_1^a, v_2^a, and v_3^a tetrads,
     #           as well as detgamma and gammaUU from
     #           BSSN.ADM_in_terms_of_BSSN
-    x, y, z = par.Cparameters("REAL", thismodule, ["x", "y", "z"])
-
     v1UCart = ixp.zerorank1()
     v2UCart = ixp.zerorank1()
 
     detgamma = AB.detgamma
     gammaUU = AB.gammaUU
 
-    # Step 2.b: Define v1U and v2U
+    # Step 2.c: Define v1U and v2U
     v1UCart = [-y, x, sp.sympify(0)]
     v2UCart = [x, y, z]
 
-    # Step 2.c: Construct the Jacobian d x_Cart^i / d xx^j
+    # Step 2.d: Construct the Jacobian d x_Cart^i / d xx^j
     Jac_dUCart_dDrfmUD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
             Jac_dUCart_dDrfmUD[i][j] = sp.diff(rfm.xxCart[i], rfm.xx[j])
 
-    # Step 2.d: Invert above Jacobian to get needed d xx^j / d x_Cart^i
+    # Step 2.e: Invert above Jacobian to get needed d xx^j / d x_Cart^i
     Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)
 
-    # Step 2.e: Transform v1U and v2U from the Cartesian to the xx^i basis
+    # Step 2.f: Transform v1U and v2U from the Cartesian to the xx^i basis
     v1U = ixp.zerorank1()
     v2U = ixp.zerorank1()
     for i in range(DIM):
@@ -80,7 +83,7 @@ def Psi4_tetrads():
             v1U[i] += Jac_dUrfm_dDCartUD[i][j] * v1UCart[j]
             v2U[i] += Jac_dUrfm_dDCartUD[i][j] * v2UCart[j]
 
-    # Step 2.f: Define the rank-3 version of the Levi-Civita symbol. Amongst
+    # Step 2.g: Define the rank-3 version of the Levi-Civita symbol. Amongst
     #         other uses, this is needed for the construction of the approximate
     #         quasi-Kinnersley tetrad.
     def define_LeviCivitaSymbol_rank3(DIM=-1):
@@ -96,7 +99,7 @@ def Psi4_tetrads():
                     LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) / 2
         return LeviCivitaSymbol
 
-    # Step 2.g: Define v3U
+    # Step 2.h: Define v3U
     v3U = ixp.zerorank1()
     LeviCivitaSymbolDDD = define_LeviCivitaSymbol_rank3(DIM=3)
     for a in range(DIM):
@@ -105,7 +108,7 @@ def Psi4_tetrads():
                 for d in range(DIM):
                     v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
 
-    # Step 2.h: Define omega_{ij}
+    # Step 2.i: Define omega_{ij}
     omegaDD = ixp.zerorank2()
     gammaDD = AB.gammaDD
     def v_vectorDU(v1U,v2U,v3U,  i,a):
@@ -125,7 +128,7 @@ def Psi4_tetrads():
             for b in range(DIM):
                 omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaDD[a][b]
 
-    # Step 2.i: Define e^a_i. Note that:
+    # Step 2.j: Define e^a_i. Note that:
     #           omegaDD[0][0] = \omega_{11} above; 
     #           omegaDD[1][1] = \omega_{22} above, etc.
     # First e_1^a: Orthogonalize & normalize:
@@ -155,7 +158,7 @@ def Psi4_tetrads():
     for a in range(DIM):
         e3U[a] /= sp.sqrt(omegaDD[2][2])
 
-    # Step 2.j: Construct l^mu, n^mu, and m^mu, based on r^mu, theta^mu, phi^mu, and u^mu:
+    # Step 2.k: Construct l^mu, n^mu, and m^mu, based on r^mu, theta^mu, phi^mu, and u^mu:
     r4U     = ixp.zerorank1(DIM=4)
     u4U     = ixp.zerorank1(DIM=4)
     theta4U = ixp.zerorank1(DIM=4)
