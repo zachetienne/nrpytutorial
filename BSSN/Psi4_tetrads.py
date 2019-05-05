@@ -22,8 +22,10 @@ thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "TetradChoice", "QuasiKinnersley"))
 par.initialize_param(par.glb_param("char", thismodule, "UseCorrectUnitNormal", "False"))
 
-def Psi4_tetrads():
+def Psi4_tetrads(CoordSystem):
     global l4U, n4U, mre4U, mim4U
+
+    par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem)
 
     # Step 1.c: Check if tetrad choice is implemented:
     if par.parval_from_str(thismodule+"::TetradChoice") != "QuasiKinnersley":

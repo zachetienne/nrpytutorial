@@ -37,7 +37,7 @@ def Psi4():
 
     # Step 1.e: Set up tetrad vectors
     import BSSN.Psi4_tetrads as BP4t
-    BP4t.Psi4_tetrads()
+    BP4t.Psi4_tetrads("Cartesian")
     mre4U = BP4t.mre4U
     mim4U = BP4t.mim4U
     n4U   = BP4t.n4U
@@ -141,7 +141,53 @@ def Psi4():
         for l in range(DIM):
             rank2term3[j][l] *= sp.sympify(4)
 
-    # Step 6: Construct real & imaginary parts of psi_4
+    # Next convert to Cartesian. All 3 terms are lower-index.
+    Jac_dUCart_dDrfmUD = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            Jac_dUCart_dDrfmUD[i][j] = sp.simplify(sp.diff(rfm.xxCart[i], rfm.xx[j]))
+
+    # Step 2.e: Invert above Jacobian to get needed d xx^j / d x_Cart^i
+    Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)
+    for i in range(DIM):
+        for j in range(DIM):
+            Jac_dUrfm_dDCartUD[i][j] = sp.simplify(Jac_dUrfm_dDCartUD[i][j])
+
+    # Therefore the Jacobians are, e.g.,
+    # rank2term3CartDD[k][l] = dx_{rfm}^i/dx_{Cart}^k dx_{rfm}^j/dx_{Cart}^l rank2term3DD[i][j]
+    rank2term3CartDD = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                for l in range(DIM):
+                    rank2term3CartDD[k][l] += Jac_dUrfm_dDCartUD[i][k]*Jac_dUrfm_dDCartUD[j][l]*rank2term3[i][j]
+
+    rank3term2CartDDD = ixp.zerorank3()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                for l in range(DIM):
+                    for m in range(DIM):
+                        for n in range(DIM):
+                            rank3term2CartDDD[l][m][n] += Jac_dUrfm_dDCartUD[i][l] * Jac_dUrfm_dDCartUD[j][m] * \
+                                                          Jac_dUrfm_dDCartUD[k][n] * rank3term2[i][j][k]
+
+    rank4term1CartDDDD = ixp.zerorank4()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                for l in range(DIM):
+                    for m in range(DIM):
+                        for n in range(DIM):
+                            for o in range(DIM):
+                                for p in range(DIM):
+                                    rank4term1CartDDDD[m][n][o][p] += Jac_dUrfm_dDCartUD[i][m] * \
+                                                                      Jac_dUrfm_dDCartUD[j][n] * \
+                                                                      Jac_dUrfm_dDCartUD[k][o] * \
+                                                                      Jac_dUrfm_dDCartUD[l][p] * \
+                                                                      rank4term1[i][j][k][l]
+
+                                    # Step 6: Construct real & imaginary parts of psi_4
     #         by contracting constituent rank 2, 3, and 4
     #         tensors with input tetrads mre4U, mim4U, & n4U.
 
@@ -158,31 +204,31 @@ def Psi4():
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
-                    psi4_re += rank4term1[i][j][k][l] * tetrad_product__Real_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
+                    psi4_re += rank4term1CartDDDD[i][j][k][l] * tetrad_product__Real_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
                                                                                   k + 1, l + 1)
-                    psi4_im += rank4term1[i][j][k][l] * tetrad_product__Imag_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
+                    psi4_im += rank4term1CartDDDD[i][j][k][l] * tetrad_product__Imag_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
                                                                                   k + 1, l + 1)
 
     # Second term:
     for j in range(DIM):
         for k in range(DIM):
             for l in range(DIM):
-                psi4_re += rank3term2[j][k][l] * \
-                           sp.Rational(1, 2) * (+tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, k + 1, l + 1)
+                psi4_re += rank3term2CartDDD[j][k][l] * \
+                           sp.Rational(1, 2) * (+ tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, k + 1, l + 1)
                                                 - tetrad_product__Real_psi4(n4U, mre4U, mim4U, j + 1, 0, k + 1, l + 1))
-                psi4_im += rank3term2[j][k][l] * \
-                           sp.Rational(1, 2) * (+tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, k + 1, l + 1)
+                psi4_im += rank3term2CartDDD[j][k][l] * \
+                           sp.Rational(1, 2) * (+ tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, k + 1, l + 1)
                                                 - tetrad_product__Imag_psi4(n4U, mre4U, mim4U, j + 1, 0, k + 1, l + 1))
     # Third term:
     for j in range(DIM):
         for l in range(DIM):
-            psi4_re += rank2term3[j][l] * \
-                       (sp.Rational(1, 4) * (+tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, 0, l + 1)
+            psi4_re += rank2term3CartDD[j][l] * \
+                       (sp.Rational(1, 4) * (+ tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, 0, l + 1)
                                              - tetrad_product__Real_psi4(n4U, mre4U, mim4U, j + 1, 0, 0, l + 1)
                                              - tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, l + 1, 0)
                                              + tetrad_product__Real_psi4(n4U, mre4U, mim4U, j + 1, 0, l + 1, 0)))
-            psi4_im += rank2term3[j][l] * \
-                       (sp.Rational(1, 4) * (+tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, 0, l + 1)
+            psi4_im += rank2term3CartDD[j][l] * \
+                       (sp.Rational(1, 4) * (+ tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, 0, l + 1)
                                              - tetrad_product__Imag_psi4(n4U, mre4U, mim4U, j + 1, 0, 0, l + 1)
                                              - tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, l + 1, 0)
                                              + tetrad_product__Imag_psi4(n4U, mre4U, mim4U, j + 1, 0, l + 1, 0)))
