@@ -37,7 +37,7 @@ def Psi4():
 
     # Step 1.e: Set up tetrad vectors
     import BSSN.Psi4_tetrads as BP4t
-    BP4t.Psi4_tetrads()
+    BP4t.Psi4_tetrads("Cartesian")
     mre4U = BP4t.mre4U
     mim4U = BP4t.mim4U
     n4U   = BP4t.n4U

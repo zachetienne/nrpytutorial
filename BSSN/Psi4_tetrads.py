@@ -22,8 +22,10 @@ thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "TetradChoice", "QuasiKinnersley"))
 par.initialize_param(par.glb_param("char", thismodule, "UseCorrectUnitNormal", "False"))
 
-def Psi4_tetrads():
+def Psi4_tetrads(CoordSystem):
     global l4U, n4U, mre4U, mim4U
+    CoordSystem_orig = par.parval_from_str("reference_metric::CoordSystem")
+    par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem)
 
     # Step 1.c: Check if tetrad choice is implemented:
     if par.parval_from_str(thismodule+"::TetradChoice") != "QuasiKinnersley":
@@ -47,26 +49,26 @@ def Psi4_tetrads():
     import BSSN.ADM_in_terms_of_BSSN as AB
     AB.ADM_in_terms_of_BSSN()
 
-    x,y,z = par.Cparameters("REAL",thismodule,["x","y","z"])
-
     # Step 2.a: Declare the Cartesian x,y,z in terms of
     #           xx0,xx1,xx2.
-    # x = rfm.xxCart[0]
-    # y = rfm.xxCart[1]
-    # z = rfm.xxCart[2]
-
+    x = rfm.xxCart[0]
+    y = rfm.xxCart[1]
+    z = rfm.xxCart[2]
 
     # Step 2.b: Declare v_1^a, v_2^a, and v_3^a tetrads,
-    #           as well as detgammaCart and gammaCartUU from
+    #           as well as detgamma and gammaUU from
     #           BSSN.ADM_in_terms_of_BSSN
     v1UCart = ixp.zerorank1()
     v2UCart = ixp.zerorank1()
 
+    detgamma = AB.detgamma
+    gammaUU = AB.gammaUU
+
     # Step 2.c: Define v1U and v2U
     v1UCart = [-y, x, sp.sympify(0)]
     v2UCart = [x, y, z]
-    #
-    # # Step 2.d: Construct the Jacobian d x_Cart^i / d xx^j
+
+    # Step 2.d: Construct the Jacobian d x_Cart^i / d xx^j
     Jac_dUCart_dDrfmUD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
@@ -75,24 +77,13 @@ def Psi4_tetrads():
     # Step 2.e: Invert above Jacobian to get needed d xx^j / d x_Cart^i
     Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)
 
-    gammaDD = AB.gammaDD
-    gammaCartDD = ixp.zerorank2()
+    # Step 2.f: Transform v1U and v2U from the Cartesian to the xx^i basis
+    v1U = ixp.zerorank1()
+    v2U = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    gammaCartDD[i][j] += Jac_dUrfm_dDCartUD[i][k] * \
-                                         Jac_dUrfm_dDCartUD[j][l] * gammaCartDD[k][l]
-
-    detgammaCart,gammaCartUU = ixp.symm_matrix_inverter3x3(gammaCartDD)
-
-    # Step 2.f: Transform v1U and v2U from the Cartesian to the xx^i basis
-    v1U = v1UCart
-    v2U = v2UCart
-    # for i in range(DIM):
-    #     for j in range(DIM):
-    #         v1U[i] += Jac_dUrfm_dDCartUD[i][j] * v1UCart[j]
-    #         v2U[i] += Jac_dUrfm_dDCartUD[i][j] * v2UCart[j]
+            v1U[i] += Jac_dUrfm_dDCartUD[i][j] * v1UCart[j]
+            v2U[i] += Jac_dUrfm_dDCartUD[i][j] * v2UCart[j]
 
     # Step 2.g: Define the rank-3 version of the Levi-Civita symbol. Amongst
     #         other uses, this is needed for the construction of the approximate
@@ -117,10 +108,11 @@ def Psi4_tetrads():
         for b in range(DIM):
             for c in range(DIM):
                 for d in range(DIM):
-                    v3U[a] += sp.sqrt(detgammaCart) * gammaCartUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
+                    v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
 
     # Step 2.i: Define omega_{ij}
     omegaDD = ixp.zerorank2()
+    gammaDD = AB.gammaDD
     def v_vectorDU(v1U,v2U,v3U,  i,a):
         if i==0:
             return v1U[a]
@@ -132,39 +124,39 @@ def Psi4_tetrads():
             print("ERROR: unknown vector!")
             exit(1)
 
-    def update_omega(omegaDD, i,j, v1U,v2U,v3U,gammaCartDD):
+    def update_omega(omegaDD, i,j, v1U,v2U,v3U,gammaDD):
         omegaDD[i][j] = sp.sympify(0)
         for a in range(DIM):
             for b in range(DIM):
-                omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaCartDD[a][b]
+                omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaDD[a][b]
 
     # Step 2.j: Define e^a_i. Note that:
     #           omegaDD[0][0] = \omega_{11} above; 
     #           omegaDD[1][1] = \omega_{22} above, etc.
     # First e_1^a: Orthogonalize & normalize:
     e1U = ixp.zerorank1()
-    update_omega(omegaDD, 0,0, v1U,v2U,v3U,gammaCartDD)
+    update_omega(omegaDD, 0,0, v1U,v2U,v3U,gammaDD)
     for a in range(DIM):
         e1U[a] = v1U[a]/sp.sqrt(omegaDD[0][0])
 
     # Next e_2^a: First orthogonalize:
     e2U = ixp.zerorank1()
-    update_omega(omegaDD, 0,1, e1U,v2U,v3U,gammaCartDD)
+    update_omega(omegaDD, 0,1, e1U,v2U,v3U,gammaDD)
     for a in range(DIM):
         e2U[a] = (v2U[a] - omegaDD[0][1]*e1U[a])
     # Then normalize:
-    update_omega(omegaDD, 1,1, e1U,e2U,v3U,gammaCartDD)
+    update_omega(omegaDD, 1,1, e1U,e2U,v3U,gammaDD)
     for a in range(DIM):
         e2U[a] /= sp.sqrt(omegaDD[1][1])
 
     # Next e_3^a: First orthogonalize:
     e3U = ixp.zerorank1()
-    update_omega(omegaDD, 0,2, e1U,e2U,v3U,gammaCartDD)
-    update_omega(omegaDD, 1,2, e1U,e2U,v3U,gammaCartDD)
+    update_omega(omegaDD, 0,2, e1U,e2U,v3U,gammaDD)
+    update_omega(omegaDD, 1,2, e1U,e2U,v3U,gammaDD)
     for a in range(DIM):
         e3U[a] = (v3U[a] - omegaDD[0][2]*e1U[a] - omegaDD[1][2]*e2U[a])
     # Then normalize:
-    update_omega(omegaDD, 2,2, e1U,e2U,e3U,gammaCartDD)
+    update_omega(omegaDD, 2,2, e1U,e2U,e3U,gammaDD)
     for a in range(DIM):
         e3U[a] /= sp.sqrt(omegaDD[2][2])
 
@@ -203,3 +195,5 @@ def Psi4_tetrads():
         n4U[mu]   = isqrt2*(u4U[mu] - r4U[mu])
         mre4U[mu] = isqrt2*theta4U[mu]
         mim4U[mu] = isqrt2*  phi4U[mu]
+
+    par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
