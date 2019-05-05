@@ -81,8 +81,8 @@ def Psi4_tetrads():
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
-                    gammaCartDD[k][l] += Jac_dUrfm_dDCartUD[i][k] * \
-                                         Jac_dUrfm_dDCartUD[j][l] * gammaDD[i][j]
+                    gammaCartDD[i][j] += Jac_dUrfm_dDCartUD[i][k] * \
+                                         Jac_dUrfm_dDCartUD[j][l] * gammaDD[k][l]
 
     detgammaCart,gammaCartUU = ixp.symm_matrix_inverter3x3(gammaCartDD)
 
