@@ -24,7 +24,7 @@ par.initialize_param(par.glb_param("char", thismodule, "UseCorrectUnitNormal", "
 
 def Psi4_tetrads(CoordSystem):
     global l4U, n4U, mre4U, mim4U
-
+    CoordSystem_orig = par.parval_from_str("reference_metric::CoordSystem")
     par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem)
 
     # Step 1.c: Check if tetrad choice is implemented:
@@ -195,3 +195,5 @@ def Psi4_tetrads(CoordSystem):
         n4U[mu]   = isqrt2*(u4U[mu] - r4U[mu])
         mre4U[mu] = isqrt2*theta4U[mu]
         mim4U[mu] = isqrt2*  phi4U[mu]
+
+    par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
