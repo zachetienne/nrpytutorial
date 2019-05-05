@@ -70,10 +70,14 @@ def Psi4_tetrads():
     Jac_dUCart_dDrfmUD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            Jac_dUCart_dDrfmUD[i][j] = sp.diff(rfm.xxCart[i], rfm.xx[j])
+            Jac_dUCart_dDrfmUD[i][j] = sp.simplify(sp.diff(rfm.xxCart[i], rfm.xx[j]))
 
     # Step 2.e: Invert above Jacobian to get needed d xx^j / d x_Cart^i
     Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)
+    # Step 2.e.i: Simplify expressions:
+    for i in range(DIM):
+        for j in range(DIM):
+            Jac_dUrfm_dDCartUD[i][j] = sp.simplify(Jac_dUrfm_dDCartUD[i][j])
 
     # Step 2.f: Transform v1U and v2U from the Cartesian to the xx^i basis
     v1U = ixp.zerorank1()
@@ -107,6 +111,11 @@ def Psi4_tetrads():
             for c in range(DIM):
                 for d in range(DIM):
                     v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
+    # Step 2.h.i: Simplify expressions for v1U,v2U,v3U. This greatly expedites the C code generation (~10x faster)
+    for a in range(DIM):
+        v1U[a] = sp.simplify(v1U[a])
+        v2U[a] = sp.simplify(v2U[a])
+        v3U[a] = sp.simplify(v3U[a])
 
     # Step 2.i: Define omega_{ij}
     omegaDD = ixp.zerorank2()

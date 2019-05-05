@@ -16,7 +16,7 @@ import reference_metric as rfm
 
 def Psi4():
 
-    global psi4_im, psi4_re
+    global psi4_im_pt, psi4_re_pt
 
     # Step 1.b: Given the chosen coordinate system, set up
     #           corresponding reference metric and needed
@@ -151,37 +151,37 @@ def Psi4():
     def tetrad_product__Imag_psi4(n, Mre, Mim, mu, nu, eta, delta):
         return -n[mu] * Mre[nu] * n[eta] * Mim[delta] - n[mu] * Mim[nu] * n[eta] * Mre[delta]
 
-    psi4_re = sp.sympify(0)
-    psi4_im = sp.sympify(0)
+    psi4_re_pt = [sp.sympify(0),sp.sympify(0),sp.sympify(0)]
+    psi4_im_pt = [sp.sympify(0),sp.sympify(0),sp.sympify(0)]
     # First term:
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
                 for l in range(DIM):
-                    psi4_re += rank4term1[i][j][k][l] * tetrad_product__Real_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
+                    psi4_re_pt[0] += rank4term1[i][j][k][l] * tetrad_product__Real_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
                                                                                   k + 1, l + 1)
-                    psi4_im += rank4term1[i][j][k][l] * tetrad_product__Imag_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
+                    psi4_im_pt[0] += rank4term1[i][j][k][l] * tetrad_product__Imag_psi4(n4U, mre4U, mim4U, i + 1, j + 1,
                                                                                   k + 1, l + 1)
 
     # Second term:
     for j in range(DIM):
         for k in range(DIM):
             for l in range(DIM):
-                psi4_re += rank3term2[j][k][l] * \
+                psi4_re_pt[1] += rank3term2[j][k][l] * \
                            sp.Rational(1, 2) * (+tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, k + 1, l + 1)
                                                 - tetrad_product__Real_psi4(n4U, mre4U, mim4U, j + 1, 0, k + 1, l + 1))
-                psi4_im += rank3term2[j][k][l] * \
+                psi4_im_pt[1] += rank3term2[j][k][l] * \
                            sp.Rational(1, 2) * (+tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, k + 1, l + 1)
                                                 - tetrad_product__Imag_psi4(n4U, mre4U, mim4U, j + 1, 0, k + 1, l + 1))
     # Third term:
     for j in range(DIM):
         for l in range(DIM):
-            psi4_re += rank2term3[j][l] * \
+            psi4_re_pt[2] += rank2term3[j][l] * \
                        (sp.Rational(1, 4) * (+tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, 0, l + 1)
                                              - tetrad_product__Real_psi4(n4U, mre4U, mim4U, j + 1, 0, 0, l + 1)
                                              - tetrad_product__Real_psi4(n4U, mre4U, mim4U, 0, j + 1, l + 1, 0)
                                              + tetrad_product__Real_psi4(n4U, mre4U, mim4U, j + 1, 0, l + 1, 0)))
-            psi4_im += rank2term3[j][l] * \
+            psi4_im_pt[2] += rank2term3[j][l] * \
                        (sp.Rational(1, 4) * (+tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, 0, l + 1)
                                              - tetrad_product__Imag_psi4(n4U, mre4U, mim4U, j + 1, 0, 0, l + 1)
                                              - tetrad_product__Imag_psi4(n4U, mre4U, mim4U, 0, j + 1, l + 1, 0)
