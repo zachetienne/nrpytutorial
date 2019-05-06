@@ -20,7 +20,7 @@ import reference_metric as rfm
 thismodule = __name__
 # Current option: QuasiKinnersley = choice made in Baker, Campanelli, and Lousto. PRD 65, 044001 (2002)
 par.initialize_param(par.glb_param("char", thismodule, "TetradChoice", "QuasiKinnersley"))
-par.initialize_param(par.glb_param("char", thismodule, "UseCorrectUnitNormal", "False"))
+par.initialize_param(par.glb_param("char", thismodule, "UseCorrectUnitNormal", "False")) # False = consistent with WeylScal4 ETK thorn.
 
 def Psi4_tetrads():
     global l4U, n4U, mre4U, mim4U
@@ -74,7 +74,8 @@ def Psi4_tetrads():
 
     # Step 2.e: Invert above Jacobian to get needed d xx^j / d x_Cart^i
     Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)
-    # Step 2.e.i: Simplify expressions:
+
+    # Step 2.e.i: Simplify expressions for d xx^j / d x_Cart^i:
     for i in range(DIM):
         for j in range(DIM):
             Jac_dUrfm_dDCartUD[i][j] = sp.simplify(Jac_dUrfm_dDCartUD[i][j])
@@ -111,6 +112,7 @@ def Psi4_tetrads():
             for c in range(DIM):
                 for d in range(DIM):
                     v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
+
     # Step 2.h.i: Simplify expressions for v1U,v2U,v3U. This greatly expedites the C code generation (~10x faster)
     for a in range(DIM):
         v1U[a] = sp.simplify(v1U[a])
