@@ -35,7 +35,7 @@ def ccode_postproc(string):
         print("Error: "+__name__+"::PRECISION = \""+ PRECISION +"\" not supported")
         exit(1)
     # ... then we append the above suffix to standard C math library functions:
-    for func in ['pow', 'sqrt', 'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'exp', 'log']:
+    for func in ['pow', 'sqrt', 'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'exp', 'log', 'fabs']:
         string2 = re.sub(func+'\(', func + cmathsuffix+"(", string); string = string2
 
     # Finally, SymPy prefers to output Rationals as long-double fractions.
