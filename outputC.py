@@ -4,7 +4,7 @@ from SIMD import expr_convert_to_SIMD_intrins
 
 from collections import namedtuple
 lhrh = namedtuple('lhrh', 'lhs rhs')
-outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix SIMD_enable SIMD_debug')
+outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix SIMD_enable SIMD_debug enable_TYPE')
 
 # Parameter initialization is called once, within nrpy.py.
 par.initialize_param(par.glb_param("char", __name__, "PRECISION", "double")) # __name__ = "outputC", this module's name.
@@ -59,6 +59,7 @@ def parse_outCparams_string(params):
     CSE_varprefix = "tmp"
     SIMD_enable = "False"
     SIMD_debug = "False"
+    enable_TYPE = "True"
 
     if params != "":
         params2 = re.sub("^,","",params)
@@ -105,11 +106,13 @@ def parse_outCparams_string(params):
                 SIMD_enable = value[i]
             elif parnm[i] == "SIMD_debug":
                 SIMD_debug = value[i]
+            elif parnm[i] == "enable_TYPE":
+                enable_TYPE = value[i]
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 exit(1)
 
-    return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_debug)
+    return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_debug,enable_TYPE)
 
 import sympy as sp
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
@@ -121,6 +124,9 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     preindent = outCparams.preindent
     TYPE = par.parval_from_str("PRECISION")
 
+    if outCparams.enable_TYPE == "False":
+        TYPE = ""
+    
     # Step 0: Initialize
     #  commentblock: comment block containing the input SymPy string,
     #                set only if outCverbose==True
@@ -133,10 +139,13 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     #         within the C code. For example for AVX-256, the C code should have
     #         #define REAL_SIMD_ARRAY __m256d
     if outCparams.SIMD_enable == "True":
-        if TYPE != "double":
-            print("SIMD output currently only supports double precision. Sorry!")
+        if not (TYPE == "double" or TYPE == ""):
+            print("SIMD output currently only supports double precision or typeless. Sorry!")
             exit(1)
-        TYPE = "REAL_SIMD_ARRAY"
+        if TYPE == "double":
+            TYPE = "REAL_SIMD_ARRAY"
+        else:
+            TYPE = ""
 
     # Step 2a: Apply sanity checks when either sympyexpr or
     #          output_varname_str is a list.
@@ -220,11 +229,15 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
         CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order='canonical')
         for commonsubexpression in CSE_results[0]:
+            FULLTYPESTRING = "const " + TYPE + " "
+            if outCparams.enable_TYPE == "False":
+                FULLTYPESTRING = ""
+
             if outCparams.SIMD_enable == "True":
-                outstring += outCparams.preindent + indent + "const " + TYPE + " " + str(commonsubexpression[0]) + " = " + \
+                outstring += outCparams.preindent + indent + FULLTYPESTRING + str(commonsubexpression[0]) + " = " + \
                              str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_debug)) + ";\n"
             else:
-                outstring += outCparams.preindent+indent+"const "+TYPE+" "+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
+                outstring += outCparams.preindent+indent+FULLTYPESTRING+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
         for i,result in enumerate(CSE_results[1]):
             if outCparams.SIMD_enable == "True":
                 outstring += outtypestring + output_varname_str[i] + " = " + \
@@ -248,12 +261,13 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             if len(SIMD_const_varnms) != len(SIMD_const_values):
                 print("Error: SIMD constant declaration arrays SIMD_const_varnms[] and SIMD_const_values[] have inconsistent sizes!")
                 exit(1)
-            else:
-                for i in range(len(SIMD_const_varnms)):
-                    SIMD_decls += outCparams.preindent+indent+"const double " + outCparams.CSE_varprefix + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_decls += outCparams.preindent+indent+"const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD("+ outCparams.CSE_varprefix + SIMD_const_varnms[i] + ");\n"
-                    # if i != len(SIMD_const_varnms)-1:
-                    #     SIMD_decls += "\n"
+
+            for i in range(len(SIMD_const_varnms)):
+                if outCparams.enable_TYPE == "False":
+                    SIMD_decls += outCparams.preindent + indent + SIMD_const_varnms[i] + " = " + SIMD_const_values[i]+";\n"
+                else:
+                    SIMD_decls += outCparams.preindent + indent + "const double " + outCparams.CSE_varprefix + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
+                    SIMD_decls += outCparams.preindent+indent+ "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD("+ outCparams.CSE_varprefix + SIMD_const_varnms[i] + ");\n"
                 SIMD_decls += "\n"
 
     # Step 7: Construct final output string
