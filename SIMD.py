@@ -1,4 +1,4 @@
-from sympy import Integer,Symbol,symbols,simplify,Rational,Function,srepr,sin,cos,exp,log,Add,Mul,Pow,preorder_traversal,N,Float,S,var,sympify
+from sympy import Integer,Symbol,symbols,simplify,Rational,Function,srepr,sin,cos,exp,log,Abs,Add,Mul,Pow,preorder_traversal,N,Float,S,var,sympify
 import NRPy_param_funcs as par
 import re
 
@@ -6,6 +6,8 @@ import re
 # Basic arithmetic operations
 def ConstSIMD_check(a):
     return Float(a,34)
+def AbsSIMD_check(a):
+    return Abs(a)
 def AddSIMD_check(a,b):
     return a+b
 def SubSIMD_check(a,b):
@@ -52,6 +54,7 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
 
     expr_orig = expr
 
+    AbsSIMD = Function("AbsSIMD")
     AddSIMD = Function("AddSIMD")
     SubSIMD = Function("SubSIMD")
     MulSIMD = Function("MulSIMD")
@@ -71,7 +74,9 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
     #         Note that due to how SymPy expresses rational numbers, the following does not
     #         affect fractional expressions of integers
     for item in preorder_traversal(expr):
-        if item.func == exp:
+        if item.func == Abs:
+            expr = expr.xreplace({item: AbsSIMD(item.args[0])})
+        elif item.func == exp:
             expr = expr.xreplace({item: ExpSIMD(item.args[0])})
         elif item.func == log:
             expr = expr.xreplace({item: LogSIMD(item.args[0])})
