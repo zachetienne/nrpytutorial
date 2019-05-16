@@ -354,8 +354,8 @@ def GiRaFFE_Higher_Order_v2():
 
     for i in range(DIM):
         for j in range (DIM):
-            for mu in range(DIM):
-                SevolParenUD[i][j] += alpsqrtgam * g4DD[mu+1][i+1] * T4EMUU[mu+1][j+1]
+            for mu in range(4):
+                SevolParenUD[i][j] += alpsqrtgam * g4DD[mu][i+1] * T4EMUU[mu][j+1]
 
     SevolParenUD_dD = ixp.declarerank3("SevolParenUD_dD","nosym")
 
