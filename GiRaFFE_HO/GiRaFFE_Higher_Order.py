@@ -82,7 +82,7 @@ def GiRaFFE_Higher_Order():
     DIM = par.parval_from_str("grid::DIM")
 
     # Step 1.1: Set the finite differencing order to 4.
-    par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
+    #par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
 
     thismodule = "GiRaFFE_NRPy"
 
