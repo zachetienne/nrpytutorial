@@ -1,15 +1,15 @@
 # As documented in the NRPy+ tutorial module
 #   Tutorial-SpinWeighted_Spherical_Harmonics.ipynb,
 #   this module will produce the required C code for
-#   computing spin wieght spherical hamronics for s = -2,
-#   for l in [0,8] and m in [-l, l] by deifnition using
-#   the Goldberg function
+#   computing spin weighted spherical hamronics for s = -2,
+#   for l in [0,maximum_l] and m in [-l, l], using
+#   the Goldberg formula
 
 # Authors: Brandon Clark
 #          Zachariah B. Etienne
 #          zachetie **at** gmail **dot* com
 
-# The Goldberg function can be found at the following citation:
+# The Goldberg formula can be found at the following citation:
 #    https://aip.scitation.org/doi/10.1063/1.1705135
 # Wikipedia also has an article on Spin-Weighted Spherical Hamronics:
 #   https://en.wikipedia.org/w/index.php?title=Spin-weighted_spherical_harmonics&oldid=853425244
