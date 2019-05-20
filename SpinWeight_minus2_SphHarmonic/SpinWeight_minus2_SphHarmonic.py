@@ -79,7 +79,7 @@ if(l<0 || l>maximum_l || m<-l || m>+l) {
             for m in range(-l,l+1):
                 file.write("            case "+str(m)+":\n")
                 Y_m2_lm = Y(-2, l, m, th, ph)
-                Cstring = outputC([sp.re(Y_m2_lm),sp.im(Y_m2_lm)],["*reYlmswm2_l_m","*reYlmswm2_l_m"],
+                Cstring = outputC([sp.re(Y_m2_lm),sp.im(Y_m2_lm)],["*reYlmswm2_l_m","*imYlmswm2_l_m"],
                                   "returnstring",outCparams)
                 file.write(Cstring)
                 file.write("                  return;\n")
