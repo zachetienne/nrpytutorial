@@ -60,7 +60,7 @@ def SpinWeight_minus2_SphHarmonic(maximum_l=8,filename="SpinWeight_minus2_SphHar
     #         s=-2 spin-weighted spherical harmonics, 
     #         using NRPy+'s outputC() function.
 
-    outCparams = "preindent=3,outCfileaccess=a,outCverbose=False,includebraces=False"
+    outCparams = "preindent=3,outCfileaccess=a,outCverbose=False,includebraces=True"
 
     with open(filename, "w") as file:
         file.write("""
