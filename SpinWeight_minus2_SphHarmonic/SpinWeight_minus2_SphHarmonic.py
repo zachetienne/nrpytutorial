@@ -65,9 +65,9 @@ def SpinWeight_minus2_SphHarmonic(maximum_l=8,filename="SpinWeight_minus2_SphHar
     with open(filename, "w") as file:
         file.write("""
 void SpinWeight_minus2_SphHarmonic(const int l, const int m, const REAL th, const REAL ph,
-                                   REAL *reYlmswm2_l_m, REAL *reYlmswm2_l_m) {
-if(l<0 || l>maximum_l || m<-l || m>+l) {
-    printf("ERROR: SpinWeight_minus2_SphHarmonic handles only l=[0,maximum_l] and only m=[-l,+l] is defined.\\n");
+                                   REAL *reYlmswm2_l_m, REAL *imYlmswm2_l_m) {
+if(l<0 || l>"""+str(maximum_l)+""" || m<-l || m>+l) {
+    printf("ERROR: SpinWeight_minus2_SphHarmonic handles only l=[0,"""+str(maximum_l)+"""] and only m=[-l,+l] is defined.\\n");
     printf("       You chose l=%d and m=%d, which is out of these bounds.\\n",l,m);
     exit(1);
 }\n""")
