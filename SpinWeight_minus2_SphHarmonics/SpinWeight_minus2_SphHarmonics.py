@@ -19,7 +19,7 @@ import sympy as sp
 import NRPy_param_funcs as par
 from outputC import *
 
-def SpinWeight_minus2_SphHarmonic(maximum_l=8,filename="SpinWeight_minus2_SphHarmonic/SpinWeight_minus2_SphHarmonic.h"):
+def SpinWeight_minus2_SphHarmonics(maximum_l=8,filename="SpinWeight_minus2_SphHarmonics/SpinWeight_minus2_SphHarmonics.h"):
     # Step 2: Defining the Goldberg function
 
     # Step 2.a: Declare SymPy symbols:
@@ -64,10 +64,10 @@ def SpinWeight_minus2_SphHarmonic(maximum_l=8,filename="SpinWeight_minus2_SphHar
 
     with open(filename, "w") as file:
         file.write("""
-void SpinWeight_minus2_SphHarmonic(const int l, const int m, const REAL th, const REAL ph,
+void SpinWeight_minus2_SphHarmonics(const int l, const int m, const REAL th, const REAL ph,
                                    REAL *reYlmswm2_l_m, REAL *imYlmswm2_l_m) {
 if(l<0 || l>"""+str(maximum_l)+""" || m<-l || m>+l) {
-    printf("ERROR: SpinWeight_minus2_SphHarmonic handles only l=[0,"""+str(maximum_l)+"""] and only m=[-l,+l] is defined.\\n");
+    printf("ERROR: SpinWeight_minus2_SphHarmonics handles only l=[0,"""+str(maximum_l)+"""] and only m=[-l,+l] is defined.\\n");
     printf("       You chose l=%d and m=%d, which is out of these bounds.\\n",l,m);
     exit(1);
 }\n""")
@@ -85,4 +85,4 @@ if(l<0 || l>"""+str(maximum_l)+""" || m<-l || m>+l) {
                 file.write("                  return;\n")
             file.write("        }  /* End switch(m) */\n")
         file.write("    } /* End switch(l) */\n")
-        file.write("} /* End function SpinWeight_minus2_SphHarmonic() */\n")
+        file.write("} /* End function SpinWeight_minus2_SphHarmonics() */\n")
