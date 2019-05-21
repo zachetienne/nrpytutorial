@@ -10,7 +10,7 @@ import finite_difference as fin
 import reference_metric as rfm
 rfm.reference_metric()
 from outputC import *
-import BSSN_RHSs_new as bssn
+import BSSN_RHSs as bssn
 import sympy as sp
 
 # Step 1: Initialize WeylScalar parameters

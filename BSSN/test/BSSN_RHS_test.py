@@ -1,7 +1,7 @@
 import unittest
 import sympy as sp
 import NRPy_param_funcs as par
-import BSSN.BSSN_RHSs_new as rhs
+import BSSN.BSSN_RHSs as rhs
 import BSSN.BSSN_gauge_RHSs as gaugerhs
 import hashlib
 import sys

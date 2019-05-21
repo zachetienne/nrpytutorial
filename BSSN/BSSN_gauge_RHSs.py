@@ -8,7 +8,7 @@
 # Non-gauge BSSN time-evolution equations are documented in the
 #   NRPy+ tutorial module
 #   Tutorial-BSSN_time_evolution-BSSN_RHSs.ipynb,
-#   and separately constructed in the BSSN.BSSN_RHSs_new
+#   and separately constructed in the BSSN.BSSN_RHSs
 #   Python module.
 
 # Author: Zachariah B. Etienne
@@ -25,7 +25,7 @@ import reference_metric as rfm
 # Step 1.a: Load BSSN quantities module
 import BSSN.BSSN_quantities as Bq
 # Step 1.b: Load BSSN RHSs module
-import BSSN.BSSN_RHSs_new as Brhs
+import BSSN.BSSN_RHSs as Brhs
 
 # Step 1.c: Declare/initialize parameters for this module
 thismodule = __name__
