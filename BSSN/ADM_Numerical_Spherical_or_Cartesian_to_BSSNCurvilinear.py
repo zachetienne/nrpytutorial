@@ -252,64 +252,64 @@ ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(xx0xx1xx2,other_inputs,
 """))
         file.write("}\n")
 
-        # Step 6: Compute $\bar{\Lambda}^i$ (Eqs. 4 and 5 of
-        #         [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)),
-        #         from finite-difference derivatives of rescaled metric
-        #         quantities $h_{ij}$:
+    # Step 6: Compute $\bar{\Lambda}^i$ (Eqs. 4 and 5 of
+    #         [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)),
+    #         from finite-difference derivatives of rescaled metric
+    #         quantities $h_{ij}$:
 
-        # \bar{\Lambda}^i = \bar{\gamma}^{jk}\left(\bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk}\right).
+    # \bar{\Lambda}^i = \bar{\gamma}^{jk}\left(\bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk}\right).
 
-        # The reference_metric.py module provides us with analytic expressions for
-        #         $\hat{\Gamma}^i_{jk}$, so here we need only compute
-        #         finite-difference expressions for $\bar{\Gamma}^i_{jk}$, based on
-        #         the values for $h_{ij}$ provided in the initial data. Once
-        #         $\bar{\Lambda}^i$ has been computed, we apply the usual rescaling
-        #         procedure:
+    # The reference_metric.py module provides us with analytic expressions for
+    #         $\hat{\Gamma}^i_{jk}$, so here we need only compute
+    #         finite-difference expressions for $\bar{\Gamma}^i_{jk}$, based on
+    #         the values for $h_{ij}$ provided in the initial data. Once
+    #         $\bar{\Lambda}^i$ has been computed, we apply the usual rescaling
+    #         procedure:
 
-        # \lambda^i = \bar{\Lambda}^i/\text{ReU[i]},
+    # \lambda^i = \bar{\Lambda}^i/\text{ReU[i]},
 
-        # and then output the result to a C file using the NRPy+
-        #         finite-difference C output routine.
+    # and then output the result to a C file using the NRPy+
+    #         finite-difference C output routine.
 
-        # We will need all BSSN gridfunctions to be defined, as well as
-        #     expressions for gammabarDD_dD in terms of exact derivatives of
-        #     the rescaling matrix and finite-difference derivatives of
-        #     hDD's. This functionality is provided by BSSN.BSSN_unrescaled_and_barred_vars,
-        #     which we call here to overwrite above definitions of gammabarDD,gammabarUU, etc.
-        Bq.gammabar__inverse_and_derivs() # Provides gammabarUU and GammabarUDD
-        gammabarUU    = Bq.gammabarUU
-        GammabarUDD   = Bq.GammabarUDD
+    # We will need all BSSN gridfunctions to be defined, as well as
+    #     expressions for gammabarDD_dD in terms of exact derivatives of
+    #     the rescaling matrix and finite-difference derivatives of
+    #     hDD's. This functionality is provided by BSSN.BSSN_unrescaled_and_barred_vars,
+    #     which we call here to overwrite above definitions of gammabarDD,gammabarUU, etc.
+    Bq.gammabar__inverse_and_derivs() # Provides gammabarUU and GammabarUDD
+    gammabarUU    = Bq.gammabarUU
+    GammabarUDD   = Bq.GammabarUDD
 
-        # Next evaluate \bar{\Lambda}^i, based on GammabarUDD above and GammahatUDD
-        #       (from the reference metric):
-        LambdabarU = ixp.zerorank1()
-        for i in range(DIM):
-            for j in range(DIM):
-                for k in range(DIM):
-                    LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
+    # Next evaluate \bar{\Lambda}^i, based on GammabarUDD above and GammahatUDD
+    #       (from the reference metric):
+    LambdabarU = ixp.zerorank1()
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
 
-        # Finally apply rescaling:
-        # lambda^i = Lambdabar^i/\text{ReU[i]}
-        lambdaU = ixp.zerorank1()
-        for i in range(DIM):
-            lambdaU[i] = LambdabarU[i] / rfm.ReU[i]
+    # Finally apply rescaling:
+    # lambda^i = Lambdabar^i/\text{ReU[i]}
+    lambdaU = ixp.zerorank1()
+    for i in range(DIM):
+        lambdaU[i] = LambdabarU[i] / rfm.ReU[i]
 
-        outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
-        lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs","lambdaU0"),rhs=lambdaU[0]),
-                               lhrh(lhs=gri.gfaccess("in_gfs","lambdaU1"),rhs=lambdaU[1]),
-                               lhrh(lhs=gri.gfaccess("in_gfs","lambdaU2"),rhs=lambdaU[2])]
-        lambdaU_expressions_FDout = fin.FD_outputC("returnstring",lambdaU_expressions, outCparams)
+    outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
+    lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs","lambdaU0"),rhs=lambdaU[0]),
+                           lhrh(lhs=gri.gfaccess("in_gfs","lambdaU1"),rhs=lambdaU[1]),
+                           lhrh(lhs=gri.gfaccess("in_gfs","lambdaU2"),rhs=lambdaU[2])]
+    lambdaU_expressions_FDout = fin.FD_outputC("returnstring",lambdaU_expressions, outCparams)
 
-        with open("BSSN/ID_BSSN_lambdas.h", "w") as file:
-            file.write("""
+    with open("BSSN/ID_BSSN_lambdas.h", "w") as file:
+        file.write("""
 void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],const REAL dxx[3],REAL *in_gfs) {\n""")
-            file.write(lp.loop(["i2","i1","i0"],["NGHOSTS","NGHOSTS","NGHOSTS"],
-                               ["NGHOSTS+Nxx[2]","NGHOSTS+Nxx[1]","NGHOSTS+Nxx[0]"],
-                               ["1","1","1"],["const REAL invdx0 = 1.0/dxx[0];\n"+
-                                              "const REAL invdx1 = 1.0/dxx[1];\n"+
-                                              "const REAL invdx2 = 1.0/dxx[2];\n"+
-                                              "#pragma omp parallel for",
-                                              "    const REAL xx2 = xx[2][i2];",
-                                              "        const REAL xx1 = xx[1][i1];"],"",
-                                             "const REAL xx0 = xx[0][i0];\n"+lambdaU_expressions_FDout))
-            file.write("}\n")
+        file.write(lp.loop(["i2","i1","i0"],["NGHOSTS","NGHOSTS","NGHOSTS"],
+                           ["NGHOSTS+Nxx[2]","NGHOSTS+Nxx[1]","NGHOSTS+Nxx[0]"],
+                           ["1","1","1"],["const REAL invdx0 = 1.0/dxx[0];\n"+
+                                          "const REAL invdx1 = 1.0/dxx[1];\n"+
+                                          "const REAL invdx2 = 1.0/dxx[2];\n"+
+                                          "#pragma omp parallel for",
+                                          "    const REAL xx2 = xx[2][i2];",
+                                          "        const REAL xx1 = xx[1][i1];"],"",
+                                         "const REAL xx0 = xx[0][i0];\n"+lambdaU_expressions_FDout))
+        file.write("}\n")
