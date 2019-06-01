@@ -28,7 +28,7 @@ xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 have_already_called_reference_metric_function = False
 
-def reference_metric():
+def reference_metric(SymPySimplifyExpressions=True):
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True
 
@@ -40,9 +40,6 @@ def reference_metric():
 
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
-        # Assuming the spherical radial & theta coordinates
-        #   are positive makes nice simplifications of
-        #   unit vectors possible.
         xx[0] = sp.symbols("xx0", real=True)
         xx[1] = sp.symbols("xx1", real=True)
 
@@ -104,6 +101,52 @@ def reference_metric():
                        [ sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]), -sp.sin(xxSph[1])],
                        [                 -sp.sin(xxSph[2]),                  sp.cos(xxSph[2]),  sp.sympify(0)   ]]
         
+    elif CoordSystem == "NobleSphericalThetaOptionOne" or CoordSystem == "NobleSphericalThetaOptionTwo":
+        R0,x0beg = par.Cparameters("REAL", thismodule, ["R0","x0beg"])
+        xx[0] = sp.symbols("xx0", real=True)
+        r  = R0 + sp.exp(x0beg + xx[0])
+
+        th_c,xi,x1beg = par.Cparameters("REAL", thismodule, ["th_c","xi","x1beg"])
+        xx[1] = sp.symbols("xx1", real=True)
+        x1j = x1beg + xx[1]
+        if CoordSystem == "NobleSphericalThetaOptionOne":
+            th = th_c + (M_PI - 2*th_c)*x1j + xi*sp.sin(2*M_PI)*x1j
+        elif CoordSystem == "NobleSphericalThetaOptionTwo":
+            x1_n_exponent = par.Cparameters("REAL", thismodule, ["x1_n_exponent"])
+            th = M_PI/2 * ( 1 + (1 - xi)*(2*x1j - 1) + (xi - 2*th_c/M_PI)*(2*x1j - 1)**x1_n_exponent )
+
+        xx[2] = sp.symbols("xx2", real=True)
+        ph = xx[2]
+
+        # These DO NOT MATTER for interp_to_Sph_grids.
+#         global xxmin
+#         global xxmax
+#         xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
+#         xxmax = [         RMAX,          M_PI,  M_PI]
+
+        xxSph[0] = r
+        xxSph[1] = th
+        xxSph[2] = ph
+
+        Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
+        Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
+        Cart_to_xx[2] = sp.atan2(Carty, Cartx)
+        
+        # Now define xCart, yCart, and zCart in terms of x0,xx[1],xx[2].
+        #   Note that the relation between r and x0 is not necessarily trivial in SinhSpherical coordinates. See above.
+        xxCart[0] = xxSph[0]*sp.sin(xxSph[1])*sp.cos(xxSph[2])
+        xxCart[1] = xxSph[0]*sp.sin(xxSph[1])*sp.sin(xxSph[2])
+        xxCart[2] = xxSph[0]*sp.cos(xxSph[1])
+
+        scalefactor_orthog[0] = sp.diff(xxSph[0],xx[0])
+        scalefactor_orthog[1] = xxSph[0]
+        scalefactor_orthog[2] = xxSph[0]*sp.sin(xxSph[1])
+
+        # Set the unit vectors
+        UnitVectors = [[ sp.sin(xxSph[1])*sp.cos(xxSph[2]), sp.sin(xxSph[1])*sp.sin(xxSph[2]),  sp.cos(xxSph[1])],
+                       [ sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]), -sp.sin(xxSph[1])],
+                       [                 -sp.sin(xxSph[2]),                  sp.cos(xxSph[2]),  sp.sympify(0)   ]]
+
     elif CoordSystem == "Cylindrical" or CoordSystem == "SinhCylindrical" or CoordSystem == "SinhCylindricalv2":
         # Assuming the cylindrical radial coordinate
         #   is positive makes nice simplifications of
@@ -234,9 +277,9 @@ def reference_metric():
     # Finally, call ref_metric__hatted_quantities()
     #  to construct hatted metric, derivs of hatted
     #  metric, and Christoffel symbols
-    ref_metric__hatted_quantities()
+    ref_metric__hatted_quantities(SymPySimplifyExpressions)
     
-def ref_metric__hatted_quantities():
+def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
     # Step 0: Set dimension DIM
     DIM = par.parval_from_str("grid::DIM")
 
@@ -310,7 +353,10 @@ def ref_metric__hatted_quantities():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                ghatDDdD[i][j][k] = sp.simplify(sp.diff(ghatDD[i][j],xx[k])) # FIXME: BAD: MUST BE SIMPLIFIED OR ANSWER IS INCORRECT! Must be some bug in sympy...
+                if SymPySimplifyExpressions==True:
+                    ghatDDdD[i][j][k] = sp.simplify(sp.diff(ghatDD[i][j],xx[k])) # FIXME: BAD: MUST BE SIMPLIFIED OR ANSWER IS INCORRECT! Must be some bug in sympy...
+                else:
+                    ghatDDdD[i][j][k] = (sp.diff(ghatDD[i][j],xx[k])) # FIXME: BAD: MUST BE SIMPLIFIED OR ANSWER IS INCORRECT! Must be some bug in sympy...
                 for l in range(DIM):
                     ghatDDdDD[i][j][k][l] = (sp.diff(ghatDDdD[i][j][k],xx[l]))
 
