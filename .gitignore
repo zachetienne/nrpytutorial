@@ -1,0 +1,4 @@
+*.pyc
+out*.txt
+htmlcov/
+.coverage
