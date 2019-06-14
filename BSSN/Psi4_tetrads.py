@@ -198,7 +198,9 @@ def Psi4_tetrads():
     mre4U  = ixp.zerorank1(DIM=4)
     mim4U  = ixp.zerorank1(DIM=4)
 
-    isqrt2 = 1/sp.sqrt(2)
+    # M_SQRT1_2 = 1 / sqrt(2) (defined in math.h on Linux)
+    M_SQRT1_2 = par.Cparameters("REAL",thismodule,"M_SQRT1_2")
+    isqrt2 = M_SQRT1_2 #1/sp.sqrt(2) <- SymPy drops precision to 15 sig. digits in unit tests
     for mu in range(4):
         l4U[mu]   = isqrt2*(u4U[mu] + r4U[mu])
         n4U[mu]   = isqrt2*(u4U[mu] - r4U[mu])
