@@ -2,7 +2,7 @@
 dist: xenial # needed for Python 3.7+: https://docs.travis-ci.com/user/reference/xenial/#python-support
 language: python
 python:
-  - "3.4"  # oldest Python 3.x supported
+  - "3.6"  # Second-oldest Python 3.x supported
   - "3.7"  # Latest Python, as of Jun 2019.
   - "3.8-dev" # development Python
   # PyPy versions
