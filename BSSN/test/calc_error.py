@@ -13,7 +13,7 @@ from datetime import datetime
 # Called by run_test
 
 
-def calc_error(mod, calculated_dict, trusted_dict, symbolic_dict):
+def calc_error(mod, calculated_dict, trusted_dict):
 
     # Precision for the module based off the set precision in trusted_values_dict
     precision = trusted_values_dict['precision']
@@ -43,10 +43,8 @@ def calc_error(mod, calculated_dict, trusted_dict, symbolic_dict):
         trusted_num = trusted_dict[var]
         output_str = '\n' + mod + ': ' + var + ': Calculated: ' + str(calculated_num) + '\n' + mod + ': ' + var \
                      + ': Trusted:    ' + str(trusted_num)
-        if logging.getLogger().getEffectiveLevel() == 0:
-            logging.debug(output_str + '\n' + mod + ': ' + var + ': Symbolic: ' + str(symbolic_dict[var]) + '\n')
-        else:
-            logging.debug(output_str + '\n')
+        logging.debug(output_str + '\n')
+
         if trusted_num == 0:
             log10_relative_error = log10(fabs(calculated_num))
         else:

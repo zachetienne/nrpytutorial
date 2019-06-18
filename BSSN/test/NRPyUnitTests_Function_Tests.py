@@ -19,9 +19,8 @@ class TestFunctions(unittest.TestCase):
 
         result_dict = dict()
         trusted_dict = dict()
-        symbolic_dict = dict()
 
-        self.assertEqual(True, calc_error(mod, result_dict, trusted_dict, symbolic_dict))
+        self.assertEqual(True, calc_error(mod, result_dict, trusted_dict))
 
         logging.info('All calc_error tests passed.')
 
@@ -31,118 +30,72 @@ class TestFunctions(unittest.TestCase):
         from trusted_values_dict import trusted_values_dict
 
         mod_dict = dict()
-        first_times = []
+        first_times = dict()
         self.assertEqual(dict(), create_trusted_globals_dict(mod_dict, first_times))
 
         mod_dict = {'mod': []}
-        first_times = [True]
+        first_times = {'mod': True}
         self.assertEqual({'mod': dict()}, create_trusted_globals_dict(mod_dict, first_times))
 
         mod_dict = {'mod': ['hello', 'world']}
-        first_times = [True]
+        first_times = {'mod': True}
         self.assertEqual({'mod': dict()}, create_trusted_globals_dict(mod_dict, first_times))
 
         with self.assertRaises(KeyError):
-            mod_dict = {'mod1': ['hello', 'world']}
-            first_times = [False]
+            mod_dict = {'mod': ['hello', 'world']}
+            first_times = {'mod': False}
             create_trusted_globals_dict(mod_dict, first_times)
 
         with self.assertRaises(AssertionError):
             mod_dict = {'mod': []}
-            first_times = [True, False]
+            first_times = {'mod': True, 'random': False}
             create_trusted_globals_dict(mod_dict, first_times)
 
         with self.assertRaises(AssertionError):
             mod_dict = {'mod1': 'hello', 'mod2': 'world'}
-            first_times = [True]
+            first_times = {'mod1': True}
+            create_trusted_globals_dict(mod_dict, first_times)
+
+        with self.assertRaises(AssertionError):
+            mod_dict = {'a': 1, 'b': 2, 'c': 3}
+            first_times = {'d': 4, 'e': 5, 'f': 6}
+            create_trusted_globals_dict(mod_dict, first_times)
+
+        with self.assertRaises(AssertionError):
+            mod_dict = {'a': 1, 'b': 2, 'c': 3}
+            first_times = {'d': 4, 'e': 5, 'f': 6}
             create_trusted_globals_dict(mod_dict, first_times)
 
         mod_dict = {'BrillLindquist': ['foo', 'bar']}
-        first_times = [True]
+        first_times = {'BrillLindquist': True}
         self.assertEqual({'BrillLindquist': dict()}, create_trusted_globals_dict(mod_dict, first_times))
 
         mod_dict = {'BrillLindquist': ['foo', 'bar']}
-        first_times = [False]
+        first_times = {'BrillLindquist': False}
         self.assertEqual({'BrillLindquist': {'alphaCart': mpf('0.12248333157451517615309'), 'betaCartU[0]': mpf('0.0'), 'betaCartU[1]': mpf('0.0'), 'betaCartU[2]': mpf('0.0'), 'BCartU[0]': mpf('0.0'), 'BCartU[1]': mpf('0.0'), 'BCartU[2]': mpf('0.0'), 'gammaCartDD[0][0]': mpf('66.657039107915231916559'), 'gammaCartDD[0][1]': mpf('0.0'), 'gammaCartDD[0][2]': mpf('0.0'), 'gammaCartDD[1][0]': mpf('0.0'), 'gammaCartDD[1][1]': mpf('66.657039107915231916559'), 'gammaCartDD[1][2]': mpf('0.0'), 'gammaCartDD[2][0]': mpf('0.0'), 'gammaCartDD[2][1]': mpf('0.0'), 'gammaCartDD[2][2]': mpf('66.657039107915231916559'), 'KCartDD[0][0]': mpf('0.0'), 'KCartDD[0][1]': mpf('0.0'), 'KCartDD[0][2]': mpf('0.0'), 'KCartDD[1][0]': mpf('0.0'), 'KCartDD[1][1]': mpf('0.0'), 'KCartDD[1][2]': mpf('0.0'), 'KCartDD[2][0]': mpf('0.0'), 'KCartDD[2][1]': mpf('0.0'), 'KCartDD[2][2]': mpf('0.0')}}
                          , create_trusted_globals_dict(mod_dict, first_times))
 
         mod_dict = {'BrillLindquist': ['foo', 'bar']}
-        first_times = [False]
+        first_times = {'BrillLindquist': False}
         self.assertEqual({'BrillLindquist': trusted_values_dict['BrillLindquistGlobals']}
                          , create_trusted_globals_dict(mod_dict, first_times))
 
         mod_dict = {'BrillLindquist': ['foo', 'bar'], 'mod': ['hello world']}
-        first_times = [False, True]
-        self.assertEqual({'BrillLindquist': trusted_values_dict['BrillLindquistGlobals'], 'mod': dict()}
-                         , create_trusted_globals_dict(mod_dict, first_times))
+        first_times = {'BrillLindquist': False, 'mod': True}
+        self.assertEqual({'BrillLindquist': trusted_values_dict['BrillLindquistGlobals'], 'mod': dict()}, create_trusted_globals_dict(mod_dict, first_times))
 
         mod_dict = {'BrillLindquist': 1, 'ShiftedKerrSchild': 2}
-        first_times = [False, False]
+        first_times = {'BrillLindquist': False, 'ShiftedKerrSchild': False}
         self.assertEqual({'BrillLindquist': trusted_values_dict['BrillLindquistGlobals']
                          , 'ShiftedKerrSchild': trusted_values_dict['ShiftedKerrSchildGlobals']}
                          , create_trusted_globals_dict(mod_dict, first_times))
 
         mod_dict = {'mod1': 1, 'mod2': 2, 'mod3': 3}
-        first_times = [True, True, True]
+        first_times = {'mod1': True, 'mod2': True, 'mod3': True}
         self.assertEqual({'mod1': dict(), 'mod2': dict(), 'mod3': dict()},
                          create_trusted_globals_dict(mod_dict, first_times))
 
         logging.info('\nAll create_trusted_globals_dict tests passed.\n')
-
-    def test_list_to_value_list(self):
-        from list_to_value_list import list_to_value_list
-        from mpmath import mpf, sqrt, mp
-        from random import random, seed
-        from trusted_values_dict import trusted_values_dict
-        from sympy.abc import x, y, z
-
-        seed(trusted_values_dict['seed'])
-        mp.dps = trusted_values_dict['precision']
-
-        var_list = []
-        self.assertEqual([], list_to_value_list(var_list))
-
-        first_val = mpf(sqrt(random()))
-        second_val = mpf(sqrt(random()))
-        third_val = mpf(sqrt(random()))
-
-        var_list = [x]
-        result_list = [first_val]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        var_list = [y]
-        result_list = [first_val]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        var_list = [x, y]
-        result_list = [first_val, second_val]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        var_list = [y, x]
-        result_list = [second_val, first_val]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        var_list = [x, y, z]
-        result_list = [first_val, second_val, third_val]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        var_list = [x+y]
-        result_list = [first_val+second_val]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        var_list = [x/y, (x+y)**2/(x*y)]
-        result_list = [first_val/second_val, (first_val+second_val)**2/(first_val*second_val)]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        var_list = [x-x]
-        result_list = [mpf(0.0)]
-        self.assertEqual(result_list, list_to_value_list(var_list))
-
-        with self.assertRaises(AttributeError):
-            var_list = [0]
-            list_to_value_list(var_list)
-
-        logging.info('All list_to_value_list tests passed')
 
     def test_evaluate_globals(self):
         from evaluate_globals import evaluate_globals
@@ -187,6 +140,43 @@ class TestFunctions(unittest.TestCase):
         self.assertEqual(result_dict, evaluate_globals(mod_dict, locs))
 
         logging.info('\nAll evaluate_globals tests passed.\n')
+
+    def test_expand_variable_dict(self):
+        from expand_variable_dict import expand_variable_dict
+
+        variable_dict = dict()
+        result_dict = dict()
+        self.assertEqual(result_dict, expand_variable_dict(variable_dict))
+
+        variable_dict = {'alpha': 1}
+        result_tuple = {'alpha': 1}
+        self.assertEqual(result_tuple, expand_variable_dict(variable_dict))
+
+        variable_dict = {'alphaD': [1, 2]}
+        result_tuple = {'alphaD[0]': 1, 'alphaD[1]': 2}
+        self.assertEqual(result_tuple, expand_variable_dict(variable_dict))
+
+        variable_dict = {'alphaDD': [[1, 2], [4, 3]]}
+        result_tuple = {'alphaDD[0][0]': 1, 'alphaDD[0][1]': 2, 'alphaDD[1][0]':4 , 'alphaDD[1][1]':3}
+        self.assertEqual(result_tuple, expand_variable_dict(variable_dict))
+
+        variable_dict = {'aDD': [[1, 2, 3, 4, 5], [2, 3, 4, 5, 6], [2, 8, 9, 7, 6], [0, 0, 0, 0, 0], [3, 1, 4, 1, 5]]}
+        result_tuple = {'aDD[0][0]': 1, 'aDD[0][1]': 2, 'aDD[0][2]': 3, 'aDD[0][3]': 4, 'aDD[0][4]': 5,
+                        'aDD[1][0]': 2, 'aDD[1][1]': 3, 'aDD[1][2]': 4, 'aDD[1][3]': 5, 'aDD[1][4]': 6,
+                        'aDD[2][0]': 2, 'aDD[2][1]': 8, 'aDD[2][2]': 9, 'aDD[2][3]': 7, 'aDD[2][4]': 6,
+                        'aDD[3][0]': 0, 'aDD[3][1]': 0, 'aDD[3][2]': 0, 'aDD[3][3]': 0, 'aDD[3][4]': 0,
+                        'aDD[4][0]': 3, 'aDD[4][1]': 1, 'aDD[4][2]': 4, 'aDD[4][3]': 1, 'aDD[4][4]': 5}
+        self.assertEqual(result_tuple, expand_variable_dict(variable_dict))
+
+        variable_dict = {'alpha': 4, 'beta': 5}
+        result_tuple = {'alpha': 4, 'beta': 5}
+        self.assertEqual(result_tuple, expand_variable_dict(variable_dict))
+
+        variable_dict = {'alphaD': [1, 2], 'beta': 3}
+        result_tuple = {'alphaD[0]': 1, 'alphaD[1]': 2, 'beta': 3}
+        self.assertEqual(result_tuple, expand_variable_dict(variable_dict))
+
+        logging.info('\nAll expand_variable_dict tests passed.\n')
 
     def test_functions_and_globals(self):
         from functions_and_globals import functions_and_globals
@@ -249,58 +239,20 @@ class TestFunctions(unittest.TestCase):
         mod_dict = {'BrillLindquist': 'Hello World'}
         fake_mod_dict = {'fake_module': 'Goodbye World'}
 
-        self.assertEqual(is_first_time({}), [])
+        self.assertEqual(is_first_time(dict()), dict())
 
-        self.assertEqual(is_first_time(mod_dict), [False])
-        self.assertEqual(is_first_time(fake_mod_dict), [True])
+        self.assertEqual(is_first_time(mod_dict), {'BrillLindquist': False})
+        self.assertEqual(is_first_time(fake_mod_dict), {'fake_module': True})
 
-        mod_dict.update(fake_mod_dict)
+        large_mod_dict = {'BrillLindquist': 'Hello World', 'fake_module': 'Goodbye World'}
 
-        self.assertEqual(is_first_time(mod_dict), [False, True])
+        self.assertEqual(is_first_time(large_mod_dict), {'BrillLindquist': False, 'fake_module': True})
 
         mod_dict_wrong_capitalization = {'brillLindquist': 2}
 
-        self.assertEqual(is_first_time(mod_dict_wrong_capitalization), [True])
+        self.assertEqual(is_first_time(mod_dict_wrong_capitalization), {'brillLindquist': True})
 
         logging.info('\nAll is_first_time tests passed.\n')
-
-    def test_variable_dict_to_list(self):
-        from variable_dict_to_list import variable_dict_to_list
-
-        variable_dict = dict()
-        result_tuple = [], []
-        self.assertEqual(result_tuple, variable_dict_to_list(variable_dict))
-
-        variable_dict = {'alpha': 1}
-        result_tuple = [1], ['alpha']
-        self.assertEqual(result_tuple, variable_dict_to_list(variable_dict))
-
-        variable_dict = {'alphaD': [1, 2]}
-        result_tuple = [1, 2], ['alphaD[0]', 'alphaD[1]']
-        self.assertEqual(result_tuple, variable_dict_to_list(variable_dict))
-
-        variable_dict = {'alphaDD': [[1, 2], [4, 3]]}
-        result_tuple = [1, 2, 4, 3], ['alphaDD[0][0]', 'alphaDD[0][1]', 'alphaDD[1][0]', 'alphaDD[1][1]']
-        self.assertEqual(result_tuple, variable_dict_to_list(variable_dict))
-
-        variable_dict = {'aDD': [[1, 2, 3, 4, 5], [2, 3, 4, 5, 6], [10, 8, 9, 7, 6], [0, 0, 0, 0, 0], [3, 1, 4, 1, 5]]}
-        result_tuple = [1, 2, 3, 4, 5, 2, 3, 4, 5, 6, 10, 8, 9, 7, 6, 0, 0, 0, 0, 0, 3, 1, 4, 1, 5], \
-                       ['aDD[0][0]', 'aDD[0][1]', 'aDD[0][2]', 'aDD[0][3]', 'aDD[0][4]',
-                        'aDD[1][0]', 'aDD[1][1]', 'aDD[1][2]', 'aDD[1][3]', 'aDD[1][4]',
-                        'aDD[2][0]', 'aDD[2][1]', 'aDD[2][2]', 'aDD[2][3]', 'aDD[2][4]',
-                        'aDD[3][0]', 'aDD[3][1]', 'aDD[3][2]', 'aDD[3][3]', 'aDD[3][4]',
-                        'aDD[4][0]', 'aDD[4][1]', 'aDD[4][2]', 'aDD[4][3]', 'aDD[4][4]']
-        self.assertEqual(result_tuple, variable_dict_to_list(variable_dict))
-
-        variable_dict = {'alpha': 4, 'beta': 5}
-        result_tuple = [4, 5], ['alpha', 'beta']
-        self.assertEqual(result_tuple, variable_dict_to_list(variable_dict))
-
-        variable_dict = {'alphaD': [1, 2], 'beta': 3}
-        result_tuple = [1, 2, 3], ['alphaD[0]', 'alphaD[1]', 'beta']
-        self.assertEqual(result_tuple, variable_dict_to_list(variable_dict))
-
-        logging.info('\nAll variable_dict_to_list tests passed.\n')
 
     def test_run_test(self):
         from run_test import run_test
@@ -308,6 +260,61 @@ class TestFunctions(unittest.TestCase):
         mod_dict = {}
         with self.assertRaises(AssertionError):
             run_test(self, mod_dict, locals())
+
+    def test_var_dict_to_value_dict(self):
+        from var_dict_to_value_dict import var_dict_to_value_dict
+        from mpmath import mpf, sqrt, mp
+        from random import random, seed
+        from trusted_values_dict import trusted_values_dict
+        from sympy.abc import x, y, z
+
+        seed(trusted_values_dict['seed'])
+        mp.dps = trusted_values_dict['precision']
+
+        var_dict = dict()
+        self.assertEqual(dict(), var_dict_to_value_dict(var_dict))
+
+        first_val = mpf(sqrt(random()))
+        second_val = mpf(sqrt(random()))
+        third_val = mpf(sqrt(random()))
+
+        var_dict = {'x': x}
+        result_dict = {'x': first_val}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        var_dict = {'y': y}
+        result_dict = {'y': first_val}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        var_dict = {'x': x, 'y': y}
+        result_dict = {'x': first_val, 'y': second_val}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        var_dict = {'y': y, 'x': x}
+        result_dict = {'y': second_val, 'x': first_val}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        var_dict = {'x': x, 'y': y, 'z': z}
+        result_dict = {'x': first_val, 'y': second_val, 'z': third_val}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        var_dict = {'x+y': x+y}
+        result_dict = {'x+y': first_val+second_val}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        var_dict = {'x/y': x/y, 'long_expression': (x+y)**2/(x*y)}
+        result_dict = {'x/y': first_val/second_val, 'long_expression': (first_val+second_val)**2/(first_val*second_val)}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        var_dict = {'x-x': x-x}
+        result_dict = {'x-x': mpf(0.0)}
+        self.assertEqual(result_dict, var_dict_to_value_dict(var_dict))
+
+        with self.assertRaises(AttributeError):
+            var_dict = {'x': 0}
+            var_dict_to_value_dict(var_dict)
+
+        logging.info('\nAll var_dict_to_value_dict tests passed\n')
 
 
 # Necessary for unittest class to work properly

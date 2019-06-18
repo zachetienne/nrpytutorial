@@ -3,8 +3,8 @@ import logging
 from calc_error import calc_error
 from first_time_print import first_time_print
 from evaluate_globals import evaluate_globals
-from variable_dict_to_list import variable_dict_to_list
-from list_to_value_list import list_to_value_list
+from expand_variable_dict import expand_variable_dict
+from var_dict_to_value_dict import var_dict_to_value_dict
 from is_first_time import is_first_time
 from create_trusted_globals_dict import create_trusted_globals_dict
 from time import time
@@ -38,46 +38,42 @@ def run_test(self, mod_dict, locs):
 
     del mod_dict
 
-    # If it is the first time for at least one module, sort the module dictionary based on first_times.
-    # This makes it so the new modules are done last. This makes it easy to copy the necessary modules' code.
-    if True in first_times:
-        # https://stackoverflow.com/questions/13668393/python-sorting-two-lists
-        first_times, result_mods = (list(x) for x in zip(*sorted(zip(first_times, result_dict))))
-
-        temp_dict = dict()
-
-        # Creates dictionary based on order of first_times
-        for mod in result_mods:
-            temp_dict[mod] = result_dict[mod]
-
-        # Updates resultDict to be in this new order
-        result_dict = temp_dict
-        del temp_dict, result_mods
+    # # If it is the first time for at least one module, sort the module dictionary based on first_times.
+    # # This makes it so the new modules are done last. This makes it easy to copy the necessary modules' code.
+    # if True in first_times:
+    #     # https://stackoverflow.com/questions/13668393/python-sorting-two-lists
+    #     first_times, result_mods = (list(x) for x in zip(*sorted(zip(first_times, result_dict))))
+    #
+    #     temp_dict = dict()
+    #
+    #     # Creates dictionary based on order of first_times
+    #     for mod in result_mods:
+    #         temp_dict[mod] = result_dict[mod]
+    #
+    #     # Updates resultDict to be in this new order
+    #     result_dict = temp_dict
+    #     del temp_dict, result_mods
 
     # Looping through each module in resultDict
-    for (mod, var_dict), first_time in zip(result_dict.items(), first_times):
+    for mod in result_dict:
+
+        var_dict = result_dict[mod]
+        first_time = first_times[mod]
 
         if not first_time:
             logging.info('Currently working on module ' + mod + '...')
 
         # Generating variable list and name list for module
-        (var_list, name_list) = variable_dict_to_list(var_dict)
+        new_dict = expand_variable_dict(var_dict)
 
         # Timing how long list_to_value_list takes
         t = time()
 
         # Calculating numerical list for module
-        num_list = list_to_value_list(var_list)
+        value_dict = var_dict_to_value_dict(new_dict)
 
         # Printing the time it took to run list_to_value_list
         logging.debug(str(time()-t) + ' seconds to run list_to_value_list')
-
-        # Initializing value dictionary for the current module
-        value_dict = dict()
-
-        # Assigning each numerical value to a name in the module's dictionary
-        for name, num in zip(name_list, num_list):
-            value_dict[name] = num
 
         # If being run for the first time, print the code that must be copied into trustedValuesDict
         if first_time:
@@ -86,18 +82,8 @@ def run_test(self, mod_dict, locs):
         # Otherwise, compare calculated values to trusted values
         else:
 
-            symbolic_dict = dict()
-
-            if logging.getLogger().getEffectiveLevel() == 0:
-
-                # Store symbolic expressions in dictionary
-                for var, name in zip(var_list, name_list):
-                    symbolic_dict[name] = var
-
             # Calculates the error between mod_dict and trusted_dict[mod] for the current module
-            values_identical = calc_error(mod, value_dict, trusted_dict[mod], symbolic_dict)
-
-            del symbolic_dict
+            values_identical = calc_error(mod, value_dict, trusted_dict[mod])
 
             # If at least one value differs, print exit message and fail the unittest
             if not values_identical:
@@ -111,6 +97,6 @@ def run_test(self, mod_dict, locs):
             self.assertTrue(values_identical)
 
     # If it's the first time for at least one module
-    if first_times[-1]:
+    if True in first_times:
         self.assertTrue(False, 'Automatically failing due to first time for at least one module. Please see above'
                                'for the code to copy into your trustedValuesDict.')
