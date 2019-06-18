@@ -130,10 +130,10 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                         exit(1)
                 elif partype == "INT":
                     glb_paramsvals_list[idx] = int(single_param_def[2])
-                elif partype is "REAL" or \
-                    partype is "REALARRAY" or \
-                    partype is "char" or \
-                    partype is "char *":
+                elif partype == "REAL" or \
+                    partype == "REALARRAY" or \
+                    partype == "char" or \
+                    partype == "char *":
                     glb_paramsvals_list[idx] = single_param_def[2]
                 else:
                     print("Error: type \""+partype+"\" on variable \""+ glb_params_list[idx].parname +"\" is unsupported.")
