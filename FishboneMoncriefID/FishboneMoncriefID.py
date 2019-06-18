@@ -12,8 +12,8 @@ import reference_metric as rfm
 
 thismodule = __name__
 
-def FishboneMoncriefID():
-    par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
+def FishboneMoncriefID(CoordSystem="Cartesian"):
+    par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
     rfm.reference_metric()
     #Set the spatial dimension parameter to 3.
     par.set_parval_from_str("grid::DIM", 3)
