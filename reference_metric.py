@@ -110,7 +110,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         xx[1] = sp.symbols("xx1", real=True)
         x1j = x1beg + xx[1]
         if CoordSystem == "NobleSphericalThetaOptionOne":
-            th = th_c + (M_PI - 2*th_c)*x1j + xi*sp.sin(2*M_PI)*x1j
+            th = th_c + (M_PI - 2*th_c)*x1j + xi*sp.sin(2*M_PI*x1j)
         elif CoordSystem == "NobleSphericalThetaOptionTwo":
             x1_n_exponent = par.Cparameters("REAL", thismodule, ["x1_n_exponent"])
             th = M_PI/2 * ( 1 + (1 - xi)*(2*x1j - 1) + (xi - 2*th_c/M_PI)*(2*x1j - 1)**x1_n_exponent )
