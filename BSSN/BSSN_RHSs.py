@@ -19,8 +19,12 @@ import grid as gri
 import finite_difference as fin
 import reference_metric as rfm
 
+# Step 1.b: Set the coordinate system for the numerical grid:
+#  DO NOT SET IN STANDALONE PYTHON MODULE
+# par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
+
 def BSSN_RHSs():
-    # Step 1.b: Given the chosen coordinate system, set up
+    # Step 1.c: Given the chosen coordinate system, set up
     #           corresponding reference metric and needed
     #           reference metric quantities
     # The following function call sets up the reference metric

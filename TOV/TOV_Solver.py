@@ -26,11 +26,13 @@
 # rbar refers to the isotropic radius, and
 # R_Schw refers to the Schwarzschild radius
 
+# Step 1: Import needed Python/NRPy+ modules
 import numpy as np
 import scipy.integrate as si
 import math
 import sys
 
+# Step 2: The TOV equations
 def TOV_Solver(outfile = "outputTOVpolytrope.txt",
                rho_baryon_central=0.129285, n_Polytrope=1.0, K_Polytrope=1.0,
                verbose = True ):

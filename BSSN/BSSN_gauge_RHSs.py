@@ -70,7 +70,7 @@ def BSSN_gauge_RHSs():
         for i in range(DIM):
             alpha_rhs += betaU[i] * alpha_dupD[i]
 
-    # Implement the harmonic slicing lapse condition
+    # Step 2.b: Implement the harmonic slicing lapse condition
     elif par.parval_from_str(thismodule + "::LapseEvolutionOption") == "HarmonicSlicing":
         if par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "W":
             alpha_rhs = -3 * cf ** (-4) * Brhs.cf_rhs
@@ -110,14 +110,14 @@ def BSSN_gauge_RHSs():
 
         # Step 3.a.ii: Compute right-hand side of B^i
         # *  \partial_t B^i     = \beta^j B^i_{,j} + 3/4 * \partial_0 \Lambda^i - eta B^i
-        # Step 15b: Define BU_dupD, in terms of derivative of rescaled variable \bet^i
+        # Step 3.a.iii: Define BU_dupD, in terms of derivative of rescaled variable \bet^i
         BU_dupD = ixp.zerorank2()
         betU_dupD = ixp.declarerank2("betU_dupD", "nosym")
         for i in range(DIM):
             for j in range(DIM):
                 BU_dupD[i][j] = betU_dupD[i][j] * rfm.ReU[i] + betU[i] * rfm.ReUdD[i][j]
 
-        # Step 15c: Compute \partial_0 \bar{\Lambda}^i = (\partial_t - \beta^i \partial_i) \bar{\Lambda}^j
+        # Step 3.a.iv: Compute \partial_0 \bar{\Lambda}^i = (\partial_t - \beta^i \partial_i) \bar{\Lambda}^j
         Lambdabar_partial0 = ixp.zerorank1()
         for i in range(DIM):
             Lambdabar_partial0[i] = Brhs.Lambdabar_rhsU[i]
@@ -125,14 +125,15 @@ def BSSN_gauge_RHSs():
             for j in range(DIM):
                 Lambdabar_partial0[j] += -betaU[i] * Brhs.LambdabarU_dupD[j][i]
 
-        # Step 15d: Evaluate RHS of B^i:
+        # Step 3.a.v: Evaluate RHS of B^i:
         for i in range(DIM):
             B_rhsU[i] += sp.Rational(3, 4) * Lambdabar_partial0[i] - eta * BU[i]
             for j in range(DIM):
                 B_rhsU[i] += betaU[j] * BU_dupD[i][j]
-
+                
+    # Step 3.b: The right-hand side of the \partial_t \beta^i equation
     if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
-        # Step 14 Option 2: \partial_t \beta^i = \left[\beta^j \bar{D}_j \beta^i\right] + B^{i}
+        # Step 3.b Option 2: \partial_t \beta^i = \left[\beta^j \bar{D}_j \beta^i\right] + B^{i}
         # First we need GammabarUDD, defined in Bq.gammabar__inverse_and_derivs()
         Bq.gammabar__inverse_and_derivs()
         GammabarUDD = Bq.GammabarUDD
@@ -152,7 +153,7 @@ def BSSN_gauge_RHSs():
             beta_rhsU[i] += BU[i]
 
     if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
-        # Step 15: Covariant option:
+        # Step 3.c: Covariant option:
         #  \partial_t B^i = \beta^j \bar{D}_j B^i
         #               + \frac{3}{4} ( \partial_t \bar{\Lambda}^{i} - \beta^j \bar{D}_j \bar{\Lambda}^{i} )
         #               - \eta B^{i}
