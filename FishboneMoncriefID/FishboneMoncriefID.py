@@ -120,6 +120,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     gPhys4BLUU[0][3] = gPhys4BLUU[3][0] = -2*a*M*r/(Delta*Sigma)
     gPhys4BLUU[3][3] = -4*a**2*M**2*r**2/(Delta*A*Sigma) + Sigma**2/(A*Sigma*sp.sin(th)**2)
 
+    global uBL4U
     uBL4U = ixp.zerorank1(DIM=4)
     for i in range(4):
         for j in range(4):
@@ -132,6 +133,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
         transformBLtoKS[i][i] = 1
     transformBLtoKS[0][1] = 2*r/(r**2 - 2*r + a*a)
     transformBLtoKS[3][1] =   a/(r**2 - 2*r + a*a)
+    global uKS4U
     uKS4U = ixp.zerorank1(DIM=4)
     for i in range(4):
         for j in range(4):
@@ -269,7 +271,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     #  v^i_(n) = u^i/(u^0*alpha) + beta^i/alpha. See eq 11 of https://arxiv.org/pdf/1501.07276.pdf
     Valencia3velocityU = ixp.zerorank1()
     for i in range(3):
-        Valencia3velocityU[i] = uKS4U[i + 1] / (alpha * uKS4U[0]) + betaU[i]
+        Valencia3velocityU[i] = uKS4U[i + 1] / (alpha * uKS4U[0]) + betaU[i] / alpha
 
     sqrtgamma4DET = sp.symbols("sqrtgamma4DET")
     sqrtgamma4DET = sp.sqrt(gammaDET)*alpha
@@ -292,6 +294,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     for i in range(DIM):
         BtildeU[i] = BtildeU[i].subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
         uKS4U[i+1] = uKS4U[i+1].subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
+        uBL4U[i+1] = uBL4U[i+1].subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
         Valencia3velocityU[i] = Valencia3velocityU[i].subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
 
     # Transform initial data to our coordinate system:
