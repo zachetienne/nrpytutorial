@@ -212,32 +212,34 @@ As we can see, `trusted_dict` fetches the existing trusted values from `trusted_
 respective modules if `first_time` is `True`, and assigns an empty dictionary to their respective modules if `first_time`
 is `False`.
 
-#### list_to_value_list:
-`list_to_value_list` takes in a list of sympy expressions `var_list` and returns a version of `var_list` where each
-expression is evaluated by assigning every variable a pseudorandom number. Since the pseudorandom number is assigned
-according to the `seed` value in `trusted_values_dict`, we expect that over multiple iterations, the same pseudorandom
-numbers will be generated in the same order. This ensures that our trusted and calculated `mpf` values for every 
-variable is using the same number for each of their expressions. Say you had a list of sympy expressions `var_list` as 
-follows,  and you want to calculate values for them according to the algorithm in `list_to_value_list`. Then it's as 
-simple as doing the following:
+#### var_dict_to_value_dict:
+`var_dict_to_value_dict` takes in a dictionary of sympy expressions `var_dict` and returns `value_dict`, which is 
+equivalent to `var_dict` except each expression is evaluated by assigning every variable a pseudorandom number. Since 
+the pseudorandom number is assigned according to the `seed` value in `trusted_values_dict`, we expect that over multiple
+iterations, the same pseudorandom numbers will be generated in the same order. This ensures that our trusted and 
+calculated `mpf` values for every variable is using the same number for each of their expressions. Say you had a dict of 
+sympy expressions `var_dict` as follows,  and you want to calculate values for them according to the algorithm in 
+`var_dict_to_value_dict`. Then it's as simple as doing the following:
 
 ````
-var_list = [a + b / (a * b), r**2, r*cos(t) + a, r*sin(t) + b]
+var_list = {'alpha': a + b / b, 'betaU[0]': r**2, 'betaU[1]': r*cos(t) + a, 'betaU[2]': r*sin(t) + b]
 value_list = list_to_value_list(var_list)
 ````
 This will result in output of `mpf` values along the lines of:
 
 ````
-value_list -> [mpf('2.00029108574223017786936345469015'), mpf('0.00749147005858719072790563586749991'), 
-mpf('1.03311642840535379455820753746684'), mpf('0.734504099569315555167726889705803')]
+value_dict -> {'alpha': mpf('2.00029108574223017786936345469015'), 
+               'betaU[0]': mpf('0.00749147005858719072790563586749991'), 
+               'betaU[1]': mpf('1.03311642840535379455820753746684'),
+               'betaU[2]': mpf('0.734504099569315555167726889705803')}
 ````
-In the backend, what `list_to_value_list` does first is get all the `free_symbols` in `var_list` and sort it by variable
-name. Then each variable is assigned a pseudorandom number using Python's `random` module. The standardized `seed` in
-`trusted_values_dict` and the sorting based on variable name act to ensure that the same variable gets the same number
-every time the code is run. Next, Sympy's `cse` (common subexpression elimination) algorithm is used to optimize the 
-calculation. For example, if the term `a**2` appears multiple times in `var_list`, it is more efficient to store 
-`a**2` as its own variable and replace all instances of `a**2` with that new variable. Finally, each variable 
-in the optimized `var_list` is replaced with its `mpf` value, and the value list is returned.
+In the backend, what var_dict_to_value_dict does first is get all the `free_symbols` in the values of `var_dict` and 
+sort it by variable name. Then each variable is assigned a pseudorandom number using Python's `random` module. The 
+standardized `seed` in `trusted_values_dict` and the sorting based on variable name act to ensure that the same variable 
+gets the same number every time the code is run. Next, Sympy's `cse` (common subexpression elimination) algorithm is 
+used to optimize the calculation. For example, if the term `a**2` appears multiple times in `var_list`, it is more 
+efficient to store `a**2` as its own variable and replace all instances of `a**2` with that new variable. Finally, each 
+variable in the optimized `var_dict` is replaced with its `mpf` value, and the resulting value dict is returned.
 
 #### evaluate_globals:
 `evaluate_globals` takes in a module dictionary `mod_dict` and a `locals()` call from where the respective 
@@ -321,27 +323,25 @@ empty_list = []
 get_variable_dimension(empty_list) -> Raises IndexError
 ````
 
-#### variable_dict_to_list:
-`variable_dict_to_list` takes in a variable dictionary `variable_dict` and returns a tuple containing a list of 
-variables `var_list` and its corresponding list of names `name_list`. These lists are created such that each tensor in 
-`variable_dict` is broken down into each of its scalars, the scalar is stored in `var_list`, and the name of the scalar
-according to Python list syntax is stored in the same respective index in `name_list`. Example usage is shown below:
+#### expand_variable_dict:
+`expand_variable_dict` takes in a variable dictionary `variable_dict` and returns a dictionary containing every variable
+in `variable_dict` The dict is created such that each tensor in `variable_dict` is broken down into each of its 
+scalars and then put into the resulting dictionary, named using the traditional Python list syntax. 
+Example usage is shown below:
 
 ````
 variable_dict = {'alpha' : r / (M + r), 'betaDD': [[r * cos(theta), r * sin(theta)], 
-[r * tan(theta), 0]], 'gammaU': [r, r**2, r**3, r**4]}
+[r * tan(theta), 0]]}
 
-variable_dict_to_list(variable_dict) -> 
-[r / (M + r), r * cos(theta), r * sin(theta), r * tan(theta), 0, r, r**2, r**3, r**4] , 
-['alpha', 'betaDD[0][0]', 'betaDD[0][1]','betaDD[1][0]', 'betaDD[1][1]',
-'gammaU[0]', 'gammaU[1]', 'gammaU[2]', 'gammaU[3]']
+expand_variable_dict(variable_dict) -> {'alpha': r / (M + r), 'betaDD[0][0]': r * cos(theta), 
+'betaDD[0][1]': r * sin(theta), 'betaDD[1][0]': r * tan(theta), 'betaDD[1][1]': 0}
 ````
 
 #### is_first_time:
-`is_first_time` takes in a module dictionary `mod_dict` and returns a list containing corresponding booleans for each
-module in `mod_dict`. The boolean for each module `mod` is `True` if `trusted_values_dict` contains a dictionary entry
-for `mod` according to the naming convention defined in `create_trusted_globals_dict`, `False` otherwise. Say we have 
-`trusted_values_dict` with the following keys (and corresponding values which aren't listed):
+`is_first_time` takes in a module dictionary `mod_dict` and returns a dictionary containing corresponding booleans for 
+each module in `mod_dict`. The boolean for each module `mod` is `True` if `trusted_values_dict` contains a dictionary 
+entry for `mod` according to the naming convention defined in `create_trusted_globals_dict`, `False` otherwise. 
+Say we have `trusted_values_dict` with the following keys (and corresponding values which aren't listed):
 
 ````
 trusted_values_dict = {'Module1Globals', 'module1Globals', 'mod1globals', 'Mod2Globals', 'Module3Globs'}

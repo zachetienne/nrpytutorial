@@ -1,9 +1,9 @@
 # Necessary imports for unit testing framework
 import unittest
 import logging
-from run_test import run_test
-from functions_and_globals import functions_and_globals
-from RepeatedTimer import RepeatedTimer
+from UnitTesting.run_test import run_test
+from UnitTesting.functions_and_globals import functions_and_globals
+from UnitTesting.RepeatedTimer import RepeatedTimer
 
 # TODO: Change level based on desired amount of output.
 # ERROR -> Outputs minimal information -- only when there's an error
@@ -13,13 +13,9 @@ from RepeatedTimer import RepeatedTimer
 logging.basicConfig(level=logging.INFO)
 
 
-# # https://stackoverflow.com/questions/3393612/run-certain-code-every-n-seconds/13151299
-# # Creates a threaded timer object that prints to the console every 5 minutes
-def print_fun(msg):
-    logging.info(msg)
-
-
-Timer = RepeatedTimer(300, print_fun, "\nPrinting every 5 minutes to prevent timeouts.\n")
+# https://stackoverflow.com/questions/3393612/run-certain-code-every-n-seconds/13151299
+# Creates a threaded timer object that prints to the console every 5 minutes
+Timer = RepeatedTimer(300, logging.info, "\nPrinting every 5 minutes to prevent timeouts.\n")
 
 
 # Python unittest class

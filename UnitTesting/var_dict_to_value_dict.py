@@ -1,9 +1,9 @@
 # WARNING: Importing more than the bare minimum with mpmath will result in errors on eval() below.
 # This is because we need SymPy to evaluate that expression, not mpmath.
-from mpmath import mp, mpf, sqrt, pi
+from mpmath import mp, mpf, sqrt, pi, mpc
 from random import seed, random
-from trusted_values_dict import trusted_values_dict
-from sympy import cse
+from UnitTesting.trusted_values_dict import trusted_values_dict
+from sympy import cse, simplify
 
 
 # Takes in a variable dictionary [var_dict] and returns the same dictionary with each expression evaluated
@@ -65,6 +65,10 @@ def var_dict_to_value_dict(var_dict):
             reduce = reduce.subs(key, new_var_dict[key])
 
         # Adding our variable, value pair to our value_dict
-        value_dict[var] = mpf(reduce)
+        try:
+            value_dict[var] = mpf(reduce)
+        except TypeError:
+            reduce = simplify(reduce)
+            value_dict[var] = mpc(reduce)
 
     return value_dict

@@ -1,13 +1,15 @@
 import logging
 
-from calc_error import calc_error
-from first_time_print import first_time_print
-from evaluate_globals import evaluate_globals
-from expand_variable_dict import expand_variable_dict
-from var_dict_to_value_dict import var_dict_to_value_dict
-from is_first_time import is_first_time
-from create_trusted_globals_dict import create_trusted_globals_dict
+from UnitTesting.calc_error import calc_error
+from UnitTesting.first_time_print import first_time_print
+from UnitTesting.evaluate_globals import evaluate_globals
+from UnitTesting.expand_variable_dict import expand_variable_dict
+from UnitTesting.var_dict_to_value_dict import var_dict_to_value_dict
+from UnitTesting.is_first_time import is_first_time
+from UnitTesting.create_trusted_globals_dict import create_trusted_globals_dict
 from time import time
+from mpmath import mp
+from UnitTesting.trusted_values_dict import trusted_values_dict
 
 
 # run_test takes in :
@@ -20,6 +22,8 @@ def run_test(self, mod_dict, locs):
 
     # Can't use empty module dictionary
     assert mod_dict != dict()
+
+    mp.dps = trusted_values_dict['precision']
 
     # Determining if this is the first time the code is run based of the existence of trusted values
     first_times = is_first_time(mod_dict)
@@ -75,7 +79,7 @@ def run_test(self, mod_dict, locs):
         # Printing the time it took to run list_to_value_list
         logging.debug(str(time()-t) + ' seconds to run list_to_value_list')
 
-        # If being run for the first time, print the code that must be copied into trustedValuesDict
+        # If being run for the first time, print the code that must be copied into trusted_values_dict
         if first_time:
             first_time_print(mod, value_dict)
 
@@ -99,4 +103,4 @@ def run_test(self, mod_dict, locs):
     # If it's the first time for at least one module
     if True in first_times:
         self.assertTrue(False, 'Automatically failing due to first time for at least one module. Please see above'
-                               'for the code to copy into your trustedValuesDict.')
+                               'for the code to copy into your trusted_values_dict.')

@@ -2,22 +2,30 @@
 dist: xenial # needed for Python 3.7+: https://docs.travis-ci.com/user/reference/xenial/#python-support
 language: python
 python:
-  - "2.7"  # Oldest Python supported by Travis xenial
-  - "3.4"  # Oldest Python 3.x supported by Travis xenial
-  - "3.7"  # Latest non-dev Python, as of Jun 2019.
+    # According to https://github.com/tornadoweb/tornado/blob/master/.travis.yml:
+    #  3.5.2 is interesting because it's the version in ubuntu 16.04, and due to python's
+    # "provisional feature" rules there are significant differences between patch
+    # versions for asyncio and typing.
+  - "2.7"  # Oldest Python supported by Travis-xenial
+  - "3.4"  # Oldest Python 3.x supported by Travis-xenial, as of Jun 2019
+  - 3.5.2
+  - "3.6"  # Second-oldest Python 3.x supported
+  - "3.7"  # Latest Python, as of Jun 2019.
   - "3.8-dev" # development Python
+  - "nightly" # bleeding-edge development Python
   # PyPy versions
   - "pypy2.7-6.0"
   - "pypy3.5-6.0"
 # command to install dependencies
 install:
-  - pip install -U sympy
+  - pip install sympy
+  - pip install testfixtures
 #  - pip install coverage
 #  - pip install codecov
 # We generally don't need to install matplotlib for the test.
 #  - pip install -r requirements.txt
 # command to run tests
-script: BSSN/test/run_NRPy_UnitTests.sh
+script: ./UnitTesting/run_NRPy_UnitTests.sh
 # After completion, push results to codecov
 #after_success:
 #  - codecov
