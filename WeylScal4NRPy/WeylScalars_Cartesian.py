@@ -1,6 +1,10 @@
 # This code calculates the Weyl scalars psi0, psi1, psi2, psi3, and psi4. It does so by following the paper
 # Baker, Campanelli, and Lousto. PRD 65, 044001 (2002), gr-qc/0104063 and the example set by the Kranc-
 # generated ETK thorn which can be found at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src
+
+# As documented in the NRPy+ tutorial module
+#   Tutorial-WeylScalarsInvariants-Cartesian
+
 # Step 1: import all needed modules from NRPy+:
 import NRPy_param_funcs as par
 import indexedexp as ixp
@@ -32,7 +36,7 @@ def define_LeviCivitaSymbol_rank3(DIM=-1):
                 LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) / 2
     return LeviCivitaSymbol
 
-# Step 1: Call BSSNs. This module computes many different quantities related to the metric,
+# Step 4: Call BSSNs. This module computes many different quantities related to the metric,
 #         many of which will be essential here. We must first change to our desired coordinate
 #         system, however.
 def WeylScalars_Cartesian():
@@ -57,16 +61,16 @@ def WeylScalars_Cartesian():
                                                                                                     "psi1r","psi1i",\
                                                                                                     "psi0r","psi0i"])
 
-    # Step 2a: Set spatial dimension (must be 3 for BSSN)
+    # Step 4.a: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
 
-    # Step 2b: Set the coordinate system to Cartesian
+    # Step 4.b: Set the coordinate system to Cartesian
     x,y,z = gri.register_gridfunctions("AUX",["x","y","z"])
 
-    # Step 2c: Set which tetrad is used; at the moment, only one supported option
+    # Step 5: Set which tetrad is used; at the moment, only one supported option
     if par.parval_from_str("WeylScal4NRPy.WeylScalars_Cartesian::TetradChoice") == "Approx_QuasiKinnersley":
-        # Step 3a: Choose 3 orthogonal vectors. Here, we choose one in the azimuthal 
+        # Step 5.a: Choose 3 orthogonal vectors. Here, we choose one in the azimuthal 
         #          direction, one in the radial direction, and the cross product of the two. 
         # Eqs 5.6, 5.7 in https://arxiv.org/pdf/gr-qc/0104063.pdf:
         # v_1^a &= [-y,x,0] \\
@@ -88,7 +92,7 @@ def WeylScalars_Cartesian():
                     for d in range(DIM):
                         v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbol_rank3[d][b][c] * v1U[b] *v2U[c]
 
-        # Step 3b: Gram-Schmidt orthonormalization of the vectors.
+        # Step 5.b: Gram-Schmidt orthonormalization of the vectors.
         # The w_i^a vectors here are used to temporarily hold values on the way to the final vectors e_i^a
         # e_1^a &= \frac{v_1^a}{\omega_{11}} \\
         # e_2^a &= \frac{v_2^a - \omega_{12} e_1^a}{\omega_{22}} \\
@@ -142,7 +146,7 @@ def WeylScalars_Cartesian():
         for a in range(DIM):
             e3U[a] = w3U[a] / sp.sqrt(omega33)
 
-        # Step 3c: Construct the tetrad itself.
+        # Step 5.c: Construct the tetrad itself.
         # Eqs. 5.6:
         # l^a &= \frac{1}{\sqrt{2}} e_2^a \\
         # n^a &= -\frac{1}{\sqrt{2}} e_2^a \\
@@ -166,6 +170,17 @@ def WeylScalars_Cartesian():
         print("Error: TetradChoice == "+par.parval_from_str("TetradChoice")+" unsupported!")
         exit(1)
 
+    #Step 6: Declare and construct the second derivative of the metric.
+    #gammabarDD_dDD = ixp.zerorank4()
+    #for i in range(DIM):
+    #    for j in range(DIM):
+    #        for k in range(DIM):
+    #            for l in range(DIM):
+    #                gammabarDD_dDD[i][j][k][l] = bssn.hDD_dDD[i][j][k][l]*rfm.ReDD[i][j] + \
+    #                                             bssn.hDD_dD[i][j][k]*rfm.ReDDdD[i][j][l] + \
+    #                                             bssn.hDD_dD[i][j][l]*rfm.ReDDdD[i][j][k] + \
+    #                                             bssn.hDD[i][j]*rfm.ReDDdDD[i][j][k][l] + \
+    #                                             rfm.ghatDDdDD[i][j][k][l]
     gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
 
     # Define the Christoffel symbols
@@ -178,7 +193,7 @@ def WeylScalars_Cartesian():
                                          (gammaDD_dD[m][k][l] + gammaDD_dD[m][l][k] - gammaDD_dD[k][l][m])
 
 
-    # Step 4b: Declare and construct the Riemann curvature tensor:
+    # Step 6.a: Declare and construct the Riemann curvature tensor:
     # R_{abcd} = \frac{1}{2} (\gamma_{ad,cb}+\gamma_{bc,da}-\gamma_{ac,bd}-\gamma_{bd,ac}) 
     #            + \gamma_{je} \Gamma^{j}_{bc}\Gamma^{e}_{ad} - \gamma_{je} \Gamma^{j}_{bd} \Gamma^{e}_{ac}
     gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
@@ -197,7 +212,7 @@ def WeylScalars_Cartesian():
                                                         gammaDD[j][e] * GammaUDD[j][b][d] * GammaUDD[e][a][c]
 
 
-    # Step 4c: We also need the extrinsic curvature tensor $K_{ij}$. 
+    # Step 6.b: We also need the extrinsic curvature tensor $K_{ij}$. 
     # In Cartesian coordinates, we already made the components gridfunctions.
     # We will, however, need to calculate the trace of K seperately:
     trK = sp.sympify(0)
@@ -205,7 +220,7 @@ def WeylScalars_Cartesian():
         for j in range(DIM):
             trK += gammaUU[i][j] * kDD[i][j]
 
-    # Step 5: Build the formula for \psi_4.
+    # Step 7: Build the formula for \psi_4.
     # Gauss equation: involving the Riemann tensor and extrinsic curvature.
     # GaussDDDD[i][j][k][l] =& R_{ijkl} + 2K_{i[k}K_{l]j}
     GaussDDDD = ixp.zerorank4()

@@ -4,6 +4,9 @@
 # does not depend on WeylScalars_Cartesian(), when implementing C code generated from the outputs of these two 
 # functions, the psis from WeylScalars_Cartesian() must be calculated before the invariants generated here.
 
+# As documented in Step 6 of the NRPy+ tutorial module
+#             Tutorial-WeylScalarsInvariants-Cartesian
+
 # Step P1: import all needed modules from NRPy+:
 import NRPy_param_funcs as par
 import indexedexp as ixp
