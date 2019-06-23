@@ -7,6 +7,7 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
+# Step P0: Import needed Python/NRPy+ modules
 import sympy as sp
 import NRPy_param_funcs as par
 from outputC import *
@@ -27,10 +28,10 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
     #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
     #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
-    # Step 0: Set spatial dimension (must be 3 for BSSN)
+    # Step P1: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
-
-    # Step 0: Copy gammaSphDD_in to gammaSphDD, KSphDD_in to KSphDD, etc.
+    
+    # Step P2: Copy gammaSphDD_in to gammaSphDD, KSphDD_in to KSphDD, etc.
     #    This ensures that the input arrays are not modified below;
     #    modifying them would result in unexpected effects outside
     #    this function.
@@ -58,6 +59,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     #         r,th,ph or x,y,z, respectively, with the appropriate functions of xx0,xx1,xx2
     #         as defined for this particular reference metric in reference_metric.py's 
     #         xxSph[] or xxCart[], respectively:
+
     # Note that substitution only works when the variable is not an integer. Hence the 
     #         if isinstance(...,...) stuff:
     def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
@@ -123,21 +125,22 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     #         we converted them to the xx0,xx1,xx2 basis, and as functions of xx0,xx1,xx2.
     #         Here we convert ADM quantities to their BSSN Curvilinear counterparts:
     
-    # Step 3.1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{\gamma}_{ij}$:
-    #   We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
-    # \bar{\gamma}_{i j} = \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \gamma_{ij}.
+    # Step 3.1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{gamma}_{ij}$:
+    #           We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
+
+    # \bar{gamma}_{ij} = (\frac{\bar{gamma}}{gamma})^{1/3}*gamma_{ij}.
     gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
     gammabarDD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
             gammabarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*gammaDD[i][j]
 
-    # Step 3.2: Convert the extrinsic curvature $K_{ij}$ to the trace-free extrinsic 
-    #           curvature $\bar{A}_{ij}$, plus the trace of the extrinsic curvature $K$, 
+    # Step 3.2: Convert the extrinsic curvature K_{ij} to the trace-free extrinsic 
+    #           curvature \bar{A}_{ij}, plus the trace of the extrinsic curvature K, 
     #           where (Eq. 3 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
 
-    # K = \gamma^{ij} K_{ij}, and
-    # \bar{A}_{ij} &= \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)
+    # K = gamma^{ij} K_{ij}, and
+    # \bar{A}_{ij} &= (\frac{\bar{gamma}}{gamma})^{1/3}*(K_{ij} - \frac{1}{3}*gamma_{ij}*K)
     trK = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
@@ -149,12 +152,12 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
             AbarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*(KDD[i][j] - sp.Rational(1,3)*gammaDD[i][j]*trK)
 
 
-    # Step 3.3: Define $\bar{\Lambda}^i$ (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
+    # Step 3.3: Define \bar{Lambda}^i (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
 
-    # \bar{\Lambda}^i = \bar{\gamma}^{jk}\left(\bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk}\right).
+    # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
     gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
 
-    # First compute \bar{\Gamma}^i_{jk}:
+    # First compute \bar{Gamma}^i_{jk}:
     GammabarUDD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):
@@ -163,7 +166,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
                     GammabarUDD[i][j][k] += sp.Rational(1,2)*gammabarUU[i][l]*( sp.diff(gammabarDD[l][j],rfm.xx[k]) +
                                                                                 sp.diff(gammabarDD[l][k],rfm.xx[j]) -
                                                                                 sp.diff(gammabarDD[j][k],rfm.xx[l]) )
-    # Next evaluate \bar{\Lambda}^i, based on GammabarUDD above and GammahatUDD 
+    # Next evaluate \bar{Lambda}^i, based on GammabarUDD above and GammahatUDD 
     #       (from the reference metric):
     LambdabarU = ixp.zerorank1()
     for i in range(DIM):
@@ -172,25 +175,23 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
                 LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
 
 
-    # Step 3.4: Set the conformal factor variable $\texttt{cf}$, which is set 
+    # Step 3.4: Set the conformal factor variable cf, which is set 
     #           by the "BSSN_quantities::EvolvedConformalFactor_cf" parameter. For example if 
     #           "EvolvedConformalFactor_cf" is set to "phi", we can use Eq. 3 of 
     #           [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf), 
     #           which in arbitrary coordinates is written:
 
-    # \phi = \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right).
+    # phi = \frac{1}{12} log(\frac{gamma}{\bar{gamma}}).
 
     # Alternatively if "BSSN_quantities::EvolvedConformalFactor_cf" is set to "chi", then
 
-    # \chi = e^{-4 \phi} = \exp\left(-4 \frac{1}{12} \left(\frac{\gamma}{\bar{\gamma}}\right)\right)
-    #      = \exp\left(-\frac{1}{3} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) = \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/3}.
+    # chi = exp(-4*phi) = exp(-4*\frac{1}{12}*(\frac{gamma}{\bar{gamma}}))
+    #      = exp(-\frac{1}{3}*log(\frac{gamma}{\bar{gamma}})) = (\frac{gamma}{\bar{gamma}})^{-1/3}.
     #
     # Finally if "BSSN_quantities::EvolvedConformalFactor_cf" is set to "W", then
 
-    # W = e^{-2 \phi} = \exp\left(-2 \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
-    # \exp\left(-\frac{1}{6} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
-    # \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/6}.
-
+    # W = exp(-2*phi) = exp(-2*\frac{1}{12}*log(\frac{gamma}{\bar{gamma}})) 
+    #   = exp(-\frac{1}{6}*log(\frac{gamma}{\bar{gamma}})) = (\frac{gamma}{bar{gamma}})^{-1/6}.
     cf = sp.sympify(0)
 
     if par.parval_from_str("EvolvedConformalFactor_cf") == "phi":
@@ -208,11 +209,11 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     #         the [BSSN in curvilinear coordinates tutorial module](Tutorial-BSSNCurvilinear.ipynb) 
     #         (also [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
     #
-    # h_{ij} &= (\bar{\gamma}_{ij} - \hat{\gamma}_{ij})/\text{ReDD[i][j]}\\
-    # a_{ij} &= \bar{A}_{ij}/\text{ReDD[i][j]}\\
-    # \lambda^i &= \bar{\Lambda}^i/\text{ReU[i]}\\
-    # \mathcal{V}^i &= \beta^i/\text{ReU[i]}\\
-    # \mathcal{B}^i &= B^i/\text{ReU[i]}\\
+    # h_{ij} = (\bar{gamma}_{ij} - \hat{gamma}_{ij})/(ReDD[i][j])
+    # a_{ij} = \bar{A}_{ij}/(ReDD[i][j])
+    # \lambda^i = \bar{Lambda}^i/(ReU[i])
+    # \mathcal{V}^i &= beta^i/(ReU[i])
+    # \mathcal{B}^i &= B^i/(ReU[i])
     hDD     = ixp.zerorank2()
     aDD     = ixp.zerorank2()
     lambdaU = ixp.zerorank1()
