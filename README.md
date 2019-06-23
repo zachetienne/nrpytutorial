@@ -10,6 +10,6 @@ To explore the NRPy+ tutorial without downloading, check out the [NRPy+ tutorial
 
 If you would like to explore the NRPy+ tutorial on your local computer, you'll need to install Python, Jupyter, Sympy, and Matplotlib. Once they are installed, [you may find this useful](https://jupyter-notebook-beginner-guide.readthedocs.io/en/latest/execute.html)
 
-In certain circumstances, developers may wish to execute one of these Jupyter notebooks from the command line. In that case, try this:
+In certain circumstances, developers may wish to execute one of these Jupyter notebooks from the command line. For example, when the notebook constructs an [Einstein Toolkit](https://einsteintoolkit.org) thorn. In such a case, the following command should be useful:
 
 jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 [Jupyter notebook file]
