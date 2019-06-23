@@ -44,6 +44,7 @@ import finite_difference as fin
 #          used in below expressions. In the C code, it acts
 #          just like a usual parameter, whose value is
 #          specified in the parameter file.
+
 # The name of this module ("ScalarWave") is given by __name__:
 thismodule = __name__
 global wavespeed
@@ -78,7 +79,7 @@ def ScalarWave_RHSs():
         vv_rhs += wavespeed*wavespeed*uu_dDD[i][i]
 
 
-    # # Step 5: Generate C code for scalarwave evolution equations,
+    # # Step 6: Generate C code for scalarwave evolution equations,
     # #         print output to the screen (standard out, or stdout).
     # fin.FD_outputC("stdout",
     #                [lhrh(lhs=gri.gfaccess("out_gfs","UU_rhs"),rhs=uu_rhs),
