@@ -43,6 +43,8 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     # Auxiliary variables:
     rho2 = sp.symbols('rho2', real=True)
     
+    # Step 1: Define rho^2, alpha, beta^(r_{KS}), beta^(theta), beta^(phi), gamma_{r_{KS}theta}, gamma_{theta\phi}
+
     # r_{KS} = r + r0
     rKS = r+r0
 
@@ -60,6 +62,9 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     # Time derivative of shift vector beta^i, B^i, is zero.
     BSphU = ixp.zerorank1()
 
+    # Step 2: Define and construct nonzero components gamma_{r_{KS}r_{KS}}$, gamma_{r_{KS}phi},
+    #         gamma_{thetatheta}, gamma_{phiphi}
+
     # Initialize \gamma_{ij} to zero.
     gammaSphDD = ixp.zerorank2()
 
@@ -75,7 +80,7 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     # gammaDD{phi phi} = (rKS^2 + a^2 + 2Mr/rho^2*a^2*sin^2(theta))*sin^2(theta)
     gammaSphDD[2][2] = (rKS*rKS + a*a + 2*M*rKS*a*a*sp.sin(th)**2/rho2)*sp.sin(th)**2
     
-    # *** Define Useful Quantities A, B, D ***
+    # Step 3: Define useful quantities A, B, C
     # A = (a^2*cos^2(2theta) + a^2 + 2r^2)
     A = (a*a*sp.cos(2*th) + a*a + 2*rKS*rKS)
 
@@ -86,7 +91,7 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     D = sp.sqrt(2*M*rKS/(a*a*sp.cos(th)**2 + rKS*rKS) + 1)
                 
     
-    # *** The extrinsic curvature in spherical polar coordinates ***
+    # Step 4: Define the extrinsic curvature in spherical polar coordinates
 
     # Establish the 3x3 zero-matrix
     KSphDD = ixp.zerorank2()

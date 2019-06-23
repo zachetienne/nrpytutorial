@@ -7,7 +7,7 @@
 #         zachetie **at** gmail **dot* com
 
 thismodule = __name__
-# Step 1: Load SymPy and other needed core NRPy+ modules
+# Step 1: Initialize needed Python/NRPy+ modules
 import sympy as sp
 import NRPy_param_funcs as par
 import indexedexp as ixp
@@ -48,13 +48,6 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
     ###############################
     ###############################
 
-    # Next we define the Hamiltonian constraint. Eq. 13 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf) yields:
-    # $$
-    # H = {\underbrace {\textstyle \frac{2}{3} K^2}_{\rm Term\ 1}} -
-    # {\underbrace {\textstyle \bar{A}_{ij} \bar{A}^{ij}}_{\rm Term\ 2}} +
-    # {\underbrace {\textstyle e^{-4\phi} \left(\bar{R} - 8 \bar{D}^i \phi \bar{D}_i \phi - 8 \bar{D}^2 \phi\right)}_{\rm Term\ 3}}
-    # $$
-
     # Term 1: 2/3 K^2
     global H
     H = sp.Rational(2, 3) * Bq.trK ** 2
@@ -90,11 +83,14 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
 
     # FIXME: ADD T4UUmunu SOURCE TERMS TO MOMENTUM CONSTRAINT!
 
+    # Step 3: M^i, the momentum constraint
+
     ###############################
     ###############################
     #  MOMENTUM CONSTRAINT
     ###############################
     ###############################
+
     # SEE Tutorial-BSSN_constraints.ipynb for full documentation.
     global MU
     MU = ixp.zerorank1()
