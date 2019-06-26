@@ -117,7 +117,7 @@ def GiRaFFEfood_HO_1D_tests():
     # \end{align}
 
 
-    AD = ixp.register_gridfunctions_for_single_rank1("AUX","AD")
+    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
     global AleftD,AcenterD,ArightD
     AleftD = ixp.zerorank1()
 
