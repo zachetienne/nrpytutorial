@@ -98,7 +98,7 @@ DIM = par.parval_from_str("grid::DIM")
 mu_AW,M_PI = par.Cparameters("REAL",thismodule,["mu_AW","M_PI"]) # The wave speed and pi in C
 
 def GiRaFFEfood_HO_1D_tests():
-    gammamu = (1-mu_AW**2)**(-1/2)
+    gammamu = 1/sp.sqrt(1-mu_AW**2)
 
     # We'll use reference_metric.py to define x and y
     x = rfm.xxCart[0]
