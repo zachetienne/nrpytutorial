@@ -164,7 +164,7 @@ def GiRaFFEfood_HO_1D_tests():
 
 
     xprime = gammamu*x
-    f_AW = 1 + sp.sin(5*M_PI*xprime)
+    f_AW = 1.0 + sp.sin(5.0*M_PI*xprime)
 
 
     # We will now set the magnetic field in the wave frame:
@@ -288,17 +288,17 @@ def GiRaFFEfood_HO_1D_tests():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                ValenciavleftU[i] = LeviCivitaSymbolDDD[i][j][k] * EleftU[j] * BleftU[k] / Bleft2
+                ValenciavleftU[i] += LeviCivitaSymbolDDD[i][j][k] * EleftU[j] * BleftU[k] / Bleft2
 
     ValenciavcenterU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                ValenciavcenterU[i] = LeviCivitaSymbolDDD[i][j][k] * EcenterU[j] * BcenterU[k] / Bcenter2
+                ValenciavcenterU[i] += LeviCivitaSymbolDDD[i][j][k] * EcenterU[j] * BcenterU[k] / Bcenter2
 
     ValenciavrightU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                ValenciavrightU[i] = LeviCivitaSymbolDDD[i][j][k] * ErightU[j] * BrightU[k] / Bright2
+                ValenciavrightU[i] += LeviCivitaSymbolDDD[i][j][k] * ErightU[j] * BrightU[k] / Bright2
 
