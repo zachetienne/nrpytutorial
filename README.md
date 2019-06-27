@@ -1,5 +1,6 @@
 # NRPy+, SENRv2, and the NRPy+ Jupyter Tutorial
 [![Build Status](https://travis-ci.org/zachetienne/nrpytutorial.svg?branch=master)](https://travis-ci.org/zachetienne/nrpytutorial)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/zachetienne/nrpytutorial/master?filepath=NRPyPlus_Tutorial.ipynb)
 
 This repository houses
 * [The newest version of NRPy+: Python-Based Code Generation for Numerical Relativity... and Beyond](https://arxiv.org/abs/1712.07658),
