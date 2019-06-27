@@ -1,2 +1,3 @@
 sympy
 matplotlib
+nbviewer==5.5.*
