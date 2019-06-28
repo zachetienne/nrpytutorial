@@ -41,7 +41,16 @@ import indexedexp as ixp
 from outputC import *
 
 
-def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
+def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,ValenciavU=None,BU=None):
+
+    if gammaDD==None:
+        # Declare these generically if uninitialized.
+        gammaDD    = ixp.declarerank2("gammaDD","sym01")
+        betaU      = ixp.declarerank1("betaU")
+        alpha      = sp.sympify("alpha")
+        ValenciavU = ixp.declarerank1("ValenciavU")
+        BU         = ixp.declarerank1("BU")
+    
     # Set spatial dimension = 3
     DIM=3
 
@@ -164,7 +173,6 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU):
     for i in range(DIM):
         for j in range(DIM):
             uD[j] += alpha*u0*gammaDD[i][j]*ValenciavU[j]
-
 
     # ## Step 4: Compute $\gamma=\text{gammaDET}$ from the ADM 3+1 variables
     # This is accomplished simply, using the symmetric matrix inversion function in indexedexp.py:

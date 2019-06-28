@@ -4,6 +4,7 @@ import logging
 from UnitTesting.run_test import run_test
 from UnitTesting.functions_and_globals import functions_and_globals
 from UnitTesting.RepeatedTimer import RepeatedTimer
+from trusted_values_dict import trusted_values_dict
 
 # TODO: Change level based on desired amount of output.
 # ERROR -> Outputs minimal information -- only when there's an error
@@ -42,7 +43,7 @@ class TestGlobals(unittest.TestCase):
         mod_dict = {'ScalarWaveCurvilinear_RHSs': functions_and_globals(['ScalarWaveCurvilinear_RHSs()'], global_list)}
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
 
 # Necessary for unittest class to work properly

@@ -1,31 +1,94 @@
-# from https://docs.travis-ci.com/user/languages/python/
-dist: xenial # needed for Python 3.7+: https://docs.travis-ci.com/user/reference/xenial/#python-support
 language: python
-python:
+
+
+matrix:
+  include:
+    - name: "Ubuntu Linux Xenial pypy2.7-6.0"
+      os: linux
+      dist: xenial
+      python: pypy2.7-6.0
+      install:
+        - pip install mpmath sympy testfixtures
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
+
+    - name: "Ubuntu Linux Xenial pypy3.5-6.0"
+      os: linux
+      dist: xenial
+      python: pypy3.5-6.0
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+
+    - name: "Ubuntu Linux Trusty pypy3.5"
+      os: linux
+      dist: trusty
+      python: pypy3.5
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+
+    - name: "Windows Python 3.7.3"
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: sh          # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python3
+        - export PATH="/c/Python37:/c/Python37/Scripts:$PATH"
+        - python -m pip install --upgrade pip wheel
+      install:
+        - pip install mpmath sympy testfixtures
+      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python
+
+    - name: "OS X Python 3.7"
+      os: osx
+      language: sh
+      python: 3.7
+      before_script: pip3 install mpmath sympy testfixtures
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    # https://docs.travis-ci.com/user/languages/python/
+    - name: "OS X, xcode 10.2 Python 3.7"
+      os: osx
+      osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
+      language: shell       # 'language: python' is an error on Travis CI macOS
+      before_script: pip3 install mpmath sympy testfixtures
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+      
+    - name: "Ubuntu Linux Xenial CPython 2.7"
+      os: linux
+      dist: xenial
+      python: 2.7
+      before_script: pip install testfixtures
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python
+
+    - name: "Ubuntu Linux Xenial CPython 3.4"
+      os: linux
+      dist: xenial
+      python: 3.4
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
     # According to https://github.com/tornadoweb/tornado/blob/master/.travis.yml:
     #  3.5.2 is interesting because it's the version in ubuntu 16.04, and due to python's
     # "provisional feature" rules there are significant differences between patch
     # versions for asyncio and typing.
-  - "2.7"  # Oldest Python supported by Travis-xenial
-  - "3.4"  # Oldest Python 3.x supported by Travis-xenial, as of Jun 2019
-  - 3.5.2
-  - "3.6"  # Second-oldest Python 3.x supported
-  - "3.7"  # Latest Python, as of Jun 2019.
-  - "3.8-dev" # development Python
-  - "nightly" # bleeding-edge development Python
-  # PyPy versions
-  - "pypy2.7-6.0"
-  - "pypy3.5-6.0"
-# command to install dependencies
-install:
-  - pip install sympy
-  - pip install testfixtures
-#  - pip install coverage
-#  - pip install codecov
-# We generally don't need to install matplotlib for the test.
-#  - pip install -r requirements.txt
-# command to run tests
-script: ./UnitTesting/run_NRPy_UnitTests.sh
-# After completion, push results to codecov
-#after_success:
-#  - codecov
+    - name: "Ubuntu Linux Xenial CPython 3.5.2"
+      os: linux
+      dist: xenial
+      python: 3.5.2
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Xenial CPython 3.7"
+      os: linux
+      dist: xenial
+      python: 3.7
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Xenial CPython 3.8-dev"
+      os: linux
+      dist: xenial
+      python: 3.8-dev
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Xenial CPython NIGHTLY"
+      os: linux
+      dist: xenial
+      python: nightly
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+

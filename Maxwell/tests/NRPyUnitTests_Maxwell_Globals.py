@@ -26,21 +26,44 @@ class TestGlobals(unittest.TestCase):
     def tearDownClass(cls):
         Timer.stop()
 
+    def tearDown(self):
+        import grid as gri
+        gri.glb_gridfcs_list = []
+
     # Testing globals
-    def test_globals(self):
+    def test_evol_globals(self):
 
         # TODO: Import modules to be tested
         # Note: Even though it says the modules are unused, these imports are vital for run_test to work properly.
         # Their information gets passed into run_test through locals()
-        import FishboneMoncriefID.FishboneMoncriefID as FishBoneMoncriefID
+        import Maxwell.MaxwellCartesian_Evol as MaxwellCartesian_Evol
 
         # TODO: Create lists of globals to calculate
-        global_list = ['hm1', 'rho_initial', 'IDalpha', 'IDgammaDD', 'IDKDD', 'IDbetaU', 'IDValencia3velocityU']
+
+        evol_global_list = ['ArhsD', 'ErhsD', 'psi_rhs', 'Gamma_rhs', 'Cviola']
 
         # TODO: Create Module dictionary based on imported modules, functions to initialize the modules, and globals
         # Note that the name of the modules in mod_dict MUST have the same name as the imported module.
         # Example: If you say 'import My_Modules.Module1 as M1', then mod_dict should have the entry 'M1' as a string.
-        mod_dict = {'FishBoneMoncriefID': functions_and_globals(['FishboneMoncriefID()'], global_list)}
+        mod_dict = {'MaxwellCartesian_Evol': functions_and_globals(['MaxwellCartesian_Evol()'], evol_global_list)}
+
+        # TODO: Call run_test with arguments (self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
+
+    def test_id_globals(self):
+        # TODO: Import modules to be tested
+        # Note: Even though it says the modules are unused, these imports are vital for run_test to work properly.
+        # Their information gets passed into run_test through locals()
+        import Maxwell.MaxwellCartesian_ID as MaxwellCartesian_ID
+
+        # TODO: Create lists of globals to calculate
+
+        id_global_list = ['AidD', 'EidD', 'psi_ID', 'Gamma_ID']
+
+        # TODO: Create Module dictionary based on imported modules, functions to initialize the modules, and globals
+        # Note that the name of the modules in mod_dict MUST have the same name as the imported module.
+        # Example: If you say 'import My_Modules.Module1 as M1', then mod_dict should have the entry 'M1' as a string.
+        mod_dict = {'MaxwellCartesian_ID': functions_and_globals(['MaxwellCartesian_ID()'], id_global_list)}
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
         run_test(self, mod_dict, trusted_values_dict, locals())

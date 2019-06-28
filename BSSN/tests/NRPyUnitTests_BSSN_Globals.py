@@ -4,6 +4,7 @@ import logging
 from UnitTesting.run_test import run_test
 from UnitTesting.functions_and_globals import functions_and_globals
 from UnitTesting.RepeatedTimer import RepeatedTimer
+from trusted_values_dict import trusted_values_dict
 
 # TODO: Change level based on desired amount of output.
 # ERROR -> Outputs minimal information -- only when there's an error
@@ -44,7 +45,7 @@ class TestBSSNGlobals(unittest.TestCase):
         }
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
     # Testing globals for BSSN constraints
     def test_Constraints_Globals(self):
@@ -64,7 +65,7 @@ class TestBSSNGlobals(unittest.TestCase):
         }
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
     # Testing globals for BSSN exact modules
     def test_Exact_Globals(self):
@@ -95,7 +96,7 @@ class TestBSSNGlobals(unittest.TestCase):
         }
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
     # Testing globals for BSSN Psi4 Globals
     def test_Psi4_Globals(self):
@@ -119,7 +120,7 @@ class TestBSSNGlobals(unittest.TestCase):
         }
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
     # Testing globals for BSSN quantities
     def test_Quantities_Globals(self):
@@ -152,7 +153,7 @@ class TestBSSNGlobals(unittest.TestCase):
         }
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
     # Testing globals for BSSN RHS
     def test_RHS_Globals(self):
@@ -176,7 +177,7 @@ class TestBSSNGlobals(unittest.TestCase):
         }
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
     # Testing globals for BSSN T4UUmunu_vars
     def test_T4UU_Globals(self):
@@ -197,7 +198,7 @@ class TestBSSNGlobals(unittest.TestCase):
         }
 
         # TODO: Call run_test with arguments (self, mod_dict, locals())
-        run_test(self, mod_dict, locals())
+        run_test(self, mod_dict, trusted_values_dict, locals())
 
 
 # Necessary for unittest class to work properly

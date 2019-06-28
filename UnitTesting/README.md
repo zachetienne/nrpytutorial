@@ -62,13 +62,12 @@ TODO
 
 ####trusted_values_dict:
 `trusted_values_dict` acts as the storage hub for NRPy unit tests. It is a module that stores trusted values of the 
-globals that you calculate in an easily accessible dictionary. It also stores the precision `precision` that is used in 
-comparing your trusted values and calculated values, as well as a seed `seed` that is used by some functions below. A 
-good default value for `precision` is `30`, and a standard `seed` is `1234`. 
+globals that you calculate in an easily accessible dictionary. Each module being tested should have its own 
+`trusted_values_dict` that stores its own values.
 
 
 #### functions_and_globals:
-`functions_and_globals` is a simple function that takes in a list of functions and a list of globals, and returns a
+`functions_and_globals` is a simple function that takes in a list of functions and a list of globals and returns a
 dictionary containing those functions and globals in a format that is readable by the other functions. The purpose of
 this function is to be called to create the value for your module in your module dictionary. Examples are shown below:
 
@@ -92,10 +91,18 @@ in each list passed in isn't a string.
 #### run_test basic:
 `run_test` is the culmination of all the functions outlined below. It does all the heavy lifting in calculating values,
 comparing them to trusted values, throwing errors if necessary, printing the desired output, etc. `run_test` takes in 
-`self`, which simply allows it to use the assert functions of `unittest`, `mod_dict`, which is the user-created module 
-dictionary containing the modules they're testing, the necessary functions to run for each module, and the globals to 
-evaluate and compare for each module, and `locs` (almost always a simple call to the built-in function 
-`locals`), which allows the current local variables to be passed into `run_test`.
+the following:
+ 
+`self`, which simply allows it to use the `assert` functions of `unittest`
+
+`mod_dict`, which is the user-created module dictionary containing the modules they're testing, the necessary functions 
+to run for each module, and the globals to evaluate and compare for each module
+
+`trusted_values_dict`, which is the dictionary of trusted values as definied in the `trusted_values_dict` file in your
+module
+ 
+`locs` (almost always a simple call to the built-in function `locals`), which allows the current local variables to be 
+passed into `run_test`.
 
 At the most basic level, an understanding of exactly what `run_test` does isn't necessary to start creating your own
 tests, and as such a simple usage tutorial will be given here, while a more in-depth tutorial will be given 
@@ -103,7 +110,9 @@ tests, and as such a simple usage tutorial will be given here, while a more in-d
 correctly and imported its necessary modules, running `run_test` is as simple as calling the following:
 
 ````
-run_test(self, mod_dict, locals())
+from YOUR_MODULE.test.trusted_values_dict import trusted_values_dict
+
+run_test(self, mod_dict, trusted_values_dict, locals())
 ````
 
 ### Functions:
@@ -117,9 +126,10 @@ all values in both dictionaries are close enough in value. It prints output to t
 
 ````
 mod = 'myMod'
-calculated_dict = {'alpha': mpf('0.12759172659175684561176895'), 'beta': mpf('60.561850917509181234786')}
-trusted_dict = {'alpha': mpf('0.12759172659175684561176904'), 'beta': mpf('60.5618509175149189740873')}
-symbolic_dict = {'alpha': sqrt(x**2 + y**2), 'beta': x**3/y**5}
+calculated_dict = {'alpha': mpf('0.12759172659175684561176895'), 'beta': mpf('60.56185091750918123478')}
+trusted_dict =    {'alpha': mpf('0.12759172659175684561176904'), 'beta': mpf('60.56185091751491897407')}
+symbolic_dict =   {'alpha': sqrt(x**2 + y**2), 'beta': x**3/y**5}
+
 calc_error(mod, calculated_dict, trusted_dict, symbolic_dict) -> False
 
 Console output:
@@ -127,14 +137,16 @@ Console output:
 ERROR:root:
 Variable beta in module myMod failed. Please check values.
 If you are confident that the newly calculated values are correct, comment out the old trusted values 
-for 'myModGlobals' in trustedValuesDict and copy the following code between the ##### into 
+for 'myModGlobals' in trusted_values_dict and copy the following code between the ##### into 
 trustedValuesDict. Make sure to fill out the TODO comment describing why the values had to be changed. 
 Then re-run test script.
 #####
-# Generated on: 2019-06-14 14:03:20.771968
+
+# Generated on: YEAR-MONTH-DAY
 # Reason for changing values: TODO
-trustedValuesDict['myModGlobals'] = {'alpha': mpf('0.127591726591756854380932395542914'), 
-'beta': mpf('60.5618509175091830343262699898332')}
+trusted_values_dict['myModGlobals'] = {'alpha': mpf('0.12759172659175684561176895'), 
+'beta': mpf('60.56185091750918123478')}
+
 #####
 
 ````

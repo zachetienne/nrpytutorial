@@ -2,12 +2,12 @@
 # This is because we need SymPy to evaluate that expression, not mpmath.
 from mpmath import mp, mpf, sqrt, pi, mpc
 from random import seed, random
-from UnitTesting.trusted_values_dict import trusted_values_dict
 from sympy import cse, simplify
+import UnitTesting.standard_constants as standard_constants
 
 
-# Takes in a variable dictionary [var_dict] and returns the same dictionary with each expression evaluated
-# according to parameters (seed, precision) in trustedValues.
+# Takes in a variable dictionary [var_dict] a precision value [precision] and a seed value [seed_value], and returns
+# a dictionary with each expression in [var_dict] evaluated according to parameters (seed, precision).
 # Throws an [AttributeError] if the variable list being passed in has no sympy symbols
 
 # Called by run_test
@@ -18,7 +18,7 @@ def var_dict_to_value_dict(var_dict):
         return dict()
 
     # Setting precision
-    mp.dps = trusted_values_dict["precision"]
+    mp.dps = standard_constants.precision
 
     # List all the free symbols in the expressions in [var_dict].
     free_symbols_list = list(sum(var_dict.values()).free_symbols)
@@ -27,7 +27,7 @@ def var_dict_to_value_dict(var_dict):
     free_symbols_list.sort(key=lambda v: str(v))
 
     # Set the random seed according to seed in trustedValuesDict:
-    seed(trusted_values_dict["seed"])
+    seed(standard_constants.seed)
 
     # Creating dictionary entry for each variable and its pseudorandom value in [0,1) as determined by seed
     variable_dictionary = dict()
@@ -67,6 +67,7 @@ def var_dict_to_value_dict(var_dict):
         # Adding our variable, value pair to our value_dict
         try:
             value_dict[var] = mpf(reduce)
+        # If value is a complex number, store it as a mpc
         except TypeError:
             reduce = simplify(reduce)
             value_dict[var] = mpc(reduce)

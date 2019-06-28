@@ -7,29 +7,30 @@ from UnitTesting.expand_variable_dict import expand_variable_dict
 from UnitTesting.var_dict_to_value_dict import var_dict_to_value_dict
 from UnitTesting.is_first_time import is_first_time
 from UnitTesting.create_trusted_globals_dict import create_trusted_globals_dict
+from UnitTesting.standard_constants import precision
 from time import time
 from mpmath import mp
-from UnitTesting.trusted_values_dict import trusted_values_dict
 
 
 # run_test takes in :
 # [self]- The unittest self object,
 # [mod_dict]- The user-supplied dictionary of modules
+# [trusted_values_dict]- The dictionary of trusted values
 # [locs]- The current local variables in the workspace. Should ALWAYS be locals()
 # It then runs a unittest, comparing calculated values with trusted values.
 # Throws an [AssertionError] if [mod_dict] is empty
-def run_test(self, mod_dict, locs):
+def run_test(self, mod_dict, trusted_values_dict, locs):
 
-    # Can't use empty module dictionary
+    # Can't use empty dictionaries
     assert mod_dict != dict()
 
-    mp.dps = trusted_values_dict['precision']
+    mp.dps = precision
 
     # Determining if this is the first time the code is run based of the existence of trusted values
-    first_times = is_first_time(mod_dict)
+    first_times = is_first_time(mod_dict, trusted_values_dict)
 
     # Creating trusted dictionary based off names of modules in ModDict
-    trusted_dict = create_trusted_globals_dict(mod_dict, first_times)
+    trusted_dict = create_trusted_globals_dict(mod_dict, trusted_values_dict, first_times)
 
     # Timing how long evaluate_globals takes
     t = time()

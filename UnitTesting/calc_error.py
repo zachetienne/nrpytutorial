@@ -1,12 +1,12 @@
 import logging
-from UnitTesting.trusted_values_dict import trusted_values_dict
 from mpmath import log10,fabs, mp
 from datetime import date
+from UnitTesting.standard_constants import precision
 
-# Takes in a module [mod], a calculated dictionary [calculated_dict], a trusted dictionary [trusted_dict], and
-# a symbolic dictionary [symbolic_dict] and computes the error for each result-trusted pair for each respective index.
-# Logs debug statements for each pair of values if the logging level is <= DEBUG
-# and logs a failure message if logging level is <= ERROR.
+# Takes in a module [mod], a calculated dictionary [calculated_dict], a trusted dictionary [trusted_dict], a precision
+# value, [precision], and a symbolic dictionary [symbolic_dict] and computes the error for each result-trusted pair
+# for each respective index according to [precision]. Logs debug statements for each pair of values if the logging
+# level is <= DEBUG and logs a failure message if logging level is <= ERROR.
 # Returns a boolean [good] that represents if any two value pairs didn't differ
 # by more than (precision/2) decimal places.
 
@@ -16,7 +16,6 @@ from datetime import date
 def calc_error(mod, calculated_dict, trusted_dict, output=True):
 
     # Precision for the module based off the set precision in trusted_values_dict
-    precision = trusted_values_dict['precision']
     mp.dps = precision
 
     # Creating sets to easily compare the keys of resultDict and trustedDict
@@ -76,7 +75,7 @@ def create_dict_string(calculated_dict):
 
     return_string = '{'
 
-    for var, num in calculated_dict.items():
+    for var, num in sorted(calculated_dict.items()):
         return_string += "'" + var + "': mpf('" + str(num) + "'), "
 
     return_string = return_string[0:-2] + '}'
