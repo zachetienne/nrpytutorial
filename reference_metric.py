@@ -213,8 +213,8 @@ def reference_metric(SymPySimplifyExpressions=True):
         #   unit vectors possible.
         xx[0],xx[1],bScale = sp.symbols("xx0 xx1 bScale", real=True)
 
-        xxmin = ["0.0","0.0","0.0"]
-        xxmax = ["params.AMAX","M_PI","2.0*M_PI"]
+        xxmin = [sp.sympify(0), sp.sympify(0),-M_PI]
+        xxmax = [         AMAX,          M_PI, M_PI]
     
         AA = xx[0]
     
@@ -261,6 +261,10 @@ def reference_metric(SymPySimplifyExpressions=True):
         xxSph[0] = sp.sqrt(xx[0] ** 2 + xx[1] ** 2 + xx[2] ** 2)
         xxSph[1] = sp.acos(xx[2] / xxSph[0])
         xxSph[2] = sp.atan2(xx[1], xx[0])
+        
+        Cart_to_xx[0] = Cartx
+        Cart_to_xx[1] = Carty
+        Cart_to_xx[2] = Cartz
 
         scalefactor_orthog[0] = sp.sympify(1)
         scalefactor_orthog[1] = sp.sympify(1)
