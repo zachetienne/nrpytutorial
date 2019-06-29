@@ -82,7 +82,6 @@ def Set_up_CurviBoundaryConditions():
     parity = ixp.zerorank1(DIM=10)
     UnitVectors_inner = ixp.zerorank2()
     xx0_inbounds, xx1_inbounds, xx2_inbounds = sp.symbols("xx0_inbounds xx1_inbounds xx2_inbounds", real=True)
-#     if rfm.UnitVectors[0][0] == 0
     for i in range(3):
         for j in range(3):
             if isinstance(rfm.UnitVectors[i][j], int):
