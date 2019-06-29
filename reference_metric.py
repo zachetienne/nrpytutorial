@@ -235,7 +235,37 @@ def reference_metric(SymPySimplifyExpressions=True):
         xxSph[0] = sp.sqrt(RHOSYMTP**2 + ZSYMTP**2)
         xxSph[1] = sp.acos(ZSYMTP / xxSph[0])
         xxSph[2] = PHSYMTP
-    
+
+        if CoordSystem == "SymTP":
+            rSph  = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
+            thSph = sp.acos(Cartz / rSph)
+            phSph = sp.atan2(Carty, Cartx)
+
+            # Mathematica script to compute Cart_to_xx[]
+#             AA = x1;
+#             var2 = Sqrt[AA^2 + bScale^2];
+#             RHOSYMTP = AA*Sin[x2];
+#             ZSYMTP = var2*Cos[x2];
+#             Solve[{rSph == Sqrt[RHOSYMTP^2 + ZSYMTP^2],
+#                    thSph == ArcCos[ZSYMTP/Sqrt[RHOSYMTP^2 + ZSYMTP^2]],
+#                    phSph == x3}, 
+#                   {x1, x2, x3}]
+            Cart_to_xx[0] = sp.sqrt(-bScale**2 + rSph**2 + 
+                                    sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
+                                            4*bScale**2*rSph**2*sp.cos(thSph)**2))/sp.sqrt(2)
+            
+        # BAD ROOT:
+#             Cart_to_xx[1] = sp.acos(sp.sqrt(1 + rSph**2/bScale**2 + 
+#                                             sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
+#                                                     4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)/sp.sqrt(2))
+            # The sign() function in the following expression ensures the correct root is taken.
+            Cart_to_xx[1] = sp.acos(sp.sign(Cartz)*(
+                                      sp.sqrt(1 + rSph**2/bScale**2 - 
+                                            sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
+                                                    4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)/sp.sqrt(2)))
+
+            Cart_to_xx[2] = phSph
+        
         scalefactor_orthog[0] = sp.diff(AA,xx[0]) * var1 / var2
         scalefactor_orthog[1] = var1
         scalefactor_orthog[2] = AA * sp.sin(xx[1])
