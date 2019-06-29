@@ -33,7 +33,7 @@ def reference_metric(SymPySimplifyExpressions=True):
     have_already_called_reference_metric_function = True
 
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
-    M_PI = par.Cparameters("REAL",thismodule,"M_PI")
+    M_PI,M_SQRT1_2 = par.Cparameters("REAL",thismodule,["M_PI","M_SQRT1_2"])
 
     global UnitVectors
     UnitVectors = ixp.zerorank2(DIM=3)
@@ -78,9 +78,10 @@ def reference_metric(SymPySimplifyExpressions=True):
                 r = AMPL*( const_dr*xx[0] + (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) /
                            (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW)) )
 
-                Cart_to_xx[0] = "NewtonRaphson"
-                Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
-                Cart_to_xx[2] = sp.atan2(Carty, Cartx)
+                # NO CLOSED-FORM EXPRESSION FOR RADIAL INVERSION.
+                # Cart_to_xx[0] = "NewtonRaphson"
+                # Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
+                # Cart_to_xx[2] = sp.atan2(Carty, Cartx)
 
         xxSph[0] = r
         xxSph[1] = th
@@ -252,16 +253,14 @@ def reference_metric(SymPySimplifyExpressions=True):
 #                   {x1, x2, x3}]
             Cart_to_xx[0] = sp.sqrt(-bScale**2 + rSph**2 + 
                                     sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
-                                            4*bScale**2*rSph**2*sp.cos(thSph)**2))/sp.sqrt(2)
-        # BAD ROOT:
-#             Cart_to_xx[1] = sp.acos(sp.sqrt(1 + rSph**2/bScale**2 + 
-#                                             sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
-#                                                     4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)/sp.sqrt(2))
+                                            4*bScale**2*rSph**2*sp.cos(thSph)**2))*M_SQRT1_2 # M_SQRT1_2 = 1/sqrt(2); define this way for UnitTesting
+
             # The sign() function in the following expression ensures the correct root is taken.
             Cart_to_xx[1] = sp.acos(sp.sign(Cartz)*(
                                       sp.sqrt(1 + rSph**2/bScale**2 - 
                                               sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
-                                                      4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)/sp.sqrt(2)))
+                                                      4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)*M_SQRT1_2)) # M_SQRT1_2 = 1/sqrt(2); define this way for UnitTesting
+
             Cart_to_xx[2] = phSph
         
         scalefactor_orthog[0] = sp.diff(AA,xx[0]) * var1 / var2
