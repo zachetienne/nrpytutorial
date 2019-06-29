@@ -36,7 +36,7 @@ def reference_metric(SymPySimplifyExpressions=True):
     M_PI = par.Cparameters("REAL",thismodule,"M_PI")
 
     global UnitVectors
-    UnitVectors = ixp.zerorank2(3)
+    UnitVectors = ixp.zerorank2(DIM=3)
 
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
@@ -230,7 +230,7 @@ def reference_metric(SymPySimplifyExpressions=True):
     
         xxCart[0] = AA  *sp.sin(xx[1])*sp.cos(xx[2])
         xxCart[1] = AA  *sp.sin(xx[1])*sp.sin(xx[2])
-        xxCart[2] = var2*sp.cos(xx[1])
+        xxCart[2] = ZSYMTP
     
         xxSph[0] = sp.sqrt(RHOSYMTP**2 + ZSYMTP**2)
         xxSph[1] = sp.acos(ZSYMTP / xxSph[0])
@@ -253,7 +253,6 @@ def reference_metric(SymPySimplifyExpressions=True):
             Cart_to_xx[0] = sp.sqrt(-bScale**2 + rSph**2 + 
                                     sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
                                             4*bScale**2*rSph**2*sp.cos(thSph)**2))/sp.sqrt(2)
-            
         # BAD ROOT:
 #             Cart_to_xx[1] = sp.acos(sp.sqrt(1 + rSph**2/bScale**2 + 
 #                                             sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
@@ -261,9 +260,8 @@ def reference_metric(SymPySimplifyExpressions=True):
             # The sign() function in the following expression ensures the correct root is taken.
             Cart_to_xx[1] = sp.acos(sp.sign(Cartz)*(
                                       sp.sqrt(1 + rSph**2/bScale**2 - 
-                                            sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
-                                                    4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)/sp.sqrt(2)))
-
+                                              sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
+                                                      4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)/sp.sqrt(2)))
             Cart_to_xx[2] = phSph
         
         scalefactor_orthog[0] = sp.diff(AA,xx[0]) * var1 / var2
@@ -277,7 +275,7 @@ def reference_metric(SymPySimplifyExpressions=True):
                        [AA * sp.cos(xx[1]) * sp.cos(xx[2]) / var1,
                         AA * sp.cos(xx[1]) * sp.sin(xx[2]) / var1,
                             -sp.sin(xx[1]) * var2 / var1],
-                       [-sp.sin(xx[2]), sp.cos(xx[2]), 0]]
+                       [-sp.sin(xx[2]), sp.cos(xx[2]), sp.sympify(0)]]
 
     elif CoordSystem == "Cartesian":
         xmin, xmax, ymin, ymax, zmin, zmax = par.Cparameters("REAL",thismodule,["xmin","xmax","ymin","ymax","zmin","zmax"])

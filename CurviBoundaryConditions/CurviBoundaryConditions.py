@@ -82,8 +82,13 @@ def Set_up_CurviBoundaryConditions():
     parity = ixp.zerorank1(DIM=10)
     UnitVectors_inner = ixp.zerorank2()
     xx0_inbounds, xx1_inbounds, xx2_inbounds = sp.symbols("xx0_inbounds xx1_inbounds xx2_inbounds", real=True)
+#     if rfm.UnitVectors[0][0] == 0
     for i in range(3):
         for j in range(3):
+            if isinstance(rfm.UnitVectors[i][j], int):
+                print("Error: rfm.UnitVectors["+str(i)+"]["+str(j)+"] is an integer.")
+                print("       Please set all integer elements of rfm.UnitVectors[][] using sp.sympify([integer]).")
+                sys.exit(1)
             UnitVectors_inner[i][j] = rfm.UnitVectors[i][j].subs(rfm.xx[0], xx0_inbounds).subs(rfm.xx[1],
                                                                                                xx1_inbounds).subs(
                 rfm.xx[2], xx2_inbounds)
