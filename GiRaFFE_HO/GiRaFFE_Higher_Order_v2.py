@@ -363,7 +363,8 @@ def GiRaFFE_Higher_Order_v2():
     Stilde_rhsD = ixp.zerorank1()
     # The first term: \alpha \sqrt{\gamma} \partial_j T^j_{{\rm EM} i}
     for i in range(DIM):
-        Stilde_rhsD[i] += -SevolParenUD_dD[i][j][j]
+        for j in range(DIM):
+            Stilde_rhsD[i] += -SevolParenUD_dD[j][i][j]
 
     # The second term: \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} / 2
     for i in range(DIM):
