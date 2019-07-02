@@ -335,6 +335,11 @@ H = Hns + Hs + Hss + (dheffSS*sKerrdotsStar + dheffSSv2)*Hpt1
 Hreal = sp.sqrt(1 + 2*eta*(H - 1))
 """
 
+    f = open("Hamstring.txt", 'r')
+    Hamstring1 = str(f.read())
+    f.close()
+    Hamstring = Hamstring1
+
     # Split Hamstring by carriage returns:
     Hamterms = Hamstring.splitlines()
 
@@ -474,7 +479,7 @@ m1,m2,x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z = sp.symbols("m1 m2 x y z px py pz 
 c0k2,c1k2,c0k3,c1k3,c0k4 = sp.symbols("c0k2 c1k2 c0k3 c1k3 c0k4",real=True)
 c1k4,c2k4,c0k5,c1k5,c2k5 = sp.symbols("c1k4 c2k4 c0k5 c1k5 c2k5",real=True)
 eta,KK,k5l,b3,bb3,d1,d1v2,dheffSS,dheffSSv2 = sp.symbols("eta KK k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2",real=True)
-tortoise,copysignresult = sp.symbols("tortoise copysignresult",real=True)
+tortoise = sp.symbols("tortoise",real=True)
 
 """)
         for i in range(len(lr)):
@@ -482,56 +487,75 @@ tortoise,copysignresult = sp.symbols("tortoise copysignresult",real=True)
         file.write("\n")
         for i in range(len(lhss_deriv_x)):
             file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + str(rhss_deriv_x[i]).replace("sqrt(",
-                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_x") + "\n")
+                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
+                "prm", "prm_x") + "\n")
         for i in range(len(lhss_deriv_y)):
             file.write(str(lhss_deriv_y[i]).replace("prm", "prm_y") + " = " + str(rhss_deriv_y[i]).replace("sqrt(",
-                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_y") + "\n")
+                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
+                "prm", "prm_y") + "\n")
         for i in range(len(lhss_deriv_z)):
             file.write(str(lhss_deriv_z[i]).replace("prm", "prm_z") + " = " + str(rhss_deriv_z[i]).replace("sqrt(",
-                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_z") + "\n")
+                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
+                "prm", "prm_z") + "\n")
 
         for i in range(len(lhss_deriv_px)):
             file.write(str(lhss_deriv_px[i]).replace("prm", "prm_px") + " = " + str(rhss_deriv_px[i]).replace("sqrt(",
-                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_px") + "\n")
+                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
+                "prm", "prm_px") + "\n")
         for i in range(len(lhss_deriv_py)):
             file.write(str(lhss_deriv_py[i]).replace("prm", "prm_py") + " = " + str(rhss_deriv_py[i]).replace("sqrt(",
-                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_py") + "\n")
+                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
+                "prm", "prm_py") + "\n")
         for i in range(len(lhss_deriv_pz)):
             file.write(str(lhss_deriv_pz[i]).replace("prm", "prm_pz") + " = " + str(rhss_deriv_pz[i]).replace("sqrt(",
-                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_pz") + "\n")
+                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
+                "prm", "prm_pz") + "\n")
 
         for i in range(len(lhss_deriv_s1x)):
             file.write(
                 str(lhss_deriv_s1x[i]).replace("prm", "prm_s1x") + " = " + str(rhss_deriv_s1x[i]).replace("sqrt(",
-                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_s1x") + "\n")
+                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(",
+                    "sp.sign(").replace("prm", "prm_s1x") + "\n")
         for i in range(len(lhss_deriv_s1y)):
             file.write(
                 str(lhss_deriv_s1y[i]).replace("prm", "prm_s1y") + " = " + str(rhss_deriv_s1y[i]).replace("sqrt(",
-                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_s1y") + "\n")
+                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(",
+                    "sp.sign(").replace("prm", "prm_s1y") + "\n")
         for i in range(len(lhss_deriv_s1z)):
             file.write(
                 str(lhss_deriv_s1z[i]).replace("prm", "prm_s1z") + " = " + str(rhss_deriv_s1z[i]).replace("sqrt(",
-                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_s1z") + "\n")
+                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(",
+                    "sp.sign(").replace("prm", "prm_s1z") + "\n")
 
         for i in range(len(lhss_deriv_s2x)):
             file.write(
                 str(lhss_deriv_s2x[i]).replace("prm", "prm_s2x") + " = " + str(rhss_deriv_s2x[i]).replace("sqrt(",
-                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_s2x") + "\n")
+                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(",
+                    "sp.sign(").replace("prm", "prm_s2x") + "\n")
         for i in range(len(lhss_deriv_s2y)):
             file.write(
                 str(lhss_deriv_s2y[i]).replace("prm", "prm_s2y") + " = " + str(rhss_deriv_s2y[i]).replace("sqrt(",
-                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_s2y") + "\n")
+                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(",
+                    "sp.sign(").replace("prm", "prm_s2y") + "\n")
         for i in range(len(lhss_deriv_s2z)):
             file.write(
                 str(lhss_deriv_s2z[i]).replace("prm", "prm_s2z") + " = " + str(rhss_deriv_s2z[i]).replace("sqrt(",
-                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("prm", "prm_s2z") + "\n")
+                    "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(",
+                    "sp.sign(").replace("prm", "prm_s2z") + "\n")
         file.write("""
-            outputC([Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
-            Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z],
-            ["Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py","Hrealprm_pz",
-            "Hrealprm_s1x","Hrealprm_s1y","Hrealprm_s1z","Hrealprm_s2x","Hrealprm_s2y","Hrealprm_s2z"],
-            "/tmp/outC.h","outCverbose=False,includebraces=False")
-            """)
+CSE_results = sp.cse(Hrealprm_x, sp.numbered_symbols("tmp"), order='canonical')
+print(CSE_results[0])
+print(CSE_results[1])
+#for commonsubexpression in CSE_results[0]:
+#    print(str(commonsubexpression[0])+" = "+str(commonsubexpression[1]))
+#for i,result in enumerate(CSE_results[1]):
+#    print(str(CSE_results[i][0])+" = "+str(result))
+
+#outputC([Hreal,Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z],
+#["Hreal","Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py","Hrealprm_pz",
+#"Hrealprm_s1x","Hrealprm_s1y","Hrealprm_s1z","Hrealprm_s2x","Hrealprm_s2y","Hrealprm_s2z"],
+#"/tmp/outC.h","outCverbose=False,includebraces=False")
+""")
 
     return 0
 
