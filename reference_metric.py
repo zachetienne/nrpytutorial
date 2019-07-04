@@ -47,17 +47,18 @@ def reference_metric(SymPySimplifyExpressions=True):
     # SPHERICAL-LIKE COORDINATE SYSTEMS WITH & WITHOUT RADIAL RESCALING #
     #####################################################################
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
+        # Adding assumption real=True can help simplify expressions involving xx[0] & xx[1] below.
         xx[0] = sp.symbols("xx0", real=True)
         xx[1] = sp.symbols("xx1", real=True)
-
-        r  = xx[0]
-        th = xx[1]
-        ph = xx[2]
 
         if CoordSystem == "Spherical":
             RMAX = par.Cparameters("REAL", thismodule, ["RMAX"])
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [         RMAX,          M_PI,  M_PI]
+
+            r  = xx[0]
+            th = xx[1]
+            ph = xx[2]
 
             Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
             Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
@@ -71,6 +72,8 @@ def reference_metric(SymPySimplifyExpressions=True):
             # Set SinhSpherical radial coordinate by default; overwrite later if CoordSystem == "SinhSphericalv2".
             r = AMPL * (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) / \
                        (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW))
+            th = xx[1]
+            ph = xx[2]
 
             Cart_to_xx[0] = SINHW*sp.asinh(sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)*sp.sinh(1/SINHW)/AMPL)
             Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
@@ -86,6 +89,8 @@ def reference_metric(SymPySimplifyExpressions=True):
             const_dr = par.Cparameters("REAL",thismodule,["const_dr"])
             r = AMPL*( const_dr*xx[0] + (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) /
                        (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW)) )
+            th = xx[1]
+            ph = xx[2]
 
             # NO CLOSED-FORM EXPRESSION FOR RADIAL INVERSION.
             # Cart_to_xx[0] = "NewtonRaphson"
@@ -164,14 +169,14 @@ def reference_metric(SymPySimplifyExpressions=True):
         #   unit vectors possible.
         xx[0] = sp.symbols("xx0", real=True)
 
-        RHOCYL = xx[0]
-        PHICYL = xx[1]
-        ZCYL   = xx[2]
-
         if CoordSystem == "Cylindrical":
             RHOMAX,ZMIN,ZMAX = par.Cparameters("REAL",thismodule,["RHOMAX","ZMIN","ZMAX"])
             xxmin = [sp.sympify(0), -M_PI, ZMIN]
             xxmax = [       RHOMAX,  M_PI, ZMAX]
+
+            RHOCYL = xx[0]
+            PHICYL = xx[1]
+            ZCYL   = xx[2]
 
             Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2)
             Cart_to_xx[1] = sp.atan2(Carty, Cartx)
@@ -284,6 +289,7 @@ def reference_metric(SymPySimplifyExpressions=True):
                                                       4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)*M_SQRT1_2)) # M_SQRT1_2 = 1/sqrt(2); define this way for UnitTesting
 
             Cart_to_xx[2] = phSph
+
         elif CoordSystem == "SinhSymTP":
             pass
             # Closed form expression for Cart_to_xx in SinhSymTP may exist, but has not yet been found
@@ -326,6 +332,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         UnitVectors = [[sp.sympify(1), sp.sympify(0), sp.sympify(0)],
                        [sp.sympify(0), sp.sympify(1), sp.sympify(0)],
                        [sp.sympify(0), sp.sympify(0), sp.sympify(1)]]
+
     else:
         print("CoordSystem == " + CoordSystem + " is not supported.")
         exit(1)
