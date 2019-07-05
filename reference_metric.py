@@ -35,53 +35,68 @@ def reference_metric(SymPySimplifyExpressions=True):
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
     M_PI,M_SQRT1_2 = par.Cparameters("REAL",thismodule,["M_PI","M_SQRT1_2"])
 
+    global xxmin
+    global xxmax
+
     global UnitVectors
     UnitVectors = ixp.zerorank2(DIM=3)
 
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
+    
+    #####################################################################
+    # SPHERICAL-LIKE COORDINATE SYSTEMS WITH & WITHOUT RADIAL RESCALING #
+    #####################################################################
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
+        # Adding assumption real=True can help simplify expressions involving xx[0] & xx[1] below.
         xx[0] = sp.symbols("xx0", real=True)
         xx[1] = sp.symbols("xx1", real=True)
 
-        r  = xx[0]
-        th = xx[1]
-        ph = xx[2]
-
         if CoordSystem == "Spherical":
             RMAX = par.Cparameters("REAL", thismodule, ["RMAX"])
-            global xxmin
-            global xxmax
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [         RMAX,          M_PI,  M_PI]
+
+            r  = xx[0]
+            th = xx[1]
+            ph = xx[2]
 
             Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
             Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
             Cart_to_xx[2] = sp.atan2(Carty, Cartx)
-        elif CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
-            AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"])
-    
+
+        elif CoordSystem == "SinhSpherical":
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [sp.sympify(1),          M_PI,  M_PI]
-    
+            
+            AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"])
             # Set SinhSpherical radial coordinate by default; overwrite later if CoordSystem == "SinhSphericalv2".
             r = AMPL * (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) / \
                        (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW))
+            th = xx[1]
+            ph = xx[2]
 
             Cart_to_xx[0] = SINHW*sp.asinh(sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)*sp.sinh(1/SINHW)/AMPL)
             Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
             Cart_to_xx[2] = sp.atan2(Carty, Cartx)
 
-            # SinhSphericalv2 adds the parameter "const_dr", which allows for a region near xx[0]=0 to have
-            # constant radial resolution of const_dr, provided the sinh() term does not dominate near xx[0]=0.
-            if CoordSystem == "SinhSphericalv2":
-                const_dr = par.Cparameters("REAL",thismodule,["const_dr"])
-                r = AMPL*( const_dr*xx[0] + (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) /
-                           (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW)) )
+        # SinhSphericalv2 adds the parameter "const_dr", which allows for a region near xx[0]=0 to have
+        # constant radial resolution of const_dr, provided the sinh() term does not dominate near xx[0]=0.
+        elif CoordSystem == "SinhSphericalv2":
+            xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
+            xxmax = [sp.sympify(1),          M_PI,  M_PI]
+            
+            AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"])
+            const_dr = par.Cparameters("REAL",thismodule,["const_dr"])
+            r = AMPL*( const_dr*xx[0] + (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) /
+                       (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW)) )
+            th = xx[1]
+            ph = xx[2]
 
-                # NO CLOSED-FORM EXPRESSION FOR RADIAL INVERSION.
-                # Cart_to_xx[0] = "NewtonRaphson"
-                # Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
-                # Cart_to_xx[2] = sp.atan2(Carty, Cartx)
+            # NO CLOSED-FORM EXPRESSION FOR RADIAL INVERSION.
+            # Cart_to_xx[0] = "NewtonRaphson"
+            # Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
+            # Cart_to_xx[2] = sp.atan2(Carty, Cartx)
+                
 
         xxSph[0] = r
         xxSph[1] = th
@@ -102,7 +117,14 @@ def reference_metric(SymPySimplifyExpressions=True):
                        [ sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]), -sp.sin(xxSph[1])],
                        [                 -sp.sin(xxSph[2]),                  sp.cos(xxSph[2]),  sp.sympify(0)   ]]
         
+    ######################################################################
+    # SPHERICAL-LIKE COORDINATE SYSTEMS WITH RADIAL AND THETA RESCALINGS #
+    ######################################################################
     elif CoordSystem == "NobleSphericalThetaOptionOne" or CoordSystem == "NobleSphericalThetaOptionTwo":
+        # WARNING: CANNOT BE USED FOR SENR RUNS; 
+        #  THESE DO NOT DEFINE xxmin, xxmax, Cart_to_xx
+        #  ALSO THE RADIAL RESCALINGS ARE NOT ODD FUNCTIONS OF xx0,
+        #  MEANING THAT CURVI. BOUNDARY CONDITIONS WILL NOT WORK.
         R0,x0beg = par.Cparameters("REAL", thismodule, ["R0","x0beg"])
         xx[0] = sp.symbols("xx0", real=True)
         r  = R0 + sp.exp(x0beg + xx[0])
@@ -119,20 +141,10 @@ def reference_metric(SymPySimplifyExpressions=True):
         xx[2] = sp.symbols("xx2", real=True)
         ph = xx[2]
 
-        # These DO NOT MATTER for interp_to_Sph_grids.
-#         global xxmin
-#         global xxmax
-#         xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
-#         xxmax = [         RMAX,          M_PI,  M_PI]
-
         xxSph[0] = r
         xxSph[1] = th
         xxSph[2] = ph
 
-        Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2)
-        Cart_to_xx[1] = sp.acos(Cartz / Cart_to_xx[0])
-        Cart_to_xx[2] = sp.atan2(Carty, Cartx)
-        
         # Now define xCart, yCart, and zCart in terms of x0,xx[1],xx[2].
         #   Note that the relation between r and x0 is not necessarily trivial in SinhSpherical coordinates. See above.
         xxCart[0] = xxSph[0]*sp.sin(xxSph[1])*sp.cos(xxSph[2])
@@ -148,26 +160,32 @@ def reference_metric(SymPySimplifyExpressions=True):
                        [ sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]), -sp.sin(xxSph[1])],
                        [                 -sp.sin(xxSph[2]),                  sp.cos(xxSph[2]),  sp.sympify(0)   ]]
 
+    ##########################################################################
+    # CYLINDRICAL-LIKE COORDINATE SYSTEMS WITH & WITHOUT RADIAL/Z RESCALINGS #
+    ##########################################################################
     elif CoordSystem == "Cylindrical" or CoordSystem == "SinhCylindrical" or CoordSystem == "SinhCylindricalv2":
         # Assuming the cylindrical radial coordinate
         #   is positive makes nice simplifications of
         #   unit vectors possible.
         xx[0] = sp.symbols("xx0", real=True)
 
-        RHOCYL = xx[0]
-        PHICYL = xx[1]
-        ZCYL   = xx[2]
-
         if CoordSystem == "Cylindrical":
             RHOMAX,ZMIN,ZMAX = par.Cparameters("REAL",thismodule,["RHOMAX","ZMIN","ZMAX"])
             xxmin = [sp.sympify(0), -M_PI, ZMIN]
             xxmax = [       RHOMAX,  M_PI, ZMAX]
 
+            RHOCYL = xx[0]
+            PHICYL = xx[1]
+            ZCYL   = xx[2]
+
             Cart_to_xx[0] = sp.sqrt(Cartx ** 2 + Carty ** 2)
             Cart_to_xx[1] = sp.atan2(Carty, Cartx)
             Cart_to_xx[2] = Cartz
 
-        elif CoordSystem == "SinhCylindrical" or CoordSystem == "SinhCylindricalv2":
+        elif CoordSystem == "SinhCylindrical":
+            xxmin = [sp.sympify(0), -M_PI, sp.sympify(-1)]
+            xxmax = [sp.sympify(1),  M_PI, sp.sympify(+1)]
+
             AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"])
     
             # Set SinhCylindrical radial & z coordinates by default; overwrite later if CoordSystem == "SinhCylindricalv2".
@@ -175,18 +193,27 @@ def reference_metric(SymPySimplifyExpressions=True):
             # phi coordinate remains unchanged.
             PHICYL = xx[1]
             ZCYL   = AMPLZ   * (sp.exp(xx[2] / SINHWZ)   - sp.exp(-xx[2] / SINHWZ))   / (sp.exp(1 / SINHWZ)   - sp.exp(-1 / SINHWZ))
-
-            # SinhCylindricalv2 adds the parameters "const_drho", "const_dz", which allows for regions near xx[0]=0
-            # and xx[2]=0 to have constant rho and z resolution of const_drho and const_dz, provided the sinh() terms
-            # do not dominate near xx[0]=0 and xx[2]=0.
-            if CoordSystem == "SinhCylindricalv2":
-                const_drho, const_dz = par.Cparameters("REAL",thismodule,["const_drho","const_dz"])
- 
-                RHOCYL = AMPLRHO * ( const_drho*xx[0] + (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO)) )
-                ZCYL   = AMPLZ   * ( const_dz  *xx[2] + (sp.exp(xx[2] / SINHWZ  ) - sp.exp(-xx[2] / SINHWZ  )) / (sp.exp(1 / SINHWZ  ) - sp.exp(-1 / SINHWZ  )) )
-    
+            Cart_to_xx[0] = SINHWRHO*sp.asinh(sp.sqrt(Cartx ** 2 + Carty ** 2)*sp.sinh(1/SINHWRHO)/AMPLRHO)
+            Cart_to_xx[1] = sp.atan2(Carty, Cartx)
+            Cart_to_xx[2] = SINHWZ*sp.asinh(Cartz*sp.sinh(1/SINHWZ)/AMPLZ)
+            
+        # SinhCylindricalv2 adds the parameters "const_drho", "const_dz", which allows for regions near xx[0]=0
+        # and xx[2]=0 to have constant rho and z resolution of const_drho and const_dz, provided the sinh() terms
+        # do not dominate near xx[0]=0 and xx[2]=0.
+        elif CoordSystem == "SinhCylindricalv2":
             xxmin = [sp.sympify(0), -M_PI, sp.sympify(-1)]
             xxmax = [sp.sympify(1),  M_PI, sp.sympify(+1)]
+            AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"])
+            const_drho, const_dz = par.Cparameters("REAL",thismodule,["const_drho","const_dz"])
+
+            RHOCYL = AMPLRHO * ( const_drho*xx[0] + (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO)) )
+            PHICYL = xx[1]
+            ZCYL   = AMPLZ   * ( const_dz  *xx[2] + (sp.exp(xx[2] / SINHWZ  ) - sp.exp(-xx[2] / SINHWZ  )) / (sp.exp(1 / SINHWZ  ) - sp.exp(-1 / SINHWZ  )) )
+    
+            # NO CLOSED-FORM EXPRESSION FOR RADIAL OR Z INVERSION.
+            # Cart_to_xx[0] = "NewtonRaphson"
+            # Cart_to_xx[1] = sp.atan2(Carty, Cartx)
+            # Cart_to_xx[2] = "NewtonRaphson"
 
         xxCart[0] = RHOCYL*sp.cos(PHICYL)
         xxCart[1] = RHOCYL*sp.sin(PHICYL)
@@ -262,7 +289,11 @@ def reference_metric(SymPySimplifyExpressions=True):
                                                       4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)*M_SQRT1_2)) # M_SQRT1_2 = 1/sqrt(2); define this way for UnitTesting
 
             Cart_to_xx[2] = phSph
-        
+
+        elif CoordSystem == "SinhSymTP":
+            pass
+            # Closed form expression for Cart_to_xx in SinhSymTP may exist, but has not yet been found
+
         scalefactor_orthog[0] = sp.diff(AA,xx[0]) * var1 / var2
         scalefactor_orthog[1] = var1
         scalefactor_orthog[2] = AA * sp.sin(xx[1])
@@ -301,6 +332,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         UnitVectors = [[sp.sympify(1), sp.sympify(0), sp.sympify(0)],
                        [sp.sympify(0), sp.sympify(1), sp.sympify(0)],
                        [sp.sympify(0), sp.sympify(0), sp.sympify(1)]]
+
     else:
         print("CoordSystem == " + CoordSystem + " is not supported.")
         exit(1)

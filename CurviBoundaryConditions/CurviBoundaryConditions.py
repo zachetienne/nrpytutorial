@@ -139,7 +139,7 @@ def Set_up_CurviBoundaryConditions():
     if rfm.Cart_to_xx[0] == 0 or rfm.Cart_to_xx[1] == 0 or rfm.Cart_to_xx[2] == 0:
         print("ERROR: rfm.Cart_to_xx[], which maps Cartesian -> xx, has not been set for")
         print("       reference_metric::CoordSystem = "+par.parval_from_str("reference_metric::CoordSystem"))
-        print("       Boundary conditions in curvilinear coordinates REQUiRE this be set.")
+        print("       Boundary conditions in curvilinear coordinates REQUIRE this be set.")
         sys.exit(1)
     outputC([rfm.Cart_to_xx[0], rfm.Cart_to_xx[1], rfm.Cart_to_xx[2]],
             ["Cart_to_xx0_inbounds", "Cart_to_xx1_inbounds", "Cart_to_xx2_inbounds"],
