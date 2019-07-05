@@ -1,7 +1,8 @@
 from outputC import *
 import sympy as sp
 
-def simplify_deriv(lhss_deriv,rhss_deriv):
+
+def simplify_deriv(lhss_deriv, rhss_deriv):
     lhss_deriv_simp = []
     rhss_deriv_simp = []
     for i in range(len(rhss_deriv)):
@@ -9,10 +10,10 @@ def simplify_deriv(lhss_deriv,rhss_deriv):
         rhss_deriv_simp.append(rhss_deriv[i])
     for i in range(len(rhss_deriv_simp)):
         if rhss_deriv_simp[i] == 0:
-            for j in range(i+1,len(rhss_deriv_simp)):
+            for j in range(i+1, len(rhss_deriv_simp)):
                 for var in rhss_deriv_simp[j].free_symbols:
                     if str(var) == str(lhss_deriv_simp[i]):
-                        rhss_deriv_simp[j] = rhss_deriv_simp[j].subs(var,0)
+                        rhss_deriv_simp[j] = rhss_deriv_simp[j].subs(var, 0)
     zero_elements_to_remove = []
     for i in range(len(rhss_deriv_simp)):
         if rhss_deriv_simp[i] == sp.sympify(0):
@@ -22,7 +23,8 @@ def simplify_deriv(lhss_deriv,rhss_deriv):
         del lhss_deriv_simp[zero_elements_to_remove[i]+count]
         del rhss_deriv_simp[zero_elements_to_remove[i]+count]
         count -= 1
-    return lhss_deriv_simp,rhss_deriv_simp
+    return lhss_deriv_simp, rhss_deriv_simp
+
 
 def deriv_onevar(lhss_deriv, rhss_deriv,
                  xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0, pzprm=0, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0,
@@ -62,6 +64,12 @@ def deriv_onevar(lhss_deriv, rhss_deriv,
     return lhss_deriv_simp, rhss_deriv_simp
 
 
+def replace_numpy_funcs(expression):
+
+    return str(expression).replace("sqrt(", "sp.sqrt(").replace("log(",
+                                            "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(")
+
+
 def output_H_and_derivs():
 
     f = open("Hamstring.txt", 'r')
@@ -82,7 +90,8 @@ def output_H_and_derivs():
             # Append to the "lr" array, removing spaces, "sp." prefixes, and replacing Lambda->Lamb
             #       (Lambda is a protected keyword):
             lr.append(lhrh(lhs=splitHamterms[0].replace(" ", "").replace("Lambda", "Lamb"),
-                           rhs=splitHamterms[1].replace(" ", "").replace("sp.", "").replace("Lambda", "Lamb")))
+                           rhs=splitHamterms[1].replace(" ", "").replace("sp.A", "a").replace("sp.",
+                                                            "").replace("Lambda", "Lamb")))
 
     xx = sp.Symbol('xx')
     func = []
@@ -108,11 +117,9 @@ def output_H_and_derivs():
     c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5 = sp.symbols(
         "c0k2 c1k2 c0k3 c1k3 c0k4 c1k4 c2k4 c0k5 c1k5 c2k5", real=True)
     KK, k5l, b3, bb3, d1, d1v2, dheffSS, dheffSSv2 = sp.symbols("KK k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2", real=True)
-    tortoise, copysignresult = sp.symbols("tortoise copysignresult", real=True)
-    input_constants = [m1, m2, eta,
-                       c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5,
-                       KK, k5l, b3, bb3, d1, d1v2, dheffSS, dheffSSv2,
-                       tortoise, copysignresult]
+    tortoise = sp.symbols("tortoise", real=True)
+    input_constants = [m1, m2, eta, c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5, KK, k5l, b3, bb3, d1,
+                       d1v2, dheffSS, dheffSSv2, tortoise]
 
     # Derivatives of input constants will always be zero, so remove them from the full_symbol_list.
     for inputconst in input_constants:
@@ -210,12 +217,24 @@ eta,KK,k5l,b3,bb3,d1,d1v2,dheffSS,dheffSSv2 = sp.symbols("eta KK k5l b3 bb3 d1 d
 tortoise = sp.symbols("tortoise",real=True)
 
 """)
+
         for i in range(len(lr)):
-#            file.write(lr[i].lhs + " = " + "sp.symbols(\"" + lr[i].lhs + "\")\n")
             file.write(lr[i].lhs + " = " + str(lr[i].rhs).replace("sqrt(","sp.sqrt(").replace("log(",
                 "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace("Rational(",
                 "sp.Rational(") + "\n")
-        file.write("\n")
+        file.write("""
+CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
+
+with open("/tmp/numpy_expressions.py", "w") as file:
+    for commonsubexpression in CSE_results[0]:
+        file.write(str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+    for i,result in enumerate(CSE_results[1]):
+        file.write("Hreal = "+str(result)+"\\n")
+
+""")
+
+        for i in range(len(lr)):
+            file.write(lr[i].lhs + " = " + "sp.symbols(\"" + lr[i].lhs + "\")\n")
         for i in range(len(lhss_deriv_x)):
             file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + str(rhss_deriv_x[i]).replace("sqrt(",
                 "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
@@ -275,16 +294,16 @@ tortoise = sp.symbols("tortoise",real=True)
                     "sp.sign(").replace("prm", "prm_s2z") + "\n")
         file.write("""
 
-output_list = ["Hreal","Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py","Hrealprm_pz",
+output_list = ["Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py","Hrealprm_pz",
          "Hrealprm_s1x","Hrealprm_s1y","Hrealprm_s1z","Hrealprm_s2x","Hrealprm_s2y","Hrealprm_s2z"]
-expression_list = [Hreal,Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
+expression_list = [Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
          Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z]
 
 CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
 
-with open("/tmp/numpy_expressions.py", "w") as file:
+with open("/tmp/numpy_expressions.py", "a") as file:
     for commonsubexpression in CSE_results[0]:
-        file.write(str(commonsubexpression[0])+" = "+str(commonsubexpression[1])+"\\n")
+        file.write(str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
     for i,result in enumerate(CSE_results[1]):
         file.write(str(output_list[i])+" = "+str(result)+"\\n")
 """)
