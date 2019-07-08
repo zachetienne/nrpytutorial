@@ -222,6 +222,9 @@ tortoise = sp.symbols("tortoise",real=True)
             file.write(lr[i].lhs + " = " + str(lr[i].rhs).replace("sqrt(","sp.sqrt(").replace("log(",
                 "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace("Rational(",
                 "sp.Rational(") + "\n")
+#        for i in range(len(lr)-1):
+#            file.write(lr[i].lhs + " = " + "sp.symbols(\"" + lr[i].lhs + "\")\n")
+
         file.write("""
 CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
 
@@ -230,11 +233,11 @@ with open("/tmp/numpy_expressions.py", "w") as file:
         file.write(str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
     for i,result in enumerate(CSE_results[1]):
         file.write("Hreal = "+str(result)+"\\n")
+    for commonsubexpression in CSE_results[0]:
+        file.write(str(commonsubexpression[0]) + " = " + "sp.symbols(\\"" + str(commonsubexpression[1]) + "\\")\\n")
 
 """)
 
-        for i in range(len(lr)):
-            file.write(lr[i].lhs + " = " + "sp.symbols(\"" + lr[i].lhs + "\")\n")
         for i in range(len(lhss_deriv_x)):
             file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + str(rhss_deriv_x[i]).replace("sqrt(",
                 "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
