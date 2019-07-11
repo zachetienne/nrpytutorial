@@ -1,4 +1,4 @@
-from sympy import Integer,Symbol,symbols,simplify,Rational,Function,srepr,sin,cos,exp,log,Abs,Add,Mul,Pow,preorder_traversal,N,Float,S,var,sympify
+from sympy import Integer,Symbol,symbols,simplify,Rational,sign,Function,srepr,sin,cos,exp,log,Abs,Add,Mul,Pow,preorder_traversal,N,Float,S,var,sympify
 import NRPy_param_funcs as par
 import re
 
@@ -20,6 +20,8 @@ def FusedMulSubSIMD_check(a,b,c):
     return a*b - c
 def DivSIMD_check(a,b):
     return a/b
+def signSIMD_check(a):
+    return sign(a)
 
 # For debugging purposes, Part 2:
 # Transcendental operations
@@ -61,6 +63,7 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
     FusedMulAddSIMD = Function("FusedMulAddSIMD")
     FusedMulSubSIMD = Function("FusedMulSubSIMD")
     DivSIMD = Function("DivSIMD")
+    SignSIMD = Function("SignSIMD")
 
     PowSIMD = Function("PowSIMD")
     SqrtSIMD = Function("SqrtSIMD")
@@ -84,6 +87,8 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
             expr = expr.xreplace({item: SinSIMD(item.args[0])})
         elif item.func == cos:
             expr = expr.xreplace({item: CosSIMD(item.args[0])})
+        elif item.func == sign:
+            expr = expr.xreplace({item: SignSIMD(item.args[0])})
 
     for item in preorder_traversal(expr):
         if item.func == Pow:
