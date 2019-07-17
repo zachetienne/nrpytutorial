@@ -95,22 +95,27 @@ const int MAXFACE = -1;
 const int NUL     = +0;
 const int MINFACE = +1;
 
-
-#define OB_UPDATE(inner,which_gf, bc_gz_map,bc_parity_conditions, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
+#define OB_UPDATE_OUTER(which_gf, bc_gz_map,bc_parity_conditions, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
   LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) {                  \
     const int idx3 = IDX3(i0,i1,i2);                                    \
-    if(bc_gz_map[idx3].i0 == -1 && inner==0) {                          \
+    if(bc_gz_map[idx3].i0 == -1) {                                      \
       gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
         +3.0*gfs[IDX4(which_gf,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]    \
         -3.0*gfs[IDX4(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]    \
         +1.0*gfs[IDX4(which_gf,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)];   \
-    } else if(bc_gz_map[idx3].i0 != -1 && inner==1) {                   \
-     gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
+    }                                                                   \
+  }
+
+#define OB_UPDATE_INNER(which_gf, bc_gz_map,bc_parity_conditions, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \
+  LOOP_REGION(i0min,i0max, i1min,i1max, i2min,i2max) {                  \
+    const int idx3 = IDX3(i0,i1,i2);                                    \
+    if(bc_gz_map[idx3].i0 != -1) {                                      \
+      gfs[IDX4(which_gf,i0,i1,i2)] =                                    \
         ( (REAL)bc_parity_conditions[idx3].parity[gfs_parity[which_gf]] )* \
-                                             gfs[IDX4(which_gf,           \
-                                                    bc_gz_map[idx3].i0, \
-                                                    bc_gz_map[idx3].i1, \
-                                                    bc_gz_map[idx3].i2)]; \
+        gfs[IDX4(which_gf,                                              \
+                 bc_gz_map[idx3].i0,                                    \
+                 bc_gz_map[idx3].i1,                                    \
+                 bc_gz_map[idx3].i2)];                                  \
     }                                                                   \
   }
 
@@ -124,19 +129,34 @@ void apply_bcs(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS[0]-NGHOSTS, Nxx_plus_2NGHOSTS[1]-NGHOSTS, Nxx_plus_2NGHOSTS[2]-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      for(int inner=0;inner<2;inner++) {
-        // After updating each face, adjust imin[] and imax[] 
-        //   to reflect the newly-updated face extents.
-        OB_UPDATE(inner,which_gf, bc_gz_map,bc_parity_conditions, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
-        OB_UPDATE(inner,which_gf, bc_gz_map,bc_parity_conditions, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
 
-        OB_UPDATE(inner,which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
-        OB_UPDATE(inner,which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
+      // First apply OUTER boundary conditions,
+      //   in case an INNER (parity) boundary point
+      //   needs data at the outer boundary:
+      // After updating each face, adjust imin[] and imax[] 
+      //   to reflect the newly-updated face extents.
+      OB_UPDATE_OUTER(which_gf, bc_gz_map,bc_parity_conditions, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
+      OB_UPDATE_OUTER(which_gf, bc_gz_map,bc_parity_conditions, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
 
-        OB_UPDATE(inner,which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
-        OB_UPDATE(inner,which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
-        if(inner==0) { for(int ii=0;ii<3;ii++) {imin[ii]++; imax[ii]--;} }
-      }
+      OB_UPDATE_OUTER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
+      OB_UPDATE_OUTER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
+
+      OB_UPDATE_OUTER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
+      OB_UPDATE_OUTER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
+
+      // Then apply INNER (parity) boundary conditions:
+      for(int ii=0;ii<3;ii++) {imin[ii]++; imax[ii]--;}
+      // After updating each face, adjust imin[] and imax[] 
+      //   to reflect the newly-updated face extents.
+      OB_UPDATE_INNER(which_gf, bc_gz_map,bc_parity_conditions, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
+      OB_UPDATE_INNER(which_gf, bc_gz_map,bc_parity_conditions, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
+
+      OB_UPDATE_INNER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
+      OB_UPDATE_INNER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
+
+      OB_UPDATE_INNER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); imin[2]--;
+      OB_UPDATE_INNER(which_gf, bc_gz_map,bc_parity_conditions, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
+
     }
   }
 }
