@@ -6,6 +6,7 @@
 
 import grid as gri
 import re
+import sys
 from outputC import *
 
 from operator import itemgetter
@@ -71,7 +72,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                     print("in NRPy+ as either a gridfunction or Cparameter, by calling")
                     print(str(var)+" = register_gridfunctions...() (in ixp/grid) if \""+str(var)+"\" is a gridfunction, or")
                     print(str(var)+" = Cparameters() (in par) otherwise (e.g., if it is a free parameter set at C runtime).")
-                    exit(1)
+                    sys.exit(1)
                 list_of_deriv_vars_with_duplicates.append(var)
 #            elif vartype == "gridfunction":
 #                list_of_deriv_vars_with_duplicates.append(var)
@@ -129,7 +130,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
             print("Error: "+varstr+" has "+str(num_UDs)+" U's and D's, but ")
             print(str(num_digits)+" integers at the end. These must be equal.")
             print("Please rename your gridfunction.")
-            exit(1)
+            sys.exit(1)
         # Step 2a.2: Based on the variable name, find the rank of
         #            the underlying gridfunction of which we're
         #            trying to take the derivative.
@@ -169,7 +170,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         if not is_gf:
             print("Error: Attempting to take the derivative of "+basegf+", which is not a registered gridfunction.")
             print("       Make sure your gridfunction name does not have any underscores in it!")
-            exit(1)
+            sys.exit(1)
 
     # Step 2c:
     # Check each derivative operator to make sure it is
@@ -181,7 +182,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                 found_derivID = True
         if not found_derivID:
             print("Error: Valid derivative operator in "+deriv__operator[i]+" not found.")
-            exit(1)
+            sys.exit(1)
 
     # Step 2d (Upwinded derivatives algorithm, part 1):
     # If an upwinding control vector is specified, determine
@@ -200,7 +201,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                     upwind_directions_unsorted_withdups.append(dirn)
                 else:
                     print("Error: Derivative operator "+deriv_op+" does not contain a direction")
-                    exit(1)
+                    sys.exit(1)
         upwind_directions = []
         if len(upwind_directions_unsorted_withdups)>0:
             upwind_directions = superfast_uniq(upwind_directions_unsorted_withdups)
@@ -298,7 +299,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
             return str(int(idx4[3])+os + sz*( (int(idx4[2])+os) + sz*( (int(idx4[1])+os) + sz*( int(idx4[0])+os ) ) ))
         else:
             print("Error: MemAllocStyle = "+par.parval_from_str("MemAllocStyle")+" unsupported.")
-            exit(1)
+            sys.exit(1)
 
     # Step 4d.ii: For each gridfunction and
     #      point read from memory, call unique_idx,
@@ -463,7 +464,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
             exprs[i] *= invdx[dirn1]*invdx[dirn2]
         else:
             print("Error: was unable to parse derivative operator: ",deriv__operator[i])
-            exit(1)
+            sys.exit(1)
     # Step 5b.ii: If upwind control vector is specified,
     #             add upwind control vectors to the
     #             derivative expression list, so its
@@ -674,7 +675,7 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
     if "DDD" in derivstring:
         print("Error: Only derivatives up to second order currently supported.")
         print("       Feel free to contribute to NRPy+ to extend its functionality!")
-        exit(1)
+        sys.exit(1)
     elif "DD" in derivstring:
 
         if derivstring[len(derivstring)-1] == derivstring[len(derivstring)-2]:

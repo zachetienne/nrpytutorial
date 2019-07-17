@@ -5,6 +5,7 @@
 import NRPy_param_funcs as par
 import grid as gri
 import sympy as sp
+import sys
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
@@ -44,7 +45,7 @@ def apply_symmetry_condition_to_derivatives(IDX_OBJ):
             rank = 4
         else:
             print("Error: could not figure out rank for ",IDX_OBJ)
-            exit(1)
+            sys.exit(1)
 
     def does_IDXOBJ_perform_derivative_across_symmetry_axis(idxobj_str):
         returnval = False
@@ -60,7 +61,7 @@ def apply_symmetry_condition_to_derivatives(IDX_OBJ):
                             deriv_order = deriv_order + 1
             if deriv_order > 2:
                 print("Error. Derivative order > 2 not supported. Found derivative order = "+str(deriv_order))
-                exit(1)
+                sys.exit(1)
             end_idx_of_idxobj_str = len(idxobj_str)-1
             for j in range(end_idx_of_idxobj_str,end_idx_of_idxobj_str-deriv_order,-1):
                 if idxobj_str[j] in symmetry_axes:
@@ -136,7 +137,7 @@ def declarerank2(objname, symmetry_option, DIM=-1):
                 pass
             else:
                 print("Error: symmetry option " + symmetry_option + " unsupported.")
-                exit(1)
+                sys.exit(1)
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option, DIM=-1):
@@ -182,7 +183,7 @@ def declarerank3(objname, symmetry_option, DIM=-1):
                         IDX_OBJ_TMP[i][j][k] = IDX_OBJ_TMP[i][k][j]
                 if not (symmetry_option == "sym01" or symmetry_option == "sym12" or symmetry_option == "nosym"):
                     print("Error: symmetry option " + symmetry_option + " unsupported.")
-                    exit(1)
+                    sys.exit(1)
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 def declarerank4(objname, symmetry_option, DIM=-1):
@@ -205,7 +206,7 @@ def declarerank4(objname, symmetry_option, DIM=-1):
                             IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[i][j][l][k]
                     if not (symmetry_option=="sym01" or symmetry_option=="sym23" or symmetry_option=="sym01_sym23" or symmetry_option=="none"):
                         print("Error: symmetry option "+symmetry_option+" unsupported.")
-                        exit(1)
+                        sys.exit(1)
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
 
 

@@ -23,6 +23,7 @@
 #         zachetie **at** gmail **dot* com
 
 import time
+import sys
 import sympy as sp
 
 import NRPy_param_funcs as par
@@ -350,7 +351,7 @@ def reference_metric(SymPySimplifyExpressions=True):
 
     else:
         print("CoordSystem == " + CoordSystem + " is not supported.")
-        exit(1)
+        sys.exit(1)
 
     # Finally, call ref_metric__hatted_quantities()
     #  to construct hatted metric, derivs of hatted
@@ -384,13 +385,13 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         for j in range(DIM):
             if ReDD[i][j] != ReDD[j][i]:
                 print("Error: ReDD["+ str(i) + "][" + str(j) + "] != ReDD["+ str(j) + "][" + str(i) + ": " + str(ReDD[i][j]) + "!=" + str(ReDD[j][i]))
-                exit(1)
+                sys.exit(1)
             if ghatDD[i][j] != ghatDD[j][i]:
                 print("Error: ghatDD["+ str(i) + "][" + str(j) + "] != ghatDD["+ str(j) + "][" + str(i) + ": " + str(ghatDD[i][j]) + "!=" + str(ghatDD[j][i]))
-                exit(1)
+                sys.exit(1)
             if ghatUU[i][j] != ghatUU[j][i]:
                 print("Error: ghatUU["+ str(i) + "][" + str(j) + "] != ghatUU["+ str(j) + "][" + str(i) + ": " + str(ghatUU[i][j]) + "!=" + str(ghatUU[j][i]))
-                exit(1)
+                sys.exit(1)
 
     # Step 2: Compute det(ghat) and its 1st & 2nd derivatives
     global detgammahatdD,detgammahatdDD

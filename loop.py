@@ -1,10 +1,12 @@
+import sys
+
 # loop1D() is just a special case of loop(), and in fact is called by loop().
 #   For documentation on the inputs, see loop()'s documentation below.
 def loop1D(idxvar="i0",lower="0",upper="Nx0",incr="1",OpenMPpragma="#pragma omp parallel for",tabprefix=""):
     if not (isinstance(idxvar, str) and isinstance(lower, str) and
             isinstance(upper, str) and isinstance(incr, str) and isinstance(OpenMPpragma, str)):
         print("Error: all inputs to loop1D() must be STRINGS, and to loop() must be LISTS OF STRINGS")
-        exit(1)
+        sys.exit(1)
     OMPheader = ""
     if OpenMPpragma != "":
         OMPheader = OpenMPpragma + "\n"

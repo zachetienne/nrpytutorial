@@ -3,6 +3,7 @@ glb_paramsvals_list = []  # = where we store parameter values.
 from collections import namedtuple
 glb_param = namedtuple('glb_param', 'type module parname defaultval')
 import sympy as sp
+import sys
 
 def initialize_param(input):
     if get_params_idx(input) == -1:
@@ -25,7 +26,7 @@ def get_params_idx(input):
     else:
         if len(list) > 1:
             print("Error: Found multiple parameters matching "+str(input))
-            exit(1)
+            sys.exit(1)
         return list.pop() # pop() returns the index
 
 def get_params_value(input):
@@ -33,7 +34,7 @@ def get_params_value(input):
     if idx < 0:
         print("Error: could not find a parameter matching:",input)
         print("Full list of modules:\n",glb_params_list)
-        exit(1)
+        sys.exit(1)
     else:
         return glb_paramsvals_list[idx]
 
@@ -51,10 +52,10 @@ def idx_from_str(varname,modname=""):
         list = [i for i, v in enumerate(glb_params_list) if (v[1] == modname and v[2] == varname)]
     if list == []:
         print("Error: Could not find a parameter matching \""+varname+"\" in ",glb_params_list)
-        exit(1)
+        sys.exit(1)
     if len(list) > 1:
         print("Error: Found more than one parameter named \""+varname+"\". Use get_params_value() instead.")
-        exit(1)
+        sys.exit(1)
     return list.pop()
 
 def parval_from_str(string):
@@ -99,7 +100,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
             else:
                 print("Error: the command-line argument " + stripped_line_of_text + " is not in the form")
                 print("\"module::variable=value\"   <-- NOTICE NO SPACES ALLOWED!")
-            exit(1)
+            sys.exit(1)
 
         # Next remove all leading/trailing whitespace from single_param_def
         for i in range(len(single_param_def)):
@@ -116,7 +117,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                 else:
                     print("Error: when parsing command-line argument \"" + stripped_line_of_text + "\":")
                 print("\t\tcould not find parameter \""+ single_param_def[1] + "\" in \""+single_param_def[0]+"\" module.")
-                exit(1)
+                sys.exit(1)
             # If parameter is found at index idx, set paramsval[idx] to the value specified in the file.
             if glb_params_list[idx].defaultval != "RUNTIME":
                 partype = glb_params_list[idx].type
@@ -127,7 +128,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                         glb_paramsvals_list[idx] = False
                     else:
                         print("Error: \"bool\" type can only take values of \"True\" or \"False\"")
-                        exit(1)
+                        sys.exit(1)
                 elif partype == "INT":
                     glb_paramsvals_list[idx] = int(single_param_def[2])
                 elif partype == "REAL" or \
@@ -138,7 +139,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                 else:
                     print("Error: type \""+partype+"\" on variable \""+ glb_params_list[idx].parname +"\" is unsupported.")
                     print("Supported types include: bool, INT, REAL, REALARRAY, char, and char *")
-                    exit(1)
+                    sys.exit(1)
 #                    glb_paramsvals_list[idx] = single_param_def[2]
             else:
                 print("Error: Tried to set the parameter "
@@ -146,13 +147,13 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                       " with default value RUNTIME")
                 print("Such a parameter is defined by NRPy+, but must be "
                       "set at C code runtime. Go fix your C code parameter file!")
-                exit(1)
+                sys.exit(1)
         elif FindMainModuleMode == True and MainModuleFound == False:
             if single_param_def[0] == "NRPy" and single_param_def[1] == "MainModule":
                 idx = get_params_idx(glb_param("ignoretype", single_param_def[0], single_param_def[1], "ignoredefval"))
                 if idx == -1:
                     print("Critical error: NRPy::MainModule is uninitialized!")
-                    exit(1)
+                    sys.exit(1)
                 glb_paramsvals_list[idx] = single_param_def[2]
 
 def Cparameters(type,module,names,assumption="Real"):
@@ -169,7 +170,7 @@ def Cparameters(type,module,names,assumption="Real"):
             tmp = sp.Symbol(names[i], real=True, positive=True) # Assumes all Cparameters are real and positive.
         else:
             print("Error: assumption "+str(assumption)+" not supported.")
-            exit(1)
+            sys.exit(1)
         output.append(tmp)
     if len(names) == 1:
         return output[0]
@@ -185,7 +186,7 @@ def Ccode__declare_params(filename):
            partype != "REAL":
             print("Error: parameter "+glb_params_list[i].module+"::"+glb_params_list[i].parname+" has unsupported type: \""
                   + glb_params_list[i].type + "\"")
-            exit(1)
+            sys.exit(1)
         if partype == "char":
             Ctype = "char *"
         else:

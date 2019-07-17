@@ -1,5 +1,6 @@
 import NRPy_param_funcs as par
 import re
+import sys
 from SIMD import expr_convert_to_SIMD_intrins
 
 from collections import namedtuple
@@ -33,7 +34,7 @@ def ccode_postproc(string):
         cmathsuffix = "f"
     else:
         print("Error: "+__name__+"::PRECISION = \""+ PRECISION +"\" not supported")
-        exit(1)
+        sys.exit(1)
     # ... then we append the above suffix to standard C math library functions:
     for func in ['pow', 'sqrt', 'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'exp', 'log', 'fabs']:
         string2 = re.sub(func+'\(', func + cmathsuffix+"(", string); string = string2
@@ -68,7 +69,7 @@ def parse_outCparams_string(params):
 
         if len(splitstring) % 2 != 0:
             print("outputC: Invalid params string: "+params)
-            exit(1)
+            sys.exit(1)
 
         parnm = []
         value = []
@@ -86,7 +87,7 @@ def parse_outCparams_string(params):
                 if not value[i].isdigit():
                     print("Error: preindent must be set to an integer (corresponding to the number of tab stops). ")
                     print(value[i]+" is not an integer.")
-                    exit(1)
+                    sys.exit(1)
                 preindent = ""
                 for i in range(int(value[i])):
                     preindent += "   "
@@ -110,7 +111,7 @@ def parse_outCparams_string(params):
                 enable_TYPE = value[i]
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
-                exit(1)
+                sys.exit(1)
 
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_debug,enable_TYPE)
 
@@ -141,7 +142,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     if outCparams.SIMD_enable == "True":
         if not (TYPE == "double" or TYPE == ""):
             print("SIMD output currently only supports double precision or typeless. Sorry!")
-            exit(1)
+            sys.exit(1)
         if TYPE == "double":
             TYPE = "REAL_SIMD_ARRAY"
         else:
@@ -151,15 +152,15 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     #          output_varname_str is a list.
     if type(output_varname_str) is list and type(sympyexpr) is not list:
         print("Error: Provided a list of output variable names, but only one SymPy expression.")
-        exit(1)
+        sys.exit(1)
     if type(sympyexpr) is list:
         if type(output_varname_str) is not list:
             print("Error: Provided a list of SymPy expressions, but no corresponding list of output variable names")
-            exit(1)
+            sys.exit(1)
         elif len(output_varname_str) != len(sympyexpr):
             print("Error: Length of SymPy expressions list ("+str(len(sympyexpr))+
                   ") != Length of corresponding output variable name list ("+str(len(output_varname_str))+")")
-            exit(1)
+            sys.exit(1)
     # Step 2b: If sympyexpr and output_varname_str are not lists,
     #          convert them to lists of one element each, to
     #          simplify proceeding code.
@@ -260,7 +261,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             SIMD_const_values = uniq_values
             if len(SIMD_const_varnms) != len(SIMD_const_values):
                 print("Error: SIMD constant declaration arrays SIMD_const_varnms[] and SIMD_const_values[] have inconsistent sizes!")
-                exit(1)
+                sys.exit(1)
 
             for i in range(len(SIMD_const_varnms)):
                 if outCparams.enable_TYPE == "False":

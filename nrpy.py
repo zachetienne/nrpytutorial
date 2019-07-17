@@ -5,7 +5,7 @@ PYTHONVERSION3 = False
 if sys.version_info[0]==2:
     if sys.version_info[1]<4:
         print("Sorry, NRPy won't work with Python < 2.4; sorting functs won't work. See https://docs.python.org/3/howto/sorting.html for details.")
-        exit()
+        sys.exit(1)
 if sys.version_info[0]==3:
     PYTHONVERSION3 = True
 
@@ -51,7 +51,7 @@ elif(len(sys.argv) == 2 and sys.argv[1] == "--help"):
     print("\t\t settings with command-line parameters, with same")
     print("\t\t syntax (`mainmodule:paramname=value`)")
     print("     \033[1m............................................\033[0m ")
-    exit(0)
+    sys.exit(0)
 
 #    Run with parameter file & optional list of parameter overrides if NRPy+ is run via
 #   `python nrpy.py [PARAMETER FILE] [(optional) PARAMETER OVERRIDES]`:
@@ -75,7 +75,7 @@ elif(len(sys.argv) >= 2):
     MainModule = par.glb_paramsvals_list[idx]
     if MainModule == "NODEFAULT":
         print("Error: Could not find NRPy::MainModule defined in the parameter file \""+sys.argv[1]+"\" or on the command line!")
-        exit(1)
+        sys.exit(1)
 
     # Next initialize all of MainModule's parameters.
     # Note that MainModule must also initialize parameters for modules

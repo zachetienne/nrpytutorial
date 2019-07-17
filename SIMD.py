@@ -1,6 +1,7 @@
 from sympy import Integer,Symbol,symbols,simplify,Rational,sign,Function,srepr,sin,cos,exp,log,Abs,Add,Mul,Pow,preorder_traversal,N,Float,S,var,sympify
 import NRPy_param_funcs as par
 import re
+import sys
 
 # For debugging purposes, Part 1:
 # Basic arithmetic operations
@@ -269,7 +270,7 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
                 # E.g., doesn't make sense to have -1/-3. SymPy should have simplified this.
                 print("Found a weird Rational(a,b) expression, where a<0 and b<0. Report to SymPy devels")
                 print("Specifically, found that a="+str(item.args[0])+" and b="+str(item.args[1]))
-                exit(1)
+                sys.exit(1)
             # Set variable value, to 34 digits of precision
             SIMD_const_values.extend([str(N(Float(item.args[0],34)/Float(item.args[1],34),34))])
         elif item.func == IntegerTMP:
@@ -293,7 +294,7 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
                 # E.g., doesn't make sense to have -1/-3. SymPy should have simplified this.
                 print("Found a weird Rational(a,b) expression, where a<0 and b<0. Report to SymPy devels")
                 print("Specifically, found that a=" + str(item.args[0]) + " and b=" + str(item.args[1]))
-                exit(1)
+                sys.exit(1)
         elif item.func == IntegerTMP:
             if item.args[0] < 0:
                 tempitem = var("_Integer_m" + str(-item.args[0]))
@@ -306,7 +307,7 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
             if list_of_names[i] == name:
                 return i
         print("I SHOULDN'T BE HERE!",name,list_of_names)
-        exit(1)
+        sys.exit(1)
 
     if debug=="True":
         expr_check = expr
