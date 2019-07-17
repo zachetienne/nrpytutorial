@@ -71,11 +71,11 @@ void set_up_bc_gz_map_and_parity_conditions(const int Nxx_plus_2NGHOSTS[3], REAL
       REAL REAL_parity_array[10];
       set_bc_parity_conditions(REAL_parity_array,  xx0,xx1,xx2, xx0_inbounds,xx1_inbounds,xx2_inbounds);
       for(int whichparity=0;whichparity<10;whichparity++) {
-          //printf("Good? Parity %d evaluated to %e\n",whichparity,REAL_parity_array[whichparity]);
+          //printf("Good? Parity %d evaluated to %e\n",whichparity,(double)REAL_parity_array[whichparity]);
           // Perform sanity check on parity array output: should be +1 or -1 to within 8 significant digits:
           if( (REAL_parity_array[whichparity]  > 0 && fabs(REAL_parity_array[whichparity] - (+1)) > 1e-8) ||
               (REAL_parity_array[whichparity] <= 0 && fabs(REAL_parity_array[whichparity] - (-1)) > 1e-8) ) {
-              printf("Error. Parity evaluated to %e , which is not within 8 significant digits of +1 or -1.",(double)REAL_parity_array[whichparity]);
+              printf("Error. Parity evaluated to %e , which is not within 8 significant digits of +1 or -1.",REAL_parity_array[whichparity]);
               exit(1);
           }
           if(REAL_parity_array[whichparity] < 0.0) bc_parity_conditions[IDX3(i0,i1,i2)].parity[whichparity] = -1;
