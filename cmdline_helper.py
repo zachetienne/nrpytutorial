@@ -22,7 +22,7 @@
 #          Zach Etienne
 #          zachetie **at** gmail **dot* com
 
-import io, os, shlex, subprocess, sys, time, multiprocessing
+import io, os, shlex, subprocess, sys, time, multiprocessing, platform
 
 # check_executable_exists(): Check to see whether an executable exists. 
 #                            Error out or return False if not exists;
@@ -75,7 +75,7 @@ def C_compile(main_C_output_path, main_C_output_file):
 #            if available. Calls Execute_input_string() to
 #            redirect output from stdout & stderr to desired
 #            destinations.
-def Execute(executable, executable_output_arguments = "", file_to_redirect_stdout = os.devnull, use_ht_cores=True):
+def Execute(executable, executable_output_arguments = "", file_to_redirect_stdout = os.devnull):
     # Step 1: Delete old version of executable file
     if file_to_redirect_stdout != os.devnull:
         delete_existing_files(file_to_redirect_stdout)
@@ -92,10 +92,16 @@ def Execute(executable, executable_output_arguments = "", file_to_redirect_stdou
     taskset_exists = check_executable_exists("taskset",error_if_not_found=False)
     if taskset_exists == True:
         execute_string += "taskset -c 0"
-        N_cores_to_use = int(multiprocessing.cpu_count()) # Use all cores by default
-        # NOTE: You may observe a speed-up by using only *PHYSICAL* (as opposed to logical/hyperthreading) cores:
-        if use_HT_cores == False:
+        has_HT_cores = False # Does CPU have hyperthreading cores?
+        if platform.processor() != '': # If processor string returns null, then assume CPU does not support hyperthreading.
+                                       # This will yield correct behavior on ARM (e.g., cell phone) CPUs.
+            has_HT_cores=True
+        if has_HT_cores == True:
+            # NOTE: You will observe a speed-up by using only *PHYSICAL* (as opposed to logical/hyperthreading) cores:
             N_cores_to_use = int(multiprocessing.cpu_count()/2) # To account for hyperthreading cores
+        else:
+            N_cores_to_use = int(multiprocessing.cpu_count()) # Use all cores if none are hyperthreading cores.
+                                                              # This will happen on ARM (e.g., cellphone) CPUs 
         for i in range(N_cores_to_use-1):
             execute_string += ","+str(i+1)
         execute_string += " "
