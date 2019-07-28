@@ -22,7 +22,7 @@
 #          Zach Etienne
 #          zachetie **at** gmail **dot* com
 
-import io, os, shlex, subprocess, sys, time, multiprocessing, platform
+import io, os, shlex, subprocess, sys, time, multiprocessing, platform, getpass
 
 # check_executable_exists(): Check to see whether an executable exists. 
 #                            Error out or return False if not exists;
@@ -92,18 +92,20 @@ def Execute(executable, executable_output_arguments = "", file_to_redirect_stdou
     taskset_exists = check_executable_exists("taskset",error_if_not_found=False)
     if taskset_exists == True:
         execute_string += "taskset -c 0"
-        has_HT_cores = False # Does CPU have hyperthreading cores?
-        if platform.processor() != '': # If processor string returns null, then assume CPU does not support hyperthreading.
-                                       # This will yield correct behavior on ARM (e.g., cell phone) CPUs.
-            has_HT_cores=True
-        if has_HT_cores == True:
-            # NOTE: You will observe a speed-up by using only *PHYSICAL* (as opposed to logical/hyperthreading) cores:
-            N_cores_to_use = int(multiprocessing.cpu_count()/2) # To account for hyperthreading cores
-        else:
-            N_cores_to_use = int(multiprocessing.cpu_count()) # Use all cores if none are hyperthreading cores.
-                                                              # This will happen on ARM (e.g., cellphone) CPUs 
-        for i in range(N_cores_to_use-1):
-            execute_string += ","+str(i+1)
+        if getpass.getuser() != "jovyan": # on mybinder, username is jovyan, and taskset -c 0 is the fastest option.
+            # If not on mybinder and taskset exists:
+            has_HT_cores = False # Does CPU have hyperthreading cores?
+            if platform.processor() != '': # If processor string returns null, then assume CPU does not support hyperthreading.
+                                           # This will yield correct behavior on ARM (e.g., cell phone) CPUs.
+                has_HT_cores=True
+            if has_HT_cores == True:
+                # NOTE: You will observe a speed-up by using only *PHYSICAL* (as opposed to logical/hyperthreading) cores:
+                N_cores_to_use = int(multiprocessing.cpu_count()/2) # To account for hyperthreading cores
+            else:
+                N_cores_to_use = int(multiprocessing.cpu_count()) # Use all cores if none are hyperthreading cores.
+                                                                  # This will happen on ARM (e.g., cellphone) CPUs 
+            for i in range(N_cores_to_use-1):
+                execute_string += ","+str(i+1)
         execute_string += " "
     execute_string += os.path.join(".", executable)+" "+executable_output_arguments
 
