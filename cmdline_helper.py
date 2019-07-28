@@ -75,7 +75,7 @@ def C_compile(main_C_output_path, main_C_output_file):
 #            if available. Calls Execute_input_string() to
 #            redirect output from stdout & stderr to desired
 #            destinations.
-def Execute(executable, executable_output_arguments = "", file_to_redirect_stdout = os.devnull):
+def Execute(executable, executable_output_arguments = "", file_to_redirect_stdout = os.devnull, use_ht_cores=True):
     # Step 1: Delete old version of executable file
     if file_to_redirect_stdout != os.devnull:
         delete_existing_files(file_to_redirect_stdout)
@@ -92,8 +92,11 @@ def Execute(executable, executable_output_arguments = "", file_to_redirect_stdou
     taskset_exists = check_executable_exists("taskset",error_if_not_found=False)
     if taskset_exists == True:
         execute_string += "taskset -c 0"
-        N_physical_cores = int(multiprocessing.cpu_count()/2) # To account for hyperthreading
-        for i in range(N_physical_cores-1):
+        N_cores_to_use = int(multiprocessing.cpu_count()) # Use all cores by default
+        # NOTE: You may observe a speed-up by using only *PHYSICAL* (as opposed to logical/hyperthreading) cores:
+        if use_HT_cores == False:
+            N_cores_to_use = int(multiprocessing.cpu_count()/2) # To account for hyperthreading cores
+        for i in range(N_cores_to_use-1):
             execute_string += ","+str(i+1)
         execute_string += " "
     execute_string += os.path.join(".", executable)+" "+executable_output_arguments
