@@ -119,7 +119,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                 print("\t\tcould not find parameter \""+ single_param_def[1] + "\" in \""+single_param_def[0]+"\" module.")
                 sys.exit(1)
             # If parameter is found at index idx, set paramsval[idx] to the value specified in the file.
-            if glb_params_list[idx].defaultval != "RUNTIME":
+            if glb_params_list[idx].defaultval != "SetAtCRuntime":
                 partype = glb_params_list[idx].type
                 if partype == "bool":
                     if single_param_def[2] == "True":
@@ -129,10 +129,9 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     else:
                         print("Error: \"bool\" type can only take values of \"True\" or \"False\"")
                         sys.exit(1)
-                elif partype == "INT":
+                elif partype == "int":
                     glb_paramsvals_list[idx] = int(single_param_def[2])
                 elif partype == "REAL" or \
-                    partype == "REALARRAY" or \
                     partype == "char" or \
                     partype == "char *":
                     glb_paramsvals_list[idx] = single_param_def[2]
@@ -144,7 +143,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
             else:
                 print("Error: Tried to set the parameter "
                       + single_param_def[0] + "::" + single_param_def[1] +
-                      " with default value RUNTIME")
+                      " with default value SetAtCRuntime")
                 print("Such a parameter is defined by NRPy+, but must be "
                       "set at C code runtime. Go fix your C code parameter file!")
                 sys.exit(1)
