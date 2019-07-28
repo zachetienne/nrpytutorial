@@ -32,7 +32,7 @@ def check_executable_exists(exec_name,error_if_not_found=True):
     try: 
         subprocess.check_output([cmd, exec_name])
     except:
-        if error_out==True:
+        if error_if_not_found==True: # Thanks to Kevin Lituchy for fixing a bug in this line of code.
             print("Sorry, cannot execute the command: "+exec_name)
             sys.exit(1)
         else:
@@ -51,16 +51,21 @@ def C_compile(main_C_output_path, main_C_output_file):
         main_C_output_file += ".exe"
     delete_existing_files(main_C_output_file)
     
-    # Step 3: Construct the script to run the compilation
+    # Step 3: Compile the executable
     compile_string = "gcc -Ofast -fopenmp -march=native "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
     Execute_input_string(compile_string, os.devnull)
-    # Check if -fopenmp exists, if not, run a slower mode within the compiler
+    # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
     if not os.path.isfile(main_C_output_file):
-        # Step 3.A: Revert to maximally compatible gcc compile option
-        print("Optimized compilation failed. Moving to GCC Compatibility (slower) mode:")
+        # Step 3.A: Revert to more compatible gcc compile option
+        print("Most optimized compilation failed. Removing -march=native:")
+        compile_string = "gcc -Ofast -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+        Execute_input_string(compile_string, os.devnull)
+    if not os.path.isfile(main_C_output_file):
+        # Step 3.B: Revert to maximally compatible gcc compile option
+        print("Next-to-most optimized compilation failed. Moving to maximally-compatible gcc compile option:")
         compile_string = "gcc -O2 "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
         Execute_input_string(compile_string, os.devnull)
-    # Step 3.B: If there are still missing components within the compiler, say compilation failed
+    # Step 3.C: If there are still missing components within the compiler, say compilation failed
     if not os.path.isfile(main_C_output_file):
         print("Sorry, compilation failed")
         sys.exit(1)
