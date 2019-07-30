@@ -137,7 +137,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     glb_paramsvals_list[idx] = single_param_def[2]
                 else:
                     print("Error: type \""+partype+"\" on variable \""+ glb_params_list[idx].parname +"\" is unsupported.")
-                    print("Supported types include: bool, INT, REAL, REALARRAY, char, and char *")
+                    print("Supported types include: bool, int, REAL, REALARRAY, char, and char *")
                     sys.exit(1)
 #                    glb_paramsvals_list[idx] = single_param_def[2]
             else:
@@ -181,7 +181,7 @@ def Ccode__declare_params(filename):
         partype = glb_params_list[i].type
         if partype != "bool" and \
            partype != "char" and \
-           partype != "INT" and \
+           partype != "int" and \
            partype != "REAL":
             print("Error: parameter "+glb_params_list[i].module+"::"+glb_params_list[i].parname+" has unsupported type: \""
                   + glb_params_list[i].type + "\"")
