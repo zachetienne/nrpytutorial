@@ -15,8 +15,8 @@ from operator import itemgetter
 import NRPy_param_funcs as par
 modulename = __name__
 # Centered finite difference accuracy order
-par.initialize_param(par.glb_param("INT", modulename, "FD_CENTDERIVS_ORDER",  4))
-par.initialize_param(par.glb_param("INT", modulename, "FD_KO_ORDER__CENTDERIVS_PLUS", 2))
+par.initialize_param(par.glb_param("int", modulename, "FD_CENTDERIVS_ORDER",  4))
+par.initialize_param(par.glb_param("int", modulename, "FD_KO_ORDER__CENTDERIVS_PLUS", 2))
 
 def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     outCparams = parse_outCparams_string(params)

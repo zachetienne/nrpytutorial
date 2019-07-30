@@ -13,7 +13,7 @@ glb_gridfc  = namedtuple('gridfunction', 'gftype name')
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess",   "SENRlike"))
 par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","210"))
-par.initialize_param(par.glb_param("INT",  thismodule, "DIM", 3))
+par.initialize_param(par.glb_param("int",  thismodule, "DIM", 3))
 
 Nxx = par.Cparameters("int", thismodule,["Nxx0","Nxx1","Nxx2"])
 xx  = par.Cparameters("REAL",thismodule,[ "xx0", "xx1", "xx2"])
