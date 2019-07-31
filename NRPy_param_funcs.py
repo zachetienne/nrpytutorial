@@ -210,11 +210,12 @@ def generate_Cparameters_Ccodes(directory="./"):
     with open(directory+"declare_Cparameters_struct.h", "w") as file:
         file.write("typedef struct __paramstruct__ {\n")
         for i in range(len(glb_Cparams_list)):
-            if glb_Cparams_list[i].type == "char":
-                Ctype = "char *"
-            else:
-                Ctype = glb_Cparams_list[i].type
-            file.write(Ctype + " " + glb_Cparams_list[i].parname + ";\n")
+            if glb_Cparams_list[i].type != "#define":
+                if glb_Cparams_list[i].type == "char":
+                    Ctype = "char *"
+                else:
+                    Ctype = glb_Cparams_list[i].type
+                file.write(Ctype + " " + glb_Cparams_list[i].parname + ";\n")
         file.write("} paramstruct;\n")
 
     # Step 3: Generate C code to set all elements in 
@@ -222,14 +223,15 @@ def generate_Cparameters_Ccodes(directory="./"):
     #         "set_Cparameters_default.h"
     with open(directory+"set_Cparameters_default.h", "w") as file:
         for i in range(len(glb_Cparams_list)):
-            Coutput = "params." + glb_Cparams_list[i].parname
-            if isinstance(glb_Cparams_list[i].defaultval, (bool,int,float)):
-                Coutput += " = " + str(glb_Cparams_list[i].defaultval).lower() + ";\n"
-            elif isinstance(glb_Cparams_list[i].defaultval, (str)):
-                Coutput += " = \"" + str(glb_Cparams_list[i].defaultval).lower() + "\";\n"
-            else:
-                Coutput += " = " + str(glb_Cparams_list[i].defaultval) + ";\n"
-            file.write(Coutput)
+            if glb_Cparams_list[i].type != "#define":
+                Coutput = "params." + glb_Cparams_list[i].parname
+                if isinstance(glb_Cparams_list[i].defaultval, (bool,int,float)):
+                    Coutput += " = " + str(glb_Cparams_list[i].defaultval).lower() + ";\n"
+                elif isinstance(glb_Cparams_list[i].defaultval, (str)):
+                    Coutput += " = \"" + str(glb_Cparams_list[i].defaultval).lower() + "\";\n"
+                else:
+                    Coutput += " = " + str(glb_Cparams_list[i].defaultval) + ";\n"
+                file.write(Coutput)
 
     # Step 4: Generate C code to set C parameter constants 
     #         (i.e., all ints != -12345678 and REALs != 1e300); 
@@ -243,7 +245,7 @@ def generate_Cparameters_Ccodes(directory="./"):
             else:
                 Ctype = glb_Cparams_list[i].type
 
-            if not (Ctype == "REAL" and glb_Cparams_list[i].defaultval == 1e300):
+            if not ((Ctype == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or Ctype == "#define"):
                 Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params."+glb_Cparams_list[i].parname + ";\n"
                 file.write(Coutput)
     # Step 4.b: Output SIMD version, set_Cparameters-SIMD.h
@@ -259,6 +261,6 @@ def generate_Cparameters_Ccodes(directory="./"):
                 Coutput =  "const REAL            NOSIMD" + parname + " = " + "params." + glb_Cparams_list[i].parname + ";\n"
                 Coutput += "const REAL_SIMD_ARRAY " + parname + " = ConstSIMD(NOSIMD" + parname + ");\n"
                 file.write(Coutput)
-            elif glb_Cparams_list[i].defaultval != 1e300:
+            elif glb_Cparams_list[i].defaultval != 1e300 and Ctype !="#define":
                 Coutput = "const "+Ctype+" "+parname + " = " + "params." + glb_Cparams_list[i].parname + ";\n"
                 file.write(Coutput)
