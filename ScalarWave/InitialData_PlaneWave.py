@@ -28,8 +28,8 @@ def InitialData_PlaneWave():
     xx = gri.xx
 
     # Step 2: Declare free parameters intrinsic to these initial data
-    time = par.Cparameters("REAL", thismodule, "time")
-    kk = par.Cparameters("REAL", thismodule, ["kk0", "kk1", "kk2"])
+    time = par.Cparameters("REAL", thismodule, "time",0.0)
+    kk = par.Cparameters("REAL", thismodule, ["kk0", "kk1", "kk2"],[1.0,1.0,1.0])
 
     #  Step 3: Normalize the k vector
     kk_norm = sp.sqrt(kk[0] ** 2 + kk[1] ** 2 + kk[2] ** 2)

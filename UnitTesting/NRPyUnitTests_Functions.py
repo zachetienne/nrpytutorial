@@ -787,11 +787,13 @@ class TestFunctions(unittest.TestCase):
 
         thismodule = "Brill-Lindquist"
         BH1_posn_x, BH1_posn_y, BH1_posn_z = par.Cparameters("REAL", thismodule,
-                                                             ["BH1_posn_x", "BH1_posn_y", "BH1_posn_z"])
-        BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"])
+                                                             ["BH1_posn_x", "BH1_posn_y", "BH1_posn_z"],
+                                                             [0.0, 0.0, +0.5])
+        BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"], 1.0)
         BH2_posn_x, BH2_posn_y, BH2_posn_z = par.Cparameters("REAL", thismodule,
-                                                             ["BH2_posn_x", "BH2_posn_y", "BH2_posn_z"])
-        BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"])
+                                                             ["BH2_posn_x", "BH2_posn_y", "BH2_posn_z"],
+                                                             [0.0, 0.0, -0.5])
+        BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"], 1.0)
         Cartxyz = ixp.declarerank1("Cartxyz")
         Cartxyz0, Cartxyz1, Cartxyz2 = Cartxyz
 
@@ -805,7 +807,7 @@ class TestFunctions(unittest.TestCase):
         locs = locals()
 
         r, th, ph = symbols('r th ph', real=True)
-        M = par.Cparameters("REAL", thismodule, ["M"])
+        M = par.Cparameters("REAL", thismodule, ["M"],1.0)
 
         result_dict = {'BrillLindquist': {'alphaCart': (BH1_mass/(2*sqrt((-BH1_posn_x + Cartxyz0)**2 + (-BH1_posn_y + Cartxyz1)**2 + (-BH1_posn_z + Cartxyz2)**2)) + BH2_mass/(2*sqrt((-BH2_posn_x + Cartxyz0)**2 + (-BH2_posn_y + Cartxyz1)**2 + (-BH2_posn_z + Cartxyz2)**2)) + 1)**(-2), 'betaCartU': [0, 0, 0], 'BCartU': [0, 0, 0], 'gammaCartDD': [[(BH1_mass/(2*sqrt((-BH1_posn_x + Cartxyz0)**2 + (-BH1_posn_y + Cartxyz1)**2 + (-BH1_posn_z + Cartxyz2)**2)) + BH2_mass/(2*sqrt((-BH2_posn_x + Cartxyz0)**2 + (-BH2_posn_y + Cartxyz1)**2 + (-BH2_posn_z + Cartxyz2)**2)) + 1)**4, 0, 0], [0, (BH1_mass/(2*sqrt((-BH1_posn_x + Cartxyz0)**2 + (-BH1_posn_y + Cartxyz1)**2 + (-BH1_posn_z + Cartxyz2)**2)) + BH2_mass/(2*sqrt((-BH2_posn_x + Cartxyz0)**2 + (-BH2_posn_y + Cartxyz1)**2 + (-BH2_posn_z + Cartxyz2)**2)) + 1)**4, 0], [0, 0, (BH1_mass/(2*sqrt((-BH1_posn_x + Cartxyz0)**2 + (-BH1_posn_y + Cartxyz1)**2 + (-BH1_posn_z + Cartxyz2)**2)) + BH2_mass/(2*sqrt((-BH2_posn_x + Cartxyz0)**2 + (-BH2_posn_y + Cartxyz1)**2 + (-BH2_posn_z + Cartxyz2)**2)) + 1)**4]], 'KCartDD': [[0, 0, 0], [0, 0, 0], [0, 0, 0]]},
                        'StaticTrumpet': {'alphaSph': r/(M + r), 'betaSphU': [M*r/(M + r)**2, 0, 0], 'BSphU': [0, 0, 0], 'gammaSphDD': [[(M/r + 1)**2, 0, 0], [0, r**2*(M/r + 1)**2, 0], [0, 0, r**2*(M/r + 1)**2*sin(th)**2]], 'KSphDD': [[-M/r**2, 0, 0], [0, M, 0], [0, 0, M*sin(th)**2]]}}

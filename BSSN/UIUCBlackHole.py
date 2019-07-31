@@ -50,7 +50,7 @@ def UIUCBlackHole(ComputeADMGlobalsOnly = False):
     #  and dimensionless spin chi in UIUC quasi-isotropic coordinates,
     #   see https://arxiv.org/abs/1001.4077
     # Input parameters:
-    M,chi = par.Cparameters("REAL", thismodule, ["M","chi"])
+    M,chi = par.Cparameters("REAL", thismodule, ["M","chi"],[1.0,0.99])
 
     # Auxiliary variables:
     a,rp,rm,rBL,SIG,DEL,AA = sp.symbols('a rp rm rBL SIG DEL AA', real=True)

@@ -130,7 +130,9 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,Val
         for j in range(DIM):
             R += gammaDD[i][j]*ValenciavU[i]*ValenciavU[j]
 
-    GAMMA_SPEED_LIMIT = par.Cparameters("REAL",thismodule,"GAMMA_SPEED_LIMIT")
+    GAMMA_SPEED_LIMIT = par.Cparameters("REAL",thismodule,"GAMMA_SPEED_LIMIT",10.0) # Default value based on
+                                                                                    # IllinoisGRMHD.
+                                                                                    # GiRaFFE default = 2000.0
     Rmax = 1 - 1/GAMMA_SPEED_LIMIT
 
     rescaledValenciavU = ixp.zerorank1()
@@ -167,7 +169,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,Val
     # &= \alpha u^0 \gamma_{ij} v^i_{(n)} \\
 
     global u0
-    u0 = par.Cparameters("REAL",thismodule,"u0")
+    u0 = par.Cparameters("REAL",thismodule,"u0",1e300) # Will be overwritten in C code. Set to crazy value to ensure this.
     global uD
     uD = ixp.zerorank1()
     for i in range(DIM):
@@ -197,7 +199,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,Val
     # + $u^0$,
     #
     # with the goal of outputting now $b^\mu$ and $b^2$:
-    M_PI = par.Cparameters("REAL",thismodule,"M_PI")
+    M_PI = par.Cparameters("#define",thismodule,"M_PI","")
 
     # uBcontraction = u_i B^i
     global uBcontraction

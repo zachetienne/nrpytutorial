@@ -86,7 +86,7 @@ def GiRaFFE_Higher_Order_v2():
     thismodule = "GiRaFFE_NRPy"
 
     # M_PI will allow the C code to substitute the correct value
-    M_PI = par.Cparameters("REAL",thismodule,"M_PI")
+    M_PI = par.Cparameters("#define",thismodule,"M_PI","")
     # ADMBase defines the 4-metric in terms of the 3+1 spacetime metric quantities gamma_{ij}, beta^i, and alpha
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
     betaU   = ixp.register_gridfunctions_for_single_rank1("AUX","betaU",DIM=3)
@@ -393,7 +393,7 @@ def GiRaFFE_Higher_Order_v2():
 
     # Step 4.0: Construct the evolution equations for A_i and sqrt(gamma)Phi
     # Step 4.0.a: Construct some useful auxiliary gridfunctions for the other evolution equations
-    xi = par.Cparameters("REAL",thismodule,"xi") # The damping factor
+    xi = par.Cparameters("REAL",thismodule,"xi", 0.1) # The (dimensionful) Lorenz damping factor. Recommendation: set to ~1.5/max(delta t).
 
     # Define sqrt(gamma)Phi as psi6Phi
     psi6Phi = gri.register_gridfunctions("EVOL","psi6Phi")

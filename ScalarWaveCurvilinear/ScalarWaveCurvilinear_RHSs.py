@@ -40,7 +40,7 @@ import NRPy_param_funcs as par
 #          specified in the parameter file.
 # The name of this module ("ScalarWaveCurvilinear") is given by __name__:
 thismodule = __name__
-wavespeed = par.Cparameters("REAL", thismodule, "wavespeed")
+wavespeed = par.Cparameters("REAL", thismodule, "wavespeed", 1.0)
 
 def ScalarWaveCurvilinear_RHSs():
     import indexedexp as ixp

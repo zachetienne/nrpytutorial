@@ -49,7 +49,7 @@ def reference_metric(SymPySimplifyExpressions=True):
     have_already_called_reference_metric_function = True
 
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
-    M_PI,M_SQRT1_2 = par.Cparameters("REAL",thismodule,["M_PI","M_SQRT1_2"])
+    M_PI,M_SQRT1_2 = par.Cparameters("#define",thismodule,["M_PI","M_SQRT1_2"],"")
 
     global xxmin
     global xxmax
@@ -68,7 +68,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         xx[1] = sp.symbols("xx1", real=True)
 
         if CoordSystem == "Spherical":
-            RMAX = par.Cparameters("REAL", thismodule, ["RMAX"])
+            RMAX = par.Cparameters("REAL", thismodule, ["RMAX"],10.0)
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [         RMAX,          M_PI,  M_PI]
 
@@ -84,7 +84,7 @@ def reference_metric(SymPySimplifyExpressions=True):
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [sp.sympify(1),          M_PI,  M_PI]
             
-            AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"])
+            AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"],[10.0,0.2])
             # Set SinhSpherical radial coordinate by default; overwrite later if CoordSystem == "SinhSphericalv2".
             r = AMPL * (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) / \
                        (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW))
@@ -101,8 +101,8 @@ def reference_metric(SymPySimplifyExpressions=True):
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [sp.sympify(1),          M_PI,  M_PI]
             
-            AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"])
-            const_dr = par.Cparameters("REAL",thismodule,["const_dr"])
+            AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"],[10.0,0.2])
+            const_dr = par.Cparameters("REAL",thismodule,["const_dr"],0.0625)
             r = AMPL*( const_dr*xx[0] + (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) /
                        (sp.exp(1 / SINHW) - sp.exp(-1 / SINHW)) )
             th = xx[1]
@@ -141,17 +141,19 @@ def reference_metric(SymPySimplifyExpressions=True):
         #  THESE DO NOT DEFINE xxmin, xxmax, Cart_to_xx
         #  ALSO THE RADIAL RESCALINGS ARE NOT ODD FUNCTIONS OF xx0,
         #  MEANING THAT CURVI. BOUNDARY CONDITIONS WILL NOT WORK.
-        R0,x0beg = par.Cparameters("REAL", thismodule, ["R0","x0beg"])
+        Rin,R0 = par.Cparameters("REAL", thismodule, ["Rin","R0"],[1.08986052555408,0.0])
+        x0beg = sp.log(Rin-R0)
         xx[0] = sp.symbols("xx0", real=True)
         r  = R0 + sp.exp(x0beg + xx[0])
 
-        th_c,xi,x1beg = par.Cparameters("REAL", thismodule, ["th_c","xi","x1beg"])
+        # 0.053407075111026485 == 0.017*pi
+        th_c,xi,x1beg = par.Cparameters("REAL", thismodule, ["th_c","xi","x1beg"],[0.053407075111026485,0.25,0.0])
         xx[1] = sp.symbols("xx1", real=True)
         x1j = x1beg + xx[1]
         if CoordSystem == "NobleSphericalThetaOptionOne":
             th = th_c + (M_PI - 2*th_c)*x1j + xi*sp.sin(2*M_PI*x1j)
         elif CoordSystem == "NobleSphericalThetaOptionTwo":
-            x1_n_exponent = par.Cparameters("REAL", thismodule, ["x1_n_exponent"])
+            x1_n_exponent = par.Cparameters("REAL", thismodule, ["x1_n_exponent"],9.0)
             th = M_PI/2 * ( 1 + (1 - xi)*(2*x1j - 1) + (xi - 2*th_c/M_PI)*(2*x1j - 1)**x1_n_exponent )
 
         xx[2] = sp.symbols("xx2", real=True)
@@ -186,7 +188,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         xx[0] = sp.symbols("xx0", real=True)
 
         if CoordSystem == "Cylindrical":
-            RHOMAX,ZMIN,ZMAX = par.Cparameters("REAL",thismodule,["RHOMAX","ZMIN","ZMAX"])
+            RHOMAX,ZMIN,ZMAX = par.Cparameters("REAL",thismodule,["RHOMAX","ZMIN","ZMAX"],[10.0,-10.0,10.0])
             xxmin = [sp.sympify(0), -M_PI, ZMIN]
             xxmax = [       RHOMAX,  M_PI, ZMAX]
 
@@ -202,8 +204,10 @@ def reference_metric(SymPySimplifyExpressions=True):
             xxmin = [sp.sympify(0), -M_PI, sp.sympify(-1)]
             xxmax = [sp.sympify(1),  M_PI, sp.sympify(+1)]
 
-            AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"])
-    
+            AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,
+                                                               ["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"],
+                                                               [10.0, 0.2, 10.0, 0.2])
+
             # Set SinhCylindrical radial & z coordinates by default; overwrite later if CoordSystem == "SinhCylindricalv2".
             RHOCYL = AMPLRHO * (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO))
             # phi coordinate remains unchanged.
@@ -219,8 +223,10 @@ def reference_metric(SymPySimplifyExpressions=True):
         elif CoordSystem == "SinhCylindricalv2":
             xxmin = [sp.sympify(0), -M_PI, sp.sympify(-1)]
             xxmax = [sp.sympify(1),  M_PI, sp.sympify(+1)]
-            AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"])
-            const_drho, const_dz = par.Cparameters("REAL",thismodule,["const_drho","const_dz"])
+            AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,
+                                                               ["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"],
+                                                               [10.0, 0.2, 10.0, 0.2])
+            const_drho, const_dz = par.Cparameters("REAL",thismodule,["const_drho","const_dz"],[0.0625,0.0625])
 
             RHOCYL = AMPLRHO * ( const_drho*xx[0] + (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO)) )
             PHICYL = xx[1]
@@ -250,7 +256,9 @@ def reference_metric(SymPySimplifyExpressions=True):
         
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
         var1, var2= sp.symbols('var1 var2',real=True)
-        bScale, AW, AA, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,["bScale","AW","AA","AMAX","RHOMAX","ZMIN","ZMAX"])
+        bScale, AW, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,
+                                                                   ["bScale","AW","AMAX","RHOMAX","ZMIN","ZMAX"],
+                                                                   [0.5,     0.2,   10.0,    10.0, -10.0,  10.0])
 
         # Assuming xx0, xx1, and bScale
         #   are positive makes nice simplifications of
@@ -324,7 +332,9 @@ def reference_metric(SymPySimplifyExpressions=True):
                        [-sp.sin(xx[2]), sp.cos(xx[2]), sp.sympify(0)]]
 
     elif CoordSystem == "Cartesian":
-        xmin, xmax, ymin, ymax, zmin, zmax = par.Cparameters("REAL",thismodule,["xmin","xmax","ymin","ymax","zmin","zmax"])
+        xmin, xmax, ymin, ymax, zmin, zmax = par.Cparameters("REAL",thismodule,
+                                                             ["xmin","xmax","ymin","ymax","zmin","zmax"],
+                                                             [ -10.0,  10.0, -10.0,  10.0, -10.0,  10.0])
         xxmin = ["xmin", "ymin", "zmin"]
         xxmax = ["xmax", "ymax", "zmax"]
     
@@ -433,6 +443,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         for j in range(DIM):
             for k in range(DIM):
                 if SymPySimplifyExpressions==True:
+#                    ghatDDdD[i][j][k] = sp.trigsimp(sp.diff(ghatDD[i][j],xx[k])) # FIXME: BAD: MUST BE SIMPLIFIED OR ANSWER IS INCORRECT! Must be some bug in sympy...
                     ghatDDdD[i][j][k] = sp.simplify(sp.diff(ghatDD[i][j],xx[k])) # FIXME: BAD: MUST BE SIMPLIFIED OR ANSWER IS INCORRECT! Must be some bug in sympy...
                 else:
                     ghatDDdD[i][j][k] = (sp.diff(ghatDD[i][j],xx[k])) # FIXME: BAD: MUST BE SIMPLIFIED OR ANSWER IS INCORRECT! Must be some bug in sympy...
@@ -446,6 +457,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         for k in range(DIM):
             for l in range(DIM):
                 for m in range(DIM):
+#                    GammahatUDD[i][k][l] += sp.trigsimp((sp.Rational(1,2))*ghatUU[i][m]*\
                     GammahatUDD[i][k][l] += (sp.Rational(1,2))*ghatUU[i][m]*\
                                             (ghatDDdD[m][k][l] + ghatDDdD[m][l][k] - ghatDDdD[k][l][m])
 

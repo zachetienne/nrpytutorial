@@ -12,8 +12,7 @@ def MaxwellCartesian_ID():
                                                                                     # used in diagnostic modules.
 
     # Step 1: Declare free parameters intrinsic to these initial data
-    amp = par.Cparameters("REAL",__name__,"amp") # __name__ = "MaxwellCartesian_ID", this module's name
-    lam = par.Cparameters("REAL",__name__,"lam") # __name__ = "MaxwellCartesian_ID", this module's name
+    amp,lam = par.Cparameters("REAL",__name__,["amp","lam"], [1.0,1.0]) # __name__ = "MaxwellCartesian_ID", this module's name
 
     # Step 2: Set the initial data
     system = par.parval_from_str("System_to_use")

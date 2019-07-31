@@ -106,7 +106,7 @@ def BSSN_gauge_RHSs():
             for j in range(DIM):
                 beta_rhsU[i] += betaU[j] * betaU_dupD[i][j]
         # Compute right-hand side of B^i:
-        eta = par.Cparameters("REAL", thismodule, ["eta"])
+        eta = par.Cparameters("REAL", thismodule, ["eta"],2.0)
 
         # Step 3.a.ii: Compute right-hand side of B^i
         # *  \partial_t B^i     = \beta^j B^i_{,j} + 3/4 * \partial_0 \Lambda^i - eta B^i
@@ -190,7 +190,7 @@ def BSSN_gauge_RHSs():
                     B_rhsU[i] += -sp.Rational(3, 4) * betaU[j] * GammabarUDD[i][m][j] * Bq.LambdabarU[m]
         # Term 6: - \eta B^i
         # eta is a free parameter; we declare it here:
-        eta = par.Cparameters("REAL", thismodule, ["eta"])
+        eta = par.Cparameters("REAL", thismodule, ["eta"],2.0)
         for i in range(DIM):
             B_rhsU[i] += -eta * BU[i]
 

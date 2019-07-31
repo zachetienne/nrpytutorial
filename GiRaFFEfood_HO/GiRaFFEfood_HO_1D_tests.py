@@ -95,7 +95,8 @@ DIM = par.parval_from_str("grid::DIM")
 # $$\label{step2}$$
 
 
-mu_AW,M_PI = par.Cparameters("REAL",thismodule,["mu_AW","M_PI"]) # The wave speed and pi in C
+mu_AW = par.Cparameters("REAL",thismodule,["mu_AW"], -0.5) # The wave speed
+M_PI  = par.Cparameters("#define",thismodule,["M_PI"], "")
 
 def GiRaFFEfood_HO_1D_tests():
     gammamu = 1/sp.sqrt(1-mu_AW**2)

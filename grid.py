@@ -11,12 +11,14 @@ glb_gridfcs_list = []
 glb_gridfc  = namedtuple('gridfunction', 'gftype name')
 
 thismodule = __name__
-par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess",   "SENRlike"))
+par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess", "SENRlike"))
 par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","210"))
 par.initialize_param(par.glb_param("int",  thismodule, "DIM", 3))
 
-Nxx = par.Cparameters("int", thismodule,["Nxx0","Nxx1","Nxx2"])
-xx  = par.Cparameters("REAL",thismodule,[ "xx0", "xx1", "xx2"])
+Nxx = par.Cparameters("int", thismodule,["Nxx0","Nxx1","Nxx2"],[64,32,64]) # Default to 64x32x64 grid
+xx  = par.Cparameters("REAL",thismodule,[ "xx0", "xx1", "xx2"],1e300) # These are C variables, not parameters, and
+                                                                      # will be overwritten; best to initialize to crazy
+                                                                      # number to ensure they are overwritten!
 
 def variable_type(var):
     var_is_gf = False
@@ -24,8 +26,11 @@ def variable_type(var):
         if str(var) == glb_gridfcs_list[gf].name:
             var_is_gf = True
     var_is_parameter = False
-    for paramname in range(len(par.glb_params_list)):
-        if str(var) == par.glb_params_list[paramname].parname:
+#     for paramname in range(len(par.glb_params_list)):
+#         if str(var) == par.glb_params_list[paramname].parname:
+#             var_is_parameter = True
+    for paramname in range(len(par.glb_Cparams_list)):
+        if str(var) == par.glb_Cparams_list[paramname].parname:
             var_is_parameter = True
     if var_is_parameter and var_is_gf:
         print("Error: variable "+str(var)+" is registered both as a gridfunction and as a Cparameter.")

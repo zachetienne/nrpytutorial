@@ -25,9 +25,11 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     # Variables needed for initial data given in spherical basis
     r, th, ph = gri.register_gridfunctions("AUX",["r","th","ph"])
 
-    r_in,r_at_max_density,a,M = par.Cparameters("REAL",thismodule,["r_in","r_at_max_density","a","M"])
+    r_in,r_at_max_density,a,M = par.Cparameters("REAL",thismodule,
+                                                ["r_in","r_at_max_density",    "a","M"],
+                                                [   6.0,              12.0, 0.9375,1.0])
 
-    kappa,gamma = par.Cparameters("REAL",thismodule,["kappa","gamma"])
+    kappa,gamma = par.Cparameters("REAL",thismodule,["kappa","gamma"], [1.0e-3, 4.0/3.0])
 
     LorentzFactor = gri.register_gridfunctions("AUX","LorentzFactor")
 
@@ -181,7 +183,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
             #    and gammaKSUU[][] is a spatial tensor, with indices again ranging from 0 to 2.
             gPhys4UU[i][j] = gPhys4UU[j][i] = gammaKSUU[i-1][j-1] - betaKSU[i-1]*betaKSU[j-1]/alphaKS**2
 
-    A_b = par.Cparameters("REAL",thismodule,"A_b")
+    A_b = par.Cparameters("REAL",thismodule,"A_b",1.0)
 
     A_3vecpotentialD = ixp.zerorank1()
     # Set A_phi = A_b*rho_initial FIXME: why is there a sign error?

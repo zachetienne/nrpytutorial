@@ -1,9 +1,13 @@
-glb_params_list = []  # = where we store the parameters and default values of parameters. A list of named tuples
-glb_paramsvals_list = []  # = where we store parameter values.
-from collections import namedtuple
-glb_param = namedtuple('glb_param', 'type module parname defaultval')
 import sympy as sp
 import sys
+from collections import namedtuple
+
+glb_params_list = []  # = where we store NRPy+ parameters and default values of parameters. A list of named tuples
+glb_paramsvals_list = []  # = where we store NRPy+ parameter values.
+glb_param  = namedtuple('glb_param', 'type module parname defaultval')
+
+glb_Cparams_list = []  # = where we store C runtime parameters and default values of parameters. A list of named tuples
+glb_Cparam = namedtuple('glb_Cparam','type module parname defaultval')
 
 def initialize_param(input):
     if get_params_idx(input) == -1:
@@ -12,15 +16,25 @@ def initialize_param(input):
     else:
         print("initialize_param() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
 
+def initialize_Cparam(input):
+    if get_params_idx(input,Cparam=True) == -1:
+        glb_Cparams_list.append(input)
+    else:
+        print("initialize_Cparam() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
+
 # Given the named tuple `input` and list of named tuples `params`,
 #    defined according to namedtuple('param', 'type module name defaultval'),
 #    where in the case of `input`, defaultval need not be set,
 #    return the list index of `params` that matches `input`.
 # On error returns -1
-def get_params_idx(input):
+def get_params_idx(input,Cparam=False):
     # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
-    list = [i for i, v in enumerate(glb_params_list)
-            if (input.type=="ignoretype" or input.type==v[0]) and input.module == v[1] and input.parname == v[2]]
+    if Cparam==False:
+        list = [i for i, v in enumerate(glb_params_list)
+                if (input.type=="ignoretype" or input.type==v[0]) and input.module == v[1] and input.parname == v[2]]
+    else:
+        list = [i for i, v in enumerate(glb_Cparams_list)
+                if (input.type=="ignoretype" or input.type==v[0]) and input.module == v[1] and input.parname == v[2]]
     if list == []:
         return -1 # No match found => error out!
     else:
@@ -119,33 +133,24 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                 print("\t\tcould not find parameter \""+ single_param_def[1] + "\" in \""+single_param_def[0]+"\" module.")
                 sys.exit(1)
             # If parameter is found at index idx, set paramsval[idx] to the value specified in the file.
-            if glb_params_list[idx].defaultval != "SetAtCRuntime":
-                partype = glb_params_list[idx].type
-                if partype == "bool":
-                    if single_param_def[2] == "True":
-                        glb_paramsvals_list[idx] = True
-                    elif single_param_def[2] == "False":
-                        glb_paramsvals_list[idx] = False
-                    else:
-                        print("Error: \"bool\" type can only take values of \"True\" or \"False\"")
-                        sys.exit(1)
-                elif partype == "int":
-                    glb_paramsvals_list[idx] = int(single_param_def[2])
-                elif partype == "REAL" or \
-                    partype == "char" or \
-                    partype == "char *":
-                    glb_paramsvals_list[idx] = single_param_def[2]
+            partype = glb_params_list[idx].type
+            if partype == "bool":
+                if single_param_def[2] == "True":
+                    glb_paramsvals_list[idx] = True
+                elif single_param_def[2] == "False":
+                    glb_paramsvals_list[idx] = False
                 else:
-                    print("Error: type \""+partype+"\" on variable \""+ glb_params_list[idx].parname +"\" is unsupported.")
-                    print("Supported types include: bool, int, REAL, REALARRAY, char, and char *")
+                    print("Error: \"bool\" type can only take values of \"True\" or \"False\"")
                     sys.exit(1)
-#                    glb_paramsvals_list[idx] = single_param_def[2]
+            elif partype == "int":
+                glb_paramsvals_list[idx] = int(single_param_def[2])
+            elif partype == "REAL" or \
+                partype == "char" or \
+                partype == "char *":
+                glb_paramsvals_list[idx] = single_param_def[2]
             else:
-                print("Error: Tried to set the parameter "
-                      + single_param_def[0] + "::" + single_param_def[1] +
-                      " with default value SetAtCRuntime")
-                print("Such a parameter is defined by NRPy+, but must be "
-                      "set at C code runtime. Go fix your C code parameter file!")
+                print("Error: type \""+partype+"\" on variable \""+ glb_params_list[idx].parname +"\" is unsupported.")
+                print("Supported types include: bool, int, REAL, REALARRAY, char, and char *")
                 sys.exit(1)
         elif FindMainModuleMode == True and MainModuleFound == False:
             if single_param_def[0] == "NRPy" and single_param_def[1] == "MainModule":
@@ -155,14 +160,26 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     sys.exit(1)
                 glb_paramsvals_list[idx] = single_param_def[2]
 
-def Cparameters(type,module,names,assumption="Real"):
+def Cparameters(type,module,names,defaultvals,assumption="Real"):
     output = []
     # if names is not a list, make it a list, to
     #      simplify the remainder of this routine.
     if not isinstance(names,list):
         names = [names]
+    defaultval_list = []
+    if not isinstance(defaultvals,list):
+        for i in range(len(names)):
+            defaultval_list.append(defaultvals)
+    else:
+        # If defaultvals *is* a list, then make sure it has the same number of elements as "names".
+        if len(defaultvals) != len(names):
+            print("Error in Cparameters(): Was provided a list of variables:\n"+str(names)+"\n")
+            print("and a list of their default values:\n"+str(defaultvals)+"\n")
+            print("but the lists have different lengths ("+str(len(names))+" != "+str(len(defaultvals))+")\n")
+            sys.exit(1)
+        defaultval_list = defaultvals
     for i in range(len(names)):
-        initialize_param(glb_param(type, module, names[i], "SetAtCRuntime"))
+        initialize_Cparam(glb_Cparam(type, module, names[i], defaultval_list[i]))
         if assumption == "Real":
             tmp = sp.Symbol(names[i], real=True) # Assumes all Cparameters are real.
         elif assumption == "RealPositive":
@@ -175,35 +192,45 @@ def Cparameters(type,module,names,assumption="Real"):
         return output[0]
     return output
 
-def Ccode__declare_params(filename):
-    Coutput = ""
-    for i in range(len(glb_params_list)):
-        partype = glb_params_list[i].type
+def generate_Cparameters_headers():
+    # Step 1: Check that Cparams types are supported.
+    for i in range(len(glb_Cparams_list)):
+        partype = glb_Cparams_list[i].type
         if partype != "bool" and \
+           partype != "#define" and \
            partype != "char" and \
            partype != "int" and \
            partype != "REAL":
-            print("Error: parameter "+glb_params_list[i].module+"::"+glb_params_list[i].parname+" has unsupported type: \""
-                  + glb_params_list[i].type + "\"")
+            print("Error: parameter "+glb_Cparams_list[i].module+"::"+glb_Cparams_list[i].parname+" has unsupported type: \""
+                  + glb_Cparams_list[i].type + "\"")
             sys.exit(1)
-        if partype == "char":
-            Ctype = "char *"
-        else:
-            Ctype = partype
-        Coutput += Ctype + " " + glb_params_list[i].module + "__" + glb_params_list[i].parname
-        if isinstance(glb_paramsvals_list[i], (bool,int,float)):
-            Coutput += " = " + str(glb_paramsvals_list[i]).lower() + ";\n"
-        elif isinstance(glb_paramsvals_list[i], (str)):
-            Coutput += " = \"" + str(glb_paramsvals_list[i]).lower() + "\";\n"
-        else:
-            Coutput += " = " + str(glb_paramsvals_list[i]) + ";\n"
-    if filename == "stdout":
-        print(Coutput)
-        return
-    elif filename == "returnstring":
-        return Coutput
-    else:
-        # Output to the file specified by outCfilename
-        with open(filename, "w") as file:
+
+    # Step 2: Generate C code needed to declare C paramstruct; 
+    #         output to "declare_Cparameters_struct.h"
+    with open("declare_Cparameters_struct.h", "w") as file:
+        file.write("typedef struct __paramstruct__ {\n")
+        for i in range(len(glb_Cparams_list)):
+            if partype == "char":
+                Ctype = "char *"
+            else:
+                Ctype = partype
+            file.write(Ctype + " " + glb_Cparams_list[i].parname + ";\n")
+        file.write("} paramstruct;\n")
+
+    # Step 3: Generate C code needed to set all elements in 
+    #         C paramstruct to default values; output to 
+    #         "set_Cparameters_default.h"
+    with open("set_Cparameters_default.h", "w") as file:
+        for i in range(len(glb_Cparams_list)):
+            if partype == "char":
+                Ctype = "char *"
+            else:
+                Ctype = partype
+            Coutput = "params." + glb_Cparams_list[i].parname
+            if isinstance(glb_Cparams_list[i].defaultval, (bool,int,float)):
+                Coutput += " = " + str(glb_Cparams_list[i].defaultval).lower() + ";\n"
+            elif isinstance(glb_Cparams_list[i].defaultval, (str)):
+                Coutput += " = \"" + str(glb_Cparams_list[i].defaultval).lower() + "\";\n"
+            else:
+                Coutput += " = " + str(glb_Cparams_list[i].defaultval) + ";\n"
             file.write(Coutput)
-        print("Wrote to file \"" + filename + "\"")

@@ -38,7 +38,9 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     par.set_parval_from_str("grid::DIM",DIM)
 
     # Input parameters:
-    M, a, r0 = par.Cparameters("REAL", thismodule, ["M", "a", "r0"])
+    M, a, r0 = par.Cparameters("REAL", thismodule,
+                               ["M", "a", "r0"],
+                               [1.0, 0.9,  1.0])
 
     # Auxiliary variables:
     rho2 = sp.symbols('rho2', real=True)

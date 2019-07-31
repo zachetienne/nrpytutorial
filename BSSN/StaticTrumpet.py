@@ -50,7 +50,7 @@ def StaticTrumpet(ComputeADMGlobalsOnly = False):
     # Step 1: Set psi, the conformal factor:
 
     # Input parameters:
-    M = par.Cparameters("REAL", thismodule, ["M"])
+    M = par.Cparameters("REAL", thismodule, ["M"],[1.0])
 
     # Auxiliary variables:
     psi0 = sp.symbols('psi0', real=True)

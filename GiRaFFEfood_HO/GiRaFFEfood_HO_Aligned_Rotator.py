@@ -42,7 +42,11 @@ thismodule = "GiRaFFEfood_HO_Aligned_Rotator"
 par.set_parval_from_str("grid::DIM", 3)
 DIM = par.parval_from_str("grid::DIM")
 
-B_p_aligned_rotator,R_NS_aligned_rotator = par.Cparameters("REAL",thismodule,["B_p_aligned_rotator","R_NS_aligned_rotator"]) # A constant defining the intensity of the magnetic field and the Neutron star Radius
+B_p_aligned_rotator,R_NS_aligned_rotator = par.Cparameters("REAL",thismodule,
+                                                           # B_p_aligned_rotator = the intensity of the magnetic field and
+                                                           # R_NS_aligned_rotator= "Neutron star" radius
+                                                           ["B_p_aligned_rotator","R_NS_aligned_rotator"],
+                                                           [1e-5, 1.0])
 
 
 # <a id='step2'></a>
@@ -115,7 +119,7 @@ def GiRaFFEfood_HO_Aligned_Rotator():
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
 
-    Omega_aligned_rotator = par.Cparameters("REAL",thismodule,"Omega_aligned_rotator") # The angular velocity of the NS
+    Omega_aligned_rotator = par.Cparameters("REAL",thismodule,"Omega_aligned_rotator",1e3) # The angular velocity of the "neutron star"
     unit_zU = ixp.zerorank1()
     unit_zU[2] = 1
 

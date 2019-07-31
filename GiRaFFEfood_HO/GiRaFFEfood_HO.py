@@ -56,8 +56,9 @@ DIM = par.parval_from_str("grid::DIM")
 par.initialize_param(par.glb_param("char", thismodule, "IDchoice", "Exact_Wald"))
 
 # Step 1b: Set Cparameters we need to use and the gridfunctions we'll need.
-M,M_PI = par.Cparameters("REAL",thismodule,["M","M_PI"]) # The mass of the black hole, and pi in C
-KerrSchild_radial_shift = par.Cparameters("REAL",thismodule,"KerrSchild_radial_shift")
+M    = par.Cparameters("REAL",thismodule,["M"],1.0) # The mass of the black hole, and pi in C
+M_PI = par.Cparameters("#define",thismodule,["M_PI"],"") # The mass of the black hole, and pi in C
+KerrSchild_radial_shift = par.Cparameters("REAL",thismodule,"KerrSchild_radial_shift",0.4) # Default value for ExactWald
 
 def GiRaFFEfood_HO():
 

@@ -76,7 +76,7 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
     H += Bq.exp_m4phi * (Rbartrace - 8 * (phi_dBar_times_phi_dBar + phi_dBarDD_contraction))
 
     if add_T4UUmunu_source_terms:
-        M_PI = par.Cparameters("REAL", thismodule, "M_PI")  # M_PI is pi as defined in C
+        M_PI = par.Cparameters("#define", thismodule, "M_PI","")  # M_PI is pi as defined in C
         BTmunu.define_BSSN_T4UUmunu_rescaled_source_terms()
         rho = BTmunu.rho
         H += -16*M_PI*rho

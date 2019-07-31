@@ -40,10 +40,14 @@ def BrillLindquist(ComputeADMGlobalsOnly = False):
     
     # Step 2: Setting up Brill-Lindquist initial data
     thismodule = "Brill-Lindquist"
-    BH1_posn_x,BH1_posn_y,BH1_posn_z = par.Cparameters("REAL", thismodule, ["BH1_posn_x","BH1_posn_y","BH1_posn_z"])
-    BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"])
-    BH2_posn_x,BH2_posn_y,BH2_posn_z = par.Cparameters("REAL", thismodule, ["BH2_posn_x","BH2_posn_y","BH2_posn_z"])
-    BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"])
+    BH1_posn_x,BH1_posn_y,BH1_posn_z = par.Cparameters("REAL", thismodule,
+                                                       ["BH1_posn_x","BH1_posn_y","BH1_posn_z"],
+                                                       [         0.0,         0.0,        +0.5])
+    BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"],1.0)
+    BH2_posn_x,BH2_posn_y,BH2_posn_z = par.Cparameters("REAL", thismodule,
+                                                       ["BH2_posn_x","BH2_posn_y","BH2_posn_z"],
+                                                       [         0.0,         0.0,        -0.5])
+    BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"],1.0)
 
     # Step 2.a: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
