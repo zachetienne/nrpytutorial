@@ -16,6 +16,9 @@ par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","210"))
 par.initialize_param(par.glb_param("int",  thismodule, "DIM", 3))
 
 Nxx = par.Cparameters("int", thismodule,["Nxx0","Nxx1","Nxx2"],[64,32,64]) # Default to 64x32x64 grid
+Nxx_plus_2NGHOSTS = par.Cparameters("int", thismodule,
+                      ["Nxx_plus_2NGHOSTS0","Nxx_plus_2NGHOSTS1","Nxx_plus_2NGHOSTS2"],
+                      [                  70,                  38,                  70]) # Default to 64x32x64 grid w/ NGHOSTS=3
 xx  = par.Cparameters("REAL",thismodule,[ "xx0", "xx1", "xx2"],1e300) # These are C variables, not parameters, and
                                                                       # will be overwritten; best to initialize to crazy
                                                                       # number to ensure they are overwritten!
