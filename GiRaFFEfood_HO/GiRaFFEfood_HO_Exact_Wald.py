@@ -60,7 +60,7 @@ M    = par.Cparameters("REAL",thismodule,["M"],1.0)      # The mass of the black
 M_PI = par.Cparameters("#define",thismodule,["M_PI"],"") # pi, 3.141592...
 KerrSchild_radial_shift = par.Cparameters("REAL",thismodule,"KerrSchild_radial_shift",0.4) # Default value for ExactWald
 
-def GiRaFFEfood_HO():
+def GiRaFFEfood_HO_Exact_Wald():
 
     # <a id='step2'></a>
     # 
