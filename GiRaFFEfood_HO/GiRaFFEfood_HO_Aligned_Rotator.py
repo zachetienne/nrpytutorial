@@ -48,6 +48,8 @@ B_p_aligned_rotator,R_NS_aligned_rotator = par.Cparameters("REAL",thismodule,
                                                            ["B_p_aligned_rotator","R_NS_aligned_rotator"],
                                                            [1e-5, 1.0])
 
+# The angular velocity of the "neutron star"
+Omega_aligned_rotator = par.Cparameters("REAL",thismodule,"Omega_aligned_rotator",1e3) 
 
 # <a id='step2'></a>
 # 
@@ -119,7 +121,6 @@ def GiRaFFEfood_HO_Aligned_Rotator():
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
 
-    Omega_aligned_rotator = par.Cparameters("REAL",thismodule,"Omega_aligned_rotator",1e3) # The angular velocity of the "neutron star"
     unit_zU = ixp.zerorank1()
     unit_zU[2] = 1
 

@@ -206,7 +206,7 @@ def reference_metric(SymPySimplifyExpressions=True):
 
             AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,
                                                                ["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"],
-                                                               [10.0, 0.2, 10.0, 0.2])
+                                                               [     10.0,       0.2,   10.0,    0.2])
 
             # Set SinhCylindrical radial & z coordinates by default; overwrite later if CoordSystem == "SinhCylindricalv2".
             RHOCYL = AMPLRHO * (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO))
@@ -225,7 +225,7 @@ def reference_metric(SymPySimplifyExpressions=True):
             xxmax = [sp.sympify(1),  M_PI, sp.sympify(+1)]
             AMPLRHO, SINHWRHO, AMPLZ, SINHWZ = par.Cparameters("REAL",thismodule,
                                                                ["AMPLRHO","SINHWRHO","AMPLZ","SINHWZ"],
-                                                               [10.0, 0.2, 10.0, 0.2])
+                                                               [     10.0,       0.2,   10.0,    0.2])
             const_drho, const_dz = par.Cparameters("REAL",thismodule,["const_drho","const_dz"],[0.0625,0.0625])
 
             RHOCYL = AMPLRHO * ( const_drho*xx[0] + (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO)) )
@@ -257,13 +257,13 @@ def reference_metric(SymPySimplifyExpressions=True):
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
         var1, var2= sp.symbols('var1 var2',real=True)
         bScale, AW, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,
-                                                                   ["bScale","AW","AMAX","RHOMAX","ZMIN","ZMAX"],
-                                                                   [0.5,     0.2,   10.0,    10.0, -10.0,  10.0])
+                                                               ["bScale","AW","AMAX","RHOMAX","ZMIN","ZMAX"],
+                                                               [0.5,     0.2,   10.0,    10.0, -10.0,  10.0])
 
         # Assuming xx0, xx1, and bScale
         #   are positive makes nice simplifications of
         #   unit vectors possible.
-        xx[0],xx[1],bScale = sp.symbols("xx0 xx1 bScale", real=True)
+        xx[0],xx[1] = sp.symbols("xx0 xx1", real=True)
 
         xxmin = [sp.sympify(0), sp.sympify(0),-M_PI]
         xxmax = [         AMAX,          M_PI, M_PI]

@@ -52,8 +52,6 @@ def UIUCBlackHole(ComputeADMGlobalsOnly = False):
     # Input parameters:
     M,chi = par.Cparameters("REAL", thismodule, ["M","chi"],[1.0,0.99])
 
-    # Auxiliary variables:
-    a,rp,rm,rBL,SIG,DEL,AA = sp.symbols('a rp rm rBL SIG DEL AA', real=True)
     # Spin per unit mass
     a = M*chi
 

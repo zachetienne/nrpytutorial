@@ -94,7 +94,6 @@ DIM = par.parval_from_str("grid::DIM")
 # First, however, we must set $$\gamma_\mu = (1-\mu^2)^{-1/2}$$ and $$g(x) = \cos (5\pi \gamma_\mu x)/\pi$$.
 # $$\label{step2}$$
 
-
 mu_AW = par.Cparameters("REAL",thismodule,["mu_AW"], -0.5) # The wave speed
 M_PI  = par.Cparameters("#define",thismodule,["M_PI"], "")
 
