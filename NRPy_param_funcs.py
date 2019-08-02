@@ -245,7 +245,7 @@ def generate_Cparameters_Ccodes(directory="./"):
                 Ctype = glb_Cparams_list[i].type
 
             if not ((Ctype == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or Ctype == "#define"):
-                Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params."+glb_Cparams_list[i].parname + ";\n"
+                Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params->"+glb_Cparams_list[i].parname + ";\n"
                 file.write(Coutput)
     # Step 4.b: Output SIMD version, set_Cparameters-SIMD.h
     with open(directory+"set_Cparameters-SIMD.h", "w") as file:
@@ -257,9 +257,9 @@ def generate_Cparameters_Ccodes(directory="./"):
 
             parname = glb_Cparams_list[i].parname
             if Ctype == "REAL" and glb_Cparams_list[i].defaultval != 1e300:
-                Coutput =  "const REAL            NOSIMD" + parname + " = " + "params." + glb_Cparams_list[i].parname + ";\n"
+                Coutput =  "const REAL            NOSIMD" + parname + " = " + "params->" + glb_Cparams_list[i].parname + ";\n"
                 Coutput += "const REAL_SIMD_ARRAY " + parname + " = ConstSIMD(NOSIMD" + parname + ");\n"
                 file.write(Coutput)
             elif glb_Cparams_list[i].defaultval != 1e300 and Ctype !="#define":
-                Coutput = "const "+Ctype+" "+parname + " = " + "params." + glb_Cparams_list[i].parname + ";\n"
+                Coutput = "const "+Ctype+" "+parname + " = " + "params->" + glb_Cparams_list[i].parname + ";\n"
                 file.write(Coutput)
