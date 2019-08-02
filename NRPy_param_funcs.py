@@ -33,8 +33,7 @@ def get_params_idx(input,Cparam=False):
         list = [i for i, v in enumerate(glb_params_list)
                 if (input.type=="ignoretype" or input.type==v[0]) and input.module == v[1] and input.parname == v[2]]
     else:
-        list = [i for i, v in enumerate(glb_Cparams_list)
-                if (input.type=="ignoretype" or input.type==v[0]) and input.module == v[1] and input.parname == v[2]]
+        list = [i for i, v in enumerate(glb_Cparams_list) if input.parname == v[2]]
     if list == []:
         return -1 # No match found => error out!
     else:
