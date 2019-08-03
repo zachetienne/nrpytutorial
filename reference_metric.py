@@ -42,6 +42,7 @@ Cartx,Carty,Cartz = sp.symbols("Cartx Carty Cartz", real=True)
 Cart = [Cartx,Carty,Cartz]
 xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
+scalefactor_orthog_funcform = ixp.zerorank1(DIM=4) # Must be set in terms of generic functions of xx[]s
 have_already_called_reference_metric_function = False
 
 def reference_metric(SymPySimplifyExpressions=True):
@@ -128,6 +129,12 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog[1] = xxSph[0]
         scalefactor_orthog[2] = xxSph[0]*sp.sin(xxSph[1])
 
+        f_of_x0 = sp.Function('f_of_x0')(xx[0])
+        f_of_x1 = sp.Function('f_of_x1')(xx[1])
+        scalefactor_orthog_funcform[0] = sp.diff(f_of_x0,xx[0])
+        scalefactor_orthog_funcform[1] = f_of_x0
+        scalefactor_orthog_funcform[2] = f_of_x0*f_of_x1
+        
         # Set the unit vectors
         UnitVectors = [[ sp.sin(xxSph[1])*sp.cos(xxSph[2]), sp.sin(xxSph[1])*sp.sin(xxSph[2]),  sp.cos(xxSph[1])],
                        [ sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]), -sp.sin(xxSph[1])],
@@ -366,9 +373,11 @@ def reference_metric(SymPySimplifyExpressions=True):
     # Finally, call ref_metric__hatted_quantities()
     #  to construct hatted metric, derivs of hatted
     #  metric, and Christoffel symbols
-    ref_metric__hatted_quantities(SymPySimplifyExpressions)
-    
-def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
+    ref_metric__hatted_quantities(scalefactor_orthog,SymPySimplifyExpressions)
+    # ref_metric__hatted_quantities(scalefactor_orthog_funcform,SymPySimplifyExpressions)
+    # ref_metric__hatted_quantities(scalefactor_orthog,SymPySimplifyExpressions)
+
+def ref_metric__hatted_quantities(scalefactor_input, SymPySimplifyExpressions=True):
     # Step 0: Set dimension DIM
     DIM = par.parval_from_str("grid::DIM")
 
@@ -381,11 +390,11 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
     #         (inverse reference metric), as well as 
     #         rescaling vector ReU & rescaling matrix ReDD
     for i in range(DIM):
-        scalefactor_orthog[i] = sp.sympify(scalefactor_orthog[i])
-        ghatDD[i][i] = scalefactor_orthog[i]**2
-        ReU[i] = 1/scalefactor_orthog[i]
+        scalefactor_input[i] = sp.sympify(scalefactor_input[i])
+        ghatDD[i][i] = scalefactor_input[i]**2
+        ReU[i] = 1/scalefactor_input[i]
         for j in range(DIM):
-            ReDD[i][j] = scalefactor_orthog[i]*scalefactor_orthog[j]
+            ReDD[i][j] = scalefactor_input[i]*scalefactor_input[j]
     # Step 1b: Compute ghatUU
     ghatUU, detgammahat = ixp.symm_matrix_inverter3x3(ghatDD)
 
