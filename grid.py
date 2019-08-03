@@ -22,6 +22,8 @@ Nxx_plus_2NGHOSTS = par.Cparameters("int", thismodule,
 xx  = par.Cparameters("REAL",thismodule,[ "xx0", "xx1", "xx2"],1e300) # These are C variables, not parameters, and
                                                                       # will be overwritten; best to initialize to crazy
                                                                       # number to ensure they are overwritten!
+dxx   = par.Cparameters("REAL",thismodule,[   "dxx0",   "dxx1",   "dxx2"],0.1)
+invdx = par.Cparameters("REAL",thismodule,[ "invdx0", "invdx1", "invdx2"],1.0)
 
 def variable_type(var):
     var_is_gf = False
