@@ -42,10 +42,18 @@ Cartx,Carty,Cartz = sp.symbols("Cartx Carty Cartz", real=True)
 Cart = [Cartx,Carty,Cartz]
 xxSph  = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
 scalefactor_orthog = ixp.zerorank1(DIM=4) # Must be set in terms of xx[]s
+
 scalefactor_orthog_funcform = ixp.zerorank1(DIM=4) # Must be set in terms of generic functions of xx[]s
+
 have_already_called_reference_metric_function = False
 
 def reference_metric(SymPySimplifyExpressions=True):
+    global f0_of_xx0_funcform,f1_of_xx1_funcform
+    global f0_of_xx0,f1_of_xx1
+    f0_of_xx0_funcform = sp.Function('f0_of_xx0_funcform')(xx[0])
+    f1_of_xx1_funcform = sp.Function('f1_of_xx1_funcform')(xx[1])
+    f0_of_xx0, f1_of_xx1 = sp.symbols("f0_of_xx0 f1_of_xx1", real=True)
+
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True
 
@@ -129,11 +137,12 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog[1] = xxSph[0]
         scalefactor_orthog[2] = xxSph[0]*sp.sin(xxSph[1])
 
-        f_of_x0 = sp.Function('f_of_x0')(xx[0])
-        f_of_x1 = sp.Function('f_of_x1')(xx[1])
-        scalefactor_orthog_funcform[0] = sp.diff(f_of_x0,xx[0])
-        scalefactor_orthog_funcform[1] = f_of_x0
-        scalefactor_orthog_funcform[2] = f_of_x0*f_of_x1
+        f0_of_xx0 = xxSph[0]
+        f1_of_xx1 = sp.sin(xxSph[1])
+        print("HEY THERE!",f0_of_xx0)
+        scalefactor_orthog_funcform[0] = sp.diff(f0_of_xx0_funcform,xx[0])
+        scalefactor_orthog_funcform[1] = f0_of_xx0_funcform
+        scalefactor_orthog_funcform[2] = f0_of_xx0_funcform*f1_of_xx1_funcform
         
         # Set the unit vectors
         UnitVectors = [[ sp.sin(xxSph[1])*sp.cos(xxSph[2]), sp.sin(xxSph[1])*sp.sin(xxSph[2]),  sp.cos(xxSph[1])],
@@ -373,11 +382,11 @@ def reference_metric(SymPySimplifyExpressions=True):
     # Finally, call ref_metric__hatted_quantities()
     #  to construct hatted metric, derivs of hatted
     #  metric, and Christoffel symbols
-    ref_metric__hatted_quantities(scalefactor_orthog,SymPySimplifyExpressions)
+    ref_metric__hatted_quantities(SymPySimplifyExpressions)
     # ref_metric__hatted_quantities(scalefactor_orthog_funcform,SymPySimplifyExpressions)
     # ref_metric__hatted_quantities(scalefactor_orthog,SymPySimplifyExpressions)
 
-def ref_metric__hatted_quantities(scalefactor_input, SymPySimplifyExpressions=True):
+def ref_metric__hatted_quantities(SymPySimplifyExpressions=True,scalefactor_input="closed_form_expressions"):
     # Step 0: Set dimension DIM
     DIM = par.parval_from_str("grid::DIM")
 
@@ -389,12 +398,27 @@ def ref_metric__hatted_quantities(scalefactor_input, SymPySimplifyExpressions=Tr
     # Step 1: Compute ghatDD (reference metric), ghatUU
     #         (inverse reference metric), as well as 
     #         rescaling vector ReU & rescaling matrix ReDD
-    for i in range(DIM):
-        scalefactor_input[i] = sp.sympify(scalefactor_input[i])
-        ghatDD[i][i] = scalefactor_input[i]**2
-        ReU[i] = 1/scalefactor_input[i]
-        for j in range(DIM):
-            ReDD[i][j] = scalefactor_input[i]*scalefactor_input[j]
+    if scalefactor_input == "closed_form_expressions":
+        for i in range(DIM):
+            scalefactor_orthog[i] = sp.sympify(scalefactor_orthog[i])
+            ghatDD[i][i] = scalefactor_orthog[i]**2
+            ReU[i] = 1/scalefactor_orthog[i]
+            for j in range(DIM):
+                ReDD[i][j] = scalefactor_orthog[i]*scalefactor_orthog[j]
+    elif scalefactor_input == "generic_functions":
+        for i in range(DIM):
+            scalefactor_orthog_funcform[i] = sp.sympify(scalefactor_orthog_funcform[i])
+            ghatDD[i][i] = scalefactor_orthog_funcform[i]**2
+            ReU[i] = 1/scalefactor_orthog_funcform[i]
+            for j in range(DIM):
+                ReDD[i][j] = scalefactor_orthog_funcform[i]*scalefactor_orthog_funcform[j]
+    else:
+        print("""
+ref_metric__hatted_quantities: scalefactor_input = \"""" + str(scalefactor_input) + """\" not supported.
+        Only scalefactor_input == \"closed_form_expressions\" and
+             scalefactor_input == \"generic_functions\" supported.
+Choose one.""")
+        sys.exit(1)
     # Step 1b: Compute ghatUU
     ghatUU, detgammahat = ixp.symm_matrix_inverter3x3(ghatDD)
 
