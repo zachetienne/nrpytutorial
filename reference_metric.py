@@ -139,7 +139,6 @@ def reference_metric(SymPySimplifyExpressions=True):
 
         f0_of_xx0 = xxSph[0]
         f1_of_xx1 = sp.sin(xxSph[1])
-        print("HEY THERE!",f0_of_xx0)
         scalefactor_orthog_funcform[0] = sp.diff(f0_of_xx0_funcform,xx[0])
         scalefactor_orthog_funcform[1] = f0_of_xx0_funcform
         scalefactor_orthog_funcform[2] = f0_of_xx0_funcform*f1_of_xx1_funcform

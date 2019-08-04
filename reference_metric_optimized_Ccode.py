@@ -9,7 +9,7 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
     # Step 0: Set dimension to zero
     DIM=3
 
-    # Step 2: Declare all globals
+    # Step 1: Declare all globals
     global ReU,ReDD,ghatDD,ghatUU,detgammahat
     ReU    = ixp.zerorank1()
     ReDD   = ixp.zerorank2()
@@ -17,7 +17,7 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
     ghatUU = ixp.zerorank2()
 
     global detgammahatdD, detgammahatdDD
-    detgammahatdD = ixp.zerorank1(DIM)
+    detgammahatdD  = ixp.zerorank1(DIM)
     detgammahatdDD = ixp.zerorank2(DIM)
 
     global ReUdD,ReUdDD
@@ -25,7 +25,7 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
     ReUdDD = ixp.zerorank3(DIM)
 
     global ReDDdD,ReDDdDD
-    ReDDdD = ixp.zerorank3(DIM)
+    ReDDdD  = ixp.zerorank3(DIM)
     ReDDdDD = ixp.zerorank4(DIM)
 
     global ghatDDdD, ghatDDdDD
@@ -38,12 +38,12 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
     global GammahatUDDdD
     GammahatUDDdD = ixp.zerorank4(DIM)
 
+    # Step 2: Set up reference metric.
+    rfm.reference_metric(SymPySimplifyExpressions)
+
     # Step 3: Define all hatted quantities in terms of generic SymPy functions for scale factors,
     #         which in turn were defined in rfm.reference_metric()
-    # Step 1: Set up reference metric.
-    rfm.reference_metric(SymPySimplifyExpressions)
     rfm.ref_metric__hatted_quantities(SymPySimplifyExpressions,scalefactor_input="generic_functions")
-    print(rfm.detgammahat)
 
     # Step 4: Now that all hatted quantities are written in terms of generic SymPy functions,
     #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
@@ -78,11 +78,11 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
                     ghatDDdDD[i][j][k][l] = sp.sympify(make_replacements(str(rfm.ghatDDdDD[i][j][k][l])))
                     GammahatUDDdD[i][j][k][l] = sp.sympify(make_replacements(str(rfm.GammahatUDDdD[i][j][k][l])))
 
-    # At this point, each expression is written in terms of the generic functions of
-    #    xx0, xx1, and/or xx2 and their derivatives. Depending on the functions, some
-    #    of these derivatives may be zero. In Step 5 we'll evaluate the function
-    #    derivatives exactly and set the expressions to zero. Otherwise in the C code
-    #    we'd be storing performing arithmetic with zeros -- wasteful!
+    # Step 5: At this point, each expression is written in terms of the generic functions
+    #         of xx0, xx1, and/or xx2 and their derivatives. Depending on the functions, some
+    #         of these derivatives may be zero. In Step 5 we'll evaluate the function
+    #         derivatives exactly and set the expressions to zero. Otherwise in the C code
+    #         we'd be storing performing arithmetic with zeros -- wasteful!
 
     # Step 5.a: Construct the full list of *unique* NRPy+ variables representing the
     #           SymPy functions and derivatives, so that all zero derivatives can be
@@ -110,11 +110,15 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
 
     freevars_uniq = superfast_uniq(freevars)
 
-    print(freevars_uniq)
+    freevars_uniq_vals = []
+    for i in range(len(freevars_uniq)):
+        freevars_uniq_vals.append(freevars_uniq[i])
+
     # Step 5.b: Using the expressions rfm.f?_of_xx? set in rfm.reference_metric(),
     #           evaluate each needed derivative and, in the case it is zero,
     #           set the corresponding "freevar" variable to zero.
-    for var in freevars_uniq:
+    for i in range(len(freevars_uniq)):
+        var = freevars_uniq[i]
         basename = str(var).split("__")[0].replace("_funcform","")
         derivatv = ""
         if "__" in str(var):
@@ -128,22 +132,44 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
             sys.exit(1)
         if derivatv == "":
             if basefunc == sp.sympify(0):
-                var=0
+                freevars_uniq_vals[i] = sp.sympify(0)
         else:
             derivorder = derivatv.replace("d","").replace("D","").replace("0","0 ").replace("1","1 ").replace("2","2 ").split(" ")
-            order = len(derivorder)-1
             diff_result = basefunc
             for derivdirn in derivorder:
                 if derivdirn != "":
                     derivwrt = rfm.xx[int(derivdirn)]
                     diff_result = sp.diff(diff_result,derivwrt)
                     if diff_result == sp.sympify(0):
-                        print("Attempting to set "+str(var)+" to zero")
-                        var=0
-            print(var,diff_result)
+                        print("Setting "+str(var)+" to zero in freevars_uniq_vals")
+                        freevars_uniq_vals[i] = sp.sympify(0)
 
-    # Step 5.c:
-    print(freevars_uniq)
+    print(freevars_uniq,freevars_uniq_vals)
+
+    # Step 5.c: Finally, substitute zero for all expressions that are properly zero.
+    for varidx in range(len(freevars_uniq)):
+        detgammahat = detgammahat.subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+        for i in range(DIM):
+            ReU[i] = ReU[i].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+            detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+            for j in range(DIM):
+                ReDD  [i][j] = ReDD  [i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                ReUdD [i][j] = ReUdD [i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_vals[varidx],detgammahatdDD[i][j])
+                detgammahatdDD[i][j] = detgammahatdDD[i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_vals[varidx],detgammahatdDD[i][j])
+                for k in range(DIM):
+                    ReDDdD     [i][j][k] = ReDDdD     [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                    ReUdDD     [i][j][k] = ReUdDD     [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                    ghatDDdD   [i][j][k] = ghatDDdD   [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                    GammahatUDD[i][j][k] = GammahatUDD[i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                    for l in range(DIM):
+                        ReDDdDD      [i][j][k][l] = ReDDdDD      [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                        ghatDDdDD    [i][j][k][l] = ghatDDdDD    [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                        GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+
 
     # if basename=="f0_of_xx0":
     #     pass
