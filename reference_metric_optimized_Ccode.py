@@ -130,21 +130,19 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
         else:
             print("Error: function inside "+str(var)+" undefined.")
             sys.exit(1)
+        diff_result = basefunc
         if derivatv == "":
-            if basefunc == sp.sympify(0):
-                freevars_uniq_vals[i] = sp.sympify(0)
+            pass
         else:
             derivorder = derivatv.replace("d","").replace("D","").replace("0","0 ").replace("1","1 ").replace("2","2 ").split(" ")
-            diff_result = basefunc
             for derivdirn in derivorder:
                 if derivdirn != "":
                     derivwrt = rfm.xx[int(derivdirn)]
                     diff_result = sp.diff(diff_result,derivwrt)
-                    if diff_result == sp.sympify(0):
-                        print("Setting "+str(var)+" to zero in freevars_uniq_vals")
-                        freevars_uniq_vals[i] = sp.sympify(0)
+        freevars_uniq_vals[i]  = diff_result
 
-    print(freevars_uniq,freevars_uniq_vals)
+    print(freevars_uniq)
+    print(freevars_uniq_vals)
 
     # Step 5.c: Finally, substitute zero for all expressions that are properly zero.
     for varidx in range(len(freevars_uniq)):
