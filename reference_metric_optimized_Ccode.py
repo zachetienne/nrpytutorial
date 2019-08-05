@@ -3,6 +3,7 @@ import NRPy_param_funcs as par
 from outputC import *
 import sympy as sp
 import indexedexp as ixp
+import grid as gri
 
 def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
 
@@ -110,13 +111,14 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
 
     freevars_uniq = superfast_uniq(freevars)
 
-    freevars_uniq_vals = []
+    freevars_uniq_zeroed = []
     for i in range(len(freevars_uniq)):
-        freevars_uniq_vals.append(freevars_uniq[i])
+        freevars_uniq_zeroed.append(freevars_uniq[i])
 
     # Step 5.b: Using the expressions rfm.f?_of_xx? set in rfm.reference_metric(),
     #           evaluate each needed derivative and, in the case it is zero,
     #           set the corresponding "freevar" variable to zero.
+    freevars_uniq_vals = []
     for i in range(len(freevars_uniq)):
         var = freevars_uniq[i]
         basename = str(var).split("__")[0].replace("_funcform","")
@@ -139,36 +141,65 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
                 if derivdirn != "":
                     derivwrt = rfm.xx[int(derivdirn)]
                     diff_result = sp.diff(diff_result,derivwrt)
-        freevars_uniq_vals[i]  = diff_result
+        freevars_uniq_vals.append(diff_result)
+        if diff_result == sp.sympify(0):
+            freevars_uniq_zeroed[i]  = 0
 
     print(freevars_uniq)
     print(freevars_uniq_vals)
+    print(freevars_uniq_zeroed)
 
-    # Step 5.c: Finally, substitute zero for all expressions that are properly zero.
+    # Step 5.c: Finally, substitute zero for all functions & derivatives that evaluate to zero.
     for varidx in range(len(freevars_uniq)):
-        detgammahat = detgammahat.subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+        detgammahat = detgammahat.subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
         for i in range(DIM):
-            ReU[i] = ReU[i].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-            detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+            ReU[i] = ReU[i].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+            detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
             for j in range(DIM):
-                ReDD  [i][j] = ReDD  [i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                ReUdD [i][j] = ReUdD [i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_vals[varidx],detgammahatdDD[i][j])
-                detgammahatdDD[i][j] = detgammahatdDD[i][j].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_vals[varidx],detgammahatdDD[i][j])
+                ReDD  [i][j] = ReDD  [i][j].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                ReUdD [i][j] = ReUdD [i][j].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_zeroed[varidx],detgammahatdDD[i][j])
+                detgammahatdDD[i][j] = detgammahatdDD[i][j].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_zeroed[varidx],detgammahatdDD[i][j])
                 for k in range(DIM):
-                    ReDDdD     [i][j][k] = ReDDdD     [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                    ReUdDD     [i][j][k] = ReUdDD     [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                    ghatDDdD   [i][j][k] = ghatDDdD   [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                    GammahatUDD[i][j][k] = GammahatUDD[i][j][k].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                    ReDDdD     [i][j][k] = ReDDdD     [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                    ReUdDD     [i][j][k] = ReUdDD     [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                    ghatDDdD   [i][j][k] = ghatDDdD   [i][j][k].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                    GammahatUDD[i][j][k] = GammahatUDD[i][j][k].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
                     for l in range(DIM):
-                        ReDDdDD      [i][j][k][l] = ReDDdDD      [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                        ghatDDdDD    [i][j][k][l] = ghatDDdDD    [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
-                        GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_vals[varidx])
+                        ReDDdDD      [i][j][k][l] = ReDDdDD      [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                        ghatDDdDD    [i][j][k][l] = ghatDDdDD    [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
+                        GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
 
+    # Step 6:
+    struct_str = "typedef struct __rfmstruct__ {\n"
+    malloc_str = ""
+    define_str = ""
+    for varidx in range(len(freevars_uniq)):
+        malloc_size = 1
+        if freevars_uniq_zeroed[varidx] != sp.sympify(0):
+            dirn = "null"
+            for i in [0,1,2]:
+                if "xx"+str(i) in str(freevars_uniq_zeroed[varidx]):
+                    malloc_size *= gri.Nxx_plus_2NGHOSTS[i]
+                    dirn = str(i)
+                if "*" in str(malloc_size):
+                    print("ERROR: Currently only support functions of one variable.")
+                    sys.exit(1)
+            struct_str += "\tREAL *restrict "+str(freevars_uniq_zeroed[varidx])+";\n"
+            malloc_str += "rfmstruct."+str(freevars_uniq_zeroed[varidx])+" = (REAL *)malloc(sizeof(REAL)*"+str(malloc_size)+");\n"
 
+            define_str += """
+for(int ii=0;ii<"""+str(malloc_size)+""";ii++) {
+    const REAL xx"""+dirn+""" = xx["""+dirn+"""][ii];
+    rfmstruct."""+str(freevars_uniq_zeroed[varidx])+"""[ii] = """+str(freevars_uniq_vals[varidx])+""";
+}"""
+    struct_str += "} rfmstruct;\n"
+    print(struct_str)
+    print(malloc_str)
+    print(define_str)
     # if basename=="f0_of_xx0":
     #     pass
     # print(basename,derivatv)
