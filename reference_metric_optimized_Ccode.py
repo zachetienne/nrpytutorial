@@ -5,7 +5,7 @@ import sympy as sp
 import indexedexp as ixp
 import grid as gri
 
-def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
+def reference_metric_optimized_Ccode(directory, SymPySimplifyExpressions=True):
 
     # Step 0: Set dimension to zero
     DIM=3
@@ -50,13 +50,21 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
     #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
     #         and store these variables to globals defined above.
     def make_replacements(input):
-        for i in ["0","1","2"]:
-            inputnew = input.replace(", xx"+i+", xx"+i+", xx"+i+")", "__dDDD"+i+i+i).\
-                             replace(", xx"+i+", xx"+i+")", "__dDD"+i+i).\
-                             replace(", xx"+i+")", "__dD"+i).\
-                             replace("Derivative(", "").\
-                             replace("f"+i+"_of_xx"+i+"_funcform(xx"+i+")", "f"+i+"_of_xx"+i+"_funcform")
+        for i in ["0", "1", "2"]:
+            inputnew = input.replace("Derivative(f"+i+"_of_xx"+i+"_funcform(xx"+i+"), (xx"+i+", 3))",
+                                     "Derivative(f"+i+"_of_xx"+i+"_funcform(xx"+i+"), xx"+i+", xx"+i+", xx"+i+")"). \
+                             replace("Derivative(f"+i+"_of_xx"+i+"_funcform(xx"+i+"), (xx"+i+", 2))",
+                                     "Derivative(f"+i+"_of_xx"+i+"_funcform(xx"+i+"), xx"+i+", xx"+i+")"). \
+                             replace(", xx"+i+", xx"+i+", xx"+i+")", "__DDD"+i+i+i).\
+                             replace(", xx"+i+", xx"+i+")", "__DD"+i+i).\
+                             replace(", xx"+i+")", "__D"+i).\
+                             replace("f"+i+"_of_xx"+i+"_funcform(xx"+i+")", "f"+i+"_of_xx"+i)
             input = inputnew
+        inputnew = input.replace("Derivative(", "")
+        if "Derivative" in inputnew:
+            print("Error: ",inputnew)
+            sys.exit(1)
+        input = inputnew
         return input
     #
     detgammahat = sp.sympify(make_replacements(str(rfm.detgammahat)))
@@ -145,9 +153,9 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
         if diff_result == sp.sympify(0):
             freevars_uniq_zeroed[i]  = 0
 
-    print(freevars_uniq)
-    print(freevars_uniq_vals)
-    print(freevars_uniq_zeroed)
+    # print(freevars_uniq)
+    # print(freevars_uniq_vals)
+    # print(freevars_uniq_zeroed)
 
     # Step 5.c: Finally, substitute zero for all functions & derivatives that evaluate to zero.
     for varidx in range(len(freevars_uniq)):
@@ -173,14 +181,15 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
                         ghatDDdDD    [i][j][k][l] = ghatDDdDD    [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
                         GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
 
-    # Step 6:
+    # Step 6: Construct needed C code
     struct_str = "typedef struct __rfmstruct__ {\n"
-    malloc_str = ""
+    malloc_str = "rfm_struct rfmstruct;\n"
     define_str = ""
     readvr_str = ["","",""]
     freemm_str = ""
     for dirn in [0,1,2]:
-        malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
+#        malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
+        malloc_size = "Nxx_plus_2NGHOSTS["+str(dirn)+"]"
 
         numvars = 0
         for varidx in range(len(freevars_uniq)):
@@ -193,21 +202,33 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
                 define_str += """
 for(int ii=0;ii<"""+str(malloc_size)+""";ii++) {
     const REAL xx"""+str(dirn)+""" = xx["""+str(dirn)+"""][ii];
-    rfmstruct."""+str(freevars_uniq_zeroed[varidx])+"""[ii] = """+str(freevars_uniq_vals[varidx])+""";
+    rfmstruct."""+str(freevars_uniq_zeroed[varidx])+"""[ii] = """+str(sp.ccode(freevars_uniq_vals[varidx]))+""";
 }"""
                 readvr_str[dirn] += "const REAL "+str(freevars_uniq_zeroed[varidx])+" = rfmstruct->"+str(freevars_uniq_zeroed[varidx])+"[i"+str(dirn)+"];\n"
 
-    struct_str += "} rfmstruct;\n\n"
-    print(struct_str)
-    print(malloc_str)
-    print(define_str)
-    print(readvr_str[0])
-    print(readvr_str[1])
-    print(readvr_str[2])
-    print(freemm_str)
-    # if basename=="f0_of_xx0":
-    #     pass
-    # print(basename,derivatv)
+    struct_str += "} rfm_struct;\n\n"
+
+    # Step 7: Output needed C code to files
+    with open(directory+"/rfm_declare_struct.h", "w") as file:
+        file.write(struct_str)
+    with open(directory+"/rfm_malloc_struct.h", "w") as file:
+        file.write(malloc_str)
+    with open(directory+"/rfm_define_struct.h", "w") as file:
+        file.write(define_str)
+    for i in range(3):
+        with open(directory+"/rfm_read"+str(i)+"_struct.h", "w") as file:
+            file.write(readvr_str[i])
+    with open(directory+"/rfm_freemem_struct.h", "w") as file:
+        file.write(freemm_str)
+
+
+    # print(struct_str)
+    # print(malloc_str)
+    # print(define_str)
+    # print(readvr_str[0])
+    # print(readvr_str[1])
+    # print(readvr_str[2])
+    # print(freemm_str)
 
 # print(rfm.f0_of_xx0)
 
@@ -220,5 +241,5 @@ for(int ii=0;ii<"""+str(malloc_size)+""";ii++) {
 #         list_of_hatted_exprs.extend(rfm.ghatUU[i][j].free_symbols)
 # print(list_of_hatted_exprs)
 
-par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
-reference_metric_optimized_Ccode()
+# par.set_parval_from_str("reference_metric::CoordSystem","SinhSpherical")
+# reference_metric_optimized_Ccode("ScalarWaveCurvilinear")

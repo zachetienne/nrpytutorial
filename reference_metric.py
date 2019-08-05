@@ -52,7 +52,10 @@ def reference_metric(SymPySimplifyExpressions=True):
     global f0_of_xx0,f1_of_xx1
     f0_of_xx0_funcform = sp.Function('f0_of_xx0_funcform')(xx[0])
     f1_of_xx1_funcform = sp.Function('f1_of_xx1_funcform')(xx[1])
-    f0_of_xx0, f1_of_xx1 = sp.symbols("f0_of_xx0 f1_of_xx1", real=True)
+    f0_of_xx0, f1_of_xx1 = par.Cparameters("REAL",thismodule,["f0_of_xx0","f1_of_xx1"],1e300)
+    # FIXME: Hack
+    f0_of_xx0__D0,f0_of_xx0__DD00,f0_of_xx0__DDD000 = par.Cparameters("REAL",thismodule,["f0_of_xx0__D0","f0_of_xx0__DD00","f0_of_xx0__DDD000"],1e300)
+    f1_of_xx1__D1,f1_of_xx1__DD11,f1_of_xx1__DDD111 = par.Cparameters("REAL",thismodule,["f1_of_xx1__D1","f1_of_xx1__DD11","f1_of_xx1__DDD111"],1e300)
 
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True

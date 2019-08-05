@@ -42,7 +42,7 @@ import NRPy_param_funcs as par
 thismodule = __name__
 wavespeed = par.Cparameters("REAL", thismodule, "wavespeed", 1.0)
 
-def ScalarWaveCurvilinear_RHSs():
+def ScalarWaveCurvilinear_RHSs(rfmopt=False):
     import indexedexp as ixp
     import reference_metric as rfm
     import grid as gri
@@ -56,13 +56,18 @@ def ScalarWaveCurvilinear_RHSs():
     #         quantities derived from the
     #         reference metric.
     rfm.reference_metric()
+    rfmmod = rfm
+    if rfmopt == True:
+        import reference_metric_optimized_Ccode as rfmopt
+        rfmopt.reference_metric_optimized_Ccode("ScalarWaveCurvilinear")
+        rfmmod = rfmopt
 
     # Step 3: Compute the contracted Christoffel symbols:
     contractedGammahatU = ixp.zerorank1()
     for k in range(DIM):
         for i in range(DIM):
             for j in range(DIM):
-                contractedGammahatU[k] += rfm.ghatUU[i][j] * rfm.GammahatUDD[k][i][j]
+                contractedGammahatU[k] += rfmmod.ghatUU[i][j] * rfmmod.GammahatUDD[k][i][j]
 
     # Step 4: Register gridfunctions that are needed as input
     #         to the scalar wave RHS expressions.
@@ -99,7 +104,7 @@ def ScalarWaveCurvilinear_RHSs():
         vv_rhs -= contractedGammahatU[i]*uu_dD[i]
         for j in range(DIM):
             # PART 1:
-            vv_rhs += rfm.ghatUU[i][j]*uu_dDD[i][j]
+            vv_rhs += rfmmod.ghatUU[i][j]*uu_dDD[i][j]
 
     vv_rhs *= wavespeed*wavespeed
 
