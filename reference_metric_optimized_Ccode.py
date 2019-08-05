@@ -174,20 +174,19 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
                         GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
 
     # Step 6:
-    struct_str = ""
+    struct_str = "typedef struct __rfmstruct__ {\n"
     malloc_str = ""
     define_str = ""
     readvr_str = ["","",""]
     freemm_str = ""
     for dirn in [0,1,2]:
-        struct_str_dirn = "typedef struct __rfmstruct"+str(dirn)+"__ {\n"
         malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
 
         numvars = 0
         for varidx in range(len(freevars_uniq)):
             if "xx"+str(dirn) in str(freevars_uniq_zeroed[varidx]):
                 numvars = numvars + 1
-                struct_str_dirn += "\tREAL *restrict "+str(freevars_uniq_zeroed[varidx])+";\n"
+                struct_str += "\tREAL *restrict "+str(freevars_uniq_zeroed[varidx])+";\n"
                 malloc_str += "rfmstruct."+str(freevars_uniq_zeroed[varidx])+" = (REAL *)malloc(sizeof(REAL)*"+str(malloc_size)+");\n"
                 freemm_str += "free(rfmstruct."+str(freevars_uniq_zeroed[varidx])+");\n"
 
@@ -198,10 +197,7 @@ for(int ii=0;ii<"""+str(malloc_size)+""";ii++) {
 }"""
                 readvr_str[dirn] += "const REAL "+str(freevars_uniq_zeroed[varidx])+" = rfmstruct->"+str(freevars_uniq_zeroed[varidx])+"[i"+str(dirn)+"];\n"
 
-        struct_str_dirn += "} rfmstruct"+str(dirn)+";\n\n"
-        if numvars == 0:
-            struct_str_dirn = ""
-        struct_str += struct_str_dirn
+    struct_str += "} rfmstruct;\n\n"
     print(struct_str)
     print(malloc_str)
     print(define_str)
