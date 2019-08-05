@@ -174,32 +174,41 @@ def reference_metric_optimized_Ccode(SymPySimplifyExpressions=True):
                         GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
 
     # Step 6:
-    struct_str = "typedef struct __rfmstruct__ {\n"
+    struct_str = ""
     malloc_str = ""
     define_str = ""
-    for varidx in range(len(freevars_uniq)):
-        malloc_size = 1
-        if freevars_uniq_zeroed[varidx] != sp.sympify(0):
-            dirn = "null"
-            for i in [0,1,2]:
-                if "xx"+str(i) in str(freevars_uniq_zeroed[varidx]):
-                    malloc_size *= gri.Nxx_plus_2NGHOSTS[i]
-                    dirn = str(i)
-                if "*" in str(malloc_size):
-                    print("ERROR: Currently only support functions of one variable.")
-                    sys.exit(1)
-            struct_str += "\tREAL *restrict "+str(freevars_uniq_zeroed[varidx])+";\n"
-            malloc_str += "rfmstruct."+str(freevars_uniq_zeroed[varidx])+" = (REAL *)malloc(sizeof(REAL)*"+str(malloc_size)+");\n"
+    readvr_str = ["","",""]
+    freemm_str = ""
+    for dirn in [0,1,2]:
+        struct_str_dirn = "typedef struct __rfmstruct"+str(dirn)+"__ {\n"
+        malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
 
-            define_str += """
+        numvars = 0
+        for varidx in range(len(freevars_uniq)):
+            if "xx"+str(dirn) in str(freevars_uniq_zeroed[varidx]):
+                numvars = numvars + 1
+                struct_str_dirn += "\tREAL *restrict "+str(freevars_uniq_zeroed[varidx])+";\n"
+                malloc_str += "rfmstruct."+str(freevars_uniq_zeroed[varidx])+" = (REAL *)malloc(sizeof(REAL)*"+str(malloc_size)+");\n"
+                freemm_str += "free(rfmstruct."+str(freevars_uniq_zeroed[varidx])+");\n"
+
+                define_str += """
 for(int ii=0;ii<"""+str(malloc_size)+""";ii++) {
-    const REAL xx"""+dirn+""" = xx["""+dirn+"""][ii];
+    const REAL xx"""+str(dirn)+""" = xx["""+str(dirn)+"""][ii];
     rfmstruct."""+str(freevars_uniq_zeroed[varidx])+"""[ii] = """+str(freevars_uniq_vals[varidx])+""";
 }"""
-    struct_str += "} rfmstruct;\n"
+                readvr_str[dirn] += "const REAL "+str(freevars_uniq_zeroed[varidx])+" = rfmstruct->"+str(freevars_uniq_zeroed[varidx])+"[i"+str(dirn)+"];\n"
+
+        struct_str_dirn += "} rfmstruct"+str(dirn)+";\n\n"
+        if numvars == 0:
+            struct_str_dirn = ""
+        struct_str += struct_str_dirn
     print(struct_str)
     print(malloc_str)
     print(define_str)
+    print(readvr_str[0])
+    print(readvr_str[1])
+    print(readvr_str[2])
+    print(freemm_str)
     # if basename=="f0_of_xx0":
     #     pass
     # print(basename,derivatv)
