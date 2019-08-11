@@ -1,3 +1,45 @@
+# reference_metric_optimized_Ccode.py: Generate C code for
+#     precomputing and storing in memory complicated expressions
+#     related to the reference metric (a.k.a., "hatted quantities")
+
+# The precomputed "hatted quantity" expressions will be stored in
+#    a C struct called rfmstruct. As these expressions generally
+#    involve computationally expensive transcendental functions
+#    of xx0,xx1,or xx2, and xx0,xx1, and xx2 remain fixed across
+#    most (if not all) of a given simulation, setting up the
+#    rfmstruct can greatly improve performance.
+
+# The core challenge in setting up the rfmstruct is collecting
+#    all the information needed to automatically generate it.
+# To this end, this module implements the following algorithm:
+# Step 0: Set dimension, DIM, to three
+# Step 1: Declare all globals
+# Step 2: Set up reference metric.
+# Step 3: Define all hatted quantities in terms of generic SymPy functions for scale factors,
+#         which in turn were defined in rfm.reference_metric()
+# Step 4: Now that all hatted quantities are written in terms of generic SymPy functions,
+#         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
+#         and store these variables to globals defined above.
+# Step 5: At this point, each expression is written in terms of the generic functions
+#         of xx0, xx1, and/or xx2 and their derivatives. Depending on the functions, some
+#         of these derivatives may be zero. In Step 5 we'll evaluate the function
+#         derivatives exactly and set the expressions to zero. Otherwise in the C code
+#         we'd be storing performing arithmetic with zeros -- wasteful!
+# Step 5.a: Construct the full list of *unique* NRPy+ variables representing the
+#           SymPy functions and derivatives, so that all zero derivatives can be
+#           computed.
+# Step 5.b: Using the expressions rfm.f?_of_xx? set in rfm.reference_metric(),
+#           evaluate each needed derivative and, in the case it is zero,
+#           set the corresponding "freevar" variable to zero.
+# Step 5.c: Substitute zero for all functions & derivatives that evaluate to zero.
+# Step 6: Construct needed C code for declaring rfmstruct, allocating storage for
+#         rfmstruct arrays, defining each element in each array, reading the
+#         rfmstruct data from memory (both with and without SIMD enabled), and
+#         freeing allocated memory for the rfmstrcut arrays.
+
+# Author: Zachariah B. Etienne
+#         zachetie **at** gmail **dot* com
+
 import reference_metric as rfm
 import NRPy_param_funcs as par
 from outputC import *
@@ -7,7 +49,7 @@ import grid as gri
 
 def reference_metric_optimized_Ccode(directory, SymPySimplifyExpressions=True):
 
-    # Step 0: Set dimension to zero
+    # Step 0: Set dimension to three
     DIM=3
 
     # Step 1: Declare all globals
@@ -153,10 +195,6 @@ def reference_metric_optimized_Ccode(directory, SymPySimplifyExpressions=True):
         if diff_result == sp.sympify(0):
             freevars_uniq_zeroed[i]  = 0
 
-    # print(freevars_uniq)
-    # print(freevars_uniq_vals)
-    # print(freevars_uniq_zeroed)
-
     # Step 5.c: Finally, substitute zero for all functions & derivatives that evaluate to zero.
     for varidx in range(len(freevars_uniq)):
         detgammahat = detgammahat.subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
@@ -181,10 +219,21 @@ def reference_metric_optimized_Ccode(directory, SymPySimplifyExpressions=True):
                         ghatDDdDD    [i][j][k][l] = ghatDDdDD    [i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
                         GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],freevars_uniq_zeroed[varidx])
 
-    # Step 6: Construct needed C code
+    # Step 6: Construct needed C code for declaring rfmstruct, allocating storage for
+    #         rfmstruct arrays, defining each element in each array, reading the
+    #         rfmstruct data from memory (both with and without SIMD enabled), and
+    #         freeing allocated memory for the rfmstrcut arrays.
+    # struct_str: String that declares the rfmstruct struct.
     struct_str = "typedef struct __rfmstruct__ {\n"
+    # rfmstruct stores pointers to (so far) 1D arrays. The malloc_str string allocates space for the arrays.
     malloc_str = "rfm_struct rfmstruct;\n"
+    # define_str sets the arrays to appropriate values. Note that elements of
+    #    these arrays will generally be transcendental functions of xx0,xx1,or xx2.
+    #    Since xx0,xx1, and xx2 remain fixed across many (if not all) iterations,
+    #    and these transcendental functions are quite expensive, setting up this
+    #    struct can greatly improve performance.
     define_str = ""
+    # readvr_str reads the arrays from memory as needed
     readvr_str = ["","",""]
     freemm_str = ""
     for dirn in [0,1,2]:
