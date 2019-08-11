@@ -235,10 +235,12 @@ def reference_metric_optimized_Ccode(directory, SymPySimplifyExpressions=True):
     define_str = ""
     # readvr_str reads the arrays from memory as needed
     readvr_str = ["","",""]
+    readvr_SIMD_outer_str = ["","",""]
+    readvr_SIMD_inner_str = ["","",""]
     freemm_str = ""
     for dirn in [0,1,2]:
-#        malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
-        malloc_size = "Nxx_plus_2NGHOSTS["+str(dirn)+"]"
+        malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
+#        malloc_size = "Nxx_plus_2NGHOSTS["+str(dirn)+"]"
 
         numvars = 0
         for varidx in range(len(freevars_uniq)):
@@ -254,20 +256,27 @@ for(int ii=0;ii<"""+str(malloc_size)+""";ii++) {
     rfmstruct."""+str(freevars_uniq_zeroed[varidx])+"""[ii] = """+str(sp.ccode(freevars_uniq_vals[varidx]))+""";
 }"""
                 readvr_str[dirn] += "const REAL "+str(freevars_uniq_zeroed[varidx])+" = rfmstruct->"+str(freevars_uniq_zeroed[varidx])+"[i"+str(dirn)+"];\n"
+                readvr_SIMD_outer_str[dirn] += "const double NOSIMD"+str(freevars_uniq_zeroed[varidx])+" = rfmstruct->"+str(freevars_uniq_zeroed[varidx])+"[i"+str(dirn)+"]; "
+                readvr_SIMD_outer_str[dirn] += "const REAL_SIMD_ARRAY "+str(freevars_uniq_zeroed[varidx])+" = ConstSIMD(NOSIMD"+str(freevars_uniq_zeroed[varidx])+");\n"
+                readvr_SIMD_inner_str[dirn] += "const REAL_SIMD_ARRAY "+str(freevars_uniq_zeroed[varidx])+" = ReadSIMD(&rfmstruct->"+str(freevars_uniq_zeroed[varidx])+"[i"+str(dirn)+"]);\n"
 
     struct_str += "} rfm_struct;\n\n"
 
     # Step 7: Output needed C code to files
-    with open(directory+"/rfm_declare_struct.h", "w") as file:
+    with open(directory+"/rfm_struct__declare.h", "w") as file:
         file.write(struct_str)
-    with open(directory+"/rfm_malloc_struct.h", "w") as file:
+    with open(directory+"/rfm_struct__malloc.h", "w") as file:
         file.write(malloc_str)
-    with open(directory+"/rfm_define_struct.h", "w") as file:
+    with open(directory+"/rfm_struct__define.h", "w") as file:
         file.write(define_str)
     for i in range(3):
-        with open(directory+"/rfm_read"+str(i)+"_struct.h", "w") as file:
+        with open(directory + "/rfm_struct__read" + str(i) + ".h", "w") as file:
             file.write(readvr_str[i])
-    with open(directory+"/rfm_freemem_struct.h", "w") as file:
+        with open(directory + "/rfm_struct__SIMD_outer_read" + str(i) + ".h", "w") as file:
+            file.write(readvr_SIMD_outer_str[i])
+        with open(directory + "/rfm_struct__SIMD_inner_read" + str(i) + ".h", "w") as file:
+            file.write(readvr_SIMD_inner_str[i])
+    with open(directory+"/rfm_struct__freemem.h", "w") as file:
         file.write(freemm_str)
 
 
