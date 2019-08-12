@@ -47,7 +47,7 @@ def CosSIMD_check(a):
 # Resolution: This function extends lists "SIMD_const_varnms" and "SIMD_const_values",
 #             which store the name of each constant SIMD array (e.g., _Integer_1) and
 #             the value of each variable (e.g., 1.0).
-def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debug="False"):
+def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,SIMD_const_suffix="",debug="False"):
 
     # Declare all variables, so we can eval them in the next (AddSIMD & MulSIMD) step
     for item in preorder_traversal(expr):
@@ -263,9 +263,9 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
         if item.func == RationalTMP:
             # Set variable name
             if item.args[0]*item.args[1] < 0:
-                SIMD_const_varnms.extend(["_Rational_m"+str(abs(item.args[0]))+"_"+str(abs(item.args[1]))])
+                SIMD_const_varnms.extend(["_Rational_m"+str(abs(item.args[0]))+"_"+str(abs(item.args[1]))+SIMD_const_suffix])
             elif item.args[0] > 0 and item.args[1] > 0:
-                SIMD_const_varnms.extend(["_Rational_"+str(item.args[0])+"_"+str(item.args[1])])
+                SIMD_const_varnms.extend(["_Rational_"+str(item.args[0])+"_"+str(item.args[1])+SIMD_const_suffix])
             else:
                 # E.g., doesn't make sense to have -1/-3. SymPy should have simplified this.
                 print("Found a weird Rational(a,b) expression, where a<0 and b<0. Report to SymPy devels")
@@ -276,9 +276,9 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
         elif item.func == IntegerTMP:
             # Set variable name
             if item.args[0] < 0:
-                SIMD_const_varnms.extend(["_Integer_m"+str(-item.args[0])])
+                SIMD_const_varnms.extend(["_Integer_m"+str(-item.args[0])+SIMD_const_suffix])
             else:
-                SIMD_const_varnms.extend(["_Integer_" + str(item.args[0])])
+                SIMD_const_varnms.extend(["_Integer_" + str(item.args[0])+SIMD_const_suffix])
             # Set variable value, to 34 digits of precision
             SIMD_const_values.extend([str((Float(item.args[0],34)))])
 
@@ -287,9 +287,9 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
         tempitem = item
         if item.func == RationalTMP:
             if item.args[0]*item.args[1] < 0:
-                tempitem = var("_Rational_m" + str(abs(item.args[0])) + "_" + str(abs(item.args[1])))
+                tempitem = var("_Rational_m" + str(abs(item.args[0])) + "_" + str(abs(item.args[1]))+SIMD_const_suffix)
             elif item.args[0] > 0 and item.args[1] > 0:
-                tempitem = var("_Rational_" + str(item.args[0]) + "_" + str(item.args[1]))
+                tempitem = var("_Rational_" + str(item.args[0]) + "_" + str(item.args[1])+SIMD_const_suffix)
             else:
                 # E.g., doesn't make sense to have -1/-3. SymPy should have simplified this.
                 print("Found a weird Rational(a,b) expression, where a<0 and b<0. Report to SymPy devels")
@@ -297,9 +297,9 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,debu
                 sys.exit(1)
         elif item.func == IntegerTMP:
             if item.args[0] < 0:
-                tempitem = var("_Integer_m" + str(-item.args[0]))
+                tempitem = var("_Integer_m" + str(-item.args[0])+SIMD_const_suffix)
             else:
-                tempitem = var("_Integer_" + str(item.args[0]))
+                tempitem = var("_Integer_" + str(item.args[0])+SIMD_const_suffix)
         if item != tempitem: expr = expr.subs(item, tempitem)
 
     def lookup_name_output_idx(name, list_of_names):

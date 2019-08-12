@@ -495,7 +495,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
         default_CSE_varprefix = outCparams.CSE_varprefix
         # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
-        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FD,includebraces=False",
+        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FD,includebraces=False,SIMD_const_suffix=_FDcoeff",
                                         prestring=read_from_memory_Ccode))
 
     # Step 5b.iv: Implement control-vector upwinding algorithm.

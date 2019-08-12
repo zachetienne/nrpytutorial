@@ -5,7 +5,7 @@ from SIMD import expr_convert_to_SIMD_intrins
 
 from collections import namedtuple
 lhrh = namedtuple('lhrh', 'lhs rhs')
-outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix SIMD_enable SIMD_debug enable_TYPE')
+outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix SIMD_enable SIMD_const_suffix SIMD_debug enable_TYPE')
 
 # Parameter initialization is called once, within nrpy.py.
 par.initialize_param(par.glb_param("char", __name__, "PRECISION", "double")) # __name__ = "outputC", this module's name.
@@ -59,6 +59,7 @@ def parse_outCparams_string(params):
     CSE_enable = "True"
     CSE_varprefix = "tmp"
     SIMD_enable = "False"
+    SIMD_const_suffix = ""
     SIMD_debug = "False"
     enable_TYPE = "True"
 
@@ -105,6 +106,8 @@ def parse_outCparams_string(params):
                 CSE_varprefix = value[i]
             elif parnm[i] == "SIMD_enable":
                 SIMD_enable = value[i]
+            elif parnm[i] == "SIMD_const_suffix":
+                SIMD_const_suffix = value[i]
             elif parnm[i] == "SIMD_debug":
                 SIMD_debug = value[i]
             elif parnm[i] == "enable_TYPE":
@@ -113,7 +116,7 @@ def parse_outCparams_string(params):
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 sys.exit(1)
 
-    return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_debug,enable_TYPE)
+    return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_const_suffix,SIMD_debug,enable_TYPE)
 
 import sympy as sp
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
@@ -236,13 +239,13 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
             if outCparams.SIMD_enable == "True":
                 outstring += outCparams.preindent + indent + FULLTYPESTRING + str(commonsubexpression[0]) + " = " + \
-                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_debug)) + ";\n"
+                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_const_suffix,outCparams.SIMD_debug)) + ";\n"
             else:
                 outstring += outCparams.preindent+indent+FULLTYPESTRING+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0]))+"\n"
         for i,result in enumerate(CSE_results[1]):
             if outCparams.SIMD_enable == "True":
                 outstring += outtypestring + output_varname_str[i] + " = " + \
-                             str(expr_convert_to_SIMD_intrins(result,SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_debug)) + ";\n"
+                             str(expr_convert_to_SIMD_intrins(result,SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_const_suffix,outCparams.SIMD_debug)) + ";\n"
             else:
                 outstring += outtypestring+ccode_postproc(sp.ccode(result,output_varname_str[i]))+"\n"
 
