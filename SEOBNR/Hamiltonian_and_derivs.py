@@ -72,7 +72,7 @@ def replace_numpy_funcs(expression):
 
 def output_H_and_derivs():
 
-    f = open("Hamstring.txt", 'r')
+    f = open("SEOBNR/Hamstring.txt", 'r')
     Hamstring = str(f.read())
     f.close()
 
@@ -294,6 +294,3 @@ with open("/tmp/numpy_expressions.py", "a") as file:
         file.write(str(output_list[i])+" = "+str(result)+"\\n")
 """)
 
-    return 0
-
-output_H_and_derivs()
