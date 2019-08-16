@@ -1,15 +1,17 @@
-from mpmath import mpf,mp
+from mpmath import mpf, mp, mpc
 from UnitTesting.standard_constants import precision
 
-# Dictionary of trusted values to be used throughout files.
-# Standard precision and seed values are precision: 30, seed: 1234.
-# Note that changing these may drastically change the calculated values.
-
 mp.dps = precision
-trusted_values_dict = dict()
+trusted_values_dict = {}
 
-# Generated on: 2019-06-24 12:08:40.504117
-trusted_values_dict['MaxwellCartesian_EvolGlobals'] = {'ArhsD[0]': mpf('-0.950915101018727879507020176139165'), 'ArhsD[1]': mpf('-1.10339392620588513150233683326111'), 'ArhsD[2]': mpf('-0.769335868654741065500887471807761'), 'ErhsD[0]': mpf('1.71087347555010495881703991789342'), 'ErhsD[1]': mpf('-2.75117124738722802644005371722078'), 'ErhsD[2]': mpf('1.1111903263907933510550915059574'), 'psi_rhs': mpf('-0.232755662973305208943682954171212'), 'Gamma_rhs': mpf('-0.0942848938593562703491925868017232'), 'Cviola': mpf('2.8019895707527610013891389176519')}
+# Generated on: 2019-08-09
+trusted_values_dict['MaxwellCartesian_Evol_System_I__MaxwellCartesian_Evol__globals'] = {'ArhsD[0]': mpf('-1.00477972570544082930865670277853'), 'ArhsD[1]': mpf('-0.90933746004565019216414611946675'), 'ArhsD[2]': mpf('-1.35077580602625568761965269004577'), 'ErhsD[0]': mpf('-1.16609030551770015540915913490069'), 'ErhsD[1]': mpf('-1.74087427825341859356723017723558'), 'ErhsD[2]': mpf('-1.30944694400130436898902550312874'), 'psi_rhs': mpf('-1.83203053745211606147965285066827'), 'Cviola': mpf('2.28291424807092704512284203026058')}
 
-# Generated on: 2019-06-24 12:08:40.589134
-trusted_values_dict['MaxwellCartesian_IDGlobals'] = {'AidD[0]': mpf('0.0'), 'AidD[1]': mpf('0.0'), 'AidD[2]': mpf('0.0'), 'EidD[0]': mpf('-1.20505683837101607802241844855587'), 'EidD[1]': mpf('0.444218089464664718238492841056562'), 'EidD[2]': mpf('-1.33160376093988613357396497777671'), 'psi_ID': mpf('0.0'), 'Gamma_ID': mpf('0.0')}
+# Generated on: 2019-08-09
+trusted_values_dict['MaxwellCartesian_Evol_System_II__MaxwellCartesian_Evol__globals'] = {'ArhsD[0]': mpf('-1.00477972570544082930865670277853'), 'ArhsD[1]': mpf('-0.90933746004565019216414611946675'), 'ArhsD[2]': mpf('-1.35077580602625568761965269004577'), 'ErhsD[0]': mpf('3.04137678356786915206708937716713'), 'ErhsD[1]': mpf('5.13341388322186358472929816094321'), 'ErhsD[2]': mpf('-1.74321812261075551339942113153586'), 'psi_rhs': mpf('-0.467406274906266405722021772817243'), 'Gamma_rhs': mpf('-1.83022327141949924992491839801391'), 'Cviola': mpf('2.28291424807092704512284203026058')}
+
+# Generated on: 2019-08-09
+trusted_values_dict['MaxwellCartesian_ID_System_I__MaxwellCartesian_ID__globals'] = {'AidD[0]': mpf('0.0'), 'AidD[1]': mpf('0.0'), 'AidD[2]': mpf('0.0'), 'EidD[0]': mpf('-0.00097872468362340314605833563251625'), 'EidD[1]': mpf('0.00145603432525138889836187271486631'), 'EidD[2]': mpf('0.00715458022830078274232579882161936'), 'psi_ID': mpf('0.0')}
+
+# Generated on: 2019-08-09
+trusted_values_dict['MaxwellCartesian_ID_System_II__MaxwellCartesian_ID__globals'] = {'AidD[0]': mpf('0.0'), 'AidD[1]': mpf('0.0'), 'AidD[2]': mpf('0.0'), 'EidD[0]': mpf('-0.00097872468362340314605833563251625'), 'EidD[1]': mpf('0.00145603432525138889836187271486631'), 'EidD[2]': mpf('0.00715458022830078274232579882161936'), 'psi_ID': mpf('0.0')}

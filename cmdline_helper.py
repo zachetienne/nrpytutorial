@@ -21,8 +21,10 @@
 # Authors: Brandon Clark
 #          Zach Etienne
 #          zachetie **at** gmail **dot* com
+#          Kevin Lituchy
 
-import io, os, shlex, subprocess, sys, time, multiprocessing, platform, getpass
+import io, os, shlex, subprocess, sys, time, multiprocessing
+
 
 # check_executable_exists(): Check to see whether an executable exists. 
 #                            Error out or return False if not exists;
@@ -31,13 +33,14 @@ def check_executable_exists(exec_name,error_if_not_found=True):
     cmd = "where" if os.name == "nt" else "which"
     try: 
         subprocess.check_output([cmd, exec_name])
-    except:
-        if error_if_not_found==True: # Thanks to Kevin Lituchy for fixing a bug in this line of code.
-            print("Sorry, cannot execute the command: "+exec_name)
+    except subprocess.CalledProcessError:
+        if error_if_not_found:
+            print("Sorry, cannot execute the command: " + exec_name)
             sys.exit(1)
         else:
             return False
     return True
+
 
 # C_compile(): Write a function to compile the Main C code into an executable file
 def C_compile(main_C_output_path, main_C_output_file):
@@ -71,11 +74,12 @@ def C_compile(main_C_output_path, main_C_output_file):
         sys.exit(1)
     print("Finished compilation.")
 
+
 # Execute(): Execute generated executable file, using taskset 
 #            if available. Calls Execute_input_string() to
 #            redirect output from stdout & stderr to desired
 #            destinations.
-def Execute(executable, executable_output_arguments = "", file_to_redirect_stdout = os.devnull):
+def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=os.devnull):
     # Step 1: Delete old version of executable file
     if file_to_redirect_stdout != os.devnull:
         delete_existing_files(file_to_redirect_stdout)
@@ -89,8 +93,8 @@ def Execute(executable, executable_output_arguments = "", file_to_redirect_stdou
         # https://stackoverflow.com/questions/49018413/filenotfounderror-subprocess-popendir-windows-7
         execute_string += "cmd /c "+executable.replace("_Playground", "")
     
-    taskset_exists = check_executable_exists("taskset",error_if_not_found=False)
-    if taskset_exists == True:
+    taskset_exists = check_executable_exists("taskset", error_if_not_found=False)
+    if taskset_exists:
         execute_string += "taskset -c 0"
         if getpass.getuser() != "jovyan": # on mybinder, username is jovyan, and taskset -c 0 is the fastest option.
             # If not on mybinder and taskset exists:
@@ -106,28 +110,39 @@ def Execute(executable, executable_output_arguments = "", file_to_redirect_stdou
                                                                   # This will happen on ARM (e.g., cellphone) CPUs 
             for i in range(N_cores_to_use-1):
                 execute_string += ","+str(i+1)
-        execute_string += " "
+            execute_string += " "
     execute_string += os.path.join(".", executable)+" "+executable_output_arguments
 
     # Step 3: Execute the desired executable
     Execute_input_string(execute_string, file_to_redirect_stdout)
 
+
 # Execute_input_string(): Executes an input string and redirects 
 #            output from stdout & stderr to desired destinations.
-def Execute_input_string(input_string, file_to_redirect_stdout):
-    print("Executing `"+input_string+"`...")
+def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, output=True):
+
+    if output:
+        print('input_string: ' + repr(input_string))
+        print("Executing `"+input_string+"`...")
     start = time.time()
     # https://docs.python.org/3/library/subprocess.html
-    args = shlex.split(input_string)
+    if os.name != 'nt':
+        args = shlex.split(input_string)
+    else:
+        args = input_string
+
+    if output:
+        print('args: ' + repr(args))
     # https://stackoverflow.com/questions/18421757/live-output-from-subprocess-command
     filename = "tmp.txt"
     with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader, io.open(file_to_redirect_stdout, 'w') as rdirect:
         process = subprocess.Popen(args, stdout=rdirect, stderr=writer)
         while process.poll() is None:
-            sys.stdout.write(reader.read())
+            # https://stackoverflow.com/questions/21689365/python-3-typeerror-must-be-str-not-bytes-with-sys-stdout-write/21689447
+            sys.stdout.write(reader.read().decode('utf-8'))
             time.sleep(0.2)
         # Read the remaining
-        sys.stdout.write(reader.read())
+        sys.stdout.write(reader.read().decode('utf-8'))
     delete_existing_files(filename)
 # Old Python 2 version (broken for stdout redirect): if (sys.version_info < (3, 0)):
 #     else:
@@ -139,7 +154,9 @@ def Execute_input_string(input_string, file_to_redirect_stdout):
 #             for c in iter(lambda: process.stdout.read(1), ''):  # replace '' with b'' for Python 3<-- Doesn't work!
 #                 sys.stdout.write(f.read())
     end = time.time()
-    print("Finished executing in "+str(end-start)+" seconds.")
+    if output:
+        print("Finished executing in "+str(end-start)+" seconds.")
+
 
 # delete_existing_files(file_or_wildcard): 
 #          Runs del file_or_wildcard in Windows, or
@@ -147,7 +164,7 @@ def Execute_input_string(input_string, file_to_redirect_stdout):
 def delete_existing_files(file_or_wildcard):
     delete_string = ""
     if os.name == "nt":
-        delete_string += "del "+file_or_wildcard
+        delete_string += "del " + file_or_wildcard
     else:
-        delete_string += "rm -f "+file_or_wildcard
+        delete_string += "rm -f " + file_or_wildcard
     os.system(delete_string)

@@ -1,107 +1,65 @@
+# Step 1.a: Initialize core Python/UnitTesting modules
+from UnitTesting.calc_error import calc_error
+from UnitTesting.evaluate_globals import evaluate_globals
+from UnitTesting.first_time_print import first_time_print
+from UnitTesting.cse_simplify_and_evaluate_sympy_expressions import cse_simplify_and_evaluate_sympy_expressions
+from UnitTesting.standard_constants import precision
+from mpmath import mp
+from importlib import import_module
 import logging
 
-from UnitTesting.calc_error import calc_error
-from UnitTesting.first_time_print import first_time_print
-from UnitTesting.evaluate_globals import evaluate_globals
-from UnitTesting.expand_variable_dict import expand_variable_dict
-from UnitTesting.var_dict_to_value_dict import var_dict_to_value_dict
-from UnitTesting.is_first_time import is_first_time
-from UnitTesting.create_trusted_globals_dict import create_trusted_globals_dict
-from UnitTesting.standard_constants import precision
-from time import time
-from mpmath import mp
 
+def run_test(self):
 
-# run_test takes in :
-# [self]- The unittest self object,
-# [mod_dict]- The user-supplied dictionary of modules
-# [trusted_values_dict]- The dictionary of trusted values
-# [locs]- The current local variables in the workspace. Should ALWAYS be locals()
-# It then runs a unittest, comparing calculated values with trusted values.
-# Throws an [AssertionError] if [mod_dict] is empty
-def run_test(self, mod_dict, trusted_values_dict, locs):
+    logging.info(' Currently working on function ' + self.function + ' in module ' + self.module_name + '...\n')
 
-    # Can't use empty dictionaries
-    assert mod_dict != dict()
-
+    # Step 1.b: Set precision to the value defined in standard_constants
     mp.dps = precision
 
-    # Determining if this is the first time the code is run based of the existence of trusted values
-    first_times = is_first_time(mod_dict, trusted_values_dict)
+    # Step 1.c: Import trusted_values_dict from trusted_values_dict.py in self.path
+    logging.info(' Importing trusted_values_dict...')
+    self.trusted_values_dict = import_module('trusted_values_dict').trusted_values_dict
+    logging.info(' ...Success: Imported trusted_values_dict.\n')
 
-    # Creating trusted dictionary based off names of modules in ModDict
-    trusted_dict = create_trusted_globals_dict(mod_dict, trusted_values_dict, first_times)
+    # Step 1.d: Set boolean self.first_time based on existence of desired trusted_values_dict entry
+    self.first_time = self.trusted_values_dict_name not in self.trusted_values_dict
+    logging.debug(' First time: ' + str(self.first_time))
 
-    # Timing how long evaluate_globals takes
-    t = time()
+    # Step 1.e: Set trusted_values_dict_entry to its corresponding trusted_values_dict entry
+    self.trusted_values_dict_entry = {} if self.first_time else self.trusted_values_dict[self.trusted_values_dict_name]
 
-    # Creating dictionary of expressions for all modules in ModDict
-    result_dict = evaluate_globals(mod_dict, locs)
+    # Step 2: Calculation
 
-    # Printing the time it took to run evaluate_globals
-    logging.debug(str(time()-t) + ' seconds to run evaluate_globals')
+    # Step 2.a: Call evaluate_globals which calls self.function and gets expressions for all globals in self.global_list
+    logging.info(' Calling evaluate_globals...')
+    self.variable_dict = evaluate_globals(self)
+    logging.info(' ...Success: evaluate_globals ran without errors.\n')
 
-    del mod_dict
+    # Step 2.b: Call cse_simplify_and_evaluate_sympy_expressions to assign each variable in each expression a random
+    #           value and calculate the numerical result
+    logging.info(' Calling cse_simplify_and_evaluate_sympy_expressions...')
+    self.calculated_dict = cse_simplify_and_evaluate_sympy_expressions(self)
+    logging.info(' ...Success: cse_simplify_and_evaluate_sympy_expressions ran without errors.\n')
 
-    # # If it is the first time for at least one module, sort the module dictionary based on first_times.
-    # # This makes it so the new modules are done last. This makes it easy to copy the necessary modules' code.
-    # if True in first_times:
-    #     # https://stackoverflow.com/questions/13668393/python-sorting-two-lists
-    #     first_times, result_mods = (list(x) for x in zip(*sorted(zip(first_times, result_dict))))
-    #
-    #     temp_dict = dict()
-    #
-    #     # Creates dictionary based on order of first_times
-    #     for mod in result_mods:
-    #         temp_dict[mod] = result_dict[mod]
-    #
-    #     # Updates resultDict to be in this new order
-    #     result_dict = temp_dict
-    #     del temp_dict, result_mods
+    # Step 3: Comparison
 
-    # Looping through each module in resultDict
-    for mod in result_dict:
+    if self.first_time:
+        # Step 3.a: Print self.calculated_dict in a nice format and append it to trusted_values_dict
+        logging.info(' Calling first_time_print since it is being run for the first time...')
+        first_time_print(self)
+        logging.info(' ...Success: first_time_print ran without errors. Automatically failing due to first_time.\n')
+        self.assertTrue(False)
 
-        var_dict = result_dict[mod]
-        first_time = first_times[mod]
+    else:
+        # Step 3.b: Call calc_error to calculate the error between the trusted values and the calculated values
+        logging.info(' Calling calc_error...')
+        values_identical = calc_error(self)
 
-        if not first_time:
-            logging.info('Currently working on module ' + mod + '...')
-
-        # Generating variable list and name list for module
-        new_dict = expand_variable_dict(var_dict)
-
-        # Timing how long list_to_value_list takes
-        t = time()
-
-        # Calculating numerical list for module
-        value_dict = var_dict_to_value_dict(new_dict)
-
-        # Printing the time it took to run list_to_value_list
-        logging.debug(str(time()-t) + ' seconds to run list_to_value_list')
-
-        # If being run for the first time, print the code that must be copied into trusted_values_dict
-        if first_time:
-            first_time_print(mod, value_dict)
-
-        # Otherwise, compare calculated values to trusted values
+        # If there is an error large enough, fail
+        if not values_identical:
+            self.assertTrue(values_identical,
+                            'Variable(s) above have different calculated and trusted values. Follow '
+                            'instructions above.')
+        # Otherwise, pass
         else:
-
-            # Calculates the error between mod_dict and trusted_dict[mod] for the current module
-            values_identical = calc_error(mod, value_dict, trusted_dict[mod])
-
-            # If at least one value differs, print exit message and fail the unittest
-            if not values_identical:
-                self.assertTrue(values_identical,
-                                'Variable above has different calculated and trusted values. Follow '
-                                'above instructions.')
-
-            # If every value is the same, completed module.
-            else:
-                logging.info('Completed module ' + mod + ' with no errors.\n')
-            self.assertTrue(values_identical)
-
-    # If it's the first time for at least one module
-    if True in first_times:
-        self.assertTrue(False, 'Automatically failing due to first time for at least one module. Please see above'
-                               'for the code to copy into your trusted_values_dict.')
+            logging.info(' ...Success: calc_error ran without errors.\n')

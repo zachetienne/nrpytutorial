@@ -31,7 +31,7 @@ matrix:
         - export PATH="/c/Python37:/c/Python37/Scripts:$PATH"
         - python -m pip install --upgrade pip wheel
       install:
-        - pip install mpmath sympy testfixtures
+        - pip install mpmath sympy
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
       env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
       script: ./UnitTesting/run_NRPy_UnitTests.sh python
@@ -40,7 +40,7 @@ matrix:
       os: osx
       language: sh
       python: 3.7
-      before_script: pip3 install mpmath sympy testfixtures
+      before_script: pip3 install mpmath sympy
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     # https://docs.travis-ci.com/user/languages/python/
@@ -48,9 +48,9 @@ matrix:
       os: osx
       osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
       language: shell       # 'language: python' is an error on Travis CI macOS
-      before_script: pip3 install mpmath sympy testfixtures
+      before_script: pip3 install mpmath sympy
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-      
+
     - name: "Ubuntu Linux Xenial CPython 2.7"
       os: linux
       dist: xenial

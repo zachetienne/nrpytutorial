@@ -19,7 +19,7 @@ import grid as gri
 import finite_difference as fin
 import BSSN.BSSN_RHSs as bssnrhs  # The EvolvedConformalFactor_cf parameter is used below
 
-def Tmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
+def T4UUmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
                                                               Tmunu_input_function_name,
                                                               pointer_to_ID_inputs=False):
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.

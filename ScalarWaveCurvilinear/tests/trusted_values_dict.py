@@ -1,12 +1,8 @@
-from mpmath import mpf,mp
+from mpmath import mpf, mp, mpc
 from UnitTesting.standard_constants import precision
 
-# Dictionary of trusted values to be used throughout files.
-# Standard precision and seed values are precision: 30, seed: 1234.
-# Note that changing these may drastically change the calculated values.
-
 mp.dps = precision
-trusted_values_dict = dict()
+trusted_values_dict = {}
 
-# Generated on: 2019-06-19 15:58:07.085418
-trusted_values_dict['ScalarWaveCurvilinear_RHSsGlobals'] = {'uu_rhs': mpf('0.763038382428399942157724162730687'), 'vv_rhs': mpf('29.8343379048485150514807183285427')}
+# Generated on: 2019-08-09
+trusted_values_dict['ScalarWaveCurvilinear_RHSs__ScalarWaveCurvilinear_RHSs__globals'] = {'uu_rhs': mpf('0.65261108714780824424650518267299'), 'vv_rhs': mpf('7.91102076566947763349564936041703')}

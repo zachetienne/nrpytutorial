@@ -2,82 +2,92 @@ import logging
 from mpmath import log10,fabs, mp
 from datetime import date
 from UnitTesting.standard_constants import precision
+from UnitTesting.create_dict_string import create_dict_string
 
-# Takes in a module [mod], a calculated dictionary [calculated_dict], a trusted dictionary [trusted_dict], a precision
-# value, [precision], and a symbolic dictionary [symbolic_dict] and computes the error for each result-trusted pair
-# for each respective index according to [precision]. Logs debug statements for each pair of values if the logging
-# level is <= DEBUG and logs a failure message if logging level is <= ERROR.
-# Returns a boolean [good] that represents if any two value pairs didn't differ
-# by more than (precision/2) decimal places.
+# calc_error loops through each item in self.calculated_dict and self.trusted_values_dict_entry,
+# and makes sure that the difference between each respective value's number of decimal in the dictionaries places is
+# less than 2/3 of the precision. It returns a boolean representing whether or not any variables differed.
 
 # Called by run_test
 
+# Uses self.calculated_dict, self.trusted_values_dict_entry, self.module_name
 
-def calc_error(mod, calculated_dict, trusted_dict, output=True):
 
-    # Precision for the module based off the set precision in trusted_values_dict
+def calc_error(self):
+
+    # Setting precision
     mp.dps = precision
 
-    # Creating sets to easily compare the keys of resultDict and trustedDict
-    calculated_set = set(calculated_dict)
-    trusted_set = set(trusted_dict)
+    # Creating sets to easily compare the keys of calculated_dict and trusted_dict
+    calculated_set = set(self.calculated_dict)
+    trusted_set = set(self.trusted_values_dict_entry)
 
-    # If resultDict and trustedDict have different variables, print the differing variables
+    logging.debug(' Checking that calculated and trusted dicts contain the same variables...')
+    # If the sets differ
     if calculated_set != trusted_set:
-        if output:
-            logging.error('\n\t' + mod + ': Calculated dictionary and trusted dictionary have different variables.')
-            calculated_minus_trusted = calculated_set - trusted_set
-            trusted_minus_calculated = trusted_set - calculated_set
-            if calculated_minus_trusted != set([]):
-                logging.error('\n\tCalculated Dictionary variables not in Trusted Dictionary: \n\t' +
-                              str(sorted(calculated_minus_trusted)))
-            if trusted_minus_calculated != set([]):
-                logging.error('\n\tTrusted Dictionary variables not in Calculated Dictionary: \n\t' +
-                              str(sorted(trusted_minus_calculated)))
+        # Print differing values if [output] is True
+        logging.error(' {}: Calculated dictionary and trusted dictionary have different variables.'.format(self.module_name))
+        calculated_minus_trusted = calculated_set - trusted_set
+        trusted_minus_calculated = trusted_set - calculated_set
+        if calculated_minus_trusted != set([]):
+            logging.error(' Calculated Dictionary variables not in Trusted Dictionary: ' +
+                          str(sorted(calculated_minus_trusted)))
+        if trusted_minus_calculated != set([]):
+            logging.error(' Trusted Dictionary variables not in Calculated Dictionary: ' +
+                          str(sorted(trusted_minus_calculated)))
+        # Automatically fail and don't proceed
         return False
 
-    del calculated_set, trusted_set
+    logging.debug(' ...Success: same variables in both dicts.\n')
 
+    # Initialize list of variables whose values differ
+    bad_var_list = []
+
+    logging.debug(' Comparing all calculated and trusted values...')
     # For each variable, print calculated and trusted values
-    for var in sorted(calculated_dict):
-        calculated_num = calculated_dict[var]
-        trusted_num = trusted_dict[var]
+    for var in sorted(self.calculated_dict):
 
-        if output:
-            logging.debug('\n' + mod + ': ' + var + ': Calculated: ' + str(calculated_num) + '\n' + mod + ': ' + var
-                          + ': Trusted:    ' + str(trusted_num) + '\n')
+        # Values to compare
+        calculated_val = self.calculated_dict[var]
+        trusted_val = self.trusted_values_dict_entry[var]
 
-        if trusted_num == 0:
-            log10_relative_error = log10(fabs(calculated_num))
-        elif calculated_num == 0:
-            log10_relative_error = log10(fabs(trusted_num))
+        logging.debug('\n' + self.module_name + ': ' + var + ': Calculated: ' + str(calculated_val) + '\n' + self.module_name + ': ' + var
+                      + ': Trusted:    ' + str(trusted_val) + '\n')
+
+        # Calculate the error between both values
+        if trusted_val == 0:
+            log10_relative_error = log10(fabs(calculated_val))
+        elif calculated_val == 0:
+            log10_relative_error = log10(fabs(trusted_val))
         else:
-            log10_relative_error = log10(fabs((trusted_num - calculated_num) / trusted_num))
+            log10_relative_error = log10(fabs((trusted_val - calculated_val) / trusted_val))
 
-        good = (log10_relative_error < (precision / -2))
+        # Boolean determining if their difference is within the tolerance we accept
+        good = (log10_relative_error < (precision / -2.0))
+
+        # Store all variables who are not 'good'
         if not good:
-            if output:
-                logging.info('\n\nVariable ' + "'" + var + "'" + ' in module ' + str(mod) + ' failed. Please check' +
-                             ' values.\n\n' + 'If you are confident that the newly calculated values are correct, ' +
-                             'comment out the old trusted values for ' + "'" + mod + "Globals'" +
-                             ' in trusted_values_dict and copy the following code between the ##### into ' +
-                             'trusted_values_dict. Make sure to fill out the TODO comment describing why the values' +
-                             ' had to be changed. Then re-run test script.\n' + '#####\n\n# Generated on: ' +
-                             str(date.today()) + '\n# Reason for changing values: TODO' + "\ntrusted_values_dict['" +
-                             mod + "Globals'] = " + create_dict_string(calculated_dict) + '\n\n#####')
-            return False
+            bad_var_list.append(var)
 
-    return True
+    # If we want to output and there exists at least one variable with error, print
+    if bad_var_list != []:
+        logging.error('''
+\nVariable(s) {} in module {} failed. Please check values.
+If you are confident that the newly calculated values are correct, comment out the old trusted values for 
+{} in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
+#####
 
-# Subfunction to properly format dict to print
-def create_dict_string(calculated_dict):
+# Generated on: {}
+# Reason for changing values: TODO
+trusted_values_dict['{}'] = {}
 
-    return_string = '{'
+#####
+'''.format(bad_var_list, self.module_name, self.trusted_values_dict_name, date.today(),
+                   self.trusted_values_dict_name, create_dict_string(self.calculated_dict)))
+    else:
+        logging.debug(' ...Success: all variables identical.\n')
 
-    for var, num in sorted(calculated_dict.items()):
-        return_string += "'" + var + "': mpf('" + str(num) + "'), "
-
-    return_string = return_string[0:-2] + '}'
-
-    return return_string
+    # Return True if all variables are good, False otherwise
+    return bad_var_list == []
