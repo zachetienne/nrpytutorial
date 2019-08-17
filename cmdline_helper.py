@@ -23,7 +23,7 @@
 #          zachetie **at** gmail **dot* com
 #          Kevin Lituchy
 
-import io, os, shlex, subprocess, sys, time, multiprocessing
+import io, os, shlex, subprocess, sys, time, multiprocessing, getpass, platform
 
 
 # check_executable_exists(): Check to see whether an executable exists. 
@@ -91,8 +91,9 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
     if os.name == "nt":
         # ... do as the Windows do
         # https://stackoverflow.com/questions/49018413/filenotfounderror-subprocess-popendir-windows-7
-        execute_string += "cmd /c "+executable.replace("_Playground", "")
-    
+        execute_prefix = "cmd /c " # Run with cmd /c executable [options] on Windows
+    else:
+        execute_prefix = "./"      # Run with ./executable [options] on Linux & Mac
     taskset_exists = check_executable_exists("taskset", error_if_not_found=False)
     if taskset_exists:
         execute_string += "taskset -c 0"
@@ -111,7 +112,7 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
             for i in range(N_cores_to_use-1):
                 execute_string += ","+str(i+1)
             execute_string += " "
-    execute_string += os.path.join(".", executable)+" "+executable_output_arguments
+    execute_string += execute_prefix+executable+" "+executable_output_arguments
 
     # Step 3: Execute the desired executable
     Execute_input_string(execute_string, file_to_redirect_stdout)
@@ -122,7 +123,7 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
 def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, output=True):
 
     if output:
-        print('input_string: ' + repr(input_string))
+#         print('input_string: ' + repr(input_string))
         print("Executing `"+input_string+"`...")
     start = time.time()
     # https://docs.python.org/3/library/subprocess.html
@@ -131,8 +132,8 @@ def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, outpu
     else:
         args = input_string
 
-    if output:
-        print('args: ' + repr(args))
+    # if output:
+    #     print('args: ' + repr(args))
     # https://stackoverflow.com/questions/18421757/live-output-from-subprocess-command
     filename = "tmp.txt"
     with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader, io.open(file_to_redirect_stdout, 'w') as rdirect:
