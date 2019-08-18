@@ -25,7 +25,6 @@
 
 import io, os, shlex, subprocess, sys, time, multiprocessing, getpass, platform
 
-
 # check_executable_exists(): Check to see whether an executable exists. 
 #                            Error out or return False if not exists;
 #                            return True if executable exists in PATH.
@@ -40,7 +39,6 @@ def check_executable_exists(exec_name,error_if_not_found=True):
         else:
             return False
     return True
-
 
 # C_compile(): Write a function to compile the Main C code into an executable file
 def C_compile(main_C_output_path, main_C_output_file):
@@ -73,7 +71,6 @@ def C_compile(main_C_output_path, main_C_output_file):
         print("Sorry, compilation failed")
         sys.exit(1)
     print("Finished compilation.")
-
 
 # Execute(): Execute generated executable file, using taskset 
 #            if available. Calls Execute_input_string() to
@@ -117,7 +114,6 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
     # Step 3: Execute the desired executable
     Execute_input_string(execute_string, file_to_redirect_stdout)
 
-
 # Execute_input_string(): Executes an input string and redirects 
 #            output from stdout & stderr to desired destinations.
 def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, output=True):
@@ -157,7 +153,6 @@ def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, outpu
     end = time.time()
     if output:
         print("Finished executing in "+str(end-start)+" seconds.")
-
 
 # delete_existing_files(file_or_wildcard): 
 #          Runs del file_or_wildcard in Windows, or
