@@ -182,3 +182,8 @@ def delete_existing_files(file_or_wildcard):
     else:
         delete_string += "rm -f " + file_or_wildcard
     os.system(delete_string)
+
+# https://stackoverflow.com/questions/1274405/how-to-create-new-folder
+def mkdir(newpath):
+    if not os.path.exists(os.path.join(newpath)):
+        os.makedirs(os.path.join(newpath))
