@@ -126,7 +126,7 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
                                                                   # This will happen on ARM (e.g., cellphone) CPUs 
             for i in range(N_cores_to_use-1):
                 execute_string += ","+str(i+1)
-            execute_string += " "
+        execute_string += " "
     execute_string += execute_prefix+executable+" "+executable_output_arguments
 
     # Step 3: Execute the desired executable
