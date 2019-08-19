@@ -41,7 +41,7 @@ def check_executable_exists(exec_name,error_if_not_found=True):
     return True
 
 # C_compile(): Write a function to compile the Main C code into an executable file
-def C_compile(main_C_output_path, main_C_output_file):
+def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", custom_compile_string=""):
     print("Compiling executable...")
     # Step 1: Check for gcc compiler
     check_executable_exists("gcc")
@@ -53,23 +53,41 @@ def C_compile(main_C_output_path, main_C_output_file):
     delete_existing_files(main_C_output_file)
     
     # Step 3: Compile the executable
-    compile_string = "gcc -Ofast -fopenmp -march=native "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
-    Execute_input_string(compile_string, os.devnull)
-    # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
-    if not os.path.isfile(main_C_output_file):
-        # Step 3.A: Revert to more compatible gcc compile option
-        print("Most optimized compilation failed. Removing -march=native:")
-        compile_string = "gcc -Ofast -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+    if compile_mode=="safe":
+        compile_string = "gcc -O2 -g -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
         Execute_input_string(compile_string, os.devnull)
-    if not os.path.isfile(main_C_output_file):
-        # Step 3.B: Revert to maximally compatible gcc compile option
-        print("Next-to-most optimized compilation failed. Moving to maximally-compatible gcc compile option:")
-        compile_string = "gcc -O2 "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+        # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
+        if not os.path.isfile(main_C_output_file):
+            print("Sorry, compilation failed")
+            sys.exit(1)
+    elif compile_mode=="custom":
+        Execute_input_string(custom_compile_string, os.devnull)
+        # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
+        if not os.path.isfile(main_C_output_file):
+            print("Sorry, compilation failed")
+            sys.exit(1)
+    elif compile_mode=="optimized":
+        compile_string = "gcc -Ofast -fopenmp -march=native "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
         Execute_input_string(compile_string, os.devnull)
-    # Step 3.C: If there are still missing components within the compiler, say compilation failed
-    if not os.path.isfile(main_C_output_file):
-        print("Sorry, compilation failed")
+        # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
+        if not os.path.isfile(main_C_output_file):
+            # Step 3.A: Revert to more compatible gcc compile option
+            print("Most optimized compilation failed. Removing -march=native:")
+            compile_string = "gcc -Ofast -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+            Execute_input_string(compile_string, os.devnull)
+        if not os.path.isfile(main_C_output_file):
+            # Step 3.B: Revert to maximally compatible gcc compile option
+            print("Next-to-most optimized compilation failed. Moving to maximally-compatible gcc compile option:")
+            compile_string = "gcc -O2 "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+            Execute_input_string(compile_string, os.devnull)
+        # Step 3.C: If there are still missing components within the compiler, say compilation failed
+        if not os.path.isfile(main_C_output_file):
+            print("Sorry, compilation failed")
+            sys.exit(1)
+    else:
+        print("Sorry, compile_mode = \""+compile_mode+"\" unsupported.")
         sys.exit(1)
+        
     print("Finished compilation.")
 
 # Execute(): Execute generated executable file, using taskset 
