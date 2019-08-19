@@ -237,16 +237,28 @@ def generate_Cparameters_Ccodes(directory="./"):
     #         output to filename "set_Cparameters.h" if SIMD_enable==False
     #         or "set_Cparameters-SIMD.h" if SIMD_enable==True
     # Step 4.a: Output non-SIMD version, set_Cparameters.h
-    with open(directory+"set_Cparameters.h", "w") as file:
+    def gen_set_Cparameters(pointerEnable=True):
+        returnstring = ""
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type == "char":
                 Ctype = "char *"
             else:
                 Ctype = glb_Cparams_list[i].type
-
+            
+            pointer = "->"
+            if pointerEnable==False:
+                pointer = "."
+                
             if not ((Ctype == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or Ctype == "#define"):
-                Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params->"+glb_Cparams_list[i].parname + ";\n"
-                file.write(Coutput)
+                Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params"+pointer+glb_Cparams_list[i].parname + ";\n"
+                returnstring += Coutput
+        return returnstring
+        
+    with open(directory+"set_Cparameters.h", "w") as file:
+        file.write(gen_set_Cparameters(pointerEnable=True))
+    with open(directory+"set_Cparameters-nopointer.h", "w") as file:
+        file.write(gen_set_Cparameters(pointerEnable=False))
+
     # Step 4.b: Output SIMD version, set_Cparameters-SIMD.h
     with open(directory+"set_Cparameters-SIMD.h", "w") as file:
         for i in range(len(glb_Cparams_list)):
