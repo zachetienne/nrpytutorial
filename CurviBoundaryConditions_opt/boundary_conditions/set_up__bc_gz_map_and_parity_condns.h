@@ -13,7 +13,7 @@ void eval_symbolic_dot_products_to_set_parity_conditions(REAL parity[10],
 void set_up__bc_gz_map_and_parity_condns(const paramstruct *restrict params, 
                                          REAL *xx[3], const REAL xxmin[3], const REAL xxmax[3], 
                                          gz_map *bc_gz_map,parity_condition *bc_parity_conditions) {
-#include "set_Cparameters.h"
+#include "../set_Cparameters.h"
   LOOP_REGION(0,Nxx_plus_2NGHOSTS0,0,Nxx_plus_2NGHOSTS1,0,Nxx_plus_2NGHOSTS2) {
     // Step 1: Convert the (curvilinear) coordinate (x0,x1,x2) to Cartesian coordinates
     REAL xCart[3];

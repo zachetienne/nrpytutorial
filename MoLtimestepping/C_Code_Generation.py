@@ -13,6 +13,7 @@
 import sympy as sp
 import NRPy_param_funcs as par
 from MoLtimestepping.RK_Butcher_Table_Dictionary import Butcher_dict
+import os
 
 # Step 2: Checking if Butcher Table is Diagonal
 def diagonal(key):
@@ -38,10 +39,10 @@ def diagonal(key):
 # #################################################################
 
 # Step 3: Generating the C Code
-def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = ""):
+def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = "",outdir="MoLtimestepping/"):
 
 ####### Step 3a:Allocating Memory
-    with open("MoLtimestepping/RK_Allocate_Memory.h", "w") as file:
+    with open(os.path.join(outdir,"RK_Allocate_Memory.h"), "w") as file:
         file.write("// Code snippet allocating gridfunction memory for \""+str(RK_method)+"\" method:\n")
         # No matter the method we define gridfunctions "y_n_gfs" to store the initial data    
         file.write("REAL *restrict y_n_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);\n")
@@ -96,7 +97,7 @@ REAL *restrict diagnostic_output_gfs = k1_or_y_nplus_a21_k1_or_y_nplus1_running_
     Butcher = Butcher_dict[RK_method][0] # Get the desired Butcher table from the dictionary
     num_steps = len(Butcher)-1 # Specify the number of required steps to update solution
     indent = "  "
-    with open("MoLtimestepping/RK_MoL.h", "w") as file:
+    with open(os.path.join(outdir,"RK_MoL.h"), "w") as file:
         file.write("// Code snippet implementing "+RK_method+" algorithm for Method of Lines timestepping\n")
         # Diagonal RK3 only!!!
         if diagonal(RK_method) == True and "RK3" in RK_method:
@@ -225,7 +226,7 @@ LOOP_ALL_GFS_GPS(i) {
 ####### Step 3c: Freeing Allocated Memory
     L = len(Butcher_dict[RK_method][0])-1 # Useful when freeing k_i gridfunctions
 
-    with open("MoLtimestepping/RK_Free_Memory.h", "w") as file:
+    with open(os.path.join(outdir,"RK_Free_Memory.h"), "w") as file:
 
         file.write("// CODE SNIPPET FOR FREEING ALL ALLOCATED MEMORY FOR "+str(RK_method)+" METHOD:\n")
         if diagonal(RK_method) == True and "RK3" in RK_method:

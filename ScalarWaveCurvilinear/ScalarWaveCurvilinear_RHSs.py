@@ -42,7 +42,7 @@ import NRPy_param_funcs as par
 thismodule = __name__
 wavespeed = par.Cparameters("REAL", thismodule, "wavespeed", 1.0)
 
-def ScalarWaveCurvilinear_RHSs(rfmopt=False):
+def ScalarWaveCurvilinear_RHSs(rfmopt=False,rfmfiles_outdir="ScalarWaveCurvilinear"):
     import indexedexp as ixp
     import reference_metric as rfm
     import grid as gri
@@ -59,7 +59,7 @@ def ScalarWaveCurvilinear_RHSs(rfmopt=False):
     rfmmod = rfm
     if rfmopt == True:
         import reference_metric_optimized_Ccode as rfmopt
-        rfmopt.reference_metric_optimized_Ccode("ScalarWaveCurvilinear")
+        rfmopt.reference_metric_optimized_Ccode(rfmfiles_outdir)
         rfmmod = rfmopt
 
     # Step 3: Compute the contracted Christoffel symbols:

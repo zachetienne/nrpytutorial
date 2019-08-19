@@ -33,7 +33,7 @@ void set_bcstruct(const paramstruct *restrict params,
                   gz_map *restrict bc_gz_map, 
                   parity_condition *bc_parity_conditions,
                   bc_struct *restrict bcstruct) {
-#include "set_Cparameters.h"
+#include "../set_Cparameters.h"
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
 
