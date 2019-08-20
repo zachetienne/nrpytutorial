@@ -9,18 +9,22 @@ glb_param  = namedtuple('glb_param', 'type module parname defaultval')
 glb_Cparams_list = []  # = where we store C runtime parameters and default values of parameters. A list of named tuples
 glb_Cparam = namedtuple('glb_Cparam','type module parname defaultval')
 
+veryverbose = False
+
 def initialize_param(input):
     if get_params_idx(input) == -1:
         glb_params_list.append(input)
         glb_paramsvals_list.append(input.defaultval)
     else:
-        print("initialize_param() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
+        if veryverbose == True:
+            print("initialize_param() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
 
 def initialize_Cparam(input):
     if get_params_idx(input,Cparam=True) == -1:
         glb_Cparams_list.append(input)
     else:
-        print("initialize_Cparam() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
+        if veryverbose == True:
+            print("initialize_Cparam() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
 
 # Given the named tuple `input` and list of named tuples `params`,
 #    defined according to namedtuple('param', 'type module name defaultval'),
