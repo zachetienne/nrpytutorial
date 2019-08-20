@@ -26,9 +26,8 @@ def simplify_deriv(lhss_deriv, rhss_deriv):
     return lhss_deriv_simp, rhss_deriv_simp
 
 
-def deriv_onevar(lhss_deriv, rhss_deriv,
-                 xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0, pzprm=0, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0,
-                 s2zprm=0):
+def deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0, pzprm=0, s1xprm=0, s1yprm=0,
+                 s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0):
     lhss_deriv_new = []
     rhss_deriv_new = []
     for i in range(len(rhss_deriv)):
@@ -72,7 +71,7 @@ def replace_numpy_funcs(expression):
 
 def output_H_and_derivs():
 
-    f = open("SEOBNR/Hamstring.txt", 'r')
+    f = open("Hamstring.txt", 'r')
     Hamstring = str(f.read())
     f.close()
 
@@ -287,10 +286,18 @@ output_list = ["Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py
 expression_list = [Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
          Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z]
 CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
-with open("/tmp/numpy_expressions.py", "a") as file:
+with open("Hamil_partials.py", "w") as file:
+    file.write("def compute_dHdq(pos = np.array([0., 0., 0.]), mom = np.array([0., 0., 0.]), S1 = np.array([0., 0., 0.]), S2 = np.array([0., 0., 0.])):\\n")
     for commonsubexpression in CSE_results[0]:
-        file.write(str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
     for i,result in enumerate(CSE_results[1]):
-        file.write(str(output_list[i])+" = "+str(result)+"\\n")
+        file.write("\\t"+str(output_list[i])+" = "+str(result)+"\\n")
+    file.write("\\treturn np.array([")
+    for i,result in enumerate(CSE_results[1]):
+        if i > 0:
+            file.write(","+str(output_list[i]))
+        else:
+            file.write(str(output_list[i]))
+    file.write("])")
 """)
 
