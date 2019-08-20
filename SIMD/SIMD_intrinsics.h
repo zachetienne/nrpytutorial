@@ -82,4 +82,5 @@
 #define CosSIMD(a) (cos(a))
 #define WriteSIMD(a,b) *(a)=(b)
 #define ReadSIMD(a) *(a)
+#define UPWIND_ALG(UpwindVecU) UpwindVecU > 0.0 ? 1.0 : 0.0
 #endif
