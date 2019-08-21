@@ -505,6 +505,13 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                                     + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
                                     ": Implement upwinding algorithm:\n */\n")
             NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
+            if outCparams.SIMD_enable == "True":
+                Coutput += """
+const double tmp_upwind_Integer_1 = 1.000000000000000000000000000000000;
+const REAL_SIMD_ARRAY upwind_Integer_1 = ConstSIMD(tmp_upwind_Integer_1);
+const double tmp_upwind_Integer_0 = 0.000000000000000000000000000000000;
+const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
+"""
             for dirn in upwind_directions:
                 Coutput += indent_Ccode(out__type_var("UpWind" + str(dirn)) + " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
         upwindU = [sp.sympify(0) for i in range(par.parval_from_str("DIM"))]

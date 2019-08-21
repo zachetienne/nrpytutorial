@@ -204,11 +204,13 @@ def output_H_and_derivs():
         outsplhs.append(lhss_deriv_x[i])
         outsprhs.append(rhss_deriv_x[i])
 
-    with open("/tmp/numpy_expressions.py", "w") as file:
+    with open("numpy_expressions.py", "w") as file:
+        file.write("import numpy as np\n")
+        file.write("def compute_dHdq(x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z):\\n")
         for i in range(len(lr)-1):
-            file.write(lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(", "abs(").replace("Rational(","divide(") + "\n")
+            file.write("\\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(", "abs(").replace("Rational(","divide(") + "\n")
 
-    with open("/tmp/sympy_expression.py", "w") as file:
+    with open("sympy_expression.py", "w") as file:
         file.write("""
 import sympy as sp
 from outputC import *
@@ -225,11 +227,11 @@ tortoise = sp.symbols("tortoise",real=True)
                 "sp.Rational(") + "\n")
         file.write("""
 CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
-with open("/tmp/numpy_expressions.py", "a") as file:
+with open("numpy_expressions.py", "a") as file:
     for commonsubexpression in CSE_results[0]:
-        file.write(str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
     for i,result in enumerate(CSE_results[1]):
-        file.write("Hreal = "+str(result)+"\\n")
+        file.write("\\tHreal = "+str(result)+"\\n")
 """)
 
         for i in range(len(lr)):
@@ -286,8 +288,7 @@ output_list = ["Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py
 expression_list = [Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
          Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z]
 CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
-with open("Hamil_partials.py", "w") as file:
-    file.write("def compute_dHdq(pos = np.array([0., 0., 0.]), mom = np.array([0., 0., 0.]), S1 = np.array([0., 0., 0.]), S2 = np.array([0., 0., 0.])):\\n")
+with open("numpy_expressions.py", "a") as file:
     for commonsubexpression in CSE_results[0]:
         file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
     for i,result in enumerate(CSE_results[1]):
@@ -297,7 +298,6 @@ with open("Hamil_partials.py", "w") as file:
         if i > 0:
             file.write(","+str(output_list[i]))
         else:
-            file.write(str(output_list[i]))
+            file.write("\\treturn np.array([Hreal,"+str(output_list[i]))
     file.write("])")
 """)
-
