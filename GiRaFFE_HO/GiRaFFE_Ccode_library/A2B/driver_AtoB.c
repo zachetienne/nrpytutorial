@@ -34,53 +34,53 @@ void AtoB(const int ORDER, const int Nxx_plus_2NGHOSTS[3], const REAL *in_gfs, R
   if(ORDER==8) {
     //printf("Computing A to B with Order = 8...\n");
     for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-        #include "B_from_A_order8.h"
+        #include "A2B/B_from_A_order8.h"
     }
   } else if(ORDER==6) {
     //printf("Computing A to B with Order = 6...\n");
     for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-        #include "B_from_A_order6.h"
+        #include "A2B/B_from_A_order6.h"
     }
   } else if(ORDER==4) {
     //printf("Computing A to B with Order = 4...\n");
     for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-        #include "B_from_A_order4.h"
+        #include "A2B/B_from_A_order4.h"
     }
   } else if(ORDER==2) {
     //printf("Computing A to B with Order = 2...\n");
     for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-        #include "B_from_A_order2.h"
+        #include "A2B/B_from_A_order2.h"
     } 
   } else if(ORDER==0) {
     if(FACEX0==MAXFACE) {
     //printf("Computing A to B at x = max...\n");
         for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-            #include "B_from_A_order2_dirx0_dnwind.h"
+            #include "A2B/B_from_A_order2_dirx0_dnwind.h"
         }
     } else if(FACEX0==MINFACE) {
     //printf("Computing A to B at x = min...\n");
         for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-            #include "B_from_A_order2_dirx0_upwind.h"
+            #include "A2B/B_from_A_order2_dirx0_upwind.h"
         }
     } else if(FACEX1==MAXFACE) {
     //printf("Computing A to B at y = max...\n");
         for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-            #include "B_from_A_order2_dirx1_dnwind.h"
+            #include "A2B/B_from_A_order2_dirx1_dnwind.h"
         }
     } else if(FACEX1==MINFACE) {
     //printf("Computing A to B at y = min...\n");
         for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-            #include "B_from_A_order2_dirx1_upwind.h"
+            #include "A2B/B_from_A_order2_dirx1_upwind.h"
         }
     } else if(FACEX2==MAXFACE) {
     //printf("Computing A to B at z = max...\n");
         for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-            #include "B_from_A_order2_dirx2_dnwind.h"
+            #include "A2B/B_from_A_order2_dirx2_dnwind.h"
         }
     } else if(FACEX2==MINFACE) {
     //printf("Computing A to B at z = min...\n");
         for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-            #include "B_from_A_order2_dirx2_upwind.h"
+            #include "A2B/B_from_A_order2_dirx2_upwind.h"
         }
     } else {
         printf("ERROR. FACEX parameters not set properly.\n");
