@@ -23,6 +23,15 @@
 #include <immintrin.h>
 #define REAL_SIMD_ARRAY __m256d
 #define SIMD_width 4 // 4 doubles per loop iteration
+// Upwind algorithm notes, in the case of 256-bit SIMD:
+// Sources: https://software.intel.com/sites/landingpage/IntrinsicsGuide/#text=_mm256_cmp_pd&expand=736
+//  ...and: https://stackoverflow.com/questions/37099874/is-avx-intrinsic-mm256-cmp-ps-supposed-to-return-nan-when-true
+//     The result from _mm256_cmp_pd is 0 if a>0 and NaN otherwise.
+//     Thus if OP is >, then: if a > b then the result is NaN, and if a <= b then the result is 0.
+//     We want the result to be 1 if a>b and 0 otherwise, so we simply perform a logical AND operation
+//     on the result, against the number 1, because AND(NaN,1)=1, and AND(0,1)=0,
+//     where NaN=0xffffff... in double precision.
+#define UPWIND_ALG(a) _mm256_and_pd(_mm256_cmp_pd( (a), upwind_Integer_0, _CMP_GT_OQ ), upwind_Integer_1)
 #define ReadSIMD(a) _mm256_loadu_pd(a)
 #define WriteSIMD(a,b) _mm256_storeu_pd(a,(b))
 #define ConstSIMD(a) _mm256_set1_pd(a)
