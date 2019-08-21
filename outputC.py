@@ -18,6 +18,16 @@ def superfast_uniq(seq): # Author: Dave Kirby
     seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
 
+def check_if_string__error_if_not(allegedstring,stringdesc):
+    import sys
+    if sys.version_info[0] == 3:
+        string_types = str
+    else:
+        string_types = basestring
+    if not isinstance(allegedstring, string_types):
+        print("ERROR: "+str(stringdesc)+" =="+str(allegedstring)+" not a string!")
+        sys.exit(1)
+
 def ccode_postproc(string):
     PRECISION = par.parval_from_str("PRECISION")
 

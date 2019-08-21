@@ -529,7 +529,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #    *generic functional form* of the hatted quantities (as
         #    opposed to the exact closed-form expressions of the
         #    hatted quantities) computed above.
-        
+
         # Step 5: Now that all hatted quantities are written in terms of generic SymPy functions,
         #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
         #         and store these variables to globals defined above.

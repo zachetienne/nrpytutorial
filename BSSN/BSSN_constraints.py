@@ -131,7 +131,10 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
         MU[i] *= Bq.exp_m4phi / rfm.ReU[i]
 
 
-def output_C__Hamiltonian_h(add_T4UUmunu_source_terms=False, enable_verbose=True):
+def output_C__Hamiltonian_h(outdir="BSSN/",add_T4UUmunu_source_terms=False, enable_verbose=True):
+    # Step 0: Check if outdir is string; error out if not.
+    check_if_string__error_if_not(outdir,"outdir")
+
     # Calling BSSN_constraints() (defined above) computes H and MU:
     BSSN_constraints(add_T4UUmunu_source_terms)
 
@@ -146,7 +149,7 @@ def output_C__Hamiltonian_h(add_T4UUmunu_source_terms=False, enable_verbose=True
         print("Finished in " + str(end - start) + " seconds.")
 
     import loop as lp
-    with open("BSSN/Hamiltonian.h", "w") as file:
+    with open(outdir+"Hamiltonian.h", "w") as file:
         file.write(lp.loop(["i2", "i1", "i0"], ["NGHOSTS", "NGHOSTS", "NGHOSTS"],
                            ["NGHOSTS+Nxx[2]", "NGHOSTS+Nxx[1]", "NGHOSTS+Nxx[0]"],
                            ["1", "1", "1"], ["const REAL invdx0 = 1.0/dxx[0];\n" +
@@ -156,15 +159,16 @@ def output_C__Hamiltonian_h(add_T4UUmunu_source_terms=False, enable_verbose=True
                                              "    const REAL xx2 = xx[2][i2];",
                                              "        const REAL xx1 = xx[1][i1];"], "",
                            "const REAL xx0 = xx[0][i0];\n" + Hamiltonianstring))
-    print("Output C implementation of Hamiltonian constraint to BSSN/Hamiltonian.h")
+    print("Output C implementation of Hamiltonian constraint to "+outdir+"Hamiltonian.h")
 
 
 # WARNING: THIS PYTHON FUNCTION IS UNTESTED.
-def output_C__MomentumConstraint_h(add_T4UUmunu_source_terms=False, enable_verbose=True):
+def output_C__MomentumConstraint_h(outdir="BSSN/", add_T4UUmunu_source_terms=False, enable_verbose=True):
+    # Step 0: Check if outdir is string; error out if not.
+    check_if_string__error_if_not(outdir,"outdir")
+
     # Calling BSSN_constraints() (defined above) computes H and MU:
     BSSN_constraints(add_T4UUmunu_source_terms)
-    print(
-        "WARNING: output_C__MomentumConstraint_h() is UNTESTED CODE. PLEASE REMOVE THIS WARNING AFTER DEBUGGING.")
 
     if add_T4UUmunu_source_terms == True:
         print("ERROR: MOMENTUM CONSTRAINT DOES NOT YET ADD T4UUmunu source terms.")
@@ -182,7 +186,7 @@ def output_C__MomentumConstraint_h(add_T4UUmunu_source_terms=False, enable_verbo
         print("Finished in " + str(end - start) + " seconds.")
 
     import loop as lp
-    with open("BSSN/MomentumConstraint.h", "w") as file:
+    with open(outdir+"MomentumConstraint.h", "w") as file:
         file.write(lp.loop(["i2", "i1", "i0"], ["NGHOSTS", "NGHOSTS", "NGHOSTS"],
                            ["NGHOSTS+Nxx[2]", "NGHOSTS+Nxx[1]", "NGHOSTS+Nxx[0]"],
                            ["1", "1", "1"], ["const REAL invdx0 = 1.0/dxx[0];\n" +
@@ -192,4 +196,4 @@ def output_C__MomentumConstraint_h(add_T4UUmunu_source_terms=False, enable_verbo
                                              "    const REAL xx2 = xx[2][i2];",
                                              "        const REAL xx1 = xx[1][i1];"], "",
                            "const REAL xx0 = xx[0][i0];\n" + MomentumConstraintString))
-    print("Output C implementation of Momentum constraint to BSSN/MomentumConstraint.h")
+    print("Output C implementation of Momentum constraint to "+outdir+"MomentumConstraint.h")

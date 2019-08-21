@@ -14,7 +14,7 @@ import reference_metric as rfm
 import BSSN.BSSN_quantities as Bq
 import loop as lp
 
-def output_Enforce_Detgammabar_Constraint_Ccode():
+def Enforce_Detgammabar_Constraint_symb_expressions():
     # Set spatial dimension (must be 3 for BSSN)
     DIM = 3
 
@@ -48,7 +48,7 @@ def output_Enforce_Detgammabar_Constraint_Ccode():
                 (sp.Abs(rfm.detgammahat) / detgammabar) ** (sp.Rational(1, 3)) * (KroneckerDeltaDD[i][j] + hDD[i][j]) \
                 - KroneckerDeltaDD[i][j]
 
-    enforce_detg_constraint_vars = [ \
+    enforce_detg_constraint_symb_expressions = [
         lhrh(lhs=gri.gfaccess("in_gfs", "hDD00"), rhs=hprimeDD[0][0]),
         lhrh(lhs=gri.gfaccess("in_gfs", "hDD01"), rhs=hprimeDD[0][1]),
         lhrh(lhs=gri.gfaccess("in_gfs", "hDD02"), rhs=hprimeDD[0][2]),
@@ -56,10 +56,19 @@ def output_Enforce_Detgammabar_Constraint_Ccode():
         lhrh(lhs=gri.gfaccess("in_gfs", "hDD12"), rhs=hprimeDD[1][2]),
         lhrh(lhs=gri.gfaccess("in_gfs", "hDD22"), rhs=hprimeDD[2][2])]
 
-    enforce_gammadet_string = fin.FD_outputC("returnstring", enforce_detg_constraint_vars,
+    return enforce_detg_constraint_symb_expressions
+
+def output_Enforce_Detgammabar_Constraint_Ccode(outdir="BSSN/"):
+
+    # Step 0: Check if outdir is string; error out if not.
+    check_if_string__error_if_not(outdir,"outdir")
+
+    enforce_detg_constraint_symb_expressions = Enforce_Detgammabar_Constraint_symb_expressions()
+
+    enforce_gammadet_string = fin.FD_outputC("returnstring", enforce_detg_constraint_symb_expressions,
                                              params="outCverbose=False,preindent=0,includebraces=False")
 
-    with open("BSSN/enforce_detgammabar_constraint.h", "w") as file:
+    with open(outdir+"enforce_detgammabar_constraint.h", "w") as file:
         indent = "   "
         file.write(
             "void enforce_detgammabar_constraint(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3], REAL *in_gfs) {\n\n")
@@ -71,4 +80,4 @@ def output_Enforce_Detgammabar_Constraint_Ccode():
                            "const REAL xx0 = xx[0][i0];\n" + enforce_gammadet_string))
         file.write("}\n")
 
-    print("Output C implementation of det(gammabar) constraint to file BSSN/enforce_detgammabar_constraint.h")
+    print("Output C implementation of det(gammabar) constraint to file "+outdir+"enforce_detgammabar_constraint.h")
