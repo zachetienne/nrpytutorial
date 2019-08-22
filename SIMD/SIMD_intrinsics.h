@@ -71,7 +71,7 @@
 #define SinSIMD(a) _mm_sin_pd((a))
 #define CosSIMD(a) _mm_cos_pd((a))
 // See description above UPWIND_ALG for __AVX__:
-#define UPWIND_ALG(a) _mm_and_pd(_mm_cmp_pd( (a), upwind_Integer_0, _CMP_GT_OQ ), upwind_Integer_1)
+#define UPWIND_ALG(a) _mm_and_pd(_mm_cmpgt_pd( (a), upwind_Integer_0 ), upwind_Integer_1)
 
 #ifdef __FMA__ // Unlikely that any SSE2 chip has FMA, but this will work fine.
 #define FusedMulAddSIMD(a,b,c) _mm_fmadd_pd((a),(b),(c))
