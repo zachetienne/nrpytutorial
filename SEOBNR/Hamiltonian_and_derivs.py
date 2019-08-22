@@ -206,98 +206,99 @@ def output_H_and_derivs():
 
     with open("numpy_expressions.py", "w") as file:
         file.write("import numpy as np\n")
-        file.write("def compute_dHdq(x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z):\\n")
+        file.write("def compute_dHdq(m1, m2, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z):\n")
         for i in range(len(lr)-1):
-            file.write("\\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(", "abs(").replace("Rational(","divide(") + "\n")
+            file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(", "np.abs(").replace("Rational(",
+                    "np.divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(") + "\n")
 
     with open("sympy_expression.py", "w") as file:
         file.write("""
 import sympy as sp
 from outputC import *
-m1,m2,x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z = sp.symbols("m1 m2 x y z px py pz s1x s1y s1z s2x s2y s2z",real=True)
-c0k2,c1k2,c0k3,c1k3,c0k4 = sp.symbols("c0k2 c1k2 c0k3 c1k3 c0k4",real=True)
-c1k4,c2k4,c0k5,c1k5,c2k5 = sp.symbols("c1k4 c2k4 c0k5 c1k5 c2k5",real=True)
-eta,KK,k5l,b3,bb3,d1,d1v2,dheffSS,dheffSSv2 = sp.symbols("eta KK k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2",real=True)
-tortoise = sp.symbols("tortoise",real=True)
+def sympy_cse():
+        m1,m2,x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z = sp.symbols("m1 m2 x y z px py pz s1x s1y s1z s2x s2y s2z",real=True)
+        c0k2,c1k2,c0k3,c1k3,c0k4 = sp.symbols("c0k2 c1k2 c0k3 c1k3 c0k4",real=True)
+        c1k4,c2k4,c0k5,c1k5,c2k5 = sp.symbols("c1k4 c2k4 c0k5 c1k5 c2k5",real=True)
+        eta,KK,k5l,b3,bb3,d1,d1v2,dheffSS,dheffSSv2 = sp.symbols("eta KK k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2",real=True)
+        tortoise = sp.symbols("tortoise",real=True)
 """)
 
         for i in range(len(lr)):
-            file.write(lr[i].lhs + " = " + str(lr[i].rhs).replace("sqrt(","sp.sqrt(").replace("log(",
+            file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("sqrt(","sp.sqrt(").replace("log(",
                 "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace("Rational(",
                 "sp.Rational(") + "\n")
         file.write("""
-CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
-with open("numpy_expressions.py", "a") as file:
-    for commonsubexpression in CSE_results[0]:
-        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
-    for i,result in enumerate(CSE_results[1]):
-        file.write("\\tHreal = "+str(result)+"\\n")
+        CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
+        with open("numpy_expressions.py", "a") as file:
+                for commonsubexpression in CSE_results[0]:
+                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+                for i,result in enumerate(CSE_results[1]):
+                        file.write("\\tHreal = "+str(result)+"\\n")
 """)
 
         for i in range(len(lr)):
-            file.write(lr[i].lhs + " = " + "sp.symbols(\"" + lr[i].lhs + "\")\n")
+            file.write("\t"+lr[i].lhs + " = " + "sp.symbols(\"" + lr[i].lhs + "\")\n")
 
         for i in range(len(lhss_deriv_x)):
 #            print(rhss_deriv_x[i])
 #            replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x")
-            file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " +
+            file.write("\t"+str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " +
                        replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x") + "\n")
 #        for i in range(len(lhss_deriv_x)):
 #            file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + str(rhss_deriv_x[i]).replace("sqrt(",
 #                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
 #                "prm", "prm_x") + "\n")
         for i in range(len(lhss_deriv_y)):
-            file.write(str(lhss_deriv_y[i]).replace("prm", "prm_y") + " = " +
+            file.write("\t"+str(lhss_deriv_y[i]).replace("prm", "prm_y") + " = " +
                        replace_numpy_funcs(rhss_deriv_y[i]).replace("prm", "prm_y") + "\n")
         for i in range(len(lhss_deriv_z)):
-            file.write(str(lhss_deriv_z[i]).replace("prm", "prm_z") + " = " +
+            file.write("\t"+str(lhss_deriv_z[i]).replace("prm", "prm_z") + " = " +
                        replace_numpy_funcs(rhss_deriv_z[i]).replace("prm", "prm_z") + "\n")
 
         for i in range(len(lhss_deriv_px)):
-            file.write(str(lhss_deriv_px[i]).replace("prm", "prm_px") + " = " +
+            file.write("\t"+str(lhss_deriv_px[i]).replace("prm", "prm_px") + " = " +
                        replace_numpy_funcs(rhss_deriv_px[i]).replace("prm", "prm_px") + "\n")
         for i in range(len(lhss_deriv_py)):
-            file.write(str(lhss_deriv_py[i]).replace("prm", "prm_py") + " = " +
+            file.write("\t"+str(lhss_deriv_py[i]).replace("prm", "prm_py") + " = " +
                        replace_numpy_funcs(rhss_deriv_py[i]).replace("prm", "prm_py") + "\n")
         for i in range(len(lhss_deriv_pz)):
-            file.write(str(lhss_deriv_pz[i]).replace("prm", "prm_pz") + " = " +
+            file.write("\t"+str(lhss_deriv_pz[i]).replace("prm", "prm_pz") + " = " +
                        replace_numpy_funcs(rhss_deriv_pz[i]).replace("prm", "prm_pz") + "\n")
 
         for i in range(len(lhss_deriv_s1x)):
-            file.write(str(lhss_deriv_s1x[i]).replace("prm", "prm_s1x") + " = " +
+            file.write("\t"+str(lhss_deriv_s1x[i]).replace("prm", "prm_s1x") + " = " +
                        replace_numpy_funcs(rhss_deriv_s1x[i]).replace("prm", "prm_s1x") + "\n")
         for i in range(len(lhss_deriv_s1y)):
-            file.write(str(lhss_deriv_s1y[i]).replace("prm", "prm_s1y") + " = " +
+            file.write("\t"+str(lhss_deriv_s1y[i]).replace("prm", "prm_s1y") + " = " +
                        replace_numpy_funcs(rhss_deriv_s1y[i]).replace("prm", "prm_s1y") + "\n")
         for i in range(len(lhss_deriv_s1z)):
-            file.write(str(lhss_deriv_s1z[i]).replace("prm", "prm_s1z") + " = " +
+            file.write("\t"+str(lhss_deriv_s1z[i]).replace("prm", "prm_s1z") + " = " +
                        replace_numpy_funcs(rhss_deriv_s1z[i]).replace("prm", "prm_s1z") + "\n")
 
         for i in range(len(lhss_deriv_s2x)):
-            file.write(str(lhss_deriv_s2x[i]).replace("prm", "prm_s2x") + " = " +
+            file.write("\t"+str(lhss_deriv_s2x[i]).replace("prm", "prm_s2x") + " = " +
                        replace_numpy_funcs(rhss_deriv_s2x[i]).replace("prm", "prm_s2x") + "\n")
         for i in range(len(lhss_deriv_s2y)):
-            file.write(str(lhss_deriv_s2y[i]).replace("prm", "prm_s2y") + " = " +
+            file.write("\t"+str(lhss_deriv_s2y[i]).replace("prm", "prm_s2y") + " = " +
                        replace_numpy_funcs(rhss_deriv_s2y[i]).replace("prm", "prm_s2y") + "\n")
         for i in range(len(lhss_deriv_s2z)):
-            file.write(str(lhss_deriv_s2z[i]).replace("prm", "prm_s2z") + " = " +
+            file.write("\t"+str(lhss_deriv_s2z[i]).replace("prm", "prm_s2z") + " = " +
                        replace_numpy_funcs(rhss_deriv_s2z[i]).replace("prm", "prm_s2z") + "\n")
         file.write("""
-output_list = ["Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py","Hrealprm_pz",
-         "Hrealprm_s1x","Hrealprm_s1y","Hrealprm_s1z","Hrealprm_s2x","Hrealprm_s2y","Hrealprm_s2z"]
-expression_list = [Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
-         Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z]
-CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
-with open("numpy_expressions.py", "a") as file:
-    for commonsubexpression in CSE_results[0]:
-        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
-    for i,result in enumerate(CSE_results[1]):
-        file.write("\\t"+str(output_list[i])+" = "+str(result)+"\\n")
-    file.write("\\treturn np.array([")
-    for i,result in enumerate(CSE_results[1]):
-        if i > 0:
-            file.write(","+str(output_list[i]))
-        else:
-            file.write("\\treturn np.array([Hreal,"+str(output_list[i]))
-    file.write("])")
+        output_list = ["Hrealprm_x","Hrealprm_y","Hrealprm_z","Hrealprm_px","Hrealprm_py","Hrealprm_pz",
+                 "Hrealprm_s1x","Hrealprm_s1y","Hrealprm_s1z","Hrealprm_s2x","Hrealprm_s2y","Hrealprm_s2z"]
+        expression_list = [Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
+                 Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z]
+        CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
+        with open("numpy_expressions.py", "a") as file:
+                for commonsubexpression in CSE_results[0]:
+                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+                for i,result in enumerate(CSE_results[1]):
+                        file.write("\\t"+str(output_list[i])+" = "+str(result)+"\\n")
+                for i,result in enumerate(CSE_results[1]):
+                        if i > 0:
+                                file.write(","+str(output_list[i]))
+                        else:
+                            file.write("\\treturn np.array([Hreal,"+str(output_list[i]))
+                file.write("])")
 """)
