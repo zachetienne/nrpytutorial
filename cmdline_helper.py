@@ -60,6 +60,13 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
         if not os.path.isfile(main_C_output_file):
             print("Sorry, compilation failed")
             sys.exit(1)
+    if compile_mode=="icc":
+        compile_string = "icc -O2 -xHost -qopenmp -unroll "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+        Execute_input_string(compile_string, os.devnull)
+        # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
+        if not os.path.isfile(main_C_output_file):
+            print("Sorry, compilation failed")
+            sys.exit(1)
     elif compile_mode=="custom":
         Execute_input_string(custom_compile_string, os.devnull)
         # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
@@ -67,13 +74,13 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
             print("Sorry, compilation failed")
             sys.exit(1)
     elif compile_mode=="optimized":
-        compile_string = "gcc -Ofast -fopenmp -march=native "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+        compile_string = "gcc -Ofast -fopenmp -march=native -funroll-loops "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
         Execute_input_string(compile_string, os.devnull)
         # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
         if not os.path.isfile(main_C_output_file):
             # Step 3.A: Revert to more compatible gcc compile option
             print("Most optimized compilation failed. Removing -march=native:")
-            compile_string = "gcc -Ofast -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
+            compile_string = "gcc -Ofast -fopenmp -funroll-loops "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
             Execute_input_string(compile_string, os.devnull)
         if not os.path.isfile(main_C_output_file):
             # Step 3.B: Revert to maximally compatible gcc compile option
