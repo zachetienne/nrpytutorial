@@ -60,7 +60,8 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
         if not os.path.isfile(main_C_output_file):
             print("Sorry, compilation failed")
             sys.exit(1)
-    if compile_mode=="icc":
+    elif compile_mode=="icc":
+        check_executable_exists("icc")
         compile_string = "icc -O2 -xHost -qopenmp -unroll "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
         Execute_input_string(compile_string, os.devnull)
         # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.

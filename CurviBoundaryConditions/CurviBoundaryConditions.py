@@ -10,7 +10,7 @@ import sys
 
 def Set_up_CurviBoundaryConditions():
     # Step 2.A.2. Output gridfunction #define aliases to file:
-    evolved_variables_list, auxiliary_variables_list = \
+    evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = \
         gri.output__gridfunction_defines_h__return_gf_lists("CurviBoundaryConditions")
 
     # Step 2.B.1: set the parity conditions on each gridfunction in gf_list,
@@ -61,10 +61,12 @@ def Set_up_CurviBoundaryConditions():
 
     evol_parity_type = set_parity_types(evolved_variables_list)
     aux_parity_type = set_parity_types(auxiliary_variables_list)
+    auxevol_parity_type = set_parity_types(auxevol_variables_list)
 
     with open("CurviBoundaryConditions/gridfunction_defines.h", "a") as file:
         file.write("\n\n/* PARITY TYPES FOR ALL GRIDFUNCTIONS.\n")
         file.write("   SEE \"Tutorial-Start_to_Finish-BSSNCurvilinear-Two_BHs_Collide.ipynb\" FOR DEFINITIONS. */\n")
+
         if len(evolved_variables_list) > 0:
             file.write("const int8_t evol_gf_parity[" + str(len(evolved_variables_list)) + "] = { ")
             for i in range(len(evolved_variables_list) - 1):
@@ -76,6 +78,12 @@ def Set_up_CurviBoundaryConditions():
             for i in range(len(auxiliary_variables_list) - 1):
                 file.write(str(aux_parity_type[i]) + ", ")
             file.write(str(aux_parity_type[len(auxiliary_variables_list) - 1]) + " };\n")
+
+        if len(auxevol_variables_list) > 0:
+            file.write("const int8_t auxevol_gf_parity[" + str(len(auxevol_variables_list)) + "] = { ")
+            for i in range(len(auxevol_variables_list) - 1):
+                file.write(str(auxevol_parity_type[i]) + ", ")
+            file.write(str(auxevol_parity_type[len(auxevol_variables_list) - 1]) + " };\n")
     print("Wrote to file \"CurviBoundaryConditions/gridfunction_defines.h\"")
 
     # Step 2.B.2: Set up unit-vector dot products (=parity) for each of the 10 parity condition types

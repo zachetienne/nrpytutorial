@@ -54,7 +54,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
 
     # Step 2.a: Generate outdir+gridfunction_defines.h file,
     #       containing human-readable gridfunction aliases
-    evolved_variables_list, auxiliary_variables_list = gri.output__gridfunction_defines_h__return_gf_lists(outdir)
+    evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = gri.output__gridfunction_defines_h__return_gf_lists(outdir)
 
     # Step 2.b: set the parity conditions on all gridfunctions in gf_list,
     #       based on how many digits are at the end of their names
@@ -95,6 +95,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
 
     evol_parity_type = set_parity_types(evolved_variables_list)
     aux_parity_type = set_parity_types(auxiliary_variables_list)
+    auxevol_parity_type = set_parity_types(auxevol_variables_list)
 
     # Step 2.c: Output all gridfunctions to outdir+"/gridfunction_defines.h"
     # ... then append to the file the parity type for each gridfunction.
@@ -114,6 +115,12 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
                 file.write(str(aux_parity_type[i]) + ", ")
             file.write(str(aux_parity_type[len(auxiliary_variables_list) - 1]) + " };\n")
 
+        if len(auxevol_variables_list) > 0:
+            file.write("const int8_t auxevol_gf_parity[" + str(len(auxevol_variables_list)) + "] = { ")
+            for i in range(len(auxevol_variables_list) - 1):
+                file.write(str(auxevol_parity_type[i]) + ", ")
+            file.write(str(auxevol_parity_type[len(auxevol_variables_list) - 1]) + " };\n")
+
     if verbose == True:
         for i in range(len(evolved_variables_list)):
             print("Evolved gridfunction \"" + evolved_variables_list[i] + "\" has parity type " + str(
@@ -121,6 +128,9 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
         for i in range(len(auxiliary_variables_list)):
             print("Auxiliary gridfunction \"" + auxiliary_variables_list[i] + "\" has parity type " + str(
                 aux_parity_type[i]) + ".")
+        for i in range(len(auxevol_variables_list)):
+            print("AuxEvol gridfunction \"" + auxevol_variables_list[i] + "\" has parity type " + str(
+                auxevol_parity_type[i]) + ".")
 
     # First output code needed for mapping from any given curvilinear coordinate gridpoint
     #  to the Cartesian coordinate in the grid interior (xxCart), and then find the

@@ -34,6 +34,7 @@ import reference_metric as rfm
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "EvolvedConformalFactor_cf", "W"))
 par.initialize_param(par.glb_param("bool", thismodule, "detgbarOverdetghat_equals_one", "True"))
+par.initialize_param(par.glb_param("bool", thismodule, "LeaveRicciSymbolic", "False"))
 
 def declare_BSSN_gridfunctions_if_not_declared_already():
     # Step 2: Register all needed BSSN gridfunctions.
@@ -366,7 +367,15 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
             for k in range(DIM):
                 for m in range(DIM):
                     DGammaDDD[i][j][k] += gammabarDD[i][m] * DGammaUDD[m][j][k]
-    
+
+    if par.parval_from_str(thismodule+"::LeaveRicciSymbolic") == "True":
+        for i in range(len(gri.glb_gridfcs_list)):
+            if "RbarDD00" in gri.glb_gridfcs_list[i].name:
+                return
+
+        RbarDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","RbarDD","sym01")
+        return
+
     # Step 7.d: Summing the terms and defining \bar{R}_{ij}
     # Step 7.d.i: Add the first term to RbarDD:
     #         Rbar_{ij} += - \frac{1}{2} \bar{\gamma}^{k l} \hat{D}_{k} \hat{D}_{l} \bar{\gamma}_{i j}
@@ -384,8 +393,8 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                RbarDD[i][j] += sp.Rational(1, 2) * (gammabarDD[k][i] * LambarU_dHatD[k][j] + \
-                                                     gammabarDD[k][j] * LambarU_dHatD[k][i])
+                RbarDD[i][j] += sp.Rational(1, 2) * ( gammabarDD[k][i] * LambarU_dHatD[k][j] +
+                                                      gammabarDD[k][j] * LambarU_dHatD[k][i]  )
 
     # Step 7.d.iii: Add the remaining term to RbarDD:
     #      Rbar_{ij} += \Delta^{k} \Delta_{(i j) k} = 1/2 \Delta^{k} (\Delta_{i j k} + \Delta_{j i k})

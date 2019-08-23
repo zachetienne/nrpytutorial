@@ -389,8 +389,12 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     def read_from_memory_Ccode_onept(gfname,idx):
         idxsplit = idx.split(',')
         idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
-        #gfaccess_str = gri.gfaccess("in_gfs",gfname.upper()+"GF",ijkl_string(idx4))
-        gfaccess_str = gri.gfaccess("in_gfs",gfname,ijkl_string(idx4))
+        gf_array_name = "in_gfs"
+        # If the gridfunction is of "auxevol" type, set its array to auxevol_gfs
+        blah0,blah1,auxevol_variables_list = gri.gridfunction_lists()
+        if gfname in auxevol_variables_list:
+            gf_array_name = "auxevol_gfs"
+        gfaccess_str = gri.gfaccess(gf_array_name,gfname,ijkl_string(idx4))
         if outCparams.SIMD_enable == "True":
             retstring = out__type_var(gfname) + varsuffix(idx4) +" = ReadSIMD(&" + gfaccess_str + ");"
         else:
