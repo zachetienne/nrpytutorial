@@ -30,7 +30,15 @@ import reference_metric as rfm
 import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
 import BSSN.BSSN_ID_function_string as bIDf
 
-# ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
+thismodule = __name__
+
+# The UIUC initial data represent a Kerr black hole with mass M
+#  and dimensionless spin chi in UIUC quasi-isotropic coordinates,
+#   see https://arxiv.org/abs/1001.4077
+# Input parameters:
+M, chi = par.Cparameters("REAL", thismodule, ["M", "chi"], [1.0, 0.99])
+
+# ComputeADMGlobalsOnly == True will only set up the ADM global quantities.
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def UIUCBlackHole(ComputeADMGlobalsOnly = False):
     global Sph_r_th_ph,r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
@@ -38,20 +46,11 @@ def UIUCBlackHole(ComputeADMGlobalsOnly = False):
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
     r,th,ph = sp.symbols('r th ph', real=True)
 
-    thismodule = "UIUCBlackHole"
-
     # Step 0: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
     
     # Step 1: Set psi, the conformal factor:
-
-    # The UIUC initial data represent a Kerr black hole with mass M
-    #  and dimensionless spin chi in UIUC quasi-isotropic coordinates,
-    #   see https://arxiv.org/abs/1001.4077
-    # Input parameters:
-    M,chi = par.Cparameters("REAL", thismodule, ["M","chi"],[1.0,0.99])
-
     # Spin per unit mass
     a = M*chi
 

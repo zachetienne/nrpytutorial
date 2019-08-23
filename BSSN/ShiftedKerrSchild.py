@@ -24,6 +24,13 @@ import reference_metric as rfm
 import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
 import BSSN.BSSN_ID_function_string as bIDf
 
+thismodule = __name__
+
+# Input parameters:
+M, a, r0 = par.Cparameters("REAL", thismodule,
+                           ["M", "a", "r0"],
+                           [1.0, 0.9, 1.0])
+
 # ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
@@ -32,15 +39,8 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
     r,th,ph = sp.symbols('r th ph', real=True)
 
-    thismodule = "ShiftedKerrSchild"
-
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
-
-    # Input parameters:
-    M, a, r0 = par.Cparameters("REAL", thismodule,
-                               ["M", "a", "r0"],
-                               [1.0, 0.9,  1.0])
 
     # Auxiliary variables:
     rho2 = sp.symbols('rho2', real=True)
