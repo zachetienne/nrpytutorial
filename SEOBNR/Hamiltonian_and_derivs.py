@@ -206,7 +206,7 @@ def output_H_and_derivs():
 
     with open("numpy_expressions.py", "w") as file:
         file.write("import numpy as np\n")
-        file.write("def compute_dHdq(m1, m2, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z):\n")
+        file.write("def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z):\n")
         for i in range(len(lr)-1):
             file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(", "np.abs(").replace("Rational(",
                     "np.divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(") + "\n")
