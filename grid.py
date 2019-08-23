@@ -52,7 +52,7 @@ def find_gftype(varname):
         if gf.name == varname:
             return gf.gftype
     
-def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
+def gfaccess(gfarrayname = "", varname = "", ijklstring = ""):
     found_registered_gf = False
     for gf in glb_gridfcs_list:
         if gf.name == varname:
@@ -75,9 +75,11 @@ def gfaccess(gfarrayname = "",varname = "",ijklstring = ""):
             sys.exit(1)
         # FIXME: if gftype == "AUX" then override gfarrayname to aux_gfs[].
         #        This enables expressions containing a mixture of AUX and EVOL
-        #        gridfunctions, though in a hacky way.
+        #        gridfunctions, though in a slightly hacky way.
         if gftype == "AUX":
             gfarrayname = "aux_gfs"
+        elif gftype == "AUXEVOL":
+            gfarrayname = "auxevol_gfs"
         # Return gfarrayname[IDX3(varname,i0)] for DIM=1, gfarrayname[IDX3(varname,i0,i1)] for DIM=2, etc.
         retstring += gfarrayname + "[IDX" + str(DIM+1) + "(" + varname.upper()+"GF" + ", "
     elif par.parval_from_str("GridFuncMemAccess") == "ETK":
