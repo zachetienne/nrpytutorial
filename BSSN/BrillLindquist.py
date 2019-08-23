@@ -33,21 +33,24 @@ import indexedexp as ixp
 import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
 import BSSN.BSSN_ID_function_string as bIDf
 
-# ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
+thismodule = __name__
+
+BH1_posn_x, BH1_posn_y, BH1_posn_z = par.Cparameters("REAL", thismodule,
+                                                     ["BH1_posn_x", "BH1_posn_y", "BH1_posn_z"],
+                                                     [0.0, 0.0, +0.5])
+BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"], 1.0)
+BH2_posn_x, BH2_posn_y, BH2_posn_z = par.Cparameters("REAL", thismodule,
+                                                     ["BH2_posn_x", "BH2_posn_y", "BH2_posn_z"],
+                                                     [0.0, 0.0, -0.5])
+BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"], 1.0)
+
+
+# ComputeADMGlobalsOnly == True will only set up the ADM global quantities.
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def BrillLindquist(ComputeADMGlobalsOnly = False,returnfunctionversion=1):
     global Cartxyz,gammaCartDD, KCartDD, alphaCart, betaCartU, BCartU
     
     # Step 2: Setting up Brill-Lindquist initial data
-    thismodule = "BrillLindquist"
-    BH1_posn_x,BH1_posn_y,BH1_posn_z = par.Cparameters("REAL", thismodule,
-                                                       ["BH1_posn_x","BH1_posn_y","BH1_posn_z"],
-                                                       [         0.0,         0.0,        +0.5])
-    BH1_mass = par.Cparameters("REAL", thismodule, ["BH1_mass"],1.0)
-    BH2_posn_x,BH2_posn_y,BH2_posn_z = par.Cparameters("REAL", thismodule,
-                                                       ["BH2_posn_x","BH2_posn_y","BH2_posn_z"],
-                                                       [         0.0,         0.0,        -0.5])
-    BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"],1.0)
 
     # Step 2.a: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
