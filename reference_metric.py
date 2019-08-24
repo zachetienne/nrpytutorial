@@ -530,7 +530,8 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         return
     else:
         CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
-        if not (("Spherical" or "SymTP") in  CoordSystem):
+        # if not (("Spherical" in CoordSystem) or ("SymTP" in CoordSystem)):
+        if not (( "Spherical" in CoordSystem)):
             print("Error: CoordSystem == "+CoordSystem+" does not yet support rfm precompute infrastructure.")
             sys.exit(1)
 
