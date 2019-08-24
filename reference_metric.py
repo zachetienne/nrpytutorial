@@ -51,6 +51,21 @@ scalefactor_orthog_funcform = ixp.zerorank1(DIM=4) # Must be set in terms of gen
 have_already_called_reference_metric_function = False
 
 def reference_metric(SymPySimplifyExpressions=True):
+    global f0_of_xx0_funcform, f1_of_xx1_funcform, f2_of_xx0_xx1_funcform, f3_of_xx0_funcform
+    global f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0
+    f0_of_xx0_funcform     = sp.Function('f0_of_xx0_funcform')(xx[0])
+    f1_of_xx1_funcform     = sp.Function('f1_of_xx1_funcform')(xx[1])
+    f2_of_xx0_xx1_funcform = sp.Function('f2_of_xx0_xx1_funcform')(xx[0], xx[1])
+    f3_of_xx0_funcform     = sp.Function('f3_of_xx0_funcform')(xx[0])
+    f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0 = par.Cparameters("REAL", thismodule,
+                                                          ["f0_of_xx0", "f1_of_xx1", "f2_of_xx0_xx1", "f3_of_xx0"], 1e300)
+    # FIXME: Hack
+    f0_of_xx0__D0, f0_of_xx0__DD00, f0_of_xx0__DDD000 = par.Cparameters("REAL", thismodule,
+                                                                        ["f0_of_xx0__D0", "f0_of_xx0__DD00",
+                                                                         "f0_of_xx0__DDD000"], 1e300)
+    f1_of_xx1__D1, f1_of_xx1__DD11, f1_of_xx1__DDD111 = par.Cparameters("REAL", thismodule,
+                                                                        ["f1_of_xx1__D1", "f1_of_xx1__DD11",
+                                                                         "f1_of_xx1__DDD111"], 1e300)
 
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True
@@ -70,18 +85,6 @@ def reference_metric(SymPySimplifyExpressions=True):
     # SPHERICAL-LIKE COORDINATE SYSTEMS WITH & WITHOUT RADIAL RESCALING #
     #####################################################################
     if CoordSystem == "Spherical" or CoordSystem == "SinhSpherical" or CoordSystem == "SinhSphericalv2":
-        global f0_of_xx0_funcform, f1_of_xx1_funcform
-        global f0_of_xx0, f1_of_xx1
-        f0_of_xx0_funcform = sp.Function('f0_of_xx0_funcform')(xx[0])
-        f1_of_xx1_funcform = sp.Function('f1_of_xx1_funcform')(xx[1])
-        f0_of_xx0, f1_of_xx1 = par.Cparameters("REAL", thismodule, ["f0_of_xx0", "f1_of_xx1"], 1e300)
-        # FIXME: Hack
-        f0_of_xx0__D0, f0_of_xx0__DD00, f0_of_xx0__DDD000 = par.Cparameters("REAL", thismodule,
-                                                                            ["f0_of_xx0__D0", "f0_of_xx0__DD00",
-                                                                             "f0_of_xx0__DDD000"], 1e300)
-        f1_of_xx1__D1, f1_of_xx1__DD11, f1_of_xx1__DDD111 = par.Cparameters("REAL", thismodule,
-                                                                            ["f1_of_xx1__D1", "f1_of_xx1__DD11",
-                                                                             "f1_of_xx1__DDD111"], 1e300)
 
         # Adding assumption real=True can help simplify expressions involving xx[0] & xx[1] below.
         xx[0] = sp.symbols("xx0", real=True)
@@ -281,21 +284,6 @@ def reference_metric(SymPySimplifyExpressions=True):
                        [ sp.sympify(0),  sp.sympify(0),  sp.sympify(1)]]
         
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
-        global f0_of_xx0_funcform, f1_of_xx1_funcform, f2_of_xx0_xx1_funcform, f3_of_xx0_funcform
-        global f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0
-        f0_of_xx0_funcform = sp.Function('f0_of_xx0_funcform')(xx[0])
-        f1_of_xx1_funcform = sp.Function('f1_of_xx1_funcform')(xx[1])
-        f2_of_xx0_xx1_funcform = sp.Function('f2_of_xx0_xx1_funcform')(xx[0], xx[1])
-        f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1 = par.Cparameters("REAL", thismodule,
-                                                              ["f0_of_xx0", "f1_of_xx1", "f2_of_xx0_xx1"], 1e300)
-        # FIXME: Hack
-        f0_of_xx0__D0, f0_of_xx0__DD00, f0_of_xx0__DDD000 = par.Cparameters("REAL", thismodule,
-                                                                            ["f0_of_xx0__D0", "f0_of_xx0__DD00",
-                                                                             "f0_of_xx0__DDD000"], 1e300)
-        f1_of_xx1__D1, f1_of_xx1__DD11, f1_of_xx1__DDD111 = par.Cparameters("REAL", thismodule,
-                                                                            ["f1_of_xx1__D1", "f1_of_xx1__DD11",
-                                                                             "f1_of_xx1__DDD111"], 1e300)
-
         var1, var2= sp.symbols('var1 var2',real=True)
         bScale, AW, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,
                                                                ["bScale","AW","AMAX","RHOMAX","ZMIN","ZMAX"],
