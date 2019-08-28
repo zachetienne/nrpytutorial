@@ -125,6 +125,8 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,SIMD
                 expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0])))))))})
             elif item.args[1] == -8 and item.args[0].is_Symbol:
                 expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0]))))))))})
+            elif item.args[1] == -9 and item.args[0].is_Symbol:
+                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0])))))))))})
             elif item.args[1] == -1:
                 expr = expr.xreplace({item: DivSIMD(1, item.args[0])})
             else:

@@ -66,8 +66,11 @@ def reference_metric(SymPySimplifyExpressions=True):
     f1_of_xx1__D1, f1_of_xx1__DD11, f1_of_xx1__DDD111 = par.Cparameters("REAL", thismodule,
                                                                         ["f1_of_xx1__D1", "f1_of_xx1__DD11",
                                                                          "f1_of_xx1__DDD111"], 1e300)
-    f2_of_xx0_xx1__D0 = par.Cparameters("REAL", thismodule,["f2_of_xx0_xx1__D0"], 1e300)
-    f3_of_xx0__D0     = par.Cparameters("REAL", thismodule,["f3_of_xx0__D0"], 1e300)
+    f2_of_xx0_xx1__D0,f2_of_xx0_xx1__D1,f2_of_xx0_xx1__DD00,f2_of_xx0_xx1__DD11 = \
+        par.Cparameters("REAL", thismodule,
+                        ["f2_of_xx0_xx1__D0","f2_of_xx0_xx1__D1","f2_of_xx0_xx1__DD00","f2_of_xx0_xx1__DD11"],
+                        1e300)
+    f3_of_xx0__D0,f3_of_xx0__DD00     = par.Cparameters("REAL", thismodule,["f3_of_xx0__D0","f3_of_xx0__DD00"], 1e300)
 
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True
@@ -761,7 +764,7 @@ for(int i1=0;i1<Nxx_plus_2NGHOSTS1;i1++) for(int i0=0;i0<Nxx_plus_2NGHOSTS0;i0++
     const REAL xx0 = xx[0][i0];
     const REAL xx1 = xx[1][i1];
     rfmstruct.""" + str(freevars_uniq_xx_indep[which_freevar]) + """[i0 + Nxx_plus_2NGHOSTS0*i1] = """ + str(sp.ccode(freevars_uniq_vals[which_freevar])) + """;
-}"""
+}\n\n"""
                     readvr_str[0] += "const REAL " + str(freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + \
                                      str(freevars_uniq_xx_indep[which_freevar]) + "[i0 + Nxx_plus_2NGHOSTS0*i1];\n"
                     readvr_SIMD_outer_str[0] += "const double NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + \
