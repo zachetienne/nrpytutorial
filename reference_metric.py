@@ -742,16 +742,16 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
                 for dirn in range(3):
                     if (gri.xx[dirn] in frees_uniq) and not (gri.xx[(dirn+1)%3] in frees_uniq) and not (gri.xx[(dirn+2)%3] in frees_uniq):
                         define_str += "for(int i"+str(dirn)+"=0;i"+str(dirn)+"<Nxx_plus_2NGHOSTS"+str(dirn)+";i"+str(dirn)+"++) {\n"
-                        define_str += "    const REAL xx"+str(dirn)+" = xx[0][i"+str(dirn)+"];\n"
+                        define_str += "    const REAL xx"+str(dirn)+" = xx["+str(dirn)+"][i"+str(dirn)+"];\n"
                         define_str += "    rfmstruct." + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"] = " + str(sp.ccode(freevars_uniq_vals[which_freevar])) + ";\n"
                         define_str += "}\n\n"
-                        readvr_str[0] += "const REAL " + str(freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + \
+                        readvr_str[dirn] += "const REAL " + str(freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + \
                                          str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"];\n"
-                        readvr_SIMD_outer_str[0] += "const double NOSIMD" + str(
+                        readvr_SIMD_outer_str[dirn] += "const double NOSIMD" + str(
                             freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"]; "
-                        readvr_SIMD_outer_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                        readvr_SIMD_outer_str[dirn] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
                                                     " = ConstSIMD(NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + ");\n"
-                        readvr_SIMD_inner_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                        readvr_SIMD_inner_str[dirn] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
                                                     " = ReadSIMD(&rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"]);\n"
                         output_define_and_readvr = True
 
