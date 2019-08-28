@@ -711,67 +711,73 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         freeing allocated memory for the rfmstrcut arrays.
         # struct_str: String that declares the rfmstruct struct.
         struct_str = "typedef struct __rfmstruct__ {\n"
-        # Tease out how many variables each function in freevars_uniq_vals
-        # for expr in freevars_uniq_vals_zeroed:
-        #     frees = expr.free_symbols
-        #     frees_uniq = superfast_uniq(frees)
-        #     xx_list = []
-        #     malloc_size = 1
-        #     for i in range(3):
-        #         if gri.xx[i] in frees_uniq:
-        #             xx_list.append(gri.xx[i])
-        #             malloc_size *= gri.Nxx_plus_2NGHOSTS[i]
-
-            # struct_str += "\tREAL *restrict " + str(freevars_uniq_xx_indep[varidx]) + ";\n"
-            # malloc_str += "rfmstruct." + str(
-            #     freevars_uniq_xx_indep[varidx]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
-            # freemm_str += "free(rfmstruct." + str(freevars_uniq_xx_indep[varidx]) + ");\n"
-
-            # print(expr,xx_list)
-        # sys.exit(1)
+        define_str = ""
         # rfmstruct stores pointers to (so far) 1D arrays. The malloc_str string allocates space for the arrays.
         malloc_str = "rfm_struct rfmstruct;\n"
-        # define_str sets the arrays to appropriate values. Note that elements of
-        #    these arrays will generally be transcendental functions of xx0, xx1, or xx2.
-        #    Since xx0, xx1, and xx2 remain fixed across many (if not all) iterations,
-        #    and these transcendental functions are quite expensive, setting up this
-        #    struct can greatly improve performance.
-        define_str = ""
+        freemm_str = ""
+
         # readvr_str reads the arrays from memory as needed
         readvr_str = ["", "", ""]
         readvr_SIMD_outer_str = ["", "", ""]
         readvr_SIMD_inner_str = ["", "", ""]
-        freemm_str = ""
-        for dirn in [0, 1, 2]:
-            malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
-            #        malloc_size = "Nxx_plus_2NGHOSTS["+str(dirn)+"]"
 
-            numvars = 0
-            for varidx in range(len(freevars_uniq)):
-                if "xx" + str(dirn) in str(freevars_uniq_xx_indep[varidx]):
-                    numvars = numvars + 1
-                    struct_str += "\tREAL *restrict " + str(freevars_uniq_xx_indep[varidx]) + ";\n"
-                    malloc_str += "rfmstruct." + str(
-                        freevars_uniq_xx_indep[varidx]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
-                    freemm_str += "free(rfmstruct." + str(freevars_uniq_xx_indep[varidx]) + ");\n"
+        # Tease out how many variables each function in freevars_uniq_vals
+        which_freevar = 0
+        for expr in freevars_uniq_vals:
+            if "_of_xx" in str(freevars_uniq_xx_indep[which_freevar]):
+                frees = expr.free_symbols
+                frees_uniq = superfast_uniq(frees)
+                xx_list = []
+                malloc_size = 1
+                for i in range(3):
+                    if gri.xx[i] in frees_uniq:
+                        xx_list.append(gri.xx[i])
+                        malloc_size *= gri.Nxx_plus_2NGHOSTS[i]
 
+                struct_str += "\tREAL *restrict " + str(freevars_uniq_xx_indep[which_freevar]) + ";\n"
+                malloc_str += "rfmstruct." + str(
+                    freevars_uniq_xx_indep[which_freevar]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
+                freemm_str += "free(rfmstruct." + str(freevars_uniq_xx_indep[which_freevar]) + ");\n"
+                output_define_and_readvr = False
+                for dirn in range(3):
+                    if (gri.xx[dirn] in frees_uniq) and not (gri.xx[(dirn+1)%3] in frees_uniq) and not (gri.xx[(dirn+2)%3] in frees_uniq):
+                        define_str += "for(int i"+str(dirn)+"=0;i"+str(dirn)+"<Nxx_plus_2NGHOSTS"+str(dirn)+";i"+str(dirn)+"++) {\n"
+                        define_str += "    const REAL xx"+str(dirn)+" = xx[0][i"+str(dirn)+"];\n"
+                        define_str += "    rfmstruct." + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"] = " + str(sp.ccode(freevars_uniq_vals[which_freevar])) + ";\n"
+                        define_str += "}\n\n"
+                        readvr_str[0] += "const REAL " + str(freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + \
+                                         str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"];\n"
+                        readvr_SIMD_outer_str[0] += "const double NOSIMD" + str(
+                            freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"]; "
+                        readvr_SIMD_outer_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                    " = ConstSIMD(NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + ");\n"
+                        readvr_SIMD_inner_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                    " = ReadSIMD(&rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"]);\n"
+                        output_define_and_readvr = True
+
+                if (gri.xx[0] in frees_uniq) and (gri.xx[1] in frees_uniq):
                     define_str += """
-        for(int ii=0;ii<""" + str(malloc_size) + """;ii++) {
-            const REAL xx""" + str(dirn) + """ = xx[""" + str(dirn) + """][ii];
-            rfmstruct.""" + str(freevars_uniq_xx_indep[varidx]) + """[ii] = """ + str(
-                        sp.ccode(freevars_uniq_vals[varidx])) + """;
-        }"""
-                    readvr_str[dirn] += "const REAL " + str(freevars_uniq_xx_indep[varidx]) + " = rfmstruct->" + str(
-                        freevars_uniq_xx_indep[varidx]) + "[i" + str(dirn) + "];\n"
-                    readvr_SIMD_outer_str[dirn] += "const double NOSIMD" + str(
-                        freevars_uniq_xx_indep[varidx]) + " = rfmstruct->" + str(
-                        freevars_uniq_xx_indep[varidx]) + "[i" + str(dirn) + "]; "
-                    readvr_SIMD_outer_str[dirn] += "const REAL_SIMD_ARRAY " + str(
-                        freevars_uniq_xx_indep[varidx]) + " = ConstSIMD(NOSIMD" + str(
-                        freevars_uniq_xx_indep[varidx]) + ");\n"
-                    readvr_SIMD_inner_str[dirn] += "const REAL_SIMD_ARRAY " + str(
-                        freevars_uniq_xx_indep[varidx]) + " = ReadSIMD(&rfmstruct->" + str(
-                        freevars_uniq_xx_indep[varidx]) + "[i" + str(dirn) + "]);\n"
+for(int i1=0;i1<Nxx_plus_2NGHOSTS1;i1++) for(int i0=0;i0<Nxx_plus_2NGHOSTS0;i0++) {
+    const REAL xx0 = xx[0][i0];
+    const REAL xx1 = xx[1][i1];
+    rfmstruct.""" + str(freevars_uniq_xx_indep[which_freevar]) + """[i0 + Nxx_plus_2NGHOSTS0*i1] = """ + str(sp.ccode(freevars_uniq_vals[which_freevar])) + """;
+}"""
+                    readvr_str[0] += "const REAL " + str(freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + \
+                                     str(freevars_uniq_xx_indep[which_freevar]) + "[i0 + Nxx_plus_2NGHOSTS0*i1];\n"
+                    readvr_SIMD_outer_str[0] += "const double NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                " = rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i0 + Nxx_plus_2NGHOSTS0*i1]; "
+                    readvr_SIMD_outer_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                " = ConstSIMD(NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + ");\n"
+                    readvr_SIMD_inner_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                " = ReadSIMD(&rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i0 + Nxx_plus_2NGHOSTS0*i1]);\n"
+                    output_define_and_readvr = True
+
+                if output_define_and_readvr == False:
+                    print("ERROR: Could not figure out the (xx0,xx1,xx2) dependency within the expression for "+str(freevars_uniq_xx_indep[which_freevar])+":")
+                    print(str(freevars_uniq_vals[which_freevar]))
+                    sys.exit(1)
+
+            which_freevar += 1
 
         struct_str += "} rfm_struct;\n\n"
 
