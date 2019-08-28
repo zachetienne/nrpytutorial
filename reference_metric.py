@@ -354,7 +354,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog[2] = AA * sp.sin(xx[1])
 
         f0_of_xx0              = AA
-        f1_of_xx1              = sp.sin(xxSph[1])
+        f1_of_xx1              = sp.sin(xx[1])
         f2_of_xx0_xx1          = var1
         f3_of_xx0              = var2
 
@@ -755,7 +755,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
                                                     " = ReadSIMD(&rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"]);\n"
                         output_define_and_readvr = True
 
-                if (gri.xx[0] in frees_uniq) and (gri.xx[1] in frees_uniq):
+                if (output_define_and_readvr == False) and (gri.xx[0] in frees_uniq) and (gri.xx[1] in frees_uniq):
                     define_str += """
 for(int i1=0;i1<Nxx_plus_2NGHOSTS1;i1++) for(int i0=0;i0<Nxx_plus_2NGHOSTS0;i0++) {
     const REAL xx0 = xx[0][i0];
