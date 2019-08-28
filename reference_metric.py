@@ -51,14 +51,15 @@ scalefactor_orthog_funcform = ixp.zerorank1(DIM=4) # Must be set in terms of gen
 have_already_called_reference_metric_function = False
 
 def reference_metric(SymPySimplifyExpressions=True):
-    global f0_of_xx0_funcform, f1_of_xx1_funcform, f2_of_xx0_xx1_funcform, f3_of_xx0_funcform
-    global f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0
+    global f0_of_xx0_funcform, f1_of_xx1_funcform, f2_of_xx0_xx1_funcform, f3_of_xx0_funcform, f4_of_xx2_funcform
+    global f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0, f4_of_xx2
     f0_of_xx0_funcform     = sp.Function('f0_of_xx0_funcform')(xx[0])
     f1_of_xx1_funcform     = sp.Function('f1_of_xx1_funcform')(xx[1])
     f2_of_xx0_xx1_funcform = sp.Function('f2_of_xx0_xx1_funcform')(xx[0], xx[1])
     f3_of_xx0_funcform     = sp.Function('f3_of_xx0_funcform')(xx[0])
-    f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0 = par.Cparameters("REAL", thismodule,
-                                                          ["f0_of_xx0", "f1_of_xx1", "f2_of_xx0_xx1", "f3_of_xx0"], 1e300)
+    f4_of_xx2_funcform     = sp.Function('f4_of_xx2_funcform')(xx[2])
+    f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0, f4_of_xx2 = par.Cparameters("REAL", thismodule,
+                                  ["f0_of_xx0", "f1_of_xx1", "f2_of_xx0_xx1", "f3_of_xx0", "f4_of_xx2"], 1e300)
     # FIXME: Hack
     f0_of_xx0__D0, f0_of_xx0__DD00, f0_of_xx0__DDD000 = par.Cparameters("REAL", thismodule,
                                                                         ["f0_of_xx0__D0", "f0_of_xx0__DD00",
@@ -66,6 +67,12 @@ def reference_metric(SymPySimplifyExpressions=True):
     f1_of_xx1__D1, f1_of_xx1__DD11, f1_of_xx1__DDD111 = par.Cparameters("REAL", thismodule,
                                                                         ["f1_of_xx1__D1", "f1_of_xx1__DD11",
                                                                          "f1_of_xx1__DDD111"], 1e300)
+    f2_of_xx0_xx1__D0,f2_of_xx0_xx1__D1,f2_of_xx0_xx1__DD00,f2_of_xx0_xx1__DD11 = \
+        par.Cparameters("REAL", thismodule,
+                        ["f2_of_xx0_xx1__D0","f2_of_xx0_xx1__D1","f2_of_xx0_xx1__DD00","f2_of_xx0_xx1__DD11"],
+                        1e300)
+    f3_of_xx0__D0,f3_of_xx0__DD00     = par.Cparameters("REAL", thismodule,["f3_of_xx0__D0","f3_of_xx0__DD00"], 1e300)
+    f4_of_xx2__D2,f4_of_xx2__DD22     = par.Cparameters("REAL", thismodule,["f4_of_xx2__D2","f4_of_xx2__DD22"], 1e300)
 
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True
@@ -80,7 +87,7 @@ def reference_metric(SymPySimplifyExpressions=True):
     UnitVectors = ixp.zerorank2(DIM=3)
 
     # Set up hatted metric tensor, rescaling matrix, and rescaling vector
-    
+
     #####################################################################
     # SPHERICAL-LIKE COORDINATE SYSTEMS WITH & WITHOUT RADIAL RESCALING #
     #####################################################################
@@ -106,7 +113,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         elif CoordSystem == "SinhSpherical":
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [sp.sympify(1),          M_PI,  M_PI]
-            
+
             AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"],[10.0,0.2])
             # Set SinhSpherical radial coordinate by default; overwrite later if CoordSystem == "SinhSphericalv2".
             r = AMPL * (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) / \
@@ -123,7 +130,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         elif CoordSystem == "SinhSphericalv2":
             xxmin = [sp.sympify(0), sp.sympify(0), -M_PI]
             xxmax = [sp.sympify(1),          M_PI,  M_PI]
-            
+
             AMPL, SINHW = par.Cparameters("REAL",thismodule,["AMPL","SINHW"],[10.0,0.2])
             const_dr = par.Cparameters("REAL",thismodule,["const_dr"],0.0625)
             r = AMPL*( const_dr*xx[0] + (sp.exp(xx[0] / SINHW) - sp.exp(-xx[0] / SINHW)) /
@@ -135,7 +142,7 @@ def reference_metric(SymPySimplifyExpressions=True):
             # Cart_to_xx[0] = "NewtonRaphson"
             # Cart_to_xx[1] = sp.acos(Cartz / sp.sqrt(Cartx ** 2 + Carty ** 2 + Cartz ** 2))
             # Cart_to_xx[2] = sp.atan2(Carty, Cartx)
-                
+
 
         xxSph[0] = r
         xxSph[1] = th
@@ -156,17 +163,17 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog_funcform[0] = sp.diff(f0_of_xx0_funcform,xx[0])
         scalefactor_orthog_funcform[1] = f0_of_xx0_funcform
         scalefactor_orthog_funcform[2] = f0_of_xx0_funcform*f1_of_xx1_funcform
-        
+
         # Set the unit vectors
         UnitVectors = [[ sp.sin(xxSph[1])*sp.cos(xxSph[2]), sp.sin(xxSph[1])*sp.sin(xxSph[2]),  sp.cos(xxSph[1])],
                        [ sp.cos(xxSph[1])*sp.cos(xxSph[2]), sp.cos(xxSph[1])*sp.sin(xxSph[2]), -sp.sin(xxSph[1])],
                        [                 -sp.sin(xxSph[2]),                  sp.cos(xxSph[2]),  sp.sympify(0)   ]]
-        
+
     ######################################################################
     # SPHERICAL-LIKE COORDINATE SYSTEMS WITH RADIAL AND THETA RESCALINGS #
     ######################################################################
     elif CoordSystem == "NobleSphericalThetaOptionOne" or CoordSystem == "NobleSphericalThetaOptionTwo":
-        # WARNING: CANNOT BE USED FOR SENR RUNS; 
+        # WARNING: CANNOT BE USED FOR SENR RUNS;
         #  THESE DO NOT DEFINE xxmin, xxmax, Cart_to_xx
         #  ALSO THE RADIAL RESCALINGS ARE NOT ODD FUNCTIONS OF xx0,
         #  MEANING THAT CURVI. BOUNDARY CONDITIONS WILL NOT WORK.
@@ -245,7 +252,7 @@ def reference_metric(SymPySimplifyExpressions=True):
             Cart_to_xx[0] = SINHWRHO*sp.asinh(sp.sqrt(Cartx ** 2 + Carty ** 2)*sp.sinh(1/SINHWRHO)/AMPLRHO)
             Cart_to_xx[1] = sp.atan2(Carty, Cartx)
             Cart_to_xx[2] = SINHWZ*sp.asinh(Cartz*sp.sinh(1/SINHWZ)/AMPLZ)
-            
+
         # SinhCylindricalv2 adds the parameters "const_drho", "const_dz", which allows for regions near xx[0]=0
         # and xx[2]=0 to have constant rho and z resolution of const_drho and const_dz, provided the sinh() terms
         # do not dominate near xx[0]=0 and xx[2]=0.
@@ -260,7 +267,7 @@ def reference_metric(SymPySimplifyExpressions=True):
             RHOCYL = AMPLRHO * ( const_drho*xx[0] + (sp.exp(xx[0] / SINHWRHO) - sp.exp(-xx[0] / SINHWRHO)) / (sp.exp(1 / SINHWRHO) - sp.exp(-1 / SINHWRHO)) )
             PHICYL = xx[1]
             ZCYL   = AMPLZ   * ( const_dz  *xx[2] + (sp.exp(xx[2] / SINHWZ  ) - sp.exp(-xx[2] / SINHWZ  )) / (sp.exp(1 / SINHWZ  ) - sp.exp(-1 / SINHWZ  )) )
-    
+
             # NO CLOSED-FORM EXPRESSION FOR RADIAL OR Z INVERSION.
             # Cart_to_xx[0] = "NewtonRaphson"
             # Cart_to_xx[1] = sp.atan2(Carty, Cartx)
@@ -269,20 +276,27 @@ def reference_metric(SymPySimplifyExpressions=True):
         xxCart[0] = RHOCYL*sp.cos(PHICYL)
         xxCart[1] = RHOCYL*sp.sin(PHICYL)
         xxCart[2] = ZCYL
-    
+
         xxSph[0] = sp.sqrt(RHOCYL**2 + ZCYL**2)
         xxSph[1] = sp.acos(ZCYL / xxSph[0])
         xxSph[2] = PHICYL
-    
+
         scalefactor_orthog[0] = sp.diff(RHOCYL,xx[0])
         scalefactor_orthog[1] = RHOCYL
         scalefactor_orthog[2] = sp.diff(ZCYL,xx[2])
+
+        f0_of_xx0              = RHOCYL
+        f4_of_xx2              = sp.diff(ZCYL,xx[2])
+
+        scalefactor_orthog_funcform[0] = sp.diff(f0_of_xx0_funcform,xx[0])
+        scalefactor_orthog_funcform[1] = f0_of_xx0_funcform
+        scalefactor_orthog_funcform[2] = f4_of_xx2_funcform
 
         # Set the unit vectors
         UnitVectors = [[ sp.cos(PHICYL), sp.sin(PHICYL), sp.sympify(0)],
                        [-sp.sin(PHICYL), sp.cos(PHICYL), sp.sympify(0)],
                        [ sp.sympify(0),  sp.sympify(0),  sp.sympify(1)]]
-        
+
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
         var1, var2= sp.symbols('var1 var2',real=True)
         bScale, AW, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,
@@ -296,23 +310,23 @@ def reference_metric(SymPySimplifyExpressions=True):
 
         xxmin = [sp.sympify(0), sp.sympify(0),-M_PI]
         xxmax = [         AMAX,          M_PI, M_PI]
-    
+
         AA = xx[0]
-    
+
         if CoordSystem == "SinhSymTP":
             AA = (sp.exp(xx[0]/AW)-sp.exp(-xx[0]/AW))/2
-    
+
         var1 = sp.sqrt(AA**2 + (bScale * sp.sin(xx[1]))**2)
         var2 = sp.sqrt(AA**2 + bScale**2)
-    
+
         RHOSYMTP = AA*sp.sin(xx[1])
         PHSYMTP = xx[2]
         ZSYMTP = var2*sp.cos(xx[1])
-    
+
         xxCart[0] = AA  *sp.sin(xx[1])*sp.cos(xx[2])
         xxCart[1] = AA  *sp.sin(xx[1])*sp.sin(xx[2])
         xxCart[2] = ZSYMTP
-    
+
         xxSph[0] = sp.sqrt(RHOSYMTP**2 + ZSYMTP**2)
         xxSph[1] = sp.acos(ZSYMTP / xxSph[0])
         xxSph[2] = PHSYMTP
@@ -329,16 +343,16 @@ def reference_metric(SymPySimplifyExpressions=True):
 #             ZSYMTP = var2*Cos[x2];
 #             Solve[{rSph == Sqrt[RHOSYMTP^2 + ZSYMTP^2],
 #                    thSph == ArcCos[ZSYMTP/Sqrt[RHOSYMTP^2 + ZSYMTP^2]],
-#                    phSph == x3}, 
+#                    phSph == x3},
 #                   {x1, x2, x3}]
-            Cart_to_xx[0] = sp.sqrt(-bScale**2 + rSph**2 + 
-                                    sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
+            Cart_to_xx[0] = sp.sqrt(-bScale**2 + rSph**2 +
+                                    sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 -
                                             4*bScale**2*rSph**2*sp.cos(thSph)**2))*M_SQRT1_2 # M_SQRT1_2 = 1/sqrt(2); define this way for UnitTesting
 
             # The sign() function in the following expression ensures the correct root is taken.
             Cart_to_xx[1] = sp.acos(sp.sign(Cartz)*(
-                                      sp.sqrt(1 + rSph**2/bScale**2 - 
-                                              sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 - 
+                                      sp.sqrt(1 + rSph**2/bScale**2 -
+                                              sp.sqrt(bScale**4 + 2*bScale**2*rSph**2 + rSph**4 -
                                                       4*bScale**2*rSph**2*sp.cos(thSph)**2)/bScale**2)*M_SQRT1_2)) # M_SQRT1_2 = 1/sqrt(2); define this way for UnitTesting
 
             Cart_to_xx[2] = phSph
@@ -352,11 +366,11 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog[2] = AA * sp.sin(xx[1])
 
         f0_of_xx0              = AA
-        f1_of_xx1              = sp.sin(xxSph[1])
-        f2_of_xx0_xx1_funcform = var1
+        f1_of_xx1              = sp.sin(xx[1])
+        f2_of_xx0_xx1          = var1
         f3_of_xx0              = var2
 
-        scalefactor_orthog_funcform[0] = sp.diff(f0_of_xx0_funcform,xx[0]) * f2_of_xx0_xx1_funcform/f3_of_xx0
+        scalefactor_orthog_funcform[0] = sp.diff(f0_of_xx0_funcform,xx[0]) * f2_of_xx0_xx1_funcform/f3_of_xx0_funcform
         scalefactor_orthog_funcform[1] = f2_of_xx0_xx1_funcform
         scalefactor_orthog_funcform[2] = f0_of_xx0_funcform*f1_of_xx1_funcform
 
@@ -375,7 +389,7 @@ def reference_metric(SymPySimplifyExpressions=True):
                                                              [ -10.0,  10.0, -10.0,  10.0, -10.0,  10.0])
         xxmin = ["xmin", "ymin", "zmin"]
         xxmax = ["xmax", "ymax", "zmax"]
-    
+
         xxCart[0] = xx[0]
         xxCart[1] = xx[1]
         xxCart[2] = xx[2]
@@ -383,7 +397,7 @@ def reference_metric(SymPySimplifyExpressions=True):
         xxSph[0] = sp.sqrt(xx[0] ** 2 + xx[1] ** 2 + xx[2] ** 2)
         xxSph[1] = sp.acos(xx[2] / xxSph[0])
         xxSph[2] = sp.atan2(xx[1], xx[0])
-        
+
         Cart_to_xx[0] = Cartx
         Cart_to_xx[1] = Carty
         Cart_to_xx[2] = Cartz
@@ -423,7 +437,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
     ghatDD = ixp.zerorank2()
 
     # Step 1: Compute ghatDD (reference metric), ghatUU
-    #         (inverse reference metric), as well as 
+    #         (inverse reference metric), as well as
     #         rescaling vector ReU & rescaling matrix ReDD
     if enable_rfm_precompute == False:
         for i in range(DIM):
@@ -443,8 +457,8 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
     # Step 1b: Compute ghatUU
     ghatUU, detgammahat = ixp.symm_matrix_inverter3x3(ghatDD)
 
-    # Step 1c: Sanity check: verify that ReDD, ghatDD, 
-    #          and ghatUU are all symmetric rank-2: 
+    # Step 1c: Sanity check: verify that ReDD, ghatDD,
+    #          and ghatUU are all symmetric rank-2:
     for i in range(DIM):
         for j in range(DIM):
             if ReDD[i][j] != ReDD[j][i]:
@@ -531,9 +545,9 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
     else:
         CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
         # if not (("Spherical" in CoordSystem) or ("SymTP" in CoordSystem)):
-        if not (( "Spherical" in CoordSystem)):
-            print("Error: CoordSystem == "+CoordSystem+" does not yet support rfm precompute infrastructure.")
-            sys.exit(1)
+        # if not (( "Spherical" in CoordSystem)):
+        #     print("Error: CoordSystem == "+CoordSystem+" does not yet support rfm precompute infrastructure.")
+        #     sys.exit(1)
 
         # enable_rfm_precompute: precompute and store in memory complicated
         #     expressions related to the reference metric (a.k.a., "hatted
@@ -556,44 +570,48 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         # Step 5: Now that all hatted quantities are written in terms of generic SymPy functions,
         #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
         #         and store these variables to globals defined above.
-        def make_replacements(input):
-            for i in ["0", "1", "2"]:
-                inputnew = input.replace(
-                    "Derivative(f" + i + "_of_xx" + i + "_funcform(xx" + i + "), (xx" + i + ", 3))",
-                    "Derivative(f" + i + "_of_xx" + i + "_funcform(xx" + i + "), xx" + i + ", xx" + i + ", xx" + i + ")"). \
-                    replace("Derivative(f" + i + "_of_xx" + i + "_funcform(xx" + i + "), (xx" + i + ", 2))",
-                            "Derivative(f" + i + "_of_xx" + i + "_funcform(xx" + i + "), xx" + i + ", xx" + i + ")"). \
-                    replace(", xx" + i + ", xx" + i + ", xx" + i + ")", "__DDD" + i + i + i). \
-                    replace(", xx" + i + ", xx" + i + ")", "__DD" + i + i). \
-                    replace(", xx" + i + ")", "__D" + i). \
-                    replace("f" + i + "_of_xx" + i + "_funcform(xx" + i + ")", "f" + i + "_of_xx" + i)
-                input = inputnew
-            inputnew = input.replace("Derivative(", "")
-            if "Derivative" in inputnew:
-                print("Error: ", inputnew)
-                sys.exit(1)
-            input = inputnew
-            return input
-        #
-        detgammahat = sp.sympify(make_replacements(str(detgammahat)))
+        def make_replacements(expr):
+            for item in sp.preorder_traversal(expr):
+                if item.func == sp.Derivative:
+                    stringfunc = str(item.args[0]).split("_funcform(", 1)[0]  # store everything before _funcform(...
+                    stringderv = str(item.args[1]).replace(" ", "")  # Ignore whitespace
+                    deriv_wrt = stringderv.split(",")[0].replace("(xx", "")
+                    derivorder = int(stringderv.split(",")[1].replace(")", ""))
+
+                    derivop = "__D"
+                    for i in range(derivorder - 1):
+                        derivop += "D"
+                    derivop += deriv_wrt
+                    for i in range(derivorder - 1):
+                        derivop += deriv_wrt
+                    expr = expr.xreplace(
+                        {item: sp.sympify(stringfunc + derivop)})
+
+            for item in sp.preorder_traversal(expr):
+                if "_funcform" in str(item.func):
+                    stringfunc = str(item.func).split("_funcform", 1)[0]  # store everything before _funcform(...
+                    expr = expr.xreplace({item: sp.sympify(stringfunc)})
+            return expr
+
+        detgammahat = make_replacements(detgammahat)
         for i in range(DIM):
-            ReU[i] = sp.sympify(make_replacements(str(ReU[i])))
-            detgammahatdD[i] = sp.sympify(make_replacements(str(detgammahatdD[i])))
+            ReU[i] = make_replacements(ReU[i])
+            detgammahatdD[i] = make_replacements(detgammahatdD[i])
             for j in range(DIM):
-                ReDD[i][j] = sp.sympify(make_replacements(str(ReDD[i][j])))
-                ReUdD[i][j] = sp.sympify(make_replacements(str(ReUdD[i][j])))
-                ghatDD[i][j] = sp.sympify(make_replacements(str(ghatDD[i][j])))
-                ghatUU[i][j] = sp.sympify(make_replacements(str(ghatUU[i][j])))
-                detgammahatdDD[i][j] = sp.sympify(make_replacements(str(detgammahatdDD[i][j])))
+                ReDD[i][j] = make_replacements(ReDD[i][j])
+                ReUdD[i][j] = make_replacements(ReUdD[i][j])
+                ghatDD[i][j] = make_replacements(ghatDD[i][j])
+                ghatUU[i][j] = make_replacements(ghatUU[i][j])
+                detgammahatdDD[i][j] = make_replacements(detgammahatdDD[i][j])
                 for k in range(DIM):
-                    ReDDdD[i][j][k] = sp.sympify(make_replacements(str(ReDDdD[i][j][k])))
-                    ReUdDD[i][j][k] = sp.sympify(make_replacements(str(ReUdDD[i][j][k])))
-                    ghatDDdD[i][j][k] = sp.sympify(make_replacements(str(ghatDDdD[i][j][k])))
-                    GammahatUDD[i][j][k] = sp.sympify(make_replacements(str(GammahatUDD[i][j][k])))
+                    ReDDdD[i][j][k] = make_replacements(ReDDdD[i][j][k])
+                    ReUdDD[i][j][k] = make_replacements(ReUdDD[i][j][k])
+                    ghatDDdD[i][j][k] = make_replacements(ghatDDdD[i][j][k])
+                    GammahatUDD[i][j][k] = make_replacements(GammahatUDD[i][j][k])
                     for l in range(DIM):
-                        ReDDdDD[i][j][k][l] = sp.sympify(make_replacements(str(ReDDdDD[i][j][k][l])))
-                        ghatDDdDD[i][j][k][l] = sp.sympify(make_replacements(str(ghatDDdDD[i][j][k][l])))
-                        GammahatUDDdD[i][j][k][l] = sp.sympify(make_replacements(str(GammahatUDDdD[i][j][k][l])))
+                        ReDDdDD[i][j][k][l] = make_replacements(ReDDdDD[i][j][k][l])
+                        ghatDDdDD[i][j][k][l] = make_replacements(ghatDDdDD[i][j][k][l])
+                        GammahatUDDdD[i][j][k][l] = make_replacements(GammahatUDDdD[i][j][k][l])
 
         # Step 6: At this point, each expression is written in terms of the generic functions
         #         of xx0, xx1, and/or xx2 and their derivatives. Depending on the functions, some
@@ -627,9 +645,9 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
 
         freevars_uniq = superfast_uniq(freevars)
 
-        freevars_uniq_zeroed = []
+        freevars_uniq_xx_indep = []
         for i in range(len(freevars_uniq)):
-            freevars_uniq_zeroed.append(freevars_uniq[i])
+            freevars_uniq_xx_indep.append(freevars_uniq[i])
 
         # Step 6.b: Using the expressions f?_of_xx? set in reference_metric(),
         #           evaluate each needed derivative and, in the case it is zero,
@@ -645,6 +663,12 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
                 basefunc = f0_of_xx0
             elif basename == "f1_of_xx1":
                 basefunc = f1_of_xx1
+            elif basename == "f2_of_xx0_xx1":
+                basefunc = f2_of_xx0_xx1
+            elif basename == "f3_of_xx0":
+                basefunc = f3_of_xx0
+            elif basename == "f4_of_xx2":
+                basefunc = f4_of_xx2
             else:
                 print("Error: function inside " + str(var) + " undefined.")
                 sys.exit(1)
@@ -659,37 +683,41 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
                         derivwrt = xx[int(derivdirn)]
                         diff_result = sp.diff(diff_result, derivwrt)
             freevars_uniq_vals.append(diff_result)
-            if diff_result == sp.sympify(0):
-                freevars_uniq_zeroed[i] = 0
 
-        # Step 6.c: Finally, substitute zero for all functions & derivatives that evaluate to zero.
+            frees_uniq = superfast_uniq(diff_result.free_symbols)
+            xx_dep = False
+            for dirn in range(3):
+                if gri.xx[dirn] in frees_uniq:
+                    xx_dep = True
+            if xx_dep == False:
+                freevars_uniq_xx_indep[i] = diff_result
+
+        # Step 6.c: Finally, substitute integers for all functions & derivatives that evaluate to integers
         for varidx in range(len(freevars_uniq)):
-            detgammahat = detgammahat.subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
+            detgammahat = detgammahat.subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
             for i in range(DIM):
-                ReU[i] = ReU[i].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
+                ReU[i] = ReU[i].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+                detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
                 for j in range(DIM):
-                    ReDD[i][j] = ReDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                    ReUdD[i][j] = ReUdD[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                    ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                    ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                    # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_zeroed[varidx],detgammahatdDD[i][j])
+                    ReDD[i][j] = ReDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+                    ReUdD[i][j] = ReUdD[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+                    ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+                    ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
                     detgammahatdDD[i][j] = detgammahatdDD[i][j].subs(freevars_uniq[varidx],
-                                                                     freevars_uniq_zeroed[varidx])
-                    # print(varidx,i,j,freevars_uniq[varidx],freevars_uniq_zeroed[varidx],detgammahatdDD[i][j])
+                                                                     freevars_uniq_xx_indep[varidx])
                     for k in range(DIM):
-                        ReDDdD[i][j][k] = ReDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                        ReUdDD[i][j][k] = ReUdDD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                        ghatDDdD[i][j][k] = ghatDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
+                        ReDDdD[i][j][k] = ReDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+                        ReUdDD[i][j][k] = ReUdDD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+                        ghatDDdD[i][j][k] = ghatDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
                         GammahatUDD[i][j][k] = GammahatUDD[i][j][k].subs(freevars_uniq[varidx],
-                                                                         freevars_uniq_zeroed[varidx])
+                                                                         freevars_uniq_xx_indep[varidx])
                         for l in range(DIM):
                             ReDDdDD[i][j][k][l] = ReDDdDD[i][j][k][l].subs(freevars_uniq[varidx],
-                                                                           freevars_uniq_zeroed[varidx])
+                                                                           freevars_uniq_xx_indep[varidx])
                             ghatDDdDD[i][j][k][l] = ghatDDdDD[i][j][k][l].subs(freevars_uniq[varidx],
-                                                                               freevars_uniq_zeroed[varidx])
+                                                                               freevars_uniq_xx_indep[varidx])
                             GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],
-                                                                                       freevars_uniq_zeroed[varidx])
+                                                                                       freevars_uniq_xx_indep[varidx])
 
         # Step 7: Construct needed C code for declaring rfmstruct, allocating storage for
         #         rfmstruct arrays, defining each element in each array, reading the
@@ -697,49 +725,73 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         freeing allocated memory for the rfmstrcut arrays.
         # struct_str: String that declares the rfmstruct struct.
         struct_str = "typedef struct __rfmstruct__ {\n"
+        define_str = ""
         # rfmstruct stores pointers to (so far) 1D arrays. The malloc_str string allocates space for the arrays.
         malloc_str = "rfm_struct rfmstruct;\n"
-        # define_str sets the arrays to appropriate values. Note that elements of
-        #    these arrays will generally be transcendental functions of xx0,xx1,or xx2.
-        #    Since xx0,xx1, and xx2 remain fixed across many (if not all) iterations,
-        #    and these transcendental functions are quite expensive, setting up this
-        #    struct can greatly improve performance.
-        define_str = ""
+        freemm_str = ""
+
         # readvr_str reads the arrays from memory as needed
         readvr_str = ["", "", ""]
         readvr_SIMD_outer_str = ["", "", ""]
         readvr_SIMD_inner_str = ["", "", ""]
-        freemm_str = ""
-        for dirn in [0, 1, 2]:
-            malloc_size = gri.Nxx_plus_2NGHOSTS[dirn]
-            #        malloc_size = "Nxx_plus_2NGHOSTS["+str(dirn)+"]"
 
-            numvars = 0
-            for varidx in range(len(freevars_uniq)):
-                if "xx" + str(dirn) in str(freevars_uniq_zeroed[varidx]):
-                    numvars = numvars + 1
-                    struct_str += "\tREAL *restrict " + str(freevars_uniq_zeroed[varidx]) + ";\n"
-                    malloc_str += "rfmstruct." + str(
-                        freevars_uniq_zeroed[varidx]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
-                    freemm_str += "free(rfmstruct." + str(freevars_uniq_zeroed[varidx]) + ");\n"
+        # Tease out how many variables each function in freevars_uniq_vals
+        which_freevar = 0
+        for expr in freevars_uniq_vals:
+            if "_of_xx" in str(freevars_uniq_xx_indep[which_freevar]):
+                frees = expr.free_symbols
+                frees_uniq = superfast_uniq(frees)
+                xx_list = []
+                malloc_size = 1
+                for i in range(3):
+                    if gri.xx[i] in frees_uniq:
+                        xx_list.append(gri.xx[i])
+                        malloc_size *= gri.Nxx_plus_2NGHOSTS[i]
 
+                struct_str += "\tREAL *restrict " + str(freevars_uniq_xx_indep[which_freevar]) + ";\n"
+                malloc_str += "rfmstruct." + str(
+                    freevars_uniq_xx_indep[which_freevar]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
+                freemm_str += "free(rfmstruct." + str(freevars_uniq_xx_indep[which_freevar]) + ");\n"
+                output_define_and_readvr = False
+                for dirn in range(3):
+                    if (gri.xx[dirn] in frees_uniq) and not (gri.xx[(dirn+1)%3] in frees_uniq) and not (gri.xx[(dirn+2)%3] in frees_uniq):
+                        define_str += "for(int i"+str(dirn)+"=0;i"+str(dirn)+"<Nxx_plus_2NGHOSTS"+str(dirn)+";i"+str(dirn)+"++) {\n"
+                        define_str += "    const REAL xx"+str(dirn)+" = xx["+str(dirn)+"][i"+str(dirn)+"];\n"
+                        define_str += "    rfmstruct." + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"] = " + str(sp.ccode(freevars_uniq_vals[which_freevar])) + ";\n"
+                        define_str += "}\n\n"
+                        readvr_str[dirn] += "const REAL " + str(freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + \
+                                         str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"];\n"
+                        readvr_SIMD_outer_str[dirn] += "const double NOSIMD" + str(
+                            freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"]; "
+                        readvr_SIMD_outer_str[dirn] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                    " = ConstSIMD(NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + ");\n"
+                        readvr_SIMD_inner_str[dirn] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                    " = ReadSIMD(&rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i"+str(dirn)+"]);\n"
+                        output_define_and_readvr = True
+
+                if (output_define_and_readvr == False) and (gri.xx[0] in frees_uniq) and (gri.xx[1] in frees_uniq):
                     define_str += """
-        for(int ii=0;ii<""" + str(malloc_size) + """;ii++) {
-            const REAL xx""" + str(dirn) + """ = xx[""" + str(dirn) + """][ii];
-            rfmstruct.""" + str(freevars_uniq_zeroed[varidx]) + """[ii] = """ + str(
-                        sp.ccode(freevars_uniq_vals[varidx])) + """;
-        }"""
-                    readvr_str[dirn] += "const REAL " + str(freevars_uniq_zeroed[varidx]) + " = rfmstruct->" + str(
-                        freevars_uniq_zeroed[varidx]) + "[i" + str(dirn) + "];\n"
-                    readvr_SIMD_outer_str[dirn] += "const double NOSIMD" + str(
-                        freevars_uniq_zeroed[varidx]) + " = rfmstruct->" + str(
-                        freevars_uniq_zeroed[varidx]) + "[i" + str(dirn) + "]; "
-                    readvr_SIMD_outer_str[dirn] += "const REAL_SIMD_ARRAY " + str(
-                        freevars_uniq_zeroed[varidx]) + " = ConstSIMD(NOSIMD" + str(
-                        freevars_uniq_zeroed[varidx]) + ");\n"
-                    readvr_SIMD_inner_str[dirn] += "const REAL_SIMD_ARRAY " + str(
-                        freevars_uniq_zeroed[varidx]) + " = ReadSIMD(&rfmstruct->" + str(
-                        freevars_uniq_zeroed[varidx]) + "[i" + str(dirn) + "]);\n"
+for(int i1=0;i1<Nxx_plus_2NGHOSTS1;i1++) for(int i0=0;i0<Nxx_plus_2NGHOSTS0;i0++) {
+    const REAL xx0 = xx[0][i0];
+    const REAL xx1 = xx[1][i1];
+    rfmstruct.""" + str(freevars_uniq_xx_indep[which_freevar]) + """[i0 + Nxx_plus_2NGHOSTS0*i1] = """ + str(sp.ccode(freevars_uniq_vals[which_freevar])) + """;
+}\n\n"""
+                    readvr_str[0] += "const REAL " + str(freevars_uniq_xx_indep[which_freevar]) + " = rfmstruct->" + \
+                                     str(freevars_uniq_xx_indep[which_freevar]) + "[i0 + Nxx_plus_2NGHOSTS0*i1];\n"
+                    readvr_SIMD_outer_str[0] += "const double NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                " = rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i0 + Nxx_plus_2NGHOSTS0*i1]; "
+                    readvr_SIMD_outer_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                " = ConstSIMD(NOSIMD" + str(freevars_uniq_xx_indep[which_freevar]) + ");\n"
+                    readvr_SIMD_inner_str[0] += "const REAL_SIMD_ARRAY " + str(freevars_uniq_xx_indep[which_freevar]) + \
+                                                " = ReadSIMD(&rfmstruct->" + str(freevars_uniq_xx_indep[which_freevar]) + "[i0 + Nxx_plus_2NGHOSTS0*i1]);\n"
+                    output_define_and_readvr = True
+
+                if output_define_and_readvr == False:
+                    print("ERROR: Could not figure out the (xx0,xx1,xx2) dependency within the expression for "+str(freevars_uniq_xx_indep[which_freevar])+":")
+                    print(str(freevars_uniq_vals[which_freevar]))
+                    sys.exit(1)
+
+            which_freevar += 1
 
         struct_str += "} rfm_struct;\n\n"
 
