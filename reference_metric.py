@@ -633,9 +633,9 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
 
         freevars_uniq = superfast_uniq(freevars)
 
-        freevars_uniq_zeroed = []
+        freevars_uniq_ints_rats = []
         for i in range(len(freevars_uniq)):
-            freevars_uniq_zeroed.append(freevars_uniq[i])
+            freevars_uniq_ints_rats.append(freevars_uniq[i])
 
         # Step 6.b: Using the expressions f?_of_xx? set in reference_metric(),
         #           evaluate each needed derivative and, in the case it is zero,
@@ -669,35 +669,35 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
                         derivwrt = xx[int(derivdirn)]
                         diff_result = sp.diff(diff_result, derivwrt)
             freevars_uniq_vals.append(diff_result)
-            if diff_result == sp.sympify(0):
-                freevars_uniq_zeroed[i] = 0
+            if diff_result.is_integer or diff_result.is_rational:
+                freevars_uniq_ints_rats[i] = diff_result
 
-        # Step 6.c: Finally, substitute zero for all functions & derivatives that evaluate to zero.
+        # Step 6.c: Finally, substitute integers for all functions & derivatives that evaluate to integers
         for varidx in range(len(freevars_uniq)):
-            detgammahat = detgammahat.subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
+            detgammahat = detgammahat.subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
             for i in range(DIM):
-                ReU[i] = ReU[i].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
+                ReU[i] = ReU[i].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
+                detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
                 for j in range(DIM):
-                    ReDD[i][j] = ReDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                    ReUdD[i][j] = ReUdD[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                    ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                    ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
+                    ReDD[i][j] = ReDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
+                    ReUdD[i][j] = ReUdD[i][j].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
+                    ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
+                    ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
                     detgammahatdDD[i][j] = detgammahatdDD[i][j].subs(freevars_uniq[varidx],
-                                                                     freevars_uniq_zeroed[varidx])
+                                                                     freevars_uniq_ints_rats[varidx])
                     for k in range(DIM):
-                        ReDDdD[i][j][k] = ReDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                        ReUdDD[i][j][k] = ReUdDD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
-                        ghatDDdD[i][j][k] = ghatDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_zeroed[varidx])
+                        ReDDdD[i][j][k] = ReDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
+                        ReUdDD[i][j][k] = ReUdDD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
+                        ghatDDdD[i][j][k] = ghatDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_ints_rats[varidx])
                         GammahatUDD[i][j][k] = GammahatUDD[i][j][k].subs(freevars_uniq[varidx],
-                                                                         freevars_uniq_zeroed[varidx])
+                                                                         freevars_uniq_ints_rats[varidx])
                         for l in range(DIM):
                             ReDDdDD[i][j][k][l] = ReDDdDD[i][j][k][l].subs(freevars_uniq[varidx],
-                                                                           freevars_uniq_zeroed[varidx])
+                                                                           freevars_uniq_ints_rats[varidx])
                             ghatDDdDD[i][j][k][l] = ghatDDdDD[i][j][k][l].subs(freevars_uniq[varidx],
-                                                                               freevars_uniq_zeroed[varidx])
+                                                                               freevars_uniq_ints_rats[varidx])
                             GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],
-                                                                                       freevars_uniq_zeroed[varidx])
+                                                                                       freevars_uniq_ints_rats[varidx])
 
         # Step 7: Construct needed C code for declaring rfmstruct, allocating storage for
         #         rfmstruct arrays, defining each element in each array, reading the
@@ -705,6 +705,24 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         freeing allocated memory for the rfmstrcut arrays.
         # struct_str: String that declares the rfmstruct struct.
         struct_str = "typedef struct __rfmstruct__ {\n"
+        # Tease out how many variables each function in freevars_uniq_vals
+        # for expr in freevars_uniq_vals_zeroed:
+        #     frees = expr.free_symbols
+        #     frees_uniq = superfast_uniq(frees)
+        #     xx_list = []
+        #     malloc_size = 1
+        #     for i in range(3):
+        #         if gri.xx[i] in frees_uniq:
+        #             xx_list.append(gri.xx[i])
+        #             malloc_size *= gri.Nxx_plus_2NGHOSTS[i]
+
+            # struct_str += "\tREAL *restrict " + str(freevars_uniq_ints_rats[varidx]) + ";\n"
+            # malloc_str += "rfmstruct." + str(
+            #     freevars_uniq_ints_rats[varidx]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
+            # freemm_str += "free(rfmstruct." + str(freevars_uniq_ints_rats[varidx]) + ");\n"
+
+            # print(expr,xx_list)
+        # sys.exit(1)
         # rfmstruct stores pointers to (so far) 1D arrays. The malloc_str string allocates space for the arrays.
         malloc_str = "rfm_struct rfmstruct;\n"
         # define_str sets the arrays to appropriate values. Note that elements of
@@ -724,30 +742,30 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
 
             numvars = 0
             for varidx in range(len(freevars_uniq)):
-                if "xx" + str(dirn) in str(freevars_uniq_zeroed[varidx]):
+                if "xx" + str(dirn) in str(freevars_uniq_ints_rats[varidx]):
                     numvars = numvars + 1
-                    struct_str += "\tREAL *restrict " + str(freevars_uniq_zeroed[varidx]) + ";\n"
+                    struct_str += "\tREAL *restrict " + str(freevars_uniq_ints_rats[varidx]) + ";\n"
                     malloc_str += "rfmstruct." + str(
-                        freevars_uniq_zeroed[varidx]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
-                    freemm_str += "free(rfmstruct." + str(freevars_uniq_zeroed[varidx]) + ");\n"
+                        freevars_uniq_ints_rats[varidx]) + " = (REAL *)malloc(sizeof(REAL)*" + str(malloc_size) + ");\n"
+                    freemm_str += "free(rfmstruct." + str(freevars_uniq_ints_rats[varidx]) + ");\n"
 
                     define_str += """
         for(int ii=0;ii<""" + str(malloc_size) + """;ii++) {
             const REAL xx""" + str(dirn) + """ = xx[""" + str(dirn) + """][ii];
-            rfmstruct.""" + str(freevars_uniq_zeroed[varidx]) + """[ii] = """ + str(
+            rfmstruct.""" + str(freevars_uniq_ints_rats[varidx]) + """[ii] = """ + str(
                         sp.ccode(freevars_uniq_vals[varidx])) + """;
         }"""
-                    readvr_str[dirn] += "const REAL " + str(freevars_uniq_zeroed[varidx]) + " = rfmstruct->" + str(
-                        freevars_uniq_zeroed[varidx]) + "[i" + str(dirn) + "];\n"
+                    readvr_str[dirn] += "const REAL " + str(freevars_uniq_ints_rats[varidx]) + " = rfmstruct->" + str(
+                        freevars_uniq_ints_rats[varidx]) + "[i" + str(dirn) + "];\n"
                     readvr_SIMD_outer_str[dirn] += "const double NOSIMD" + str(
-                        freevars_uniq_zeroed[varidx]) + " = rfmstruct->" + str(
-                        freevars_uniq_zeroed[varidx]) + "[i" + str(dirn) + "]; "
+                        freevars_uniq_ints_rats[varidx]) + " = rfmstruct->" + str(
+                        freevars_uniq_ints_rats[varidx]) + "[i" + str(dirn) + "]; "
                     readvr_SIMD_outer_str[dirn] += "const REAL_SIMD_ARRAY " + str(
-                        freevars_uniq_zeroed[varidx]) + " = ConstSIMD(NOSIMD" + str(
-                        freevars_uniq_zeroed[varidx]) + ");\n"
+                        freevars_uniq_ints_rats[varidx]) + " = ConstSIMD(NOSIMD" + str(
+                        freevars_uniq_ints_rats[varidx]) + ");\n"
                     readvr_SIMD_inner_str[dirn] += "const REAL_SIMD_ARRAY " + str(
-                        freevars_uniq_zeroed[varidx]) + " = ReadSIMD(&rfmstruct->" + str(
-                        freevars_uniq_zeroed[varidx]) + "[i" + str(dirn) + "]);\n"
+                        freevars_uniq_ints_rats[varidx]) + " = ReadSIMD(&rfmstruct->" + str(
+                        freevars_uniq_ints_rats[varidx]) + "[i" + str(dirn) + "]);\n"
 
         struct_str += "} rfm_struct;\n\n"
 
