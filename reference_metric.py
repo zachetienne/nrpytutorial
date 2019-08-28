@@ -51,14 +51,15 @@ scalefactor_orthog_funcform = ixp.zerorank1(DIM=4) # Must be set in terms of gen
 have_already_called_reference_metric_function = False
 
 def reference_metric(SymPySimplifyExpressions=True):
-    global f0_of_xx0_funcform, f1_of_xx1_funcform, f2_of_xx0_xx1_funcform, f3_of_xx0_funcform
-    global f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0
+    global f0_of_xx0_funcform, f1_of_xx1_funcform, f2_of_xx0_xx1_funcform, f3_of_xx0_funcform, f4_of_xx2_funcform
+    global f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0, f4_of_xx2
     f0_of_xx0_funcform     = sp.Function('f0_of_xx0_funcform')(xx[0])
     f1_of_xx1_funcform     = sp.Function('f1_of_xx1_funcform')(xx[1])
     f2_of_xx0_xx1_funcform = sp.Function('f2_of_xx0_xx1_funcform')(xx[0], xx[1])
     f3_of_xx0_funcform     = sp.Function('f3_of_xx0_funcform')(xx[0])
-    f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0 = par.Cparameters("REAL", thismodule,
-                                                          ["f0_of_xx0", "f1_of_xx1", "f2_of_xx0_xx1", "f3_of_xx0"], 1e300)
+    f4_of_xx2_funcform     = sp.Function('f4_of_xx2_funcform')(xx[2])
+    f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0, f4_of_xx2 = par.Cparameters("REAL", thismodule,
+                                  ["f0_of_xx0", "f1_of_xx1", "f2_of_xx0_xx1", "f3_of_xx0", "f4_of_xx2"], 1e300)
     # FIXME: Hack
     f0_of_xx0__D0, f0_of_xx0__DD00, f0_of_xx0__DDD000 = par.Cparameters("REAL", thismodule,
                                                                         ["f0_of_xx0__D0", "f0_of_xx0__DD00",
@@ -71,6 +72,7 @@ def reference_metric(SymPySimplifyExpressions=True):
                         ["f2_of_xx0_xx1__D0","f2_of_xx0_xx1__D1","f2_of_xx0_xx1__DD00","f2_of_xx0_xx1__DD11"],
                         1e300)
     f3_of_xx0__D0,f3_of_xx0__DD00     = par.Cparameters("REAL", thismodule,["f3_of_xx0__D0","f3_of_xx0__DD00"], 1e300)
+    f4_of_xx2__D2,f4_of_xx2__DD22     = par.Cparameters("REAL", thismodule,["f4_of_xx2__D2","f4_of_xx2__DD22"], 1e300)
 
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True
@@ -282,6 +284,13 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog[0] = sp.diff(RHOCYL,xx[0])
         scalefactor_orthog[1] = RHOCYL
         scalefactor_orthog[2] = sp.diff(ZCYL,xx[2])
+
+        f0_of_xx0              = RHOCYL
+        f4_of_xx2              = sp.diff(ZCYL,xx[2])
+
+        scalefactor_orthog_funcform[0] = sp.diff(f0_of_xx0_funcform,xx[0])
+        scalefactor_orthog_funcform[1] = f0_of_xx0_funcform
+        scalefactor_orthog_funcform[2] = f4_of_xx2_funcform
 
         # Set the unit vectors
         UnitVectors = [[ sp.cos(PHICYL), sp.sin(PHICYL), sp.sympify(0)],
@@ -657,7 +666,9 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
             elif basename == "f2_of_xx0_xx1":
                 basefunc = f2_of_xx0_xx1
             elif basename == "f3_of_xx0":
-                    basefunc = f3_of_xx0
+                basefunc = f3_of_xx0
+            elif basename == "f4_of_xx2":
+                basefunc = f4_of_xx2
             else:
                 print("Error: function inside " + str(var) + " undefined.")
                 sys.exit(1)
