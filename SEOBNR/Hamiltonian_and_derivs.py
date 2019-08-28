@@ -65,8 +65,8 @@ def deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=
 
 def replace_numpy_funcs(expression):
 
-    return str(expression).replace("sqrt(", "sp.sqrt(").replace("log(",
-                                            "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(")
+    return str(expression).replace("sqrt(", "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(",
+                                    "sp.Abs(").replace("sign(", "sp.sign(")
 
 
 def output_H_and_derivs():
@@ -231,9 +231,9 @@ def sympy_cse():
         CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
         with open("numpy_expressions.py", "a") as file:
                 for commonsubexpression in CSE_results[0]:
-                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "np.abs").replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
-                        file.write("\\tHreal = "+str(result)+"\\n")
+                        file.write("\\tHreal = "+str(result).replace("sqrt(","np.sqrt(")+"\\n")
 """)
 
         for i in range(len(lr)):
@@ -292,9 +292,9 @@ def sympy_cse():
         CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
         with open("numpy_expressions.py", "a") as file:
                 for commonsubexpression in CSE_results[0]:
-                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs").replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
-                        file.write("\\t"+str(output_list[i])+" = "+str(result)+"\\n")
+                        file.write("\\t"+str(output_list[i])+" = "+str(result).replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
                         if i > 0:
                                 file.write(","+str(output_list[i]))
@@ -465,7 +465,7 @@ def sympy_cse():
         CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
         with open("numpy_expressions.py", "a") as file:
                 for commonsubexpression in CSE_results[0]:
-                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs")+"\\n")
+                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "np.abs").replace("sqrt(","np.sqrt(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
                         file.write("\\tHreal = "+str(result)+"\\n")
 """)
