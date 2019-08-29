@@ -65,8 +65,7 @@ def deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=
 
 def replace_numpy_funcs(expression):
 
-    return str(expression).replace("sqrt(", "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(",
-                                    "sp.Abs(").replace("sign(", "sp.sign(")
+    return str(expression).replace("sqrt(", "sp.sqrt(").replace("Abs(", "sp.Abs(").replace("log(", "sp.log(").replace("sign(", "sp.sign(")
 
 
 def output_H_and_derivs():
@@ -88,9 +87,10 @@ def output_H_and_derivs():
             splitHamterms = Hamterms[i].split("=")
             # Append to the "lr" array, removing spaces, "sp." prefixes, and replacing Lambda->Lamb
             #       (Lambda is a protected keyword):
+            # lr.append(lhrh(lhs=splitHamterms[0].replace(" ", "").replace("Lambda", "Lamb"),
+            #                rhs=splitHamterms[1].replace(" ", "").replace("sp.A", "a").replace("sp.","").replace("Lambda", "Lamb")))
             lr.append(lhrh(lhs=splitHamterms[0].replace(" ", "").replace("Lambda", "Lamb"),
-                           rhs=splitHamterms[1].replace(" ", "").replace("sp.A", "a").replace("sp.",
-                                                            "").replace("Lambda", "Lamb")))
+                           rhs=splitHamterms[1].replace(" ", "").replace("sp.","").replace("Lambda", "Lamb")))
 
     xx = sp.Symbol('xx')
     func = []
@@ -208,7 +208,7 @@ def output_H_and_derivs():
         file.write("import numpy as np\n")
         file.write("def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5, k0, k1, k2, k3, k4, k5, k5l, d1, d1v2, dheffSS, dheffSSv2, tortoise):\n")
         for i in range(len(lr)-1):
-            file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(", "np.abs(").replace("Rational(",
+            file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(",
                     "np.divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(") + "\n")
 
     with open("SEOBNR_Playground_Pycodes/sympy_expression.py", "w") as file:
@@ -224,14 +224,14 @@ def sympy_cse():
 """)
 
         for i in range(len(lr)):
-            file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("sqrt(","sp.sqrt(").replace("log(",
-                "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace("Rational(",
+            file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(","sp.Abs(").replace("sqrt(","sp.sqrt(").replace("log(",
+                "sp.log(").replace("sign(", "sp.sign(").replace("Rational(",
                 "sp.Rational(") + "\n")
         file.write("""
         CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
         with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "a") as file:
                 for commonsubexpression in CSE_results[0]:
-                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "np.abs").replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
+                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
                         file.write("\\tHreal = "+str(result).replace("sqrt(","np.sqrt(")+"\\n")
 """)
@@ -246,7 +246,7 @@ def sympy_cse():
                        replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x") + "\n")
 #        for i in range(len(lhss_deriv_x)):
 #            file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + str(rhss_deriv_x[i]).replace("sqrt(",
-#                "sp.sqrt(").replace("log(", "sp.log(").replace("Abs(", "sp.Abs(").replace("sign(", "sp.sign(").replace(
+#                "sp.sqrt(").replace("log(", "sp.log(").replace("sign(", "sp.sign(").replace(
 #                "prm", "prm_x") + "\n")
         for i in range(len(lhss_deriv_y)):
             file.write("\t"+str(lhss_deriv_y[i]).replace("prm", "prm_y") + " = " +
@@ -292,7 +292,7 @@ def sympy_cse():
         CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
         with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "a") as file:
                 for commonsubexpression in CSE_results[0]:
-                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs").replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
+                        file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
                         file.write("\\t"+str(output_list[i])+" = "+str(result).replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
