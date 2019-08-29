@@ -204,14 +204,14 @@ def output_H_and_derivs():
         outsplhs.append(lhss_deriv_x[i])
         outsprhs.append(rhss_deriv_x[i])
 
-    with open("SEOBNR/numpy_expressions.py", "w") as file:
+    with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "w") as file:
         file.write("import numpy as np\n")
         file.write("def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5, k0, k1, k2, k3, k4, k5, k5l, d1, d1v2, dheffSS, dheffSSv2, tortoise):\n")
         for i in range(len(lr)-1):
             file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(", "np.abs(").replace("Rational(",
                     "np.divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(") + "\n")
 
-    with open("SEOBNR/sympy_expression.py", "w") as file:
+    with open("SEOBNR_Playground_Pycodes/sympy_expression.py", "w") as file:
         file.write("""
 import sympy as sp
 from outputC import *
@@ -229,7 +229,7 @@ def sympy_cse():
                 "sp.Rational(") + "\n")
         file.write("""
         CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
-        with open("SEOBNR/numpy_expressions.py", "a") as file:
+        with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "a") as file:
                 for commonsubexpression in CSE_results[0]:
                         file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "np.abs").replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
@@ -290,7 +290,7 @@ def sympy_cse():
         expression_list = [Hrealprm_x,Hrealprm_y,Hrealprm_z,Hrealprm_px,Hrealprm_py,Hrealprm_pz,
                  Hrealprm_s1x,Hrealprm_s1y,Hrealprm_s1z,Hrealprm_s2x,Hrealprm_s2y,Hrealprm_s2z]
         CSE_results = sp.cse(expression_list, sp.numbered_symbols("tmp"), order='canonical')
-        with open("SEOBNR/numpy_expressions.py", "a") as file:
+        with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "a") as file:
                 for commonsubexpression in CSE_results[0]:
                         file.write("\\t"+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("Abs", "abs").replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(")+"\\n")
                 for i,result in enumerate(CSE_results[1]):
