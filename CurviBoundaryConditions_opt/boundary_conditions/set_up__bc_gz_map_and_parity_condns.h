@@ -99,7 +99,8 @@ void set_up__bc_gz_map_and_parity_condns(const paramstruct *restrict params,
           // Perform sanity check on parity array output: should be +1 or -1 to within 8 significant digits:
           if( (REAL_parity_array[whichparity]  > 0 && fabs(REAL_parity_array[whichparity] - (+1)) > 1e-8) ||
               (REAL_parity_array[whichparity] <= 0 && fabs(REAL_parity_array[whichparity] - (-1)) > 1e-8) ) {
-              printf("Error. Parity evaluated to %e , which is not within 8 significant digits of +1 or -1.",REAL_parity_array[whichparity]);
+              fprintf(stderr,"Error. Parity evaluated to %e , which is not within 8 significant digits of +1 or -1.",
+                      REAL_parity_array[whichparity]);
               exit(1);
           }
           if(REAL_parity_array[whichparity] < 0.0) bc_parity_conditions[IDX3S(i0,i1,i2)].parity[whichparity] = -1;

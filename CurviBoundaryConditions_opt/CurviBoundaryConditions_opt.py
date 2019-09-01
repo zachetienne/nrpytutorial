@@ -93,7 +93,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
 
             if len(parity_type) == parity_type__orig_len:
                 print("Error: Could not figure out parity type for evolved variable: " + varname)
-                exit(1)
+                sys.exit(1)
         return parity_type
 
     evol_parity_type = set_parity_types(evolved_variables_list)
