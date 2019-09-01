@@ -880,9 +880,11 @@ void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3],
 """)
 
 def xxCart_h(funcname,cparamsloc,outfile):
-    from outputC import *
+    import outputC
     # Arbitrary-coordinate NRPy+ file output, Part 1: output the conversion from (x0,x1,x2) to Cartesian (x,y,z)
-    Cout = outputC([xxCart[0],xxCart[1],xxCart[2]],["xCart[0]","xCart[1]","xCart[2]"],"returnstring",params="preindent=1")
+    Cout = outputC.outputC([xxCart[0],xxCart[1],xxCart[2]],
+                           ["xCart[0]","xCart[1]","xCart[2]"],
+                           "returnstring",params="preindent=1")
     
     with open(outfile, "w") as file:
         file.write("""
