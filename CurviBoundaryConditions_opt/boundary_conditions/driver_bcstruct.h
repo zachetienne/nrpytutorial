@@ -14,14 +14,13 @@ parity_condition *bc_parity_conditions = (parity_condition *)malloc(sizeof(parit
 
 // Step 3: Set bc_gz_map and bc_parity_conditions at *all*
 //         points; on the boundary and otherwise.
-set_up__bc_gz_map_and_parity_condns(&params, xx, xxmin, xxmax, bc_gz_map,
+set_up__bc_gz_map_and_parity_condns(&params, xx, bc_gz_map,
                                     bc_parity_conditions
                                    );
 
 // Step 4: Declare and allocate memory for bcstruct,
 //         which will store all information needed for
 //         applying the boundary conditions.
-bc_struct bcstruct;
 bcstruct.outer = (outer_bc **)malloc(sizeof(outer_bc *)*NGHOSTS);
 bcstruct.inner = (inner_bc **)malloc(sizeof(inner_bc *)*NGHOSTS);
 bcstruct.num_ob_gz_pts = (    int *)malloc(sizeof(int)*NGHOSTS);

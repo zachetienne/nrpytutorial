@@ -15,6 +15,9 @@ import reference_metric as rfm
 import sys
 
 def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=True):
+    # Step 0: Set up reference metric in case it hasn't already been set up.
+    #         (Doing it twice hurts nothing).
+    rfm.reference_metric()
 
     # Step 1: Set unit-vector dot products (=parity) for each of the 10 parity condition types
     parity = ixp.zerorank1(DIM=10)
@@ -132,26 +135,26 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
             print("AuxEvol gridfunction \"" + auxevol_variables_list[i] + "\" has parity type " + str(
                 auxevol_parity_type[i]) + ".")
 
-    # First output code needed for mapping from any given curvilinear coordinate gridpoint
-    #  to the Cartesian coordinate in the grid interior (xxCart), and then find the
-    #  corresponding gridpoint index in the grid interior (Cart_to_xx; xxminmax).
-    # Generic coordinate NRPy+ file output, Part 1: output the conversion from (x0,x1,x2) to Cartesian (x,y,z)
-    outputC([rfm.xxCart[0], rfm.xxCart[1], rfm.xxCart[2]], ["xCart[0]", "xCart[1]", "xCart[2]"],
-            outdir+"xxCart.h")
-    # Generic coordinate NRPy+ file output, Part 2: output the coordinate bounds xxmin[] and xxmax[]:
-    with open(outdir+"xxminmax.h", "w") as file:
-        file.write(
-            "const REAL xxmin[3] = {" + str(rfm.xxmin[0]) + "," + str(rfm.xxmin[1]) + "," + str(rfm.xxmin[2]) + "};\n")
-        file.write(
-            "const REAL xxmax[3] = {" + str(rfm.xxmax[0]) + "," + str(rfm.xxmax[1]) + "," + str(rfm.xxmax[2]) + "};\n")
-    print("Wrote to file \""+outdir+"xxminmax.h\"")
+    # Step 3: Find the Eigen-Coordinate and set up the Eigen-Coordinate's reference metric:
+    CoordSystem_orig = par.parval_from_str("reference_metric::CoordSystem")
+    par.set_parval_from_str("reference_metric::CoordSystem", rfm.get_EigenCoord())
+    rfm.reference_metric()
 
-    # Generic coordinate NRPy+ file output, Part 3: output the conversion from Cartesian (x,y,z) to interior/OB (x0,x1,x2)
+    # Step 4: Output C code for the Eigen-Coordinate mapping from xx->Cartesian:
+    rfm.xxCart_h("EigenCoord_xxCart", "../set_Cparameters.h", outdir + "EigenCoord_xxCart.h")
+
+    # Step 5: Output the Eigen-Coordinate mapping from Cartesian->xx:
+    # Step 5.a: Sanity check: First make sure that rfm.Cart_to_xx has been set. Error out if not!
     if rfm.Cart_to_xx[0] == 0 or rfm.Cart_to_xx[1] == 0 or rfm.Cart_to_xx[2] == 0:
         print("ERROR: rfm.Cart_to_xx[], which maps Cartesian -> xx, has not been set for")
-        print("       reference_metric::CoordSystem = "+par.parval_from_str("reference_metric::CoordSystem"))
+        print("       reference_metric::CoordSystem = " + par.parval_from_str("reference_metric::CoordSystem"))
         print("       Boundary conditions in curvilinear coordinates REQUIRE this be set.")
         sys.exit(1)
+    # Step 5.b: Output C code for the Eigen-Coordinate mapping from Cartesian->xx:
     outputC([rfm.Cart_to_xx[0], rfm.Cart_to_xx[1], rfm.Cart_to_xx[2]],
             ["Cart_to_xx0_inbounds", "Cart_to_xx1_inbounds", "Cart_to_xx2_inbounds"],
-            outdir+"Cart_to_xx.h")
+            outdir + "EigenCoord_Cart_to_xx.h")
+
+    # Step 6: Restore reference_metric::CoordSystem back to the original CoordSystem
+    par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
+    rfm.reference_metric()
