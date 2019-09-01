@@ -78,10 +78,10 @@ def MaxwellCartesian_Evol():
     AU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
-            AU[j] = gammaUU[i][j] * AD[i]
+            AU[j] += gammaUU[i][j] * AD[i]
             for k in range(DIM):
                 for l in range(DIM):
-                    GammaDDD[i][j][k] = gammaDD[i][l] * GammaUDD[l][j][k]
+                    GammaDDD[i][j][k] += gammaDD[i][l] * GammaUDD[l][j][k]
 
     # Covariant second derivative (the bracketed terms):
     # D_j D^j A_i = \gamma^{jk} [A_{i,jk} - A^l (\gamma_{li,kj} + \gamma_{kl,ij} - \gamma_{ik,lj})
@@ -122,7 +122,7 @@ def MaxwellCartesian_Evol():
     
     global ArhsD, ErhsD, psi_rhs
     system = par.parval_from_str("System_to_use")
-    if system is "System_I":
+    if system == "System_I":
         # Step 5: Define right-hand sides for the evolution.
         print("Warning: System I is less stable!")
         ArhsD = ixp.zerorank1()
@@ -132,7 +132,7 @@ def MaxwellCartesian_Evol():
             ErhsD[i] = -LapAD[i] + DivA_dD[i]
         psi_rhs = -DivA
 
-    elif system is "System_II":
+    elif system == "System_II":
         # We inherit here all of the definitions from System I, above
 
         # Step 7a: Register the scalar auxiliary variable \Gamma
@@ -173,10 +173,11 @@ def MaxwellCartesian_Evol():
         print("Invalid choice of system: System_to_use must be either System_I or System_II")
     
     ED_dD = ixp.declarerank2("ED_dD","nosym")
-    global Cviola
-    Cviola = gri.register_gridfunctions("AUX", ["Cviola"])
-    Cviola = sp.sympify(0)
+    global Cviolation
+    Cviolation = gri.register_gridfunctions("AUX", ["Cviolation"])
+    Cviolation = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
+            Cviolation += gammaUU[i][j] * ED_dD[j][i] 
             for b in range(DIM):
-                Cviola += gammaUU[i][j] * (ED_dD[j][i] - GammaUDD[b][i][j]*ED[b])
+                Cviolation -= gammaUU[i][j] * GammaUDD[b][i][j] * ED[b]

@@ -82,7 +82,7 @@ IO::out_fileinfo              = "none"
 IO::new_filename_scheme       = "no"
 
 IOBasic::outInfo_every        = 1
-IOBasic::outInfo_vars         = "MaxwellEvol::CviolaIGF MaxwellEvol::CviolaIIGF"
+IOBasic::outInfo_vars         = "MaxwellEvol::CviolationIGF MaxwellEvol::CviolationIIGF"
 
 
 IOASCII::out1D_style          = "gnuplot f(x)"
@@ -91,12 +91,12 @@ IOASCII::out1D_x              = "yes"
 IOASCII::out1D_y              = "no"
 IOASCII::out1D_z              = "no"
 IOASCII::out1D_d              = "no"
-IOASCII::out1D_vars           = "MaxwellEvol::CviolaIGF MaxwellEvol::CviolaIIGF"
+IOASCII::out1D_vars           = "MaxwellEvol::CviolationIGF MaxwellEvol::CviolationIIGF"
 
 IOASCII::out2D_style          = "gnuplot f(t,x,y)"
 IOASCII::out2D_every          = 1
 IOASCII::out2D_xyplane_z      = 0.0625
-IOASCII::out2D_vars           = "MaxwellEvol::CviolaIGF MaxwellEvol::CviolaIIGF"
+IOASCII::out2D_vars           = "MaxwellEvol::CviolationIGF MaxwellEvol::CviolationIIGF"
 
 #############################################################
 # Initial Data

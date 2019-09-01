@@ -7,7 +7,7 @@ def test_MaxwellCartesian_Evol_System_I():
 
     module_name = 'MaxwellCartesian_Evol_System_I'
 
-    function_and_global_dict = {'MaxwellCartesian_Evol()': ['ArhsD', 'ErhsD', 'psi_rhs', 'Cviola']}
+    function_and_global_dict = {'MaxwellCartesian_Evol()': ['ArhsD', 'ErhsD', 'psi_rhs', 'Cviolation']}
 
     initialization_string_dict = {'MaxwellCartesian_Evol()': 'import NRPy_param_funcs as par\npar.set_parval_from_str("System_to_use","System_I")'}
 
@@ -19,7 +19,7 @@ def test_MaxwellCartesian_Evol_System_II():
 
     module_name = 'MaxwellCartesian_Evol_System_II'
 
-    function_and_global_dict = {'MaxwellCartesian_Evol()': ['ArhsD', 'ErhsD', 'psi_rhs', 'Gamma_rhs', 'Cviola']}
+    function_and_global_dict = {'MaxwellCartesian_Evol()': ['ArhsD', 'ErhsD', 'psi_rhs', 'Gamma_rhs', 'Cviolation']}
 
     create_test(module, module_name, function_and_global_dict)
 

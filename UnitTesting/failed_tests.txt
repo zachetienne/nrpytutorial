@@ -1,3 +1,4 @@
 Failures:
 
-tests/test_reference_metric.py: test_SinhSymTP
+Maxwell/tests/test_Maxwell.py: test_MaxwellCartesian_Evol_System_I
+Maxwell/tests/test_Maxwell.py: test_MaxwellCartesian_Evol_System_II
