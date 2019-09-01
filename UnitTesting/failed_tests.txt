@@ -1,2 +1,3 @@
 Failures:
 
+tests/test_reference_metric.py: test_SinhSymTP

@@ -298,10 +298,10 @@ def reference_metric(SymPySimplifyExpressions=True):
                        [ sp.sympify(0),  sp.sympify(0),  sp.sympify(1)]]
 
     elif CoordSystem == "SymTP" or CoordSystem == "SinhSymTP":
-        var1, var2= sp.symbols('var1 var2',real=True)
-        bScale, AW, AMAX, RHOMAX, ZMIN, ZMAX = par.Cparameters("REAL",thismodule,
-                                                               ["bScale","AW","AMAX","RHOMAX","ZMIN","ZMAX"],
-                                                               [0.5,     0.2,   10.0,    10.0, -10.0,  10.0])
+        # var1, var2= sp.symbols('var1 var2',real=True)
+        bScale, SINHWAA, AMAX = par.Cparameters("REAL",thismodule,
+                                                ["bScale","SINHWAA","AMAX"],
+                                                [0.5,     0.2,      10.0  ])
 
         # Assuming xx0, xx1, and bScale
         #   are positive makes nice simplifications of
@@ -314,7 +314,10 @@ def reference_metric(SymPySimplifyExpressions=True):
         AA = xx[0]
 
         if CoordSystem == "SinhSymTP":
-            AA = (sp.exp(xx[0]/AW)-sp.exp(-xx[0]/AW))/2
+            # With xxmax[0] == AMAX, sinh(xx0/AMAX) will evaluate to a number between 0 and 1.
+            #   Similarly, sinh(xx0/(AMAX*SINHWAA)) / sinh(1/SINHWAA) will also evaluate to a number between 0 and 1.
+            #   Then AA = AMAX*sinh(xx0/(AMAX*SINHWAA)) / sinh(1/SINHWAA) will evaluate to a number between 0 and AMAX.
+            AA = AMAX * (sp.exp(xx[0] / (AMAX*SINHWAA)) - sp.exp(-xx[0] / (AMAX*SINHWAA))) / (sp.exp(1 / SINHWAA) - sp.exp(-1 / AMAX))
 
         var1 = sp.sqrt(AA**2 + (bScale * sp.sin(xx[1]))**2)
         var2 = sp.sqrt(AA**2 + bScale**2)
