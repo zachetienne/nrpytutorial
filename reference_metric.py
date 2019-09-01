@@ -406,6 +406,10 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog[1] = sp.sympify(1)
         scalefactor_orthog[2] = sp.sympify(1)
 
+        scalefactor_orthog_funcform[0] = sp.sympify(1)
+        scalefactor_orthog_funcform[1] = sp.sympify(1)
+        scalefactor_orthog_funcform[2] = sp.sympify(1)
+
         # Set the transpose of the matrix of unit vectors
         UnitVectors = [[sp.sympify(1), sp.sympify(0), sp.sympify(0)],
                        [sp.sympify(0), sp.sympify(1), sp.sympify(0)],
