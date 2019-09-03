@@ -1,11 +1,44 @@
-#Some of these terms are in the Hamiltonian tutorial.  Move them out so we can use them in the initial conditions
-#and not recompute them!
+# -*- coding: utf-8 -*-
+# # The Spinning Effective One-Body Constant Coefficients
+# ## Author: Tyler Knowles
+#
+# ## This module documents the reduced spinning effective one-body constant coefficients (both from numerical relativity and Post-Newtonian expansions) as implemented in LALSuite's SEOBNRv3 gravitational waveform approximant.  <font color='red'><b>FIXME: add a primary source.</b></font>
+#
+#
+# **Module Status:** <font color='red'><b> In progress </b></font>
+#
+# **Validation Notes:** This module is under active development -- do ***not*** use the resulting code for scientific applications.  In the future, this module will be validated against the LALSuite [SEOBNRv3/SEOBNRv3_opt code]( https://git.ligo.org/lscsoft/lalsuite.) that was reviewed and approved for LIGO parameter estimation by the LIGO Scientific Collaboration.
+#
+#
+# ## Introduction
+# ### The Physical System of Interest
+#
+# Consider two compact objects (e.g. black holes or neutron stars) with masses $m_{1}$, $m_{2}$ (in solar masses) and spin angular momenta ${\bf S}_{1}$, ${\bf S}_{2}$ in a binary system.  The spinning effective one-body ("SEOB") Hamiltonian $H_{\rm real}$ (see [BB2010](https://arxiv.org/abs/0912.3517) Equation (5.69)) describes the dynamics of this system.
+#
+# The constant coefficients from Post-Newtonian expansions and fits to Numerical Relativity we need to compute the Hamiltonian of this system rely on
+# 1. the symmetric mass ratio $\eta$.
+#
+# Besides $\eta$, we also need the [Euler–Mascheroni constant](https://en.wikipedia.org/wiki/Euler%E2%80%93Mascheroni_constant) $\gamma$ which is hard-coded in LALSuite with the significant digits shown below.  (The following link directly to the appropriate LALSuite documentation: [$\gamma$](https://lscsoft.docs.ligo.org/lalsuite/lal/group___l_a_l_constants__h.html#gac6af32574ff8acaeeafe8bf422281e98).)
+#
+# Please note that throughout this notebook we adpot the following conventions:
+# 1. $c = G = 1$ where $c$ is the speed of light in a vacuum and $G$ is Newton's gravitational constant, and
+# 1. $m_{1} \ge m_{2}$.
+#
+# LALSuite line numbers are taken from Git commit bba40f2 (see [LALSuite's GitLab page](https://git.ligo.org/lscsoft/lalsuite)).
 
+# +
 import numpy as np
 
 def compute_const_coeffs(eta, gamma, a):
-    # Euler–Mascheroni constant $\gamma$
+    
+    # We need to find a better primary source for these coefficeints than is listed in the LALSuite code
+    # The paper Taracchini, Pan, et. al (2012) (https://arxiv.org/pdf/1202.0790.pdf) does not have as
+    # many significant digits as are listed here
+    c0  = 1.446
+    c1  = -1.7152360250654402
+    c2  = -3.246255899738242
 
+    # There is no source for these coefficents listed in the LALSuite code
     c20 = 1.712
     c21 = -1.803949138004582
     c22 = -39.77229225266885
