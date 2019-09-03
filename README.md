@@ -1,4 +1,4 @@
-# NRPy+, SENRv2, and the NRPy+ Jupyter Tutorial[![analytics](http://www.google-analytics.com/collect?v=1&t=pageview&_s=1&dl=https%3A%2F%2Fgithub.com%2Fproject-imas%2Fapp-password&_u=MAC~&tid=UA-59152712-10)]()
+# NRPy+, SENRv2, and the NRPy+ Jupyter Tutorial
 [![Build Status](https://travis-ci.org/zachetienne/nrpytutorial.svg?branch=master)](https://travis-ci.org/zachetienne/nrpytutorial)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/zachetienne/nrpytutorial/master?filepath=NRPyPlus_Tutorial.ipynb)
 
