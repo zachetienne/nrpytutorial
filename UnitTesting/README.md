@@ -1,3 +1,5 @@
+# Deprecated: See jupyter notebook
+
 # NRPy Unit Testing: Functions In-Depth 
 If you have not already, please read through the Jupyter notebook
 tutorial for unit testing `Tutorial-UnitTesting.ipynb` This will contain

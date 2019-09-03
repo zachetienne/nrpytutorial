@@ -11,19 +11,23 @@ import logging
 
 def run_test(self):
 
+    # Step 1: Setup
+
     logging.info(' Currently working on function ' + self.function + ' in module ' + self.module_name + '...\n')
 
-    # Step 1.b: Set precision to the value defined in standard_constants
+    # Step 1.a: Set precision to the value defined in standard_constants
     mp.dps = precision
 
-    # Step 1.c: Import trusted_values_dict from trusted_values_dict.py in self.path
+    # Step 1.b: Import trusted_values_dict from trusted_values_dict.py in self.path
     logging.info(' Importing trusted_values_dict...')
     self.trusted_values_dict = import_module('trusted_values_dict').trusted_values_dict
     logging.info(' ...Success: Imported trusted_values_dict.\n')
 
-    # Step 1.d: Set boolean self.first_time based on existence of desired trusted_values_dict entry
+    # Step 1.c: Set boolean self.first_time based on existence of desired trusted_values_dict entry
     self.first_time = self.trusted_values_dict_name not in self.trusted_values_dict
-    logging.debug(' First time: ' + str(self.first_time))
+    if self.first_time:
+        logging.info(' Proper entry not in trusted_values_dict -- '
+                     'this function in this module is being run for the first time.')
 
     # Step 1.e: Set trusted_values_dict_entry to its corresponding trusted_values_dict entry
     self.trusted_values_dict_entry = {} if self.first_time else self.trusted_values_dict[self.trusted_values_dict_name]

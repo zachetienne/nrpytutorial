@@ -1,7 +1,9 @@
 #!/bin/bash
 
+# Set proper path
 export PYTHONPATH=`pwd`:`pwd`/UnitTesting
 
+# Make sure the Python interpreter to use was passed in
 if [ -z "$1" ]
 then
     echo "ERROR: Was expecting parameter."
@@ -18,8 +20,8 @@ echo $PYTHONEXEC version info:
 $PYTHONEXEC --version
 echo "########################################"
 
+# Overwrite failed_tests.txt
 failed_tests_file=UnitTesting/failed_tests.txt
-
 :> $failed_tests_file
 printf "Failures:\n\n" > $failed_tests_file
 
@@ -33,7 +35,9 @@ add_test () {
 # By default, this boolean is set to true. A motivation for changing it to false would be if every test is failing, and
 # the sheer amount of output given with the logging level is too much to process. Having it set to true is most useful
 # when only one or two modules fail.
-rerun_if_fail=true
+rerun_if_fail=false
+
+$PYTHONEXEC UnitTesting/Test_UnitTesting/test_functions.py
 
 add_test UnitTesting/Test_UnitTesting/test_module.py
 add_test BSSN/tests/test_BSSN.py
@@ -48,11 +52,10 @@ add_test TOV/tests/test_TOV.py
 add_test u0_smallb_Poynting__Cartesian/tests/test_u0_smallb_Poynting__Cartesian.py
 add_test WeylScal4NRPy/tests/test_WeylScal4NRPy.py
 
-#$PYTHONEXEC UnitTesting/Test_UnitTesting/test_functions.py
-
 # TODO: add your tests here
 
 
+# Checking failed_tests.txt to see what failed
 contents=$(<$failed_tests_file)
 
 if [ "$contents" == $"Failures:" ]
@@ -64,6 +67,7 @@ else
   printf "$contents \n\n"
   printf '%s\n' '----------------------------------------------------------------------'
 
+  # If tests failed and rerun_if_fail is true, the rerun failed tests with logging level DEBUG
   if $rerun_if_fail
   then
     printf "Re-running failed tests with logging_level=DEBUG:\n\n"

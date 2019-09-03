@@ -1,0 +1,13 @@
+[run]
+omit =
+    */site-packages/*
+    *__test.py
+    outputC.py
+    */__init__.py
+    cmdline_helper.py
+    finite_difference.py
+    grid.py
+    indexedexp.py
+    NRPy_param_funcs.py
+    SIMD.py
+    */trusted_values_dict.py

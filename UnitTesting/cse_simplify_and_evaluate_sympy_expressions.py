@@ -15,7 +15,7 @@ precision = standard_constants.precision
 
 
 # cse_simplify_and_evaluate_sympy_expressions gets self.expanded_variable_dict by calling expand_variable_dict() on
-# self.variable_dict. It then gets every free symbol in self.expanded_variable dict and assigns them random,
+# self.variable_dict. It then gets every free symbol in the resulting expanded_variable_dict and assigns them random,
 # but consistent, mpf values. It then looks at each expression in self.expanded_variable_dict, uses SymPy's CSE
 # algorithm to optimize our random value substitution, and gets a mpf (or mpc if the result is complex) value for each
 # expression. It then checks whether any of these expressions are super close to zero -- if a value is, recalculate it
@@ -28,7 +28,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
         return {}
 
     # Call expand_variable_dict
-    self.expanded_variable_dict = expand_variable_dict(self.variable_dict)
+    expanded_variable_dict = expand_variable_dict(self.variable_dict)
 
     # Setting precision
     mp.dps = precision
@@ -36,7 +36,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     # Creating free_symbols_set, which stores all free symbols from all expressions.
     logging.debug(' Getting all free symbols...')
     free_symbols_set = set()
-    for val in self.expanded_variable_dict.values():
+    for val in expanded_variable_dict.values():
         try:
             free_symbols_set = free_symbols_set | val.free_symbols
         except AttributeError:
@@ -72,10 +72,9 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     logging.debug(' ...Calculating values for each variable based on free symbols...')
 
     # Evaluating each expression using the values in var_dict
-    for var, expression in self.expanded_variable_dict.items():
+    for var, expression in expanded_variable_dict.items():
         # Using SymPy's cse algorithm to optimize our value substitution
         replaced, reduced = cse(expression, order='none')
-        reduced = reduced[0]
 
         # Calculate our result_value
         result_value = calculate_value(free_symbols_dict, replaced, reduced)
@@ -96,26 +95,29 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     return calculated_dict
 
 
-# Sub-function that calculates value for variable with precision multiplied by precision_factor
+# calculate_value takes in a dictionary of free symbols [free_symbols_dict], the outputs from SymPy's cse algorithm
+# [replaced] and [reduced], and an optional argument precision factor that defaults to 1. It calculates a numerical
+# value for reduced[0] using value substitution between [free_symbols_dict] and [replaced] at a precision of
+# [precision] * [precision_factor]
 def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
+
+    # We only care about the first argument of [reduced]
+    reduced = reduced[0]
 
     # Set precision to [precision] multiplied by [precision_factor]
     mp.dps = precision_factor * precision
 
-    # Copying free_symbols_dict into a new variable dictionary
-    new_var_dict = dict(free_symbols_dict)
-
-    # Replacing old expressions with new expressions and putting result in new variable dictionary
+    # Replacing old expressions with new expressions and storing result in free_symbols_dict
     for new, old in replaced:
         keys = old.free_symbols
         for key in keys:
-            old = old.subs(key, new_var_dict[key])
-        new_var_dict[new] = old
+            old = old.subs(key, free_symbols_dict[key])
+        free_symbols_dict[new] = old
 
-    # Evaluating expression after cse optimization
+    # Evaluating expression after cse optimization substitution
     keys = reduced.free_symbols
     for key in keys:
-        reduced = reduced.subs(key, new_var_dict[key])
+        reduced = reduced.subs(key, free_symbols_dict[key])
 
     # Adding our variable, value pair to our calculated_dict
     try:
@@ -124,15 +126,14 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
     except TypeError:
         res = mpc(N(reduced))
 
+    # Set the precision back
     mp.dps = precision
 
     return res
 
 
-# [expand_variable_dict] takes in a variable dictionary [variable_dict] and returns a dictionary that represents
+# expand_variable_dict takes in a variable dictionary [variable_dict] and returns a dictionary that represents
 # the expanded version of [variable_dict] according to the dimension of each variable in [variable_dict].
-# Example: expand_variable_dict( { 'alpha': 0, 'betaU': [1, 3, 2] } ) --> { 'alpha': 0, 'betaU[0]': 1, 'betaU[1]': 3,
-#                                                                           'betaU[2]': 2 }
 def expand_variable_dict(variable_dict):
 
     # Initialize the result dictionary
@@ -152,7 +153,7 @@ def expand_variable_dict(variable_dict):
             # Initialize our counter of the correct dimension
             counter = '0' * dim
             # Call flatten on our expression list to get a flattened list
-            flattened_list = flatten(expression_list, [])
+            flattened_list = flatten(expression_list)
 
             # Append next element to var list and increment counter
             for elt in flattened_list:
@@ -162,24 +163,53 @@ def expand_variable_dict(variable_dict):
     return result_dict
 
 
-# Takes in a tensor [tensor] and returns the rank of that tensor, along with the length of the tensor
+# get_variable_dimension takes in a tensor [tensor] and returns a tuple containing the rank and dimension of [tensor]
 # scalar -> rank 0 tensor with length 1 -> 0, 1
 # vector with 5 elements -> rank 1 tensor with length 5 -> 1, 5
 # tensor with NxN elements -> rank 2 tensor with length N -> 2, N
 def get_variable_dimension(tensor):
-    dim = 0
-    length = 1
+    # Assume rank is 0, dim is 1
+    rank = 0
+    dim = 1
 
+    # While an element of [tensor] is also a tensor, increment dim
     while isinstance(tensor, list):
-        if dim == 0:
-            length = len(tensor)
-        dim += 1
+        # Set length to the number of elements of [tensor]
+        if rank == 0:
+            dim = len(tensor)
+        rank += 1
         tensor = tensor[0]
 
-    return dim, length
+    return rank, dim
 
 
-# iter_counter takes in a counter [counter] and a length [length] and returns the next number after counter
+# flatten takes in a list [l] and an optional argument [fl] that represents the flattened list.
+# It returns [fl], where [fl] is [l] but with all nested lists removed.
+# Adapted from https://www.geeksforgeeks.org/python-convert-a-nested-list-into-a-flat-list/
+def flatten(l, fl=None):
+
+    if fl is None:
+        fl = []
+
+    for i in l:
+        if type(i) == list:
+            flatten(i, fl)
+        else:
+            fl.append(i)
+    return fl
+
+
+# form_string takes in a variable [var] and a counter [counter] and returns a string representing [var] at
+# index [counter]
+def form_string(var, counter):
+    return_string = var
+    for char in counter:
+        return_string += '[' + char + ']'
+
+    return return_string
+
+
+# increment_counter takes in a counter [counter] and a length [length] and returns the next number after counter
 # in base [length].
 # Example: iter_counter('00', 2) -> '01'
 #          iter_counter('02', 3) -> '10'
@@ -207,25 +237,3 @@ def increment_counter(counter, length):
 
     # Return reversed return_string since we built it backwards
     return return_string[::-1]
-
-
-# Used to form the proper string to be added to name list based on var and counter
-def form_string(var, counter):
-    return_string = var
-    for char in counter:
-        return_string += '[' + char + ']'
-
-    return return_string
-
-
-# Function used for removing nested lists in python.
-# https://www.geeksforgeeks.org/python-convert-a-nested-list-into-a-flat-list/
-def flatten(l, fl):
-    for i in l:
-        if type(i) == list:
-            flatten(i, fl)
-        else:
-            fl.append(i)
-    return fl
-
-

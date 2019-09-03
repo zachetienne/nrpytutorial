@@ -1,4 +1,2 @@
 Failures:
 
-Maxwell/tests/test_Maxwell.py: test_MaxwellCartesian_Evol_System_I
-Maxwell/tests/test_Maxwell.py: test_MaxwellCartesian_Evol_System_II
