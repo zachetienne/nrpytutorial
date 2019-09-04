@@ -1,0 +1,113 @@
+Cactus Code Thorn IllinoisGRMHD
+Author(s)    : Zachariah B. Etienne
+Note         : IllinoisGRMHD is based on the GRMHD code of the
+               Illinois Numerical Relativity group, written by Matt Duez, Yuk 
+               Tung Liu, and Branson Stephens (original version), and then 
+               developed primarily by Zachariah Etienne, Yuk Tung Liu, 
+               and Vasileios Paschalidis. 
+Maintainer(s): Zachariah B. Etienne
+License      : GPLv2 for HARM Conservative-to-Primitive solver (src/harm_*)
+               GPLv2+ for all other code
+--------------------------------------------------------------------------
+
+==========
+1. Purpose
+==========
+
+IllinoisGRMHD solves the equations of General Relativistic 
+MagnetoHydroDynamics (GRMHD) using a high-resolution shock capturing scheme.
+It is a rewrite of the Illinois Numerical Relativity (ILNR) group's GRMHD 
+code, and generates results that agree to roundoff error with that original
+code. Its feature set coincides with the features of the ILNR group's 
+recent code (ca. 2009--2014), which was used in their modeling of the
+following systems:
+1) Magnetized circumbinary disk accretion onto binary black holes
+2) Magnetized black hole--neutron star mergers
+3) Magnetized Bondi flow, Bondi-Hoyle-Littleton accretion
+4) White dwarf--neutron star mergers
+
+IllinoisGRMHD is particularly good at modeling GRMHD flows into black holes
+without the need for excision. Its HARM-based conservative-to-primitive solver 
+has also been modified to check the physicality of conservative variables 
+prior to primitive inversion, and move them into the physical range if they 
+become unphysical.
+
+Currently IllinoisGRMHD consists of
+1) the Piecewise Parabolic Method (PPM) for reconstruction, 
+2) the Harten, Lax, van Leer (HLL/HLLE) approximate Riemann solver, and
+3) a modified HARM Conservative-to-Primitive solver. 
+
+IllinoisGRMHD evolves the vector potential A_{\mu} (on staggered grids) 
+instead of the magnetic fields (B^i) directly, to guarantee that the 
+magnetic fields will remain divergenceless even at AMR boundaries. On 
+uniform resolution grids, this vector potential formulation produces 
+results equivalent to those generated using the standard, staggered 
+flux-CT scheme. This scheme is based on that of Del Zanna (2003, see
+below OPTIONAL CITATION #1).
+
+=======================================================
+2. Instructions for committing patches to IllinoisGRMHD
+=======================================================
+
+Before committing a patch to IllinoisGRMHD that might *conceivably* 
+affect IllinoisGRMHD's roundoff-level agreement with previous versions,
+you must first perform a correctness test. Here are the instructions:
+
+Definitions:
+a) EXE/ is the folder containing the executable built from your new,
+patched version of IllinoisGRMHD
+b) TEST/ is arrangements/WVUThorns/IllinoisGRMHD/test/
+c) ./ is arrangements/WVUThorns/IllinoisGRMHD/
+
+Instructions:
+1) Copy TEST/magnetizedTOV.par and ./code_validation.txt to EXE/.
+
+2) Go to the EXE/ directory
+
+3) Edit magnetizedTOV.par, replacing the line
+cactus::cctk_itlast = 2
+with
+cactus::cctk_itlast = 240
+
+4) Perform the run on at least 8 MPI processes. If your computer has
+16 cores, then use the command:
+OMP_NUM_THREADS=2 mpirun -n 8 -x OMP_NUM_THREADS ./cactus_[configname] magnetizedTOV.par
+
+5) Make sure the run completes without error. If there are errors, 
+you must backtrace what is wrong before committing the patch.
+
+6) The central density is extremely sensitive to beyond-truncation-error
+changes, so we'll focus on that quantity exclusively. Parse the output 
+file as follows:
+
+awk '{if(NF==3 && NR%3==0) print $0}' magnetizedTOV/rho_b.maximum.asc > myoutput.txt
+
+7) Next compare the results:
+
+paste code_validation.txt myoutput.txt | awk '{printf("%.3f %.3f\t%e\t%e\n",$1,$2,sqrt($4^2),sqrt((($3-$7)/$3)^2));}'
+
+Column definitions:
+
+Column 1: cctk_iteration
+Column 2: cctk_time 
+Column 3: The relative difference between the trusted version of the 
+code and itself, but with a 15th significant digit perturbation at t=0.
+Column 4: The relative difference between the trusted version of the 
+code and your updated code.
+
+If Columns 3 and 4 are within 1.5 orders of magnitude through iteration 240, 
+and the relative difference at iteration 240 is 3e-7 or less, then your change 
+is accepted. Please push to the git repository.
+
+===================
+REQUIRED CITATIONS:
+===================
+
+1) IllinoisGRMHD code announcement paper: 
+Class. Quantum Grav. 32 (2015) 175009, (http://arxiv.org/abs/1501.07276)
+
+2) Noble, S. C., Gammie, C. F., McKinney, J. C., \& Del Zanna, L. \ 2006, 
+        Astrophysical Journal, 641, 626.
+
+OPTIONAL CITATIONS:
+1) Del Zanna, Bucciantini & Londrillo A&A 400, 397 (2003), Eq. (44)
