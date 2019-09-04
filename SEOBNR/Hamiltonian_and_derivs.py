@@ -206,7 +206,7 @@ def output_H_and_derivs():
 
     with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "w") as file:
         file.write("import numpy as np\n")
-        file.write("def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5, k0, k1, k2, k3, k4, k5, k5l, d1, d1v2, dheffSS, dheffSSv2, tortoise):\n")
+        file.write("def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, k2, k3, k4, k5, k5l, d1, d1v2, dheffSS, dheffSSv2, tortoise):\n")
         for i in range(len(lr)-1):
             file.write("\t" + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(",
                     "np.divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(") + "\n")
