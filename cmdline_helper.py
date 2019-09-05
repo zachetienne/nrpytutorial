@@ -102,7 +102,7 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
 #            if available. Calls Execute_input_string() to
 #            redirect output from stdout & stderr to desired
 #            destinations.
-def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=os.devnull):
+def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=os.devnull,verbose=True):
     # Step 1: Delete old version of executable file
     if file_to_redirect_stdout != os.devnull:
         delete_existing_files(file_to_redirect_stdout)
@@ -138,14 +138,13 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
     execute_string += execute_prefix+executable+" "+executable_output_arguments
 
     # Step 3: Execute the desired executable
-    Execute_input_string(execute_string, file_to_redirect_stdout)
+    Execute_input_string(execute_string, file_to_redirect_stdout,verbose)
 
 # Execute_input_string(): Executes an input string and redirects 
 #            output from stdout & stderr to desired destinations.
-def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, output=True):
+def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, verbose=True):
 
-    if output:
-#         print('input_string: ' + repr(input_string))
+    if verbose:
         print("Executing `"+input_string+"`...")
     start = time.time()
     # https://docs.python.org/3/library/subprocess.html
@@ -154,8 +153,6 @@ def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, outpu
     else:
         args = input_string
 
-    # if output:
-    #     print('args: ' + repr(args))
     # https://stackoverflow.com/questions/18421757/live-output-from-subprocess-command
     filename = "tmp.txt"
     with io.open(filename, 'wb') as writer, io.open(filename, 'rb', 1) as reader, io.open(file_to_redirect_stdout, 'w') as rdirect:
@@ -167,17 +164,8 @@ def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, outpu
         # Read the remaining
         sys.stdout.write(reader.read().decode('utf-8'))
     delete_existing_files(filename)
-# Old Python 2 version (broken for stdout redirect): if (sys.version_info < (3, 0)):
-#     else:
-#         with open(os.devnull, 'w') as f:  # replace 'w' with 'wb' for Python 3<-- Doesn't work!
-#             process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#             for c in iter(lambda: process.stderr.read(1), ''):  # replace '' with b'' for Python 3<-- Doesn't work!
-#                 sys.stdout.write(c)
-#                 f.write(c)
-#             for c in iter(lambda: process.stdout.read(1), ''):  # replace '' with b'' for Python 3<-- Doesn't work!
-#                 sys.stdout.write(f.read())
     end = time.time()
-    if output:
+    if verbose:
         print("Finished executing in "+str(end-start)+" seconds.")
 
 # delete_existing_files(file_or_wildcard): 
