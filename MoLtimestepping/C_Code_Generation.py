@@ -48,8 +48,7 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
         file.write("REAL *restrict y_n_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);\n")
         if diagonal(RK_method) == True and "RK3" in RK_method:
             file.write("""REAL *restrict k1_or_y_nplus_a21_k1_or_y_nplus1_running_total_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);
-REAL *restrict k2_or_y_nplus_a32_k2_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);
-REAL *restrict diagnostic_output_gfs = k1_or_y_nplus_a21_k1_or_y_nplus1_running_total_gfs;""")
+REAL *restrict k2_or_y_nplus_a32_k2_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);""")
         else:    
             if diagonal(RK_method) == False: #  Allocate memory for non-diagonal Butcher tables 
                 # Determine the number of k_i steps based on length of Butcher Table
@@ -58,14 +57,14 @@ REAL *restrict diagnostic_output_gfs = k1_or_y_nplus_a21_k1_or_y_nplus1_running_
                 file.write("REAL *restrict next_y_input_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);\n")
                 for i in range(num_k): # Need to allocate all k_i steps for a given method 
                     file.write("REAL *restrict k"+str(i+1)+"_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);\n")
-                file.write("REAL *restrict diagnostic_output_gfs = k1_gfs;\n")
             else: # Allocate memory for diagonal Butcher tables, which use a "y_nplus1_running_total gridfunction"
                 file.write("REAL *restrict y_nplus1_running_total_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);\n")               
                 if RK_method != 'Euler': # Allocate memory for diagonal Butcher tables that aren't Euler
                     # Need k_odd for k_1,3,5... and k_even for k_2,4,6...
                     file.write("REAL *restrict k_odd_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);\n")
                     file.write("REAL *restrict k_even_gfs = (REAL *)malloc(sizeof(REAL) * NUM_EVOL_GFS * Nxx_plus_2NGHOSTS_tot);\n")
-                file.write("REAL *restrict diagnostic_output_gfs = y_nplus1_running_total_gfs;\n")
+        file.write("REAL *restrict diagnostic_output_gfs = y_n_gfs;\n") # Diagnostics are always performed on y_n_gfs.
+
 
 ######################################################################################################################## 
 # EXAMPLE
