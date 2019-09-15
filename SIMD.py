@@ -91,6 +91,17 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,SIMD
         elif item.func == sign:
             expr = expr.xreplace({item: SignSIMD(item.args[0])})
 
+    # Fun little recursive function for constructing integer powers:
+    def IntegerPowSIMD(a, n):
+        if n == 2:
+            return MulSIMD(a, a)
+        elif n > 2:
+            return MulSIMD(IntegerPowSIMD(a, n - 1), a)
+        elif n <= -2:
+            return DivSIMD(1, IntegerPowSIMD(a, -n))
+        elif n == -1:
+            return DivSIMD(1, a)
+
     for item in preorder_traversal(expr):
         if item.func == Pow:
             if item.args[1] == 0.5:
@@ -99,38 +110,10 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,SIMD
                 expr = expr.xreplace({item: DivSIMD(1,SqrtSIMD(item.args[0]))})
             elif item.args[1] == Rational(1,3):
                 expr = expr.xreplace({item: CbrtSIMD(item.args[0])})
-            elif item.args[1] == 2:
-                expr = expr.xreplace({item: MulSIMD(item.args[0],item.args[0])})
-            elif item.args[1] == -2:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0],item.args[0]))})
-            elif item.args[1] == 3: #and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: MulSIMD(item.args[0],MulSIMD(item.args[0],item.args[0]))})
-            elif item.args[1] == -3: # and len(item.args)==1 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0])))})
-            elif item.args[1] == 4 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],item.args[0])))})
-            elif item.args[1] == -4 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0]))))})
-            elif item.args[1] == 5 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],item.args[0]))))})
-            elif item.args[1] == -5 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0])))))})
-            elif item.args[1] == 6 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],item.args[0])))))})
-            elif item.args[1] == -6 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0]))))))})
-            elif item.args[1] == 7 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],MulSIMD(item.args[0],item.args[0]))))))})
-            elif item.args[1] == -7 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0])))))))})
-            elif item.args[1] == -8 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0]))))))))})
-            elif item.args[1] == -9 and item.args[0].is_Symbol:
-                expr = expr.xreplace({item: DivSIMD(1,MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], MulSIMD(item.args[0], item.args[0])))))))))})
-            elif item.args[1] == -1:
-                expr = expr.xreplace({item: DivSIMD(1, item.args[0])})
+            elif item.args[1] == int(item.args[1]):
+                expr = expr.xreplace({item: IntegerPowSIMD(item.args[0], item.args[1])})
             else:
-                expr = expr.xreplace({item: PowSIMD(item.args[0],item.args[1])})
+                expr = expr.xreplace({item:        PowSIMD(item.args[0], item.args[1])})
 
     # Step 2: Replace all rational numbers (expressed as Rational(a,b))
     #         and integers with the new functions RationalTMP and
