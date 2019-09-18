@@ -205,7 +205,8 @@ def output_H_and_derivs():
         outsprhs.append(rhss_deriv_x[i])
 
     with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "w") as file:
-        file.write("""import numpy as np
+        file.write("""from __future__ import division
+import numpy as np
 def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, k2, k3, k4, k5, k5l, d1v2, dheffSSv2, tortoise):
 """)
         for i in range(len(lr)-1):
