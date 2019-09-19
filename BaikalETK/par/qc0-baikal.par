@@ -11,7 +11,7 @@ Cactus::cctk_final_time = 200.0
 
 
 
-ActiveThorns = "IOUtil"
+ActiveThorns = "IOUtil TerminationTrigger"
 
 IO::out_dir = $parfile
 
@@ -83,7 +83,7 @@ CarpetLib::print_memstats_every  = 5120
 
 ActiveThorns = "NaNChecker"
 
-NaNChecker::check_every     = 1 # 512
+NaNChecker::check_every     = 512
 #NaNChecker::verbose         = "all"
 #NaNChecker::action_if_found = "just warn"
 NaNChecker::action_if_found = "terminate"
@@ -392,7 +392,7 @@ QuasiLocalMeasures::surface_index[5] = 5
 
 ActiveThorns = "CarpetIOBasic"
 
-IOBasic::outInfo_every      = 1
+IOBasic::outInfo_every      = 32
 IOBasic::outInfo_reductions = "norm2"
 IOBasic::outInfo_vars       = "
         Carpet::physical_time_per_hour
@@ -405,7 +405,7 @@ ActiveThorns = "CarpetIOScalar"
 
 IOScalar::one_file_per_group = yes
 
-IOScalar::outScalar_every = 32
+IOScalar::outScalar_every = 128
 IOScalar::outScalar_vars  = "
         CarpetReduce::weight
         Carpet::physical_time_per_hour
@@ -447,7 +447,7 @@ IOASCII::one_file_per_group = yes
 IOASCII::output_symmetry_points = no
 IOASCII::out3D_ghosts           = no
 
-IOASCII::out0D_every = 32
+IOASCII::out0D_every = 128
 IOASCII::out0D_vars  = "
         Carpet::timing
         CarpetReduce::weight
@@ -482,7 +482,7 @@ IOASCII::out0D_vars  = "
         QuasiLocalMeasures::qlm_multipole_moments
 "
 
-IOASCII::out1D_every = 128
+IOASCII::out1D_every = 256
 IOASCII::out1D_vars  = "
         CarpetReduce::weight
         ADMBase::metric
@@ -550,14 +550,21 @@ Activethorns = "CarpetIOHDF5"
 #         BaikalETK::MU2GF
 # "
 
-IOHDF5::checkpoint                  = no
+IOHDF5::checkpoint                  = yes
 IO::checkpoint_dir                  = $parfile
 IO::checkpoint_ID                   = no
-IO::checkpoint_every_walltime_hours = 6.0
-IO::checkpoint_on_terminate         = no
+###IO::checkpoint_every_walltime_hours = 6.0
+IO::checkpoint_on_terminate         = yes
 
 IO::recover     = "autoprobe"
 IO::recover_dir = $parfile
+
+# Parameters of thorn TerminationTrigger (implementing TerminationTrigger)
+TerminationTrigger::create_termination_file = "yes"
+TerminationTrigger::max_walltime            = 4.0 # IN HOURS
+TerminationTrigger::on_remaining_walltime   = 30  # IN MINUTES
+TerminationTrigger::termination_file        = "TERMINATE"
+TerminationTrigger::termination_from_file   = "yes"
 
 
 
