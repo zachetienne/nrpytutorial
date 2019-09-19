@@ -138,4 +138,3 @@ def ADM_in_terms_of_BSSN():
             for k in range(DIM):
                 KDDdD[i][j][k] = exp4phidD[k] * AbarDD[i][j] + exp4phi * AbarDD_dD[i][j][k] + \
                                  sp.Rational(1, 3) * (gammaDDdD[i][j][k] * trK + gammaDD[i][j] * trK_dD[k])
-
