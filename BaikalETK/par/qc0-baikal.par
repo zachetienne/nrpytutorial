@@ -284,7 +284,7 @@ ActiveThorns = "BaikalETK NewRad"
 ADMBase::evolution_method         = "BaikalETK"
 ADMBase::lapse_evolution_method   = "BaikalETK"
 ADMBase::shift_evolution_method   = "BaikalETK"
-##ADMBase::dtlapse_evolution_method = "ML_BSSN"
+ADMBase::dtlapse_evolution_method = "BaikalETK"
 ADMBase::dtshift_evolution_method = "BaikalETK"
 
 # Zach says: Dont know if we need this.
