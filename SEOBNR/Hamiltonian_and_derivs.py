@@ -116,9 +116,9 @@ def output_H_and_derivs():
     c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5 = sp.symbols(
         "c0k2 c1k2 c0k3 c1k3 c0k4 c1k4 c2k4 c0k5 c1k5 c2k5", real=True)
     KK, k0, k1, k2, k3, k4, k5, k5l, b3, bb3, d1, d1v2, dheffSS, dheffSSv2 = sp.symbols("KK k0 k1 k2 k3 k4 k5 k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2", real=True)
-    tortoise = sp.symbols("tortoise", real=True)
+    tortoise, quagsire = sp.symbols("tortoise quagsire", real=True)
     input_constants = [m1, m2, eta, c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5, KK, k0, k1, k2, k3, k4,
-                       k5, k5l, b3, bb3, d1, d1v2, dheffSS, dheffSSv2, tortoise]
+                       k5, k5l, b3, bb3, d1, d1v2, dheffSS, dheffSSv2, tortoise, quagsire]
 
     # Derivatives of input constants will always be zero, so remove them from the full_symbol_list.
     for inputconst in input_constants:
@@ -207,11 +207,11 @@ def output_H_and_derivs():
     with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "w") as file:
         file.write("""from __future__ import division
 import numpy as np
-def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, k2, k3, k4, k5, k5l, d1v2, dheffSSv2, tortoise):
+def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, k2, k3, k4, k5, k5l, d1v2, dheffSSv2, tortoise, quagsire):
 """)
         for i in range(len(lr)-1):
             file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(",
-                    "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(") + "\n")
+                    "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi") + "\n")
 
     with open("SEOBNR_Playground_Pycodes/sympy_expression.py", "w") as file:
         file.write("""import sympy as sp
@@ -221,18 +221,18 @@ def sympy_cse():
     c0k2,c1k2,c0k3,c1k3,c0k4 = sp.symbols("c0k2 c1k2 c0k3 c1k3 c0k4",real=True)
     c1k4,c2k4,c0k5,c1k5,c2k5 = sp.symbols("c1k4 c2k4 c0k5 c1k5 c2k5",real=True)
     eta,KK,k0,k1,k2,k3,k4,k5,k5l,b3,bb3,d1,d1v2,dheffSS,dheffSSv2 = sp.symbols("eta KK k0 k1 k2 k3 k4 k5 k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2",real=True)
-    tortoise = sp.symbols("tortoise",real=True)
+    tortoise,quagsire = sp.symbols("tortoise quagsire",real=True)
 """)
 
         for i in range(len(lr)):
             file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Abs(","sp.Abs(").replace("sqrt(","sp.sqrt(").replace("log(",
                 "sp.log(").replace("sign(", "sp.sign(").replace("Rational(",
-                "sp.Rational(") + "\n")
+                "sp.Rational(").replace("pi", "sp.pi") + "\n")
         file.write("""
     CSE_results = sp.cse(Hreal, sp.numbered_symbols("Htmp"), order='canonical')
     with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "a") as file:
         for commonsubexpression in CSE_results[0]:
-            file.write("    "+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(").replace("Abs(", "np.abs(")+"\\n")
+            file.write("    "+str(commonsubexpression[0])+" = "+str(commonsubexpression[1]).replace("sqrt(","np.sqrt(").replace("log(","np.log(").replace("sign(","np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi")+"\\n")
         for i,result in enumerate(CSE_results[1]):
             file.write("    Hreal = "+str(result).replace("sqrt(","np.sqrt(")+"\\n")
 """)
