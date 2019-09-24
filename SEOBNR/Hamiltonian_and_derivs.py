@@ -113,12 +113,9 @@ def output_H_and_derivs():
 
     # Declare input constants.
     m1, m2, eta = sp.symbols("m1 m2 eta", real=True)
-    c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5 = sp.symbols(
-        "c0k2 c1k2 c0k3 c1k3 c0k4 c1k4 c2k4 c0k5 c1k5 c2k5", real=True)
-    KK, k0, k1, k2, k3, k4, k5, k5l, b3, bb3, d1, d1v2, dheffSS, dheffSSv2 = sp.symbols("KK k0 k1 k2 k3 k4 k5 k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2", real=True)
+    KK, k0, k1, d1v2, dheffSSv2 = sp.symbols("KK k0 k1 d1v2 dheffSSv2", real=True)
     tortoise, quagsire = sp.symbols("tortoise quagsire", real=True)
-    input_constants = [m1, m2, eta, c0k2, c1k2, c0k3, c1k3, c0k4, c1k4, c2k4, c0k5, c1k5, c2k5, KK, k0, k1, k2, k3, k4,
-                       k5, k5l, b3, bb3, d1, d1v2, dheffSS, dheffSSv2, tortoise, quagsire]
+    input_constants = [m1, m2, eta, KK, k0, k1, d1v2, dheffSSv2, tortoise, quagsire]
 
     # Derivatives of input constants will always be zero, so remove them from the full_symbol_list.
     for inputconst in input_constants:
@@ -207,7 +204,7 @@ def output_H_and_derivs():
     with open("SEOBNR_Playground_Pycodes/numpy_expressions.py", "w") as file:
         file.write("""from __future__ import division
 import numpy as np
-def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, k2, k3, k4, k5, k5l, d1v2, dheffSSv2, tortoise, quagsire):
+def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, d1v2, dheffSSv2, tortoise, quagsire):
 """)
         for i in range(len(lr)-1):
             file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(",
@@ -218,9 +215,7 @@ def compute_dHdq(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z,
 from outputC import *
 def sympy_cse():
     m1,m2,x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z = sp.symbols("m1 m2 x y z px py pz s1x s1y s1z s2x s2y s2z",real=True)
-    c0k2,c1k2,c0k3,c1k3,c0k4 = sp.symbols("c0k2 c1k2 c0k3 c1k3 c0k4",real=True)
-    c1k4,c2k4,c0k5,c1k5,c2k5 = sp.symbols("c1k4 c2k4 c0k5 c1k5 c2k5",real=True)
-    eta,KK,k0,k1,k2,k3,k4,k5,k5l,b3,bb3,d1,d1v2,dheffSS,dheffSSv2 = sp.symbols("eta KK k0 k1 k2 k3 k4 k5 k5l b3 bb3 d1 d1v2 dheffSS dheffSSv2",real=True)
+    eta,KK,k0,k1,d1v2,dheffSSv2 = sp.symbols("eta KK k0 k1 d1v2 dheffSSv2",real=True)
     tortoise,quagsire = sp.symbols("tortoise quagsire",real=True)
 """)
 
@@ -241,14 +236,8 @@ def sympy_cse():
             file.write("    "+lr[i].lhs + " = " + "sp.symbols(\"" + lr[i].lhs + "\")\n")
 
         for i in range(len(lhss_deriv_x)):
-#            print(rhss_deriv_x[i])
-#            replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x")
             file.write("    "+str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " +
                        replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x") + "\n")
-#        for i in range(len(lhss_deriv_x)):
-#            file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + str(rhss_deriv_x[i]).replace("sqrt(",
-#                "sp.sqrt(").replace("log(", "sp.log(").replace("sign(", "sp.sign(").replace(
-#                "prm", "prm_x") + "\n")
         for i in range(len(lhss_deriv_y)):
             file.write("    "+str(lhss_deriv_y[i]).replace("prm", "prm_y") + " = " +
                        replace_numpy_funcs(rhss_deriv_y[i]).replace("prm", "prm_y") + "\n")
