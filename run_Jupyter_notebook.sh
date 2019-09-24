@@ -12,4 +12,4 @@ if [ ! -f $1 ]; then
     exit
 fi
 
-jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1
+time jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1
