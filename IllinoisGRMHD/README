@@ -7,7 +7,8 @@ Note          : IllinoisGRMHD is based on the GRMHD code of the
                 and Vasileios Paschalidis. 
 Maintainer(s) : Zachariah B. Etienne
 Special thanks: The authors would like to thank Leo Werneck for proofreading
-                the code and adding additional comments to it.
+                the code, as well as revising comments and adding comments to
+                it.
 License       : GPLv2 for HARM Conservative-to-Primitive solver (src/harm_*)
                 GPLv2+ for all other code
 --------------------------------------------------------------------------
