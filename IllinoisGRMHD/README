@@ -1,13 +1,15 @@
 Cactus Code Thorn IllinoisGRMHD
-Author(s)    : Zachariah B. Etienne
-Note         : IllinoisGRMHD is based on the GRMHD code of the
-               Illinois Numerical Relativity group, written by Matt Duez, Yuk 
-               Tung Liu, and Branson Stephens (original version), and then 
-               developed primarily by Zachariah Etienne, Yuk Tung Liu, 
-               and Vasileios Paschalidis. 
-Maintainer(s): Zachariah B. Etienne
-License      : GPLv2 for HARM Conservative-to-Primitive solver (src/harm_*)
-               GPLv2+ for all other code
+Author(s)     : Zachariah B. Etienne
+Note          : IllinoisGRMHD is based on the GRMHD code of the
+                Illinois Numerical Relativity group, written by Matt Duez, Yuk 
+                Tung Liu, and Branson Stephens (original version), and then 
+                developed primarily by Zachariah Etienne, Yuk Tung Liu, 
+                and Vasileios Paschalidis. 
+Maintainer(s) : Zachariah B. Etienne
+Special thanks: The authors would like to thank Leo Werneck for proofreading
+                the code and adding additional comments to it.
+License       : GPLv2 for HARM Conservative-to-Primitive solver (src/harm_*)
+                GPLv2+ for all other code
 --------------------------------------------------------------------------
 
 ==========
