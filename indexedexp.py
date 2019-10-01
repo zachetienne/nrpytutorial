@@ -211,22 +211,22 @@ def declarerank4(objname, symmetry_option, DIM=-1):
 
 
 # We use the following functions to evaluate 3-metric inverses
-def symm_matrix_inverter3x3(in2Darray):
+def symm_matrix_inverter3x3(a):
     # It is far more efficient to write out the matrix determinant and inverse by hand
     #   instead of using symmetry_optionPy's built-in functions, since the matrix is symmetric.
-    outDET = -in2Darray[0][2]**2*in2Darray[1][1] + 2*in2Darray[0][1]*in2Darray[0][2]*in2Darray[1][2] - \
-                in2Darray[0][0]*in2Darray[1][2]**2 - in2Darray[0][1]**2*in2Darray[2][2] + \
-                in2Darray[0][0]*in2Darray[1][1]*in2Darray[2][2]
+    outDET = -a[0][2]**2*a[1][1] + 2*a[0][1]*a[0][2]*a[1][2] - \
+                a[0][0]*a[1][2]**2 - a[0][1]**2*a[2][2] + \
+                a[0][0]*a[1][1]*a[2][2]
 
     outINV = [[sp.sympify(0) for i in range(3)] for j in range(3)]
 
     # First fill in the upper-triangle of the gPhysINV matrix...
-    outINV[0][0] = (-in2Darray[1][2]**2              + in2Darray[1][1]*in2Darray[2][2])/outDET
-    outINV[0][1] = (+in2Darray[0][2]*in2Darray[1][2] - in2Darray[0][1]*in2Darray[2][2])/outDET
-    outINV[0][2] = (-in2Darray[0][2]*in2Darray[1][1] + in2Darray[0][1]*in2Darray[1][2])/outDET
-    outINV[1][1] = (-in2Darray[0][2]**2              + in2Darray[0][0]*in2Darray[2][2])/outDET
-    outINV[1][2] = (+in2Darray[0][1]*in2Darray[0][2] - in2Darray[0][0]*in2Darray[1][2])/outDET
-    outINV[2][2] = (-in2Darray[0][1]**2              + in2Darray[0][0]*in2Darray[1][1])/outDET
+    outINV[0][0] = (-a[1][2]**2              + a[1][1]*a[2][2])/outDET
+    outINV[0][1] = (+a[0][2]*a[1][2] - a[0][1]*a[2][2])/outDET
+    outINV[0][2] = (-a[0][2]*a[1][1] + a[0][1]*a[1][2])/outDET
+    outINV[1][1] = (-a[0][2]**2              + a[0][0]*a[2][2])/outDET
+    outINV[1][2] = (+a[0][1]*a[0][2] - a[0][0]*a[1][2])/outDET
+    outINV[2][2] = (-a[0][1]**2              + a[0][0]*a[1][1])/outDET
     outINV[1][0] = outINV[0][1]
     outINV[2][0] = outINV[0][2]
     outINV[2][1] = outINV[1][2]
@@ -235,40 +235,29 @@ def symm_matrix_inverter3x3(in2Darray):
 def symm_matrix_inverter4x4(a):
     # It is far more efficient to write out the matrix determinant and inverse by hand
     #   instead of using symmetry_optionPy's built-in functions, since the matrix is symmetric.
-    outDET = a[0][2]**2*a[1][3]**2 - a[0][0]*a[1][3]**2*a[2][2] +                    \
-             a[0][3]**2*(a[1][2]**2 - a[1][1]*a[2][2]) - \
-             2*a[0][1]*a[0][2]*a[1][3]*a[2][3] + 2*a[0][0]*a[1][2]*a[1][3]*a[2][3] +     \
-             a[0][1]**2*a[2][3]**2 -                                 \
-             a[0][0]*a[1][1]*a[2][3]**2 +                    \
-             2*a[0][3]*(-(a[0][2]*a[1][2]*a[1][3]) + \
-                        a[0][1]*a[1][3]*a[2][2] +                       \
-                        a[0][2]*a[1][1]*a[2][3] -                       \
-                        a[0][1]*a[1][2]*a[2][3]) -                      \
-                        (a[0][2]**2*a[1][1] -                                   \
-                         2*a[0][1]*a[0][2]*a[1][2] +                     \
-                         a[0][0]*a[1][2]**2 +                                    \
-                         a[0][1]**2*a[2][2] -                                    \
-                         a[0][0]*a[1][1]*a[2][2])*a[3][3]
+    outDET = + a[0][2]*a[0][2]*a[1][3]*a[1][3] + a[0][3]*a[0][3]*a[1][2]*a[1][2] + a[0][1]*a[0][1]*a[2][3]*a[2][3] \
+             - a[0][0]*a[1][3]*a[1][3]*a[2][2] - a[0][3]*a[0][3]*a[1][1]*a[2][2] - a[0][0]*a[1][1]*a[2][3]*a[2][3] \
+             - 2*(+ a[0][1]*a[0][2]*a[1][3]*a[2][3] - a[0][0]*a[1][2]*a[1][3]*a[2][3]                              \
+                  - a[0][3]*(- a[0][2]*a[1][2]*a[1][3] + a[0][1]*a[1][3]*a[2][2]                                   \
+                             + a[0][2]*a[1][1]*a[2][3] - a[0][1]*a[1][2]*a[2][3]))                                 \
+             - a[3][3] * (+ a[0][2]*a[0][2]*a[1][1] - a[0][1]*a[0][2]*a[1][2] - a[0][1]*a[0][2]*a[1][2]            \
+                          + a[0][0]*a[1][2]*a[1][2] + a[0][1]*a[0][1]*a[2][2] - a[0][0]*a[1][1]*a[2][2])
 
     outINV = [[sp.sympify(0) for i in range(4)] for j in range(4)]
 
     # First fill in the upper-triangle of the gPhysINV matrix...
-    outINV[0][0] = (-(a[1][3]**2*a[2][2]) + \
-     2*a[1][2]*a[1][3]*a[2][3] - \
-     a[1][1]*a[2][3]**2 - \
-     a[1][2]**2*a[3][3] + \
-     a[1][1]*a[2][2]*a[3][3])/outDET
-
-    outINV[0][1] = (+a[0][3]*a[1][3]*a[2][2]   - a[0][3]*a[1][2]*a[2][3] - a[0][2]*a[1][3]*a[2][3] + a[0][1]*a[2][3]**2 + a[0][2]*a[1][2]*a[3][3] - a[0][1]*a[2][2]*a[3][3])/outDET
-    outINV[0][2] = (-(a[0][3]*a[1][2]*a[1][3]) + a[0][2]*a[1][3]**2 + a[0][3]*a[1][1]*a[2][3] - a[0][1]*a[1][3]*a[2][3] - a[0][2]*a[1][1]*a[3][3] + a[0][1]*a[1][2]*a[3][3])/outDET
-    outINV[0][3] = (-(a[0][2]*a[1][2]*a[1][3]) + a[0][1]*a[1][3]*a[2][2] + a[0][3]*(a[1][2]**2 - a[1][1]*a[2][2]) + a[0][2]*a[1][1]*a[2][3] - a[0][1]*a[1][2]*a[2][3])/outDET
-    outINV[1][1] = (-(a[0][3]**2*a[2][2])      + 2*a[0][2]*a[0][3]*a[2][3] - a[0][0]*a[2][3]**2 - a[0][2]**2*a[3][3] + a[0][0]*a[2][2]*a[3][3])/outDET
-    outINV[1][2] = (+a[0][3]**2*a[1][2]        + a[0][0]*a[1][3]*a[2][3] - a[0][3]*(a[0][2]*a[1][3] + a[0][1]*a[2][3]) + a[0][1]*a[0][2]*a[3][3] - a[0][0]*a[1][2]*a[3][3])/outDET
-    outINV[1][3] = (+a[0][2]**2*a[1][3]        + a[0][1]*a[0][3]*a[2][2] - a[0][0]*a[1][3]*a[2][2] + a[0][0]*a[1][2]*a[2][3] - a[0][2]*(a[0][3]*a[1][2] + a[0][1]*a[2][3]))/outDET
-    outINV[2][2] = (-(a[0][3]**2*a[1][1]) + 2*a[0][1]*a[0][3]*a[1][3] - a[0][0]*a[1][3]**2 - a[0][1]**2*a[3][3] + a[0][0]*a[1][1]*a[3][3])/outDET
-    outINV[2][3] = (+a[0][2]*a[0][3]*a[1][1] - a[0][1]*a[0][3]*a[1][2] - a[0][1]*a[0][2]*a[1][3] + a[0][0]*a[1][2]*a[1][3] + a[0][1]**2*a[2][3] - a[0][0]*a[1][1]*a[2][3])/outDET
-    outINV[3][3] = (-(a[0][2]**2*a[1][1]) + 2*a[0][1]*a[0][2]*a[1][2] - a[0][0]*a[1][2]**2 - a[0][1]**2*a[2][2] + a[0][0]*a[1][1]*a[2][2])/outDET
               
+    outINV[0][0] = (-a[1][3]*a[1][3]*a[2][2] + 2*a[1][2]*a[1][3]*a[2][3] - a[1][1]*a[2][3]*a[2][3] - a[1][2]*a[1][2]*a[3][3] + a[1][1]*a[2][2]*a[3][3])/outDET
+    outINV[1][1] = (-a[0][3]*a[0][3]*a[2][2] + 2*a[0][2]*a[0][3]*a[2][3] - a[0][0]*a[2][3]*a[2][3] - a[0][2]*a[0][2]*a[3][3] + a[0][0]*a[2][2]*a[3][3])/outDET
+    outINV[2][2] = (-a[0][3]*a[0][3]*a[1][1] + 2*a[0][1]*a[0][3]*a[1][3] - a[0][0]*a[1][3]*a[1][3] - a[0][1]*a[0][1]*a[3][3] + a[0][0]*a[1][1]*a[3][3])/outDET
+    outINV[3][3] = (-a[0][2]*a[0][2]*a[1][1] + 2*a[0][1]*a[0][2]*a[1][2] - a[0][0]*a[1][2]*a[1][2] - a[0][1]*a[0][1]*a[2][2] + a[0][0]*a[1][1]*a[2][2])/outDET
+    outINV[0][1] = (+a[0][3]*a[1][3]*a[2][2] -   a[0][3]*a[1][2]*a[2][3] - a[0][2]*a[1][3]*a[2][3] + a[0][1]*a[2][3]*a[2][3] + a[0][2]*a[1][2]*a[3][3] - a[0][1]*a[2][2]*a[3][3])/outDET
+    outINV[0][2] = (-a[0][3]*a[1][2]*a[1][3] +   a[0][2]*a[1][3]*a[1][3] + a[0][3]*a[1][1]*a[2][3] - a[0][1]*a[1][3]*a[2][3] - a[0][2]*a[1][1]*a[3][3] + a[0][1]*a[1][2]*a[3][3])/outDET
+    outINV[0][3] = (-a[0][2]*a[1][2]*a[1][3] +   a[0][1]*a[1][3]*a[2][2] + a[0][3]*a[1][2]*a[1][2] - a[0][3]*a[1][1]*a[2][2] + a[0][2]*a[1][1]*a[2][3] - a[0][1]*a[1][2]*a[2][3])/outDET
+    outINV[1][2] = (+a[0][3]*a[0][3]*a[1][2] +   a[0][0]*a[1][3]*a[2][3] - a[0][3]*a[0][2]*a[1][3] - a[0][3]*a[0][1]*a[2][3] + a[0][1]*a[0][2]*a[3][3] - a[0][0]*a[1][2]*a[3][3])/outDET
+    outINV[1][3] = (+a[0][2]*a[0][2]*a[1][3] +   a[0][1]*a[0][3]*a[2][2] - a[0][0]*a[1][3]*a[2][2] + a[0][0]*a[1][2]*a[2][3] - a[0][2]*a[0][3]*a[1][2] - a[0][2]*a[0][1]*a[2][3])/outDET
+    outINV[2][3] = (+a[0][2]*a[0][3]*a[1][1] -   a[0][1]*a[0][3]*a[1][2] - a[0][1]*a[0][2]*a[1][3] + a[0][0]*a[1][2]*a[1][3] + a[0][1]*a[0][1]*a[2][3] - a[0][0]*a[1][1]*a[2][3])/outDET
+
     # Then we fill the lower triangle of the symmetric matrix
     outINV[1][0] = outINV[0][1]
     outINV[2][0] = outINV[0][2]
