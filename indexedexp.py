@@ -232,6 +232,65 @@ def symm_matrix_inverter3x3(in2Darray):
     outINV[2][1] = outINV[1][2]
     return outINV, outDET
 
+def symm_matrix_inverter4x4(in2Darray):
+    # It is far more efficient to write out the matrix determinant and inverse by hand
+    #   instead of using symmetry_optionPy's built-in functions, since the matrix is symmetric.
+    outDET = in2Darray[0][2]**2*in2Darray[1][3]**2 -                         \
+     in2Darray[0][0]*in2Darray[1][3]**2*in2Darray[2][2] +                    \
+     in2Darray[0][3]**2*(in2Darray[1][2]**2 -                                \
+     in2Darray[1][1]*in2Darray[2][2]) -                                      \
+     2*in2Darray[0][1]*in2Darray[0][2]*in2Darray[1][3]*in2Darray[2][3] +     \
+     2*in2Darray[0][0]*in2Darray[1][2]*in2Darray[1][3]*in2Darray[2][3] +     \
+     in2Darray[0][1]**2*in2Darray[2][3]**2 -                                 \
+     in2Darray[0][0]*in2Darray[1][1]*in2Darray[2][3]**2 +                    \
+     2*in2Darray[0][3]*(-(in2Darray[0][2]*in2Darray[1][2]*in2Darray[1][3]) + \
+     in2Darray[0][1]*in2Darray[1][3]*in2Darray[2][2] +                       \
+     in2Darray[0][2]*in2Darray[1][1]*in2Darray[2][3] -                       \
+     in2Darray[0][1]*in2Darray[1][2]*in2Darray[2][3]) -                      \
+     (in2Darray[0][2]**2*in2Darray[1][1] -                                   \
+     2*in2Darray[0][1]*in2Darray[0][2]*in2Darray[1][2] +                     \
+     in2Darray[0][0]*in2Darray[1][2]**2 +                                    \
+     in2Darray[0][1]**2*in2Darray[2][2] -                                    \
+     in2Darray[0][0]*in2Darray[1][1]*in2Darray[2][2])*in2Darray[3][3]
+
+    outINV = [[sp.sympify(0) for i in range(4)] for j in range(4)]
+
+    # First fill in the upper-triangle of the gPhysINV matrix...
+    outINV[0][0] = (-(in2Darray[1][3]**2*in2Darray[2][2]) + \
+     2*in2Darray[1][2]*in2Darray[1][3]*in2Darray[2][3] - \
+     in2Darray[1][1]*in2Darray[2][3]**2 - \
+     in2Darray[1][2]**2*in2Darray[3][3] + \
+     in2Darray[1][1]*in2Darray[2][2]*in2Darray[3][3])/outDET
+    
+    outINV[0][1] = (in2Darray[0][3]*in2Darray[1][3]*in2Darray[2][2] - in2Darray[0][3]*in2Darray[1][2]*in2Darray[2][3] - in2Darray[0][2]*in2Darray[1][3]*in2Darray[2][3] + in2Darray[0][1]*in2Darray[2][3]**2 + in2Darray[0][2]*in2Darray[1][2]*in2Darray[3][3] - in2Darray[0][1]*in2Darray[2][2]*in2Darray[3][3])/outDET
+    
+    outINV[0][2] = (-(in2Darray[0][3]*in2Darray[1][2]*in2Darray[1][3]) + in2Darray[0][2]*in2Darray[1][3]**2 + in2Darray[0][3]*in2Darray[1][1]*in2Darray[2][3] - in2Darray[0][1]*in2Darray[1][3]*in2Darray[2][3] - in2Darray[0][2]*in2Darray[1][1]*in2Darray[3][3] + in2Darray[0][1]*in2Darray[1][2]*in2Darray[3][3])/outDET
+    
+    outINV[0][3] = (-(in2Darray[0][2]*in2Darray[1][2]*in2Darray[1][3]) + in2Darray[0][1]*in2Darray[1][3]*in2Darray[2][2] + in2Darray[0][3]*(in2Darray[1][2]**2 - in2Darray[1][1]*in2Darray[2][2]) + in2Darray[0][2]*in2Darray[1][1]*in2Darray[2][3] - in2Darray[0][1]*in2Darray[1][2]*in2Darray[2][3])/outDET
+    
+    outINV[1][1] = (-(in2Darray[0][3]**2*in2Darray[2][2]) + 2*in2Darray[0][2]*in2Darray[0][3]*in2Darray[2][3] - in2Darray[0][0]*in2Darray[2][3]**2 - in2Darray[0][2]**2*in2Darray[3][3] + in2Darray[0][0]*in2Darray[2][2]*in2Darray[3][3])/outDET
+    
+    outINV[1][2] = (in2Darray[0][3]**2*in2Darray[1][2] + in2Darray[0][0]*in2Darray[1][3]*in2Darray[2][3] - in2Darray[0][3]*(in2Darray[0][2]*in2Darray[1][3] + in2Darray[0][1]*in2Darray[2][3]) + in2Darray[0][1]*in2Darray[0][2]*in2Darray[3][3] - in2Darray[0][0]*in2Darray[1][2]*in2Darray[3][3])/outDET
+    
+    outINV[1][3] = (in2Darray[0][2]**2*in2Darray[1][3] + in2Darray[0][1]*in2Darray[0][3]*in2Darray[2][2] - in2Darray[0][0]*in2Darray[1][3]*in2Darray[2][2] + in2Darray[0][0]*in2Darray[1][2]*in2Darray[2][3] - in2Darray[0][2]*(in2Darray[0][3]*in2Darray[1][2] + in2Darray[0][1]*in2Darray[2][3]))/outDET
+    
+    outINV[2][2] = (-(in2Darray[0][3]**2*in2Darray[1][1]) + 2*in2Darray[0][1]*in2Darray[0][3]*in2Darray[1][3] - in2Darray[0][0]*in2Darray[1][3]**2 - in2Darray[0][1]**2*in2Darray[3][3] + in2Darray[0][0]*in2Darray[1][1]*in2Darray[3][3])/outDET
+    
+    outINV[2][3] = (in2Darray[0][2]*in2Darray[0][3]*in2Darray[1][1] - in2Darray[0][1]*in2Darray[0][3]*in2Darray[1][2] - in2Darray[0][1]*in2Darray[0][2]*in2Darray[1][3] + in2Darray[0][0]*in2Darray[1][2]*in2Darray[1][3] + in2Darray[0][1]**2*in2Darray[2][3] - in2Darray[0][0]*in2Darray[1][1]*in2Darray[2][3])/outDET
+    
+    outINV[3][3] = (-(in2Darray[0][2]**2*in2Darray[1][1]) + 2*in2Darray[0][1]*in2Darray[0][2]*in2Darray[1][2] - in2Darray[0][0]*in2Darray[1][2]**2 - in2Darray[0][1]**2*in2Darray[2][2] + in2Darray[0][0]*in2Darray[1][1]*in2Darray[2][2])/outDET
+              
+    # Then we fill the lower triangle of the symmetric matrix
+    outINV[1][0] = outINV[0][1]
+    outINV[2][0] = outINV[0][2]
+    outINV[2][1] = outINV[1][2]
+    outINV[3][0] = outINV[0][3]
+    outINV[3][1] = outINV[1][3]
+    outINV[3][2] = outINV[2][3]
+    
+    return outINV, outDET
+
+
 # symmetry_optionPy's generic matrix inverter is highly inefficient for 3x3 matrices, so here we have an optimized version.
 def generic_matrix_inverter3x3(in2Darray):
     outDET = -in2Darray[0][2]*in2Darray[1][1]*in2Darray[2][0] + in2Darray[0][1]*in2Darray[1][2]*in2Darray[2][0] + \
