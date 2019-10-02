@@ -123,111 +123,16 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     # Step 3: All ADM quantities were input into this function in the Spherical or Cartesian
     #         basis, as functions of r,th,ph or x,y,z, respectively. In Steps 1 and 2 above,
     #         we converted them to the xx0,xx1,xx2 basis, and as functions of xx0,xx1,xx2.
-    #         Here we convert ADM quantities to their BSSN Curvilinear counterparts:
-    
-    # Step 3.1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{gamma}_{ij}$:
-    #           We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
+    #         Here we convert ADM quantities in the "rfm" basis to their BSSN Curvilinear
+    #         counterparts:
 
-    # \bar{gamma}_{ij} = (\frac{\bar{gamma}}{gamma})^{1/3}*gamma_{ij}.
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
-    gammabarDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            gammabarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*gammaDD[i][j]
+    import BSSN.BSSN_in_terms_of_ADM as BitoA
+    BitoA.gammabarDD_hDD(gammaDD)
+    BitoA.trK_AbarDD_aDD(gammaDD, KDD)
+    BitoA.LambdabarU_lambdaU__exact_gammaDD(gammaDD)
+    BitoA.cf_from_gammaDD(gammaDD)
+    BitoA.betU_vetU(betaU, BU)
 
-    # Step 3.2: Convert the extrinsic curvature K_{ij} to the trace-free extrinsic 
-    #           curvature \bar{A}_{ij}, plus the trace of the extrinsic curvature K, 
-    #           where (Eq. 3 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
-
-    # K = gamma^{ij} K_{ij}, and
-    # \bar{A}_{ij} &= (\frac{\bar{gamma}}{gamma})^{1/3}*(K_{ij} - \frac{1}{3}*gamma_{ij}*K)
-    trK = sp.sympify(0)
-    for i in range(DIM):
-        for j in range(DIM):
-            trK += gammaUU[i][j]*KDD[i][j]
-
-    AbarDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            AbarDD[i][j] = (rfm.detgammahat/gammaDET)**(sp.Rational(1,3))*(KDD[i][j] - sp.Rational(1,3)*gammaDD[i][j]*trK)
-
-
-    # Step 3.3: Define \bar{Lambda}^i (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
-
-    # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
-    gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
-
-    # First compute \bar{Gamma}^i_{jk}:
-    GammabarUDD = ixp.zerorank3()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    GammabarUDD[i][j][k] += sp.Rational(1,2)*gammabarUU[i][l]*( sp.diff(gammabarDD[l][j],rfm.xx[k]) +
-                                                                                sp.diff(gammabarDD[l][k],rfm.xx[j]) -
-                                                                                sp.diff(gammabarDD[j][k],rfm.xx[l]) )
-    # Next evaluate \bar{Lambda}^i, based on GammabarUDD above and GammahatUDD 
-    #       (from the reference metric):
-    LambdabarU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
-
-
-    # Step 3.4: Set the conformal factor variable cf, which is set 
-    #           by the "BSSN_quantities::EvolvedConformalFactor_cf" parameter. For example if 
-    #           "EvolvedConformalFactor_cf" is set to "phi", we can use Eq. 3 of 
-    #           [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf), 
-    #           which in arbitrary coordinates is written:
-
-    # phi = \frac{1}{12} log(\frac{gamma}{\bar{gamma}}).
-
-    # Alternatively if "BSSN_quantities::EvolvedConformalFactor_cf" is set to "chi", then
-
-    # chi = exp(-4*phi) = exp(-4*\frac{1}{12}*(\frac{gamma}{\bar{gamma}}))
-    #      = exp(-\frac{1}{3}*log(\frac{gamma}{\bar{gamma}})) = (\frac{gamma}{\bar{gamma}})^{-1/3}.
-    #
-    # Finally if "BSSN_quantities::EvolvedConformalFactor_cf" is set to "W", then
-
-    # W = exp(-2*phi) = exp(-2*\frac{1}{12}*log(\frac{gamma}{\bar{gamma}})) 
-    #   = exp(-\frac{1}{6}*log(\frac{gamma}{\bar{gamma}})) = (\frac{gamma}{bar{gamma}})^{-1/6}.
-    cf = sp.sympify(0)
-
-    if par.parval_from_str("EvolvedConformalFactor_cf") == "phi":
-        cf = sp.Rational(1,12)*sp.log(gammaDET/gammabarDET)
-    elif par.parval_from_str("EvolvedConformalFactor_cf") == "chi":
-        cf = (gammaDET/gammabarDET)**(-sp.Rational(1,3))
-    elif par.parval_from_str("EvolvedConformalFactor_cf") == "W":
-        cf = (gammaDET/gammabarDET)**(-sp.Rational(1,6))
-    else:
-        print("Error EvolvedConformalFactor_cf type = \""+par.parval_from_str("EvolvedConformalFactor_cf")+"\" unknown.")
-        exit(1)
-
-
-    # Step 4: Rescale tensorial quantities according to the prescription described in 
-    #         the [BSSN in curvilinear coordinates tutorial module](Tutorial-BSSNCurvilinear.ipynb) 
-    #         (also [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
-    #
-    # h_{ij} = (\bar{gamma}_{ij} - \hat{gamma}_{ij})/(ReDD[i][j])
-    # a_{ij} = \bar{A}_{ij}/(ReDD[i][j])
-    # \lambda^i = \bar{Lambda}^i/(ReU[i])
-    # \mathcal{V}^i &= beta^i/(ReU[i])
-    # \mathcal{B}^i &= B^i/(ReU[i])
-    hDD     = ixp.zerorank2()
-    aDD     = ixp.zerorank2()
-    lambdaU = ixp.zerorank1()
-    vetU    = ixp.zerorank1()
-    betU    = ixp.zerorank1()
-    for i in range(DIM):
-        lambdaU[i] = LambdabarU[i] / rfm.ReU[i]
-        vetU[i]    =      betaU[i] / rfm.ReU[i]
-        betU[i]    =         BU[i] / rfm.ReU[i]
-        for j in range(DIM):
-            hDD[i][j] = (gammabarDD[i][j] - rfm.ghatDD[i][j]) / rfm.ReDD[i][j]
-            aDD[i][j] =                          AbarDD[i][j] / rfm.ReDD[i][j]
-    #print(sp.mathematica_code(hDD[0][0]))
-
-    # Step 5: Return the BSSN Curvilinear variables in the desired xx0,xx1,xx2
+    # Step 4: Return the BSSN Curvilinear variables in the desired xx0,xx1,xx2
     #         basis, and as functions of the consistent xx0,xx1,xx2 coordinates.
-    return cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU
+    return BitoA.cf, BitoA.hDD, BitoA.lambdaU, BitoA.aDD, BitoA.trK, alpha, BitoA.vetU, BitoA.betU

@@ -31,7 +31,8 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
     # Step 1: All ADM initial data quantities are now functions of xx0,xx1,xx2, but
     #         they are still in the Spherical or Cartesian basis. We can now directly apply
     #         Jacobian transformations to get them in the correct xx0,xx1,xx2 basis:
-    # Step 1: All input quantities are in terms of r,th,ph or x,y,z. We want them in terms
+
+    #         All input quantities are in terms of r,th,ph or x,y,z. We want them in terms
     #         of xx0,xx1,xx2, so here we call sympify_integers__replace_rthph() to replace
     #         r,th,ph or x,y,z, respectively, with the appropriate functions of xx0,xx1,xx2
     #         as defined for this particular reference metric in reference_metric.py's
@@ -60,7 +61,9 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
         print("Error: Can only convert ADM Cartesian or Spherical initial data to BSSN Curvilinear coords.")
         exit(1)
 
-    # Next apply Jacobian transformations to convert into the (xx0,xx1,xx2) basis
+    # Step 2: All ADM initial data quantities are now functions of xx0,xx1,xx2, but
+    #         they are still in the Spherical or Cartesian basis. We can now directly apply
+    #         Jacobian transformations to get them in the correct xx0,xx1,xx2 basis:
 
     # alpha is a scalar, so no Jacobian transformation is necessary.
     alpha = alphaSphorCart
@@ -89,89 +92,21 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
     # Step 3: All ADM quantities were input into this function in the Spherical or Cartesian
     #         basis, as functions of r,th,ph or x,y,z, respectively. In Steps 1 and 2 above,
     #         we converted them to the xx0,xx1,xx2 basis, and as functions of xx0,xx1,xx2.
-    #         Here we convert ADM quantities to their BSSN Curvilinear counterparts:
+    #         Here we convert ADM quantities in the "rfm" basis to their BSSN Curvilinear
+    #         counterparts, for all BSSN quantities *except* lambda^i:
+    import BSSN.BSSN_in_terms_of_ADM as BitoA
+    BitoA.gammabarDD_hDD(gammaDD)
+    BitoA.trK_AbarDD_aDD(gammaDD, KDD)
+    BitoA.cf_from_gammaDD(gammaDD)
+    BitoA.betU_vetU(betaU, BU)
+    hDD = BitoA.hDD
+    trK = BitoA.trK
+    aDD = BitoA.aDD
+    cf = BitoA.cf
+    vetU = BitoA.vetU
+    betU = BitoA.betU
 
-    # Step 3.1: Convert ADM $\gamma_{ij}$ to BSSN $\bar{\gamma}_{ij}$:
-    #   We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
-    # \bar{\gamma}_{i j} = \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \gamma_{ij}.
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
-    gammabarDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            gammabarDD[i][j] = (rfm.detgammahat / gammaDET) ** (sp.Rational(1, 3)) * gammaDD[i][j]
-
-    # Step 3.2: Convert the extrinsic curvature $K_{ij}$ to the trace-free extrinsic
-    #           curvature $\bar{A}_{ij}$, plus the trace of the extrinsic curvature $K$,
-    #           where (Eq. 3 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
-
-    # K = \gamma^{ij} K_{ij}, and
-    # \bar{A}_{ij} &= \left(\frac{\bar{\gamma}}{\gamma}\right)^{1/3} \left(K_{ij} - \frac{1}{3} \gamma_{ij} K \right)
-    trK = sp.sympify(0)
-    for i in range(DIM):
-        for j in range(DIM):
-            trK += gammaUU[i][j] * KDD[i][j]
-
-    AbarDD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
-            AbarDD[i][j] = (rfm.detgammahat / gammaDET) ** (sp.Rational(1, 3)) * (
-                        KDD[i][j] - sp.Rational(1, 3) * gammaDD[i][j] * trK)
-
-    # Step 3.3: Set the conformal factor variable $\texttt{cf}$, which is set
-    #           by the "BSSN_unrescaled_and_barred_vars::EvolvedConformalFactor_cf" parameter. For example if
-    #           "EvolvedConformalFactor_cf" is set to "phi", we can use Eq. 3 of
-    #           [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf),
-    #           which in arbitrary coordinates is written:
-
-    # \phi = \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right).
-
-    # Alternatively if "BSSN_unrescaled_and_barred_vars::EvolvedConformalFactor_cf" is set to "chi", then
-
-    # \chi = e^{-4 \phi} = \exp\left(-4 \frac{1}{12} \left(\frac{\gamma}{\bar{\gamma}}\right)\right)
-    #      = \exp\left(-\frac{1}{3} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) = \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/3}.
-    #
-    # Finally if "BSSN_unrescaled_and_barred_vars::EvolvedConformalFactor_cf" is set to "W", then
-
-    # W = e^{-2 \phi} = \exp\left(-2 \frac{1}{12} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
-    # \exp\left(-\frac{1}{6} \log\left(\frac{\gamma}{\bar{\gamma}}\right)\right) =
-    # \left(\frac{\gamma}{\bar{\gamma}}\right)^{-1/6}.
-
-    # First compute gammabarDET:
-    gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
-
-    cf = sp.sympify(0)
-
-    if par.parval_from_str("EvolvedConformalFactor_cf") == "phi":
-        cf = sp.Rational(1, 12) * sp.log(gammaDET / gammabarDET)
-    elif par.parval_from_str("EvolvedConformalFactor_cf") == "chi":
-        cf = (gammaDET / gammabarDET) ** (-sp.Rational(1, 3))
-    elif par.parval_from_str("EvolvedConformalFactor_cf") == "W":
-        cf = (gammaDET / gammabarDET) ** (-sp.Rational(1, 6))
-    else:
-        print("Error EvolvedConformalFactor_cf type = \"" + par.parval_from_str("EvolvedConformalFactor_cf") + "\" unknown.")
-        exit(1)
-
-    # Step 4: Rescale tensorial quantities according to the prescription described in
-    #         the [BSSN in curvilinear coordinates tutorial module](Tutorial-BSSNCurvilinear.ipynb)
-    #         (also [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
-    #
-    # h_{ij} &= (\bar{\gamma}_{ij} - \hat{\gamma}_{ij})/\text{ReDD[i][j]}\\
-    # a_{ij} &= \bar{A}_{ij}/\text{ReDD[i][j]}\\
-    # \lambda^i &= \bar{\Lambda}^i/\text{ReU[i]}\\
-    # \mathcal{V}^i &= \beta^i/\text{ReU[i]}\\
-    # \mathcal{B}^i &= B^i/\text{ReU[i]}\\
-    hDD     = ixp.zerorank2()
-    aDD     = ixp.zerorank2()
-    vetU    = ixp.zerorank1()
-    betU    = ixp.zerorank1()
-    for i in range(DIM):
-        vetU[i]    =      betaU[i] / rfm.ReU[i]
-        betU[i]    =         BU[i] / rfm.ReU[i]
-        for j in range(DIM):
-            hDD[i][j] = (gammabarDD[i][j] - rfm.ghatDD[i][j]) / rfm.ReDD[i][j]
-            aDD[i][j] =                          AbarDD[i][j] / rfm.ReDD[i][j]
-
-    # Step 5: Compute $\bar{\Lambda}^i$ (Eqs. 4 and 5 of
+    # Step 4: Compute $\bar{\Lambda}^i$ (Eqs. 4 and 5 of
     #         [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)),
     #         from finite-difference derivatives of rescaled metric
     #         quantities $h_{ij}$:
@@ -238,7 +173,7 @@ void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3]
         file.write("}\n")
 
         
-    # Step 6: Output all ADM-to-BSSN expressions to a C function. This function
+    # Step 5: Output all ADM-to-BSSN expressions to a C function. This function
     #         must first call the ID_ADM_SphorCart() defined above. Using these
     #         Spherical or Cartesian data, it sets up all quantities needed for
     #         BSSNCurvilinear initial data, *except* $\lambda^i$, which must be
@@ -291,7 +226,7 @@ void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3]
     with open(os.path.join(outdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "a") as file:
         file.write("}\n")
 
-    # Step 6.A: Output the driver function for the above
+    # Step 5.a: Output the driver function for the above
     #           function ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs()
     # Next write the driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs():
     with open(os.path.join(outdir,"ID_BSSN__ALL_BUT_LAMBDAs.h"), "w") as file:
