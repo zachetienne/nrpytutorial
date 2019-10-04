@@ -128,7 +128,7 @@ def expr_convert_to_SIMD_intrins(expr,  SIMD_const_varnms,SIMD_const_values,SIMD
     expr = eval(string2)
 
     string = str(srepr(expr))
-    string2 = re.sub('Rational\(([0-9]+), ([0-9]+)\)',
+    string2 = re.sub('Rational\(([-0-9]+), ([0-9]+)\)',
                      "(Function('RationalTMP')(('\\1'),('\\2')))", string)
     expr = eval(string2)
 
