@@ -19,6 +19,8 @@ import grid as gri
 import finite_difference as fin
 import reference_metric as rfm
 
+have_already_called_BSSN_RHSs_function = False
+
 # Step 1.b: Set the coordinate system for the numerical grid:
 #  DO NOT SET IN STANDALONE PYTHON MODULE
 # par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
@@ -31,6 +33,9 @@ def BSSN_RHSs():
     #    and related quantities, including rescaling matrices ReDD,
     #    ReU, and hatted quantities.
     rfm.reference_metric()
+
+    global have_already_called_BSSN_RHSs_function # setting to global enables other modules to see updated value.
+    have_already_called_BSSN_RHSs_function = True
 
     # Step 1.d: Set spatial dimension (must be 3 for BSSN, as BSSN is
     #           a 3+1-dimensional decomposition of the general
