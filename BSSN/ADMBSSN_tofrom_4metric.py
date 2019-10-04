@@ -8,10 +8,9 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-import sympy as sp
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import sys
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import sys                        # Standard Python modules for multiplatform OS-level functions
 
 def setup_ADM_quantities(inputvars):
     if inputvars == "ADM":
@@ -35,6 +34,7 @@ def setup_ADM_quantities(inputvars):
         sys.exit(1)
     return gammaDD,betaU,alpha
 
+# g_{mu nu} in terms of BSSN (if inputvars=="BSSN") or ADM (if inputvars=="ADM") variables.
 def g4DD_ito_BSSN_or_ADM(inputvars):
     # Step 0: Declare g4DD as globals, to make interfacing with other modules/functions easier
     global g4DD
@@ -65,6 +65,7 @@ def g4DD_ito_BSSN_or_ADM(inputvars):
         for nu in range(1, 4):
             g4DD[mu][nu] = gammaDD[mu - 1][nu - 1]
 
+# g^{mu nu} in terms of BSSN (if inputvars=="BSSN") or ADM (if inputvars=="ADM") variables.
 def g4UU_ito_BSSN_or_ADM(inputvars):
     # Step 0: Declare g4UU as globals, to make interfacing with other modules/functions easier
     global g4UU
@@ -90,8 +91,8 @@ def g4UU_ito_BSSN_or_ADM(inputvars):
         for nu in range(1, 4):
             g4UU[mu][nu] = gammaUU[mu - 1][nu - 1] - betaU[mu - 1] * betaU[nu - 1] / alpha ** 2
 
-
-def BSSN_or_ADM_ito_g4DD(inputvars):
+# BSSN (if inputvars=="BSSN") or ADM (if inputvars=="ADM") metric variables in terms of g_{mu nu}
+def BSSN_or_ADM_ito_g4DD(inputvars,g4DD=None):
     # Step 0: Declare output variables as globals, to make interfacing with other modules/functions easier
     if inputvars == "ADM":
         global gammaDD, betaU, alpha
@@ -102,7 +103,8 @@ def BSSN_or_ADM_ito_g4DD(inputvars):
         sys.exit(1)
 
     # Step 1: declare g4DD as symmetric rank-4 tensor:
-    g4DD = ixp.declarerank2("g4DD", "sym01", DIM=4)
+    if g4DD == None:
+        g4DD = ixp.declarerank2("g4DD", "sym01", DIM=4)
 
     # Step 2: Compute gammaDD & betaD
     betaD = ixp.zerorank1()
@@ -129,7 +131,10 @@ def BSSN_or_ADM_ito_g4DD(inputvars):
         beta_squared += betaU[k] * betaD[k]
 
     # Step 4.b: alpha = sqrt(beta^2 - g_{00}):
-    alpha = sp.sqrt(sp.simplify(beta_squared) - g4DD[0][0])
+    if g4DD==None:
+        alpha = sp.sqrt(sp.simplify(beta_squared) - g4DD[0][0])
+    else:
+        alpha = sp.sqrt(beta_squared - g4DD[0][0])
 
     # Step 5: If inputvars == "ADM", we are finished. Return.
     if inputvars == "ADM":
