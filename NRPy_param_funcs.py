@@ -230,7 +230,7 @@ def generate_Cparameters_Ccodes(directory="./"):
                 Coutput = "params." + glb_Cparams_list[i].parname
                 if isinstance(glb_Cparams_list[i].defaultval, (bool,int,float)):
                     Coutput += " = " + str(glb_Cparams_list[i].defaultval).lower() + ";\n"
-                elif isinstance(glb_Cparams_list[i].defaultval, (str)):
+                elif glb_Cparams_list[i].type == "char" and isinstance(glb_Cparams_list[i].defaultval, (str)):
                     Coutput += " = \"" + str(glb_Cparams_list[i].defaultval).lower() + "\";\n"
                 else:
                     Coutput += " = " + str(glb_Cparams_list[i].defaultval) + ";\n"
