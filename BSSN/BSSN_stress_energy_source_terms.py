@@ -74,20 +74,21 @@ def stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(inputvars,cus
     for mu in range(4):
         for nu in range(4):
             rho += n4D[mu] * n4D[nu] * T4UU[mu][nu]
-
+    return SDD,SD,S,rho
 
 # Step 3: Add BSSN stress-energy source terms to BSSN RHSs
 def BSSN_source_terms_for_BSSN_RHSs(custom_T4UU=None):
     global sourceterm_trK_rhs, sourceterm_a_rhsDD, sourceterm_lambda_rhsU
 
     # Step 3.a: Call BSSN_source_terms_ito_T4UU to get SDD, SD, S, & rho
+
     if custom_T4UU == "unrescaled BSSN source terms already given":
         SDD = ixp.declarerank2("SDD", "sym01")
         SD = ixp.declarerank1("SD")
         S = sp.symbols("S", real=True)
         rho = sp.symbols("rho", real=True)
     else:
-        stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN",custom_T4UU)
+        SDD,SD,S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU)
     PI = par.Cparameters("REAL", thismodule, ["PI"], "3.14159265358979323846264338327950288")
     alpha = sp.symbols("alpha", real=True)
 
@@ -138,7 +139,7 @@ def BSSN_source_terms_for_BSSN_constraints(custom_T4UU=None):
         S = sp.symbols("S", real=True)
         rho = sp.symbols("rho", real=True)
     else:
-        stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN",custom_T4UU)
+        SDD,SD,S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU)
     PI = par.Cparameters("REAL", thismodule, ["PI"], "3.14159265358979323846264338327950288")
 
     # Step 4.b: Add source term to the Hamiltonian constraint H
