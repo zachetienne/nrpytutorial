@@ -1,6 +1,5 @@
 from UnitTesting.create_test import create_test
 
-
 def test_ADM_in_terms_of_BSSN():
 
     module = 'BSSN.ADM_in_terms_of_BSSN'
@@ -33,15 +32,6 @@ def test_constraints():
 
     create_test(module, module_name, function_and_global_dict)
 
-def test_gauge_RHSs():
-
-    module = 'BSSN.BSSN_gauge_RHSs'
-
-    module_name = 'gauge_RHSs'
-    
-    function_and_global_dict = {'BSSN_gauge_RHSs()': ['alpha_rhs', 'bet_rhsU', 'vet_rhsU']}
-
-    create_test(module, module_name, function_and_global_dict)
 
 def test_Psi4():
 
@@ -111,6 +101,23 @@ def test_RHSs():
     function_and_global_dict = {'BSSN_RHSs()': ['cf_rhs', 'trK_rhs', 'lambda_rhsU', 'a_rhsDD', 'h_rhsDD']}
 
     create_test(module, module_name, function_and_global_dict)
+
+def test_gauge_RHSs():
+
+    module = 'BSSN.BSSN_gauge_RHSs'
+
+    module_name = 'gauge_RHSs'
+    
+    function_and_global_dict = {'BSSN_gauge_RHSs()': ['alpha_rhs', 'bet_rhsU', 'vet_rhsU']}
+
+    bssn_rhs_init_string = '''
+import BSSN.BSSN_RHSs as rhs
+rhs.BSSN_RHSs()
+'''
+
+    initialization_string_dict = { 'BSSN_gauge_RHSs()': bssn_rhs_init_string }
+
+    create_test(module, module_name, function_and_global_dict, initialization_string_dict=initialization_string_dict)
 
 def test_ShiftedKerrSchild():
 

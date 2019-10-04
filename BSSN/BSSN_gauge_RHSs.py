@@ -21,6 +21,7 @@ import indexedexp as ixp
 import grid as gri
 import finite_difference as fin
 import reference_metric as rfm
+import sys
 
 # Step 1.a: Load BSSN quantities module
 import BSSN.BSSN_quantities as Bq
@@ -50,8 +51,14 @@ def BSSN_gauge_RHSs():
     # Declare scalars & tensors (in terms of rescaled BSSN quantities)
     Bq.BSSN_basic_tensors()
     Bq.betaU_derivs()
-    # Declare BSSN_RHSs (excluding the time evolution equations for the gauge conditions)
-    Brhs.BSSN_RHSs()
+    # Declare BSSN_RHSs (excluding the time evolution equations for the gauge conditions),
+    #    if they haven't already been declared.
+    if Brhs.have_already_called_BSSN_RHSs_function == False:
+        print("BSSN_gauge_RHSs() Error: You must call BSSN_RHSs() before calling BSSN_gauge_RHSs().")
+        sys.exit(1)
+
+    # Step 2: Lapse conditions
+    LapseEvolOption = par.parval_from_str(thismodule + "::LapseEvolutionOption")
 
     # Step 2.a: The 1+log lapse condition:
     #   \partial_t \alpha = \beta^i \alpha_{,i} - 2*\alpha*K
@@ -64,14 +71,14 @@ def BSSN_gauge_RHSs():
     # Implement the 1+log lapse condition
     global alpha_rhs
     alpha_rhs = sp.sympify(0)
-    if par.parval_from_str(thismodule + "::LapseEvolutionOption") == "OnePlusLog":
+    if LapseEvolOption == "OnePlusLog":
         alpha_rhs = -2 * alpha * trK
         alpha_dupD = ixp.declarerank1("alpha_dupD")
         for i in range(DIM):
             alpha_rhs += betaU[i] * alpha_dupD[i]
 
     # Step 2.b: Implement the harmonic slicing lapse condition
-    elif par.parval_from_str(thismodule + "::LapseEvolutionOption") == "HarmonicSlicing":
+    elif LapseEvolOption == "HarmonicSlicing":
         if par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "W":
             alpha_rhs = -3 * cf ** (-4) * Brhs.cf_rhs
         elif par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") == "phi":
@@ -82,23 +89,43 @@ def BSSN_gauge_RHSs():
 
     # Step 2.c: Frozen lapse
     #    \partial_t \alpha = 0
-    elif par.parval_from_str(thismodule + "::LapseEvolutionOption") == "Frozen":
+    elif LapseEvolOption == "Frozen":
         alpha_rhs = sp.sympify(0)
-
+        
     else:
-        print("Error: "+thismodule + "::LapseEvolutionOption == "+
-              par.parval_from_str(thismodule + "::LapseEvolutionOption")+" not supported!")
+        print("Error: "+thismodule + "::LapseEvolutionOption == "+LapseEvolOption+" not supported!")
         exit(1)
 
     # Step 3.a: Set \partial_t \beta^i
-    # First import expressions from BSSN_quantities
+    # First check that ShiftEvolutionOption parameter choice is supported.
+    ShiftEvolOption = par.parval_from_str(thismodule + "::ShiftEvolutionOption")
+    if ShiftEvolOption != "Frozen" and \
+        ShiftEvolOption != "GammaDriving2ndOrder_NoCovariant" and \
+        ShiftEvolOption != "GammaDriving2ndOrder_Covariant"  and \
+        ShiftEvolOption != "GammaDriving2ndOrder_Covariant__Hatted" and \
+        ShiftEvolOption != "GammaDriving1stOrder_Covariant" and \
+        ShiftEvolOption != "GammaDriving1stOrder_Covariant__Hatted":
+        print("Error: ShiftEvolutionOption == " + ShiftEvolOption + " unsupported!")
+        exit(1)
+
+    # Next import expressions from BSSN_quantities
     BU = Bq.BU
     betU = Bq.betU
     betaU_dupD = Bq.betaU_dupD
     # Define needed quantities
     beta_rhsU = ixp.zerorank1()
     B_rhsU = ixp.zerorank1()
-    if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_NoCovariant":
+
+    # In the case of Frozen shift condition, we
+    #    explicitly set the betaU and BU RHS's to zero
+    #    instead of relying on the ixp.zerorank1()'s above,
+    #    for safety.
+    if ShiftEvolOption == "Frozen":
+        for i in range(DIM):
+            beta_rhsU[i] = sp.sympify(0)
+            BU[i]        = sp.sympify(0)
+
+    if ShiftEvolOption == "GammaDriving2ndOrder_NoCovariant":
         # Step 3.a.i: Compute right-hand side of beta^i
         # *  \partial_t \beta^i = \beta^j \beta^i_{,j} + B^i
         for i in range(DIM):
@@ -130,13 +157,17 @@ def BSSN_gauge_RHSs():
             B_rhsU[i] += sp.Rational(3, 4) * Lambdabar_partial0[i] - eta * BU[i]
             for j in range(DIM):
                 B_rhsU[i] += betaU[j] * BU_dupD[i][j]
-                
+
     # Step 3.b: The right-hand side of the \partial_t \beta^i equation
-    if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+    if "GammaDriving2ndOrder_Covariant" in ShiftEvolOption:
         # Step 3.b Option 2: \partial_t \beta^i = \left[\beta^j \bar{D}_j \beta^i\right] + B^{i}
         # First we need GammabarUDD, defined in Bq.gammabar__inverse_and_derivs()
         Bq.gammabar__inverse_and_derivs()
-        GammabarUDD = Bq.GammabarUDD
+        ConnectionUDD = Bq.GammabarUDD
+        # If instead we wish to use the Hatted covariant derivative, we replace
+        #    ConnectionUDD with GammahatUDD:
+        if ShiftEvolOption == "GammaDriving2ndOrder_Covariant__Hatted":
+            ConnectionUDD = rfm.GammahatUDD
         # Then compute right-hand side:
         # Term 1: \beta^j \beta^i_{,j}
         for i in range(DIM):
@@ -147,12 +178,18 @@ def BSSN_gauge_RHSs():
         for i in range(DIM):
             for j in range(DIM):
                 for m in range(DIM):
-                    beta_rhsU[i] += betaU[j] * GammabarUDD[i][m][j] * betaU[m]
+                    beta_rhsU[i] += betaU[j] * ConnectionUDD[i][m][j] * betaU[m]
         # Term 3: B^i
         for i in range(DIM):
             beta_rhsU[i] += BU[i]
 
-    if par.parval_from_str(thismodule + "::ShiftEvolutionOption") == "GammaDriving2ndOrder_Covariant":
+    if "GammaDriving2ndOrder_Covariant" in ShiftEvolOption:
+        ConnectionUDD = Bq.GammabarUDD
+        # If instead we wish to use the Hatted covariant derivative, we replace
+        #    ConnectionUDD with GammahatUDD:
+        if ShiftEvolOption == "GammaDriving2ndOrder_Covariant__Hatted":
+            ConnectionUDD = rfm.GammahatUDD
+
         # Step 3.c: Covariant option:
         #  \partial_t B^i = \beta^j \bar{D}_j B^i
         #               + \frac{3}{4} ( \partial_t \bar{\Lambda}^{i} - \beta^j \bar{D}_j \bar{\Lambda}^{i} )
@@ -175,7 +212,7 @@ def BSSN_gauge_RHSs():
         for i in range(DIM):
             for j in range(DIM):
                 for m in range(DIM):
-                    B_rhsU[i] += betaU[j] * GammabarUDD[i][m][j] * BU[m]
+                    B_rhsU[i] += betaU[j] * ConnectionUDD[i][m][j] * BU[m]
         # Term 3: \frac{3}{4}\partial_t \bar{\Lambda}^{i}
         for i in range(DIM):
             B_rhsU[i] += sp.Rational(3, 4) * Brhs.Lambdabar_rhsU[i]
@@ -187,12 +224,45 @@ def BSSN_gauge_RHSs():
         for i in range(DIM):
             for j in range(DIM):
                 for m in range(DIM):
-                    B_rhsU[i] += -sp.Rational(3, 4) * betaU[j] * GammabarUDD[i][m][j] * Bq.LambdabarU[m]
+                    B_rhsU[i] += -sp.Rational(3, 4) * betaU[j] * ConnectionUDD[i][m][j] * Bq.LambdabarU[m]
         # Term 6: - \eta B^i
         # eta is a free parameter; we declare it here:
         eta = par.Cparameters("REAL", thismodule, ["eta"],2.0)
         for i in range(DIM):
             B_rhsU[i] += -eta * BU[i]
+
+    if "GammaDriving1stOrder_Covariant" in ShiftEvolOption:
+        # Step 3.c: \partial_t \beta^i = \left[\beta^j \bar{D}_j \beta^i\right] + 3/4 Lambdabar^i - eta*beta^i
+
+        # First set \partial_t B^i = 0:
+        B_rhsU = ixp.zerorank1()  # \partial_t B^i = 0
+
+        # Second, set \partial_t beta^i RHS:
+
+        # Compute covariant advection term:
+        #  We need GammabarUDD, defined in Bq.gammabar__inverse_and_derivs()
+        Bq.gammabar__inverse_and_derivs()
+        ConnectionUDD = Bq.GammabarUDD
+        # If instead we wish to use the Hatted covariant derivative, we replace
+        #    ConnectionUDD with GammahatUDD:
+        if ShiftEvolOption == "GammaDriving1stOrder_Covariant__Hatted":
+            ConnectionUDD = rfm.GammahatUDD
+
+        # Term 1: \beta^j \beta^i_{,j}
+        for i in range(DIM):
+            for j in range(DIM):
+                beta_rhsU[i] += betaU[j] * betaU_dupD[i][j]
+
+        # Term 2: \beta^j \bar{\Gamma}^i_{mj} \beta^m
+        for i in range(DIM):
+            for j in range(DIM):
+                for m in range(DIM):
+                    beta_rhsU[i] += betaU[j] * ConnectionUDD[i][m][j] * betaU[m]
+
+        # Term 3: 3/4 Lambdabar^i - eta*beta^i
+        eta = par.Cparameters("REAL", thismodule, ["eta"], 2.0)
+        for i in range(DIM):
+            beta_rhsU[i] += sp.Rational(3, 4) * Bq.LambdabarU[i] - eta * betaU[i]
 
     # Step 4: Rescale the BSSN gauge RHS quantities so that the evolved
     #         variables may remain smooth across coord singularities
