@@ -78,7 +78,7 @@ def stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(inputvars,cus
 
 # Step 3: Add BSSN stress-energy source terms to BSSN RHSs
 def BSSN_source_terms_for_BSSN_RHSs(custom_T4UU=None):
-    global sourceterm_trK_rhs, sourceterm_a_rhsDD, sourceterm_lambda_rhsU
+    global sourceterm_trK_rhs, sourceterm_a_rhsDD, sourceterm_lambda_rhsU, sourceterm_Lambdabar_rhsU
 
     # Step 3.a: Call BSSN_source_terms_ito_T4UU to get SDD, SD, S, & rho
 
@@ -119,13 +119,13 @@ def BSSN_source_terms_for_BSSN_RHSs(custom_T4UU=None):
             sourceterm_a_rhsDD[i][j] = Abar_rhsDDij / rfm.ReDD[i][j]
 
     # Step 3.d: Stress-energy part of Lambdabar_rhsU = stressenergy_Lambdabar_rhsU
-    stressenergy_Lambdabar_rhsU = ixp.zerorank1()
+    sourceterm_Lambdabar_rhsU = ixp.zerorank1()
     for i in range(3):
         for j in range(3):
-            stressenergy_Lambdabar_rhsU[i] += -16 * PI * alpha * gammabarUU[i][j] * SD[j]
+            sourceterm_Lambdabar_rhsU[i] += -16 * PI * alpha * gammabarUU[i][j] * SD[j]
     sourceterm_lambda_rhsU = ixp.zerorank1()
     for i in range(3):
-        sourceterm_lambda_rhsU[i] = stressenergy_Lambdabar_rhsU[i] / rfm.ReU[i]
+        sourceterm_lambda_rhsU[i] = sourceterm_Lambdabar_rhsU[i] / rfm.ReU[i]
 
 
 # Step 4: Add BSSN stress-energy source terms to BSSN constraints
