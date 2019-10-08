@@ -28,11 +28,9 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,Val
     # Step 1.a: Compute the 4-metric $g_{\mu\nu}$ and its inverse
     #           $g^{\mu\nu}$ from the ADM 3+1 variables, using the
     #           BSSN.ADMBSSN_tofrom_4metric NRPy+ module
-    import BSSN.ADMBSSN_tofrom_4metric as AB4m
-    gammaDD, betaU, alpha = AB4m.setup_ADM_quantities("ADM")
-    AB4m.g4DD_ito_BSSN_or_ADM("ADM")
+    AB4m.g4DD_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
     g4DD = AB4m.g4DD
-    AB4m.g4UU_ito_BSSN_or_ADM("ADM")
+    AB4m.g4UU_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
     g4UU = AB4m.g4UU
 
     # Step 1.b: Our algorithm for computing $u^0$ is as follows:

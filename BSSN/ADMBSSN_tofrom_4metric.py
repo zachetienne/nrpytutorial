@@ -35,12 +35,13 @@ def setup_ADM_quantities(inputvars):
     return gammaDD,betaU,alpha
 
 # g_{mu nu} in terms of BSSN (if inputvars=="BSSN") or ADM (if inputvars=="ADM") variables.
-def g4DD_ito_BSSN_or_ADM(inputvars):
+def g4DD_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None):
     # Step 0: Declare g4DD as globals, to make interfacing with other modules/functions easier
     global g4DD
 
-    # Step 1: Check that inputvars is set to a supported value
-    gammaDD,betaU,alpha = setup_ADM_quantities(inputvars)
+    # Step 1: Set gammaDD, betaU, and alpha if not already input.
+    if gammaDD==None and betaU==None and alpha==None:
+        gammaDD,betaU,alpha = setup_ADM_quantities(inputvars)
 
     # Step 2: Compute g4DD = g_{mu nu}:
     # To get \gamma_{\mu \nu} = gamma4DD[mu][nu], we'll need to construct the 4-metric, using Eq. 2.122 in B&S:
@@ -66,12 +67,13 @@ def g4DD_ito_BSSN_or_ADM(inputvars):
             g4DD[mu][nu] = gammaDD[mu - 1][nu - 1]
 
 # g^{mu nu} in terms of BSSN (if inputvars=="BSSN") or ADM (if inputvars=="ADM") variables.
-def g4UU_ito_BSSN_or_ADM(inputvars):
+def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None):
     # Step 0: Declare g4UU as globals, to make interfacing with other modules/functions easier
     global g4UU
 
-    # Step 1: Check that inputvars is set to a supported value
-    gammaDD, betaU, alpha = setup_ADM_quantities(inputvars)
+    # Step 1: Set gammaDD, betaU, and alpha if not already input.
+    if gammaDD==None and betaU==None and alpha==None:
+        gammaDD,betaU,alpha = setup_ADM_quantities(inputvars)
 
     # Step 2: Compute g4UU = g_{mu nu}:
     # To get \gamma^{\mu \nu} = gamma4UU[mu][nu], we'll need to use Eq. 2.119 in B&S.
