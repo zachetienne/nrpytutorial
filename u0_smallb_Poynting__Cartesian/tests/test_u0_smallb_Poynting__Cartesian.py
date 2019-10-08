@@ -7,8 +7,8 @@ def test_u0_smallb_Poynting__Cartesian():
 
     module_name = 'u0sbPoyn'
 
-    function_and_global_dict = {'compute_u0_smallb_Poynting__Cartesian()': ['g4DD', 'u0', 'uD', 'uBcontraction', 'uU',
-                                                                            'smallb4U', 'g4UU', 'smallb4D',
+    function_and_global_dict = {'compute_u0_smallb_Poynting__Cartesian()': ['u0', 'uD', 'uBcontraction', 'uU',
+                                                                            'smallb4U', 'smallb4D',
                                                                             'smallb2etk', 'PoynSU']}
 
     create_test(module, module_name, function_and_global_dict)
