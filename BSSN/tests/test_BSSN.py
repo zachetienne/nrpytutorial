@@ -35,7 +35,29 @@ rfm.ref_metric__hatted_quantities()'''
 
     create_test(module, module_name, function_and_global_dict, logging_level='INFO', initialization_string_dict=initialization_string_dict)
 
-    
+def test_BSSN_stress_energy_source_terms():
+    module = 'BSSN.BSSN_stress_energy_source_terms'
+
+    module_name = 'BSSN_stress_energy_source_terms'
+
+    function_and_global_dict = {'stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(\"ADM\")': ['SDD','SD','S','rho'],
+                                'stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(\"BSSN\")': ['SDD','SD','S','rho'],
+                                'BSSN_source_terms_for_BSSN_RHSs()': ['sourceterm_trK_rhs', 'sourceterm_a_rhsDD', 'sourceterm_lambda_rhsU', 'sourceterm_Lambdabar_rhsU']}
+
+    rfm_init_string = '''
+import BSSN.BSSN_quantities as Bq
+import reference_metric as rfm
+rfm.reference_metric()
+rfm.ref_metric__hatted_quantities()'''
+
+    initialization_string_dict = {
+        'stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(\"ADM\")': rfm_init_string,
+        'stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(\"BSSN\")': rfm_init_string,
+        'BSSN_source_terms_for_BSSN_RHSs()': rfm_init_string
+    }
+
+    create_test(module, module_name, function_and_global_dict, logging_level='INFO', initialization_string_dict=initialization_string_dict)
+
 def test_ADM_in_terms_of_BSSN():
 
     module = 'BSSN.ADM_in_terms_of_BSSN'
