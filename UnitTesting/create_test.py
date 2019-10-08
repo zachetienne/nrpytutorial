@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
         # Create trusted_values_dict_name based on module_name and function. Clean the function inputs so there are no special characters like parentheses, equals signs, and quotation marks.
         trusted_values_dict_name = module_name + '__' + \
-                function.replace('()', '__').replace('(', '__').replace(')', '__').replace(' ', '').replace('=', '_').replace('"', '_')
+                function.replace('()', '__').replace('(', '__').replace(')', '__').replace(' ', '').replace('=', '_').replace('"', '_').replace(',', '_')
 
         # Copying the lines from run_test.py into our test file
         with open(os.path.join('UnitTesting', 'run_test.py'), 'r') as file:

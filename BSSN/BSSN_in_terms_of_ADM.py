@@ -25,6 +25,10 @@ DIM=3
 #           We have (Eqs. 2 and 3 of [Ruchlin *et al.*](https://arxiv.org/pdf/1712.07658.pdf)):
 def gammabarDD_hDD(gammaDD):
     global gammabarDD,hDD
+
+    if gammaDD == None:
+        gammaDD = ixp.declarerank2("gammaDD","sym01")
+
     if rfm.have_already_called_reference_metric_function == False:
         print("BSSN.BSSN_in_terms_of_ADM.hDD_given_ADM(): Must call reference_metric() first!")
         sys.exit(1)
@@ -42,6 +46,12 @@ def gammabarDD_hDD(gammaDD):
 #           where (Eq. 3 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
 def trK_AbarDD_aDD(gammaDD,KDD):
     global trK,AbarDD,aDD
+
+    if gammaDD == None:
+        gammaDD = ixp.declarerank2("gammaDD","sym01")
+    if KDD == None:
+        KDD = ixp.declarerank2("KDD","sym01")
+
     if rfm.have_already_called_reference_metric_function == False:
         print("BSSN.BSSN_in_terms_of_ADM.trK_AbarDD(): Must call reference_metric() first!")
         sys.exit(1)
@@ -65,6 +75,9 @@ def trK_AbarDD_aDD(gammaDD,KDD):
 # Step 2.c: Define \bar{Lambda}^i (Eqs. 4 and 5 of [Baumgarte *et al.*](https://arxiv.org/pdf/1211.6632.pdf)):
 def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
     global LambdabarU, lambdaU
+
+    if gammaDD == None:
+        gammaDD = ixp.declarerank2("gammaDD","sym01")
 
     # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
     gammabarDD_hDD(gammaDD)
@@ -100,6 +113,9 @@ def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
 def cf_from_gammaDD(gammaDD):
     global cf
 
+    if gammaDD == None:
+        gammaDD = ixp.declarerank2("gammaDD","sym01")
+
     # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
     gammabarDD_hDD(gammaDD)
     gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
@@ -132,6 +148,11 @@ def cf_from_gammaDD(gammaDD):
 # \mathcal{B}^i &= B^i/(ReU[i])
 def betU_vetU(betaU,BU):
     global vetU,betU
+
+    if betaU == None:
+        betaU = ixp.declarerank1("betaU")
+    if BU == None:
+        BU = ixp.declarerank1("BU")
 
     if rfm.have_already_called_reference_metric_function == False:
         print("BSSN.BSSN_in_terms_of_ADM.bet_vet(): Must call reference_metric() first!")

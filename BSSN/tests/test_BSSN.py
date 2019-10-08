@@ -69,6 +69,34 @@ def test_ADM_in_terms_of_BSSN():
 
     create_test(module, module_name, function_and_global_dict)
 
+def test_BSSN_in_terms_of_ADM():
+    module = 'BSSN.BSSN_in_terms_of_ADM'
+
+    module_name = 'BSSN_in_terms_of_ADM'
+
+    function_and_global_dict = {'gammabarDD_hDD(gammaDD=None)': ['gammabarDD','hDD'],
+                                'trK_AbarDD_aDD(gammaDD=None,KDD=None)': ['trK','AbarDD','aDD'],
+                                'LambdabarU_lambdaU__exact_gammaDD(gammaDD=None)': ['LambdabarU','lambdaU'],
+                                'cf_from_gammaDD(gammaDD=None)': ['cf'],
+                                'betU_vetU(betaU=None,BU=None)': ['vetU','betU']
+                                }
+
+    rfm_init_string = '''
+import BSSN.BSSN_quantities as Bq
+import reference_metric as rfm
+rfm.reference_metric()
+rfm.ref_metric__hatted_quantities()'''
+
+    initialization_string_dict = {
+        'gammabarDD_hDD(gammaDD=None)': rfm_init_string,
+        'trK_AbarDD_aDD(gammaDD=None,KDD=None)': rfm_init_string,
+        'LambdabarU_lambdaU__exact_gammaDD(gammaDD=None)': rfm_init_string,
+        'cf_from_gammaDD(gammaDD=None)': rfm_init_string,
+        'betU_vetU(betaU=None,BU=None)': rfm_init_string
+    }
+
+    create_test(module, module_name, function_and_global_dict, logging_level='INFO', initialization_string_dict=initialization_string_dict)
+
 def test_BrillLindquist():
 
     module = 'BSSN.BrillLindquist'
