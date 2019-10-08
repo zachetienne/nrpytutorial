@@ -1,5 +1,10 @@
 # # Computing the 4-Velocity Time-Component $u^0$,
 # the Magnetic Field Measured by a Comoving Observer $b^{\mu}$, and the Poynting Vector $S^i$
+
+# Authors: Zachariah B. Etienne
+#          zachetie **at** gmail **dot* com
+#          Patrick D. Nelson
+
 # 
 # ## Part 1 of 2: Computing $u^0$ and $b^{\mu}$
 # 
@@ -174,14 +179,14 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,Val
     uD = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
-            uD[j] += alpha*u0*gammaDD[i][j]*ValenciavU[j]
+            uD[j] += alpha*u0*gammaDD[i][j]*ValenciavU[i]
 
     # ## Step 4: Compute $\gamma=\text{gammaDET}$ from the ADM 3+1 variables
     # This is accomplished simply, using the symmetric matrix inversion function in indexedexp.py:
     gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
 
 
-    # ## Step 5: Compute $\beta^\mu$ from above expressions.
+    # ## Step 5: Compute $b^\mu$ from above expressions.
 
     # \sqrt{4\pi} b^0 = B^0_{\rm (u)} &= \frac{u_j B^j}{\alpha} \\
     # \sqrt{4\pi} b^i = B^i_{\rm (u)} &= \frac{B^i + (u_j B^j) u^i}{\alpha u^0}\\
