@@ -1,5 +1,17 @@
 from UnitTesting.create_test import create_test
 
+def test_ADMBSSN_tofrom_4metric():
+
+    module = 'BSSN.ADMBSSN_tofrom_4metric'
+
+    module_name = 'ADMBSSN_tofrom_4metric'
+
+    function_and_global_dict = {'g4DD_ito_BSSN_or_ADM(\"ADM\")': ['g4DD'],
+                                'g4UU_ito_BSSN_or_ADM(\"ADM\")': ['g4UU'],
+                                'BSSN_or_ADM_ito_g4DD(\"ADM\")': ['gammaDD', 'betaU', 'alpha']}
+
+    create_test(module, module_name, function_and_global_dict)
+
 def test_ADM_in_terms_of_BSSN():
 
     module = 'BSSN.ADM_in_terms_of_BSSN'
