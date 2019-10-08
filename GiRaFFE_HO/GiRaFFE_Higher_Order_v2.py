@@ -131,12 +131,11 @@ def GiRaFFE_Higher_Order_v2():
     # Error check: fixed = to +=
 
     # We will now pull in the four metric and its inverse.
-    g4DD = ixp.zerorank2(DIM=4)
-    g4UU = ixp.zerorank2(DIM=4)
-    for mu in range(4):
-        for nu in range(4):
-            g4DD[mu][nu] = u0b.g4DD[mu][nu]
-            g4UU[mu][nu] = u0b.g4UU[mu][nu]
+    import BSSN.ADMBSSN_tofrom_4metric as AB4m # NRPy+: ADM/BSSN <-> 4-metric conversions
+    AB4m.g4DD_ito_BSSN_or_ADM("ADM")
+    g4DD = AB4m.g4DD
+    AB4m.g4UU_ito_BSSN_or_ADM("ADM")
+    g4UU = AB4m.g4UU
 
 
     # Next we compute spatial derivatives of the metric, $\partial_i g_{\mu\nu} = g_{\mu\nu,i}$, written in terms of the three-metric, shift, and lapse. Simply taking the derivative of the expression for $g_{\mu\nu}$ above, we find
