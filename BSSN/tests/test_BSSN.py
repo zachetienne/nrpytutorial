@@ -12,6 +12,30 @@ def test_ADMBSSN_tofrom_4metric():
 
     create_test(module, module_name, function_and_global_dict)
 
+def test_ADMBSSN_tofrom_4metric_BSSN():
+
+    module = 'BSSN.ADMBSSN_tofrom_4metric'
+
+    module_name = 'ADMBSSN_tofrom_4metric'
+
+    function_and_global_dict = {'g4DD_ito_BSSN_or_ADM(\"BSSN\")': ['g4DD'],
+                                'g4UU_ito_BSSN_or_ADM(\"BSSN\")': ['g4UU'],
+                                'BSSN_or_ADM_ito_g4DD(\"BSSN\")': ['hDD', 'cf', 'vetU', 'alpha']}
+    rfm_init_string = '''
+import BSSN.BSSN_quantities as Bq
+import reference_metric as rfm
+rfm.reference_metric()
+rfm.ref_metric__hatted_quantities()'''
+
+    initialization_string_dict = {
+        'g4DD_ito_BSSN_or_ADM(\"BSSN\")': rfm_init_string,
+        'g4UU_ito_BSSN_or_ADM(\"BSSN\")': rfm_init_string,
+        'BSSN_or_ADM_ito_g4DD(\"BSSN\")': rfm_init_string
+    }
+
+    create_test(module, module_name, function_and_global_dict, logging_level='INFO', initialization_string_dict=initialization_string_dict)
+
+    
 def test_ADM_in_terms_of_BSSN():
 
     module = 'BSSN.ADM_in_terms_of_BSSN'
