@@ -60,7 +60,7 @@ def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,Val
     GAMMA_SPEED_LIMIT = par.Cparameters("REAL",thismodule,"GAMMA_SPEED_LIMIT",10.0) # Default value based on
                                                                                     # IllinoisGRMHD.
                                                                                     # GiRaFFE default = 2000.0
-    Rmax = 1 - 1/GAMMA_SPEED_LIMIT
+    Rmax = 1 - 1/(GAMMA_SPEED_LIMIT * GAMMA_SPEED_LIMIT)
 
     rescaledValenciavU = ixp.zerorank1()
     for i in range(DIM):
