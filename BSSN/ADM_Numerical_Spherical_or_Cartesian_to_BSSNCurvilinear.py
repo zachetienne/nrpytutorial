@@ -7,20 +7,19 @@
 
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
-# Step P1: Import needed modules
-import sympy as sp
-import NRPy_param_funcs as par
-from outputC import *
-import indexedexp as ixp
-import reference_metric as rfm
-import loop as lp
-import grid as gri
-import finite_difference as fin
-import BSSN.BSSN_quantities as Bq
-import os
+# Step P1: Initialize core Python/NRPy+ modules
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+from outputC import *             # NRPy+: Core C code output module
+import finite_difference as fin   # NRPy+: Finite difference C code generation module
+import grid as gri                # NRPy+: Functions having to do with numerical grids
+import loop as lp                 # NRPy+: Generate C code loops
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities; gammabarUU & GammabarUDD needed below
+import os, sys                    # Standard Python modules for multiplatform OS-level functions
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name, 
-                                                           outdir = "BSSN", pointer_to_ID_inputs=False):
+                                                           Ccodesdir = "BSSN", pointer_to_ID_inputs=False):
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
     #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
     #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
@@ -50,7 +49,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
     if rfm.have_already_called_reference_metric_function == False:
         print("Error. Called Convert_Spherical_ADM_to_BSSN_curvilinear() without")
         print("       first setting up reference metric, by calling rfm.reference_metric().")
-        exit(1)
+        sys.exit(1)
 
     r_th_ph_or_Cart_xyz_oID_xx = []
     if CoordType_in == "Spherical":
@@ -59,7 +58,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
         r_th_ph_or_Cart_xyz_oID_xx = rfm.xxCart
     else:
         print("Error: Can only convert ADM Cartesian or Spherical initial data to BSSN Curvilinear coords.")
-        exit(1)
+        sys.exit(1)
 
     # Step 2: All ADM initial data quantities are now functions of xx0,xx1,xx2, but
     #         they are still in the Spherical or Cartesian basis. We can now directly apply
@@ -158,7 +157,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
                            lhrh(lhs=gri.gfaccess("in_gfs","lambdaU2"),rhs=lambdaU[2])]
     lambdaU_expressions_FDout = fin.FD_outputC("returnstring",lambdaU_expressions, outCparams)
 
-    with open(os.path.join(outdir,"ID_BSSN_lambdas.h"), "w") as file:
+    with open(os.path.join(Ccodesdir,"ID_BSSN_lambdas.h"), "w") as file:
         file.write("""
 void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],const REAL dxx[3],REAL *in_gfs) {\n""")
         file.write(lp.loop(["i2","i1","i0"],["NGHOSTS","NGHOSTS","NGHOSTS"],
@@ -172,13 +171,12 @@ void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3]
                                          "const REAL xx0 = xx[0][i0];\n"+lambdaU_expressions_FDout))
         file.write("}\n")
 
-        
     # Step 5: Output all ADM-to-BSSN expressions to a C function. This function
     #         must first call the ID_ADM_SphorCart() defined above. Using these
     #         Spherical or Cartesian data, it sets up all quantities needed for
     #         BSSNCurvilinear initial data, *except* $\lambda^i$, which must be
     #         computed from numerical data using finite-difference derivatives.
-    with open(os.path.join(outdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "w") as file:
+    with open(os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "w") as file:
         file.write("void ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(const REAL xx0xx1xx2[3],")
         if pointer_to_ID_inputs == True:
             file.write("ID_inputs *other_inputs,")
@@ -203,8 +201,8 @@ void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3]
       REAL xyz_or_rthph[3];\n""")
     outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
     outputC(r_th_ph_or_Cart_xyz_oID_xx[0:3], ["xyz_or_rthph[0]", "xyz_or_rthph[1]", "xyz_or_rthph[2]"],
-            os.path.join(outdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), outCparams + ",CSE_enable=False")
-    with open(os.path.join(outdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "a") as file:
+            os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), outCparams + ",CSE_enable=False")
+    with open(os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "a") as file:
         file.write("      "+ADM_input_function_name+"""(xyz_or_rthph, other_inputs,
                       &gammaSphorCartDD00,&gammaSphorCartDD01,&gammaSphorCartDD02,
                       &gammaSphorCartDD11,&gammaSphorCartDD12,&gammaSphorCartDD22,
@@ -222,14 +220,14 @@ void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3]
              "*aDD00", "*aDD01", "*aDD02", "*aDD11", "*aDD12", "*aDD22",
              "*trK", "*vetU0", "*vetU1", "*vetU2", "*betU0", "*betU1", "*betU2",
              "*alpha", "*cf"],
-            os.path.join(outdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), params=outCparams)
-    with open(os.path.join(outdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "a") as file:
+            os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), params=outCparams)
+    with open(os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "a") as file:
         file.write("}\n")
 
     # Step 5.a: Output the driver function for the above
     #           function ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs()
     # Next write the driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs():
-    with open(os.path.join(outdir,"ID_BSSN__ALL_BUT_LAMBDAs.h"), "w") as file:
+    with open(os.path.join(Ccodesdir,"ID_BSSN__ALL_BUT_LAMBDAs.h"), "w") as file:
         file.write("void ID_BSSN__ALL_BUT_LAMBDAs(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],")
         if pointer_to_ID_inputs == True:
             file.write("ID_inputs *other_inputs,")

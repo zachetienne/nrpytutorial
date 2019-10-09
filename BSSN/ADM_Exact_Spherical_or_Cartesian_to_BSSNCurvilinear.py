@@ -8,12 +8,11 @@
 #         zachetie **at** gmail **dot* com
 
 # Step P0: Import needed Python/NRPy+ modules
-import sympy as sp
-import NRPy_param_funcs as par
-from outputC import *
-import indexedexp as ixp
-import reference_metric as rfm
-import BSSN.BSSN_quantities as Bq # The EvolvedConformalFactor_cf parameter is used below
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+from outputC import *             # NRPy+: Core C code output module
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import sys                        # Standard Python module for multiplatform OS-level functions
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_th_ph_or_Cart_xyz,
         gammaDD_inSphorCart, KDD_inSphorCart, alpha_inSphorCart, betaU_inSphorCart, BU_inSphorCart):
@@ -52,9 +51,9 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     if rfm.have_already_called_reference_metric_function == False:
         print("Error. Called Convert_Spherical_ADM_to_BSSN_curvilinear() without")
         print("       first setting up reference metric, by calling rfm.reference_metric().")
-        exit(1)
+        sys.exit(1)
     
-    # Step 1: All input quantities are in terms of r,th,ph or x,y,z. We want them in terms 
+    # Step 1: All input quantitiefs are in terms of r,th,ph or x,y,z. We want them in terms
     #         of xx0,xx1,xx2, so here we call sympify_integers__replace_rthph() to replace
     #         r,th,ph or x,y,z, respectively, with the appropriate functions of xx0,xx1,xx2
     #         as defined for this particular reference metric in reference_metric.py's 
@@ -77,7 +76,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
         r_th_ph_or_Cart_xyz_of_xx = rfm.xxCart
     else:
         print("Error: Can only convert ADM Cartesian or Spherical initial data to BSSN Curvilinear coords.")
-        exit(1)
+        sys.exit(1)
 
     alphaSphorCart = sympify_integers__replace_rthph_or_Cartxyz(
         alphaSphorCart, Sph_r_th_ph_or_Cart_xyz, r_th_ph_or_Cart_xyz_of_xx)
