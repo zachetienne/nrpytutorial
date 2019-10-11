@@ -13,7 +13,7 @@ USES CCTK_INT shift_timelevels
 USES CCTK_INT metric_timelevels
 
 shares: IllinoisGRMHD
-USES CCTK_REAL gamma_th
+USES CCTK_REAL Gamma_th
 #############################################################################
 
 private:

@@ -16,6 +16,15 @@ void Convert_to_HydroBase(CCTK_ARGUMENTS) {
   // Generally, we only need the HydroBase variables for diagnostic purposes, so we run the below loop only at iterations in which diagnostics are run.
   if(Convert_to_HydroBase_every==0 || cctk_iteration%Convert_to_HydroBase_every!=0) return;
 
+  /***************
+   * PPEOS Patch *
+   ***************
+   * We will need to set up our EOS in
+   * order to be able to compute eps below
+   */
+  eos_struct eos;
+  initialize_EOS_struct_from_input(eos);
+  
 #pragma omp parallel for 
   for(int k=0;k<cctk_lsh[2];k++)
     for(int j=0;j<cctk_lsh[1];j++)
@@ -35,7 +44,22 @@ void Convert_to_HydroBase(CCTK_ARGUMENTS) {
 
         rho[index]   = PRIMS[RHOB];
         press[index] = PRIMS[PRESSURE];
-        eps[index]   = PRIMS[PRESSURE]/PRIMS[RHOB]/(gamma_th-1.0);
+
+        /***************
+         * PPEOS Patch *
+         ***************
+         * For our hybrid piecewise polytropic EOS,
+         * we have
+         * .------------------------------------------------------.
+         * | eps = eps_cold + (P - P_cold)/( rho*(Gamma_th - 1) ) |
+         * .------------------------------------------------------.
+         */
+        /* Compute P_cold and eps_cold */
+        CCTK_REAL P_cold, eps_cold;
+        compute_P_cold__eps_cold(eos,PRIMS[RHOB], P_cold,eps_cold); /* <- This function is defined in inlined_functions.C */
+
+        /* Compute eps as described above */
+        eps[index] = (PRIMS[PRESSURE]-P_cold)/PRIMS[RHOB]/(Gamma_th-1.0);
 
         // IllinoisGRMHD defines v^i = u^i/u^0.
         
