@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NUM_JOBS=8
+NUM_JOBS=6
 
 count=0
 for i in *.ipynb; do
