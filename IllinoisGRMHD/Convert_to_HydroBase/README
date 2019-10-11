@@ -1,0 +1,34 @@
+Cactus Code Thorn Convert_to_HydroBase
+Author(s)    : Zachariah B. Etienne
+Note         : Convert IllinoisGRMHD-compatible variables 
+               to HydroBase-compatible variables. Used 
+               for compatibility with HydroBase/ADMBase
+               analysis thorns in the Einstein Toolkit.               
+Maintainer(s): Zachariah B. Etienne
+License      : FreeBSD License, AKA "2-Clause BSD License"
+----------------------------------------------------------
+
+1. Purpose
+
+IllinoisGRMHD and HydroBase variables are incompatible;
+The former uses 3-velocity defined as v^i = u^i/u^0, and
+the latter uses the Valencia formalism definition of v^i.
+
+Define the Valencia formalism's definition of v^i to be 
+"W^i", and IllinoisGRMHD's definition "v^i"
+Then
+
+W^i = (v^i + \beta^i) / (\alpha). (Eq 11 in 
+http://arxiv.org/pdf/1501.07276.pdf).
+
+Similarly,
+
+v_i = (\alpha) W^i  - \beta^i
+
+In addition, IllinoisGRMHD needs the A-fields to be 
+defined on *staggered* grids, and HydroBase does not yet
+support this option. The staggerings are defined in 
+Table 1 of the IllinoisGRMHD code announcement paper:
+http://arxiv.org/pdf/1501.07276.pdf (page 15).
+
+The long-term goal should be to deprecate this thorn.

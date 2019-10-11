@@ -1,0 +1,131 @@
+\documentclass{article}
+%\usepackage{../../../../doc/ThornGuide/cactus}
+\usepackage{../../../../doc/latex/cactus}
+\begin{document}
+
+% The title of the document (not necessarily the name of the Thorn)
+\title{{\tt ID\_Converter\_ILGRMHD}: A Module for Converting {\tt HydroBase} Initial Data into Variables {\tt IllinoisGRMHD} Can Read}
+
+% The author of the documentation - on one line, otherwise it does not work
+\author{Original author: Zachariah B. Etienne. }
+
+% the date your document was last changed, if your document is in CVS, 
+% please use:
+\date{$ $Date: 2015-10-12 12:00:00 -0600 (Mon, 12 Oct 2015) $ $}
+\maketitle
+
+% *======================================================================*
+%  Cactus Thorn template for ThornGuide documentation
+%  Author: Ian Kelley
+%  Date: Sun Jun 02, 2002
+%  $Header$                                                             
+%
+%  Thorn documentation in the latex file doc/documentation.tex 
+%  will be included in ThornGuides built with the Cactus make system.
+%  The scripts employed by the make system automatically include 
+%  pages about variables, parameters and scheduling parsed from the 
+%  relevent thorn CCL files.
+%  
+%  This template contains guidelines which help to assure that your     
+%  documentation will be correctly added to ThornGuides. More 
+%  information is available in the Cactus UsersGuide.
+%                                                    
+%  Guidelines:
+%   - Do not change anything before the line
+%       % START CACTUS THORNGUIDE",
+%     except for filling in the title, author, date etc. fields.
+%        - Each of these fields should only be on ONE line.
+%        - Author names should be sparated with a \\ or a comma
+%   - You can define your own macros are OK, but they must appear after
+%     the START CACTUS THORNGUIDE line, and do not redefine standard 
+%     latex commands.
+%   - To avoid name clashes with other thorns, 'labels', 'citations', 
+%     'references', and 'image' names should conform to the following 
+%     convention:          
+%       ARRANGEMENT_THORN_LABEL
+%     For example, an image wave.eps in the arrangement CactusWave and 
+%     thorn WaveToyC should be renamed to CactusWave_WaveToyC_wave.eps
+%   - Graphics should only be included using the graphix package. 
+%     More specifically, with the "includegraphics" command. Do
+%     not specify any graphic file extensions in your .tex file. This 
+%     will allow us (later) to create a PDF version of the ThornGuide
+%     via pdflatex. |
+%   - References should be included with the latex "bibitem" command. 
+%   - use \begin{abstract}...\end{abstract} instead of \abstract{...}
+%   - For the benefit of our Perl scripts, and for future extensions, 
+%     please use simple latex.     
+%
+% *======================================================================* 
+% 
+% Example of including a graphic image:
+%    \begin{figure}[ht]
+%       \begin{center}
+%          \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
+%       \end{center}
+%       \caption{Illustration of this and that}
+%       \label{MyArrangement_MyThorn_MyLabel}
+%    \end{figure}
+%
+% Example of using a label:
+%   \label{MyArrangement_MyThorn_MyLabel}
+%
+% Example of a citation:
+%    \cite{MyArrangement_MyThorn_Author99}
+%
+% Example of including a reference
+%   \bibitem{MyArrangement_MyThorn_Author99}
+%   {J. Author, {\em The Title of the Book, Journal, or periodical}, 1 (1999), 
+%   1--16. {\tt http://www.nowhere.com/}}
+%
+% *======================================================================* 
+
+% If you are using CVS use this line to give version information
+% $Header$
+
+% Use the Cactus ThornGuide style file
+% (Automatically used from Cactus distribution, if you have a 
+%  thorn without the Cactus Flesh download this from the Cactus
+%  homepage at www.cactuscode.org)
+
+% Do not delete next line
+% START CACTUS THORNGUIDE
+
+% Add all definitions used in this documentation here 
+%   \def\mydef etc
+
+%\newcommand{\eqref}[1]{(\ref{#1})}
+
+% Add an abstract for this thorn's documentation
+\begin{abstract}
+{\tt IllinoisGRMHD} and {\tt HydroBase} variables are incompatible;
+The former uses 3-velocity defined as $v^i = u^i/u^0$, and
+the latter uses the Valencia formalism definition of $v^i$.
+
+Define the Valencia formalism's definition of $v^i$ to be 
+"$W^i$", and {\tt IllinoisGRMHD}'s definition "$v^i$"
+Then
+\begin{equation}
+W^i = (v^i + \beta^i) / (\alpha),
+\end{equation}
+which comes from Eq 11 in the {\tt IllinoisGRMHD} code announcement
+paper:\\ \url{http://arxiv.org/pdf/1501.07276.pdf}.
+
+Similarly,
+\begin{equation}
+v_i = (\alpha) W^i  - \beta^i
+\end{equation}
+
+In addition, {\tt IllinoisGRMHD} needs the A-fields to be 
+defined on {\it staggered} grids, and {\tt HydroBase} does not yet
+support this option. The staggerings are defined in 
+Table 1 of the {\tt IllinoisGRMHD} code announcement paper:
+\\ \url{http://arxiv.org/pdf/1501.07276.pdf} (page 15).
+
+The long-term goal should be to adjust {\tt HydroBase} and {\tt
+  IllinoisGRMHD} so that this thorn is no longer necessary.
+\end{abstract}
+
+% Do not delete next line
+% END CACTUS THORNGUIDE
+
+\end{document}
