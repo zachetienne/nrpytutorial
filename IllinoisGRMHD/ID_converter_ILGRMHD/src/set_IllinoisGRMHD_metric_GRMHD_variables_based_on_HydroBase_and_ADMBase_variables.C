@@ -22,8 +22,7 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
 
-  {
-    if(rho_b_atm > 1e199) {
+  if(rho_b_atm > 1e199) {
     CCTK_VError(VERR_DEF_PARAMS, "You MUST set rho_b_atm to some reasonable value in your param.ccl file.\n");
   }
 
@@ -52,10 +51,10 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
 
 #pragma omp parallel for
   for(int k=0;k<cctk_lsh[2];k++) for(int j=0;j<cctk_lsh[1];j++) for(int i=0;i<cctk_lsh[0];i++) {
-	int index=CCTK_GFINDEX3D(cctkGH,i,j,k);
+        int index=CCTK_GFINDEX3D(cctkGH,i,j,k);
 
-	rho_b[index] = rho[index];
-	P[index] = press[index];
+        rho_b[index] = rho[index];
+        P[index] = press[index];
 
         /***************
          * PPEOS Patch *
@@ -66,7 +65,7 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
          * P = P_cold.
          */
         /* Compute P_cold */
-	int polytropic_index = find_polytropic_K_and_Gamma_index(eos, rho_b[index]);
+        int polytropic_index = find_polytropic_K_and_Gamma_index(eos, rho_b[index]);
         double K_poly     = eos.K_ppoly_tab[polytropic_index];
         double Gamma_poly = eos.Gamma_ppoly_tab[polytropic_index];
         double P_cold     = K_poly*pow(rho_b[index],Gamma_poly);
@@ -80,40 +79,40 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
                       Gamma_poly, 0.123456, P_rel_error, rho_b[index], rho_b_atm, P[index]);
         }
 
-	Ax[index] = Avec[CCTK_GFINDEX4D(cctkGH,i,j,k,0)];
-	Ay[index] = Avec[CCTK_GFINDEX4D(cctkGH,i,j,k,1)];
-	Az[index] = Avec[CCTK_GFINDEX4D(cctkGH,i,j,k,2)];
-	psi6phi[index] = Aphi[index];
+        Ax[index] = Avec[CCTK_GFINDEX4D(cctkGH,i,j,k,0)];
+        Ay[index] = Avec[CCTK_GFINDEX4D(cctkGH,i,j,k,1)];
+        Az[index] = Avec[CCTK_GFINDEX4D(cctkGH,i,j,k,2)];
+        psi6phi[index] = Aphi[index];
 	
-	double ETvx = vel[CCTK_GFINDEX4D(cctkGH,i,j,k,0)];
-	double ETvy = vel[CCTK_GFINDEX4D(cctkGH,i,j,k,1)];
-	double ETvz = vel[CCTK_GFINDEX4D(cctkGH,i,j,k,2)];
+        double ETvx = vel[CCTK_GFINDEX4D(cctkGH,i,j,k,0)];
+        double ETvy = vel[CCTK_GFINDEX4D(cctkGH,i,j,k,1)];
+        double ETvz = vel[CCTK_GFINDEX4D(cctkGH,i,j,k,2)];
 
-	// IllinoisGRMHD defines v^i = u^i/u^0.
+        // IllinoisGRMHD defines v^i = u^i/u^0.
 	
-	// Meanwhile, the ET/HydroBase formalism, called the Valencia 
-	// formalism, splits the 4 velocity into a purely spatial part
-	// and a part that is normal to the spatial hypersurface:
-	// u^a = G (n^a + U^a), (Eq. 14 of arXiv:1304.5544; G=W, U^a=v^a)
-	// where n^a is the unit normal vector to the spatial hypersurface,
-	// n_a = {-\alpha,0,0,0}, and U^a is the purely spatial part, which
-	// is defined in HydroBase as the vel[] vector gridfunction.
-	// Then u^a n_a = - \alpha u^0 = G n^a n_a = -G, and
-	// of course \alpha u^0 = 1/sqrt(1+γ^ij u_i u_j) = \Gamma,
-	// the standard Lorentz factor.
+        // Meanwhile, the ET/HydroBase formalism, called the Valencia 
+        // formalism, splits the 4 velocity into a purely spatial part
+        // and a part that is normal to the spatial hypersurface:
+        // u^a = G (n^a + U^a), (Eq. 14 of arXiv:1304.5544; G=W, U^a=v^a)
+        // where n^a is the unit normal vector to the spatial hypersurface,
+        // n_a = {-\alpha,0,0,0}, and U^a is the purely spatial part, which
+        // is defined in HydroBase as the vel[] vector gridfunction.
+        // Then u^a n_a = - \alpha u^0 = G n^a n_a = -G, and
+        // of course \alpha u^0 = 1/sqrt(1+γ^ij u_i u_j) = \Gamma,
+        // the standard Lorentz factor.
 
-	// Note that n^i = - \beta^i / \alpha, so 
-	// u^a = \Gamma (n^a + U^a) 
-	// -> u^i = \Gamma ( U^i - \beta^i / \alpha )
-	// which implies
-	// v^i = u^i/u^0
-	//     = \Gamma/u^0 ( U^i - \beta^i / \alpha ) <- \Gamma = \alpha u^0
-	//     = \alpha ( U^i - \beta^i / \alpha )
-	//     = \alpha U^i - \beta^i
+        // Note that n^i = - \beta^i / \alpha, so 
+        // u^a = \Gamma (n^a + U^a) 
+        // -> u^i = \Gamma ( U^i - \beta^i / \alpha )
+        // which implies
+        // v^i = u^i/u^0
+        //     = \Gamma/u^0 ( U^i - \beta^i / \alpha ) <- \Gamma = \alpha u^0
+        //     = \alpha ( U^i - \beta^i / \alpha )
+        //     = \alpha U^i - \beta^i
 
-	vx[index] = alp[index]*ETvx - betax[index];
-	vy[index] = alp[index]*ETvy - betay[index];
-	vz[index] = alp[index]*ETvz - betaz[index];
+        vx[index] = alp[index]*ETvx - betax[index];
+        vy[index] = alp[index]*ETvy - betay[index];
+        vz[index] = alp[index]*ETvz - betaz[index];
 
       }
 
@@ -125,18 +124,18 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
   for(int k=0;k<cctk_lsh[2];k++)
     for(int j=0;j<cctk_lsh[1];j++)
       for(int i=0;i<cctk_lsh[0];i++) {
-	int index=CCTK_GFINDEX3D(cctkGH,i,j,k);
-	double pert = (random_pert*(double)rand() / RAND_MAX);
-	double one_plus_pert=(1.0+pert);
-	rho[index]*=one_plus_pert;
-	vx[index]*=one_plus_pert;
-	vy[index]*=one_plus_pert;
-	vz[index]*=one_plus_pert;
+        int index=CCTK_GFINDEX3D(cctkGH,i,j,k);
+        double pert = (random_pert*(double)rand() / RAND_MAX);
+        double one_plus_pert=(1.0+pert);
+        rho[index]*=one_plus_pert;
+        vx[index]*=one_plus_pert;
+        vy[index]*=one_plus_pert;
+        vz[index]*=one_plus_pert;
 
-	psi6phi[index]*=one_plus_pert;
-	Ax[index]*=one_plus_pert;
-	Ay[index]*=one_plus_pert;
-	Az[index]*=one_plus_pert;
+        psi6phi[index]*=one_plus_pert;
+        Ax[index]*=one_plus_pert;
+        Ay[index]*=one_plus_pert;
+        Az[index]*=one_plus_pert;
       }
 
   // Next compute B & B_stagger from A_i. Note that this routine also depends on
@@ -284,10 +283,10 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
   for(int k=0;k<cctk_lsh[2];k++)
     for(int j=0;j<cctk_lsh[1];j++)
       for(int i=0;i<cctk_lsh[0];i++) {
-	static const int zero_int=0;
+        static const int zero_int=0;
         int index = CCTK_GFINDEX3D(cctkGH,i,j,k);
 
-	int ww;
+        int ww;
 
         double PRIMS[MAXNUMVARS];
         ww=0;
@@ -300,48 +299,48 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
         PRIMS[ww] = By[index];    ww++;
         PRIMS[ww] = Bz[index];    ww++;
 
-	double METRIC[NUMVARS_FOR_METRIC],dummy=0;
-	ww=0;
-	// FIXME: NECESSARY?
-	//psi_bssn[index] = exp(phi[index]);
-	METRIC[ww] = phi_bssn[index];ww++;
-	METRIC[ww] = dummy;          ww++; // Don't need to set psi.
-	METRIC[ww] = gtxx[index];    ww++;
-	METRIC[ww] = gtxy[index];    ww++;
-	METRIC[ww] = gtxz[index];    ww++;
-	METRIC[ww] = gtyy[index];    ww++;
-	METRIC[ww] = gtyz[index];    ww++;
-	METRIC[ww] = gtzz[index];    ww++;
-	METRIC[ww] = lapm1[index];   ww++;
-	METRIC[ww] = betax[index];   ww++;
-	METRIC[ww] = betay[index];   ww++;
-	METRIC[ww] = betaz[index];   ww++;
-	METRIC[ww] = gtupxx[index];  ww++;
-	METRIC[ww] = gtupyy[index];  ww++;
-	METRIC[ww] = gtupzz[index];  ww++;
-	METRIC[ww] = gtupxy[index];  ww++;
-	METRIC[ww] = gtupxz[index];  ww++;
-	METRIC[ww] = gtupyz[index];  ww++;
+        double METRIC[NUMVARS_FOR_METRIC],dummy=0;
+        ww=0;
+        // FIXME: NECESSARY?
+        //psi_bssn[index] = exp(phi[index]);
+        METRIC[ww] = phi_bssn[index];ww++;
+        METRIC[ww] = dummy;          ww++; // Don't need to set psi.
+        METRIC[ww] = gtxx[index];    ww++;
+        METRIC[ww] = gtxy[index];    ww++;
+        METRIC[ww] = gtxz[index];    ww++;
+        METRIC[ww] = gtyy[index];    ww++;
+        METRIC[ww] = gtyz[index];    ww++;
+        METRIC[ww] = gtzz[index];    ww++;
+        METRIC[ww] = lapm1[index];   ww++;
+        METRIC[ww] = betax[index];   ww++;
+        METRIC[ww] = betay[index];   ww++;
+        METRIC[ww] = betaz[index];   ww++;
+        METRIC[ww] = gtupxx[index];  ww++;
+        METRIC[ww] = gtupyy[index];  ww++;
+        METRIC[ww] = gtupzz[index];  ww++;
+        METRIC[ww] = gtupxy[index];  ww++;
+        METRIC[ww] = gtupxz[index];  ww++;
+        METRIC[ww] = gtupyz[index];  ww++;
 
-	double CONSERVS[NUM_CONSERVS] = {0,0,0,0,0};
-	double g4dn[4][4];
-	double g4up[4][4];
-	double TUPMUNU[10],TDNMUNU[10];
+        double CONSERVS[NUM_CONSERVS] = {0,0,0,0,0};
+        double g4dn[4][4];
+        double g4up[4][4];
+        double TUPMUNU[10],TDNMUNU[10];
 
         struct output_stats stats; stats.failure_checker=0;
-	IllinoisGRMHD_enforce_limits_on_primitives_and_recompute_conservs(zero_int,PRIMS,stats,eos,
+        IllinoisGRMHD_enforce_limits_on_primitives_and_recompute_conservs(zero_int,PRIMS,stats,eos,
                                                                           METRIC,g4dn,g4up,TUPMUNU,TDNMUNU,CONSERVS);
-	rho_b[index] = PRIMS[RHOB];
-	P[index]     = PRIMS[PRESSURE];
-	vx[index]    = PRIMS[VX];
-	vy[index]    = PRIMS[VY];
-	vz[index]    = PRIMS[VZ];
+        rho_b[index] = PRIMS[RHOB];
+        P[index]     = PRIMS[PRESSURE];
+        vx[index]    = PRIMS[VX];
+        vy[index]    = PRIMS[VY];
+        vz[index]    = PRIMS[VZ];
 
-	rho_star[index] = CONSERVS[RHOSTAR];
-	mhd_st_x[index] = CONSERVS[STILDEX];
-	mhd_st_y[index] = CONSERVS[STILDEY];
-	mhd_st_z[index] = CONSERVS[STILDEZ];
-	tau[index]      = CONSERVS[TAUENERGY];
+        rho_star[index] = CONSERVS[RHOSTAR];
+        mhd_st_x[index] = CONSERVS[STILDEX];
+        mhd_st_y[index] = CONSERVS[STILDEY];
+        mhd_st_z[index] = CONSERVS[STILDEZ];
+        tau[index]      = CONSERVS[TAUENERGY];
 
         if(update_Tmunu) {
           ww=0;
