@@ -14,6 +14,7 @@ for i in *.ipynb; do
     fi
 done
 
+wait
 echo Finished!
 
 # Alternative approach if gnu parallel is installed:
