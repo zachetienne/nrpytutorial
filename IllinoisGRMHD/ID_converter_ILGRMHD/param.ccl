@@ -5,6 +5,9 @@ USES KEYWORD rho_b_max
 USES KEYWORD rho_b_atm
 USES KEYWORD tau_atm
 USES KEYWORD neos
+USES KEYWORD K_ppoly_tab0
+USES KEYWORD rho_ppoly_tab_in[10]
+USES KEYWORD Gamma_ppoly_tab_in[10]
 USES KEYWORD Sym_Bz
 USES KEYWORD GAMMA_SPEED_LIMIT
 USES KEYWORD Psi6threshold
