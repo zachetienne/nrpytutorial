@@ -403,10 +403,10 @@ def TOV_Solver(outfile = "outputTOVpolytrope.txt",
         print(len(r_SchwArr_np),len(rhoArr_np),len(PArr_np),len(mArr_np),len(exp2phiArr_np))
         # Special thanks to Leonardo Werneck for pointing out this issue with zip()
         if sys.version_info[0] < 3:
-            np.savetxt("outputTOVpolytrope.txt", zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np), 
+            np.savetxt(outfile, zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np), 
                        fmt="%.15e")
         else:
-            np.savetxt("outputTOVpolytrope.txt", list(zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)), 
+            np.savetxt(outfile, list(zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)), 
                        fmt="%.15e")
 
         return R_Schw, M
