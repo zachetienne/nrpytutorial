@@ -64,6 +64,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
             random.seed(int(hashlib.md5(str(var).encode()).hexdigest(), 16))
             # Store the random value in free_symbols_dict as a mpf
             free_symbols_dict[var] = mpf(random.random())
+            logging.debug(' ...Setting '+str(var)+' to the random value: '+str(free_symbols_dict[var]))
 
     # Initialize calculated_dict and simplified_expression_dict
     calculated_dict = dict()
