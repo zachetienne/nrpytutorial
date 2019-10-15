@@ -12,7 +12,8 @@ import NRPy_param_funcs as par    # NRPy+: Parameter interface
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
 import sys                        # Standard Python modules for multiplatform OS-level functions
-
+import BSSN.BSSN_quantities as Bq # NRPy+: This module depends on the parameter EvolvedConformalFactor_cf,
+                                  #        which is defined in BSSN.BSSN_quantities
 # Step 1.a: Set DIM=3, as we're using a 3+1 decomposition of Einstein's equations
 DIM=3
 
