@@ -110,11 +110,12 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
     mp.dps = precision_factor * precision
 
     # Replacing old expressions with new expressions and storing result in free_symbols_dict
+    import sympy as sp
     for new, old in replaced:
         keys = old.free_symbols
         for key in keys:
             upd = old.subs(key, free_symbols_dict[key])
-            logging.debug(' free_symbols_dict: replacing key = '+str(key)+' with '+str(free_symbols_dict[key])+' ; updated '+str(old)+' with '+str(upd))
+            logging.debug(' free_symbols_dict: replacing key = '+str(key)+' with '+str(free_symbols_dict[key])+' ; updated '+str(old)+' with '+str(sp.mathematica_code(upd)))
             old = upd
         free_symbols_dict[new] = old
 
