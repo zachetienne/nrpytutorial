@@ -4,7 +4,7 @@
 ## useful polytropic quantities.
 
 # Full documentation for this module may be found in the NRPy+ tutorial Jupyter notebook:
-#  Tutorial-TOV_Polytropic_EOSs_Python_Module.ipynb
+#  Tutorial-TOV-Implementation_of_Single_and_Piecewise_Polytrope_EOSs.ipynb
 
 # Step 0: Import needed Python/NRPy+ modules
 import numpy as np                  # This module is used for math functions
