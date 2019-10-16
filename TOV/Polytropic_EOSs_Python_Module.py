@@ -59,6 +59,60 @@ def impose_continuity_on_P_cold(eos,K_poly_tab0):
         
     return
 
+# Function     : impose_continuity_on_eps_cold()
+# Author(s)    : Leo Werneck
+# Description  : This function populates the array eps_integ_const_tab
+#                by demanding that eps_cold be everywhere continuous
+# Dependencies : none
+#
+# Inputs       : eos                     - named tuple containing the following:
+#                  neos                  - number of EOSs to be used (single polytrope = 1)
+#                  rho_poly_tab          - values of rho distinguish one EOS from the
+#                                          other (not required for a single polytrope)
+#                  Gamma_poly_tab        - values of Gamma to be used within each EOS
+#                  K_poly_tab            - value of K to be used within each EOS
+#                  eps_integ_const_tab   - uninitialized, see output variable below
+#
+# Outputs      : eos.eps_integ_const_tab - value of C used to compute eps_cold within each EOS,
+#                                          determined by imposing that eps_cold be everywhere 
+#                                          continuous
+
+def impose_continuity_on_eps_cold(eos):
+    
+    # Computing eps_cold for the case of a polytropic EOS, we have
+    # .------------------------------------------------------------------------------------------------------.
+    # |        / C_0     + K_0*rho^(Gamma_0 - 1)/(Gamma_0 - 1)         ,                rho < rho_0 ;        |
+    # |        | C_1     + K_1*rho^(Gamma_1 - 1)/(Gamma_1 - 1)         ,        rho_0 < rho < rho_1 ;        |
+    # |        |                       ...                                              ...                  |
+    # | eps = <  C_j     + K_j*rho^(Gamma_j - 1)/(Gamma_j - 1)         ,    rho_(j-1) < rho < rho_j ;        |
+    # |        |                       ...                                              ...                  |
+    # |        | C_(n-2) + K_(n-2)*rho^(Gamma_(n-2)-1)/(Gamma_(n-2)-1) , rho_(neos-3) < rho < rho_(neos-2) ; |
+    # |        \ C_(n-1) + K_(n-1)*rho^(Gamma_(n-1)-1)/(Gamma_(n-1)-1) ,                rho > rho_(neos-2) . |
+    # .------------------------------------------------------------------------------------------------------.
+    # By demanding that eps_cold(rho -> 0) = 0, we fix C_0 = 0. Thus, for
+    # a single polytrope we need only return this
+    if eos.neos==1:
+        return
+    
+    # For the case of a piecewise polytropic EOS, emanding that eps_cold
+    # be everywhere continuous results in the relation:
+    # .-----------------------------------------------------------------.
+    # | C_j = C_(j-1)                                                   |
+    # |     + K_(j-1)*rho_(j-1)^( Gamma_(j-1) - 1 )/( Gamma_(j-1) - 1 ) |
+    # |     - K_(j+0)*rho_(j-1)^( Gamma_(j+0) - 1 )/( Gamma_(j+0) - 1 ) |
+    # .-----------------------------------------------------------------.
+    for j in range(1,eos.neos):
+        # Second line of the boxed equation above
+        aux_jm1 = eos.K_poly_tab[j-1]*eos.rho_poly_tab[j-1]**(eos.Gamma_poly_tab[j-1]-1)/(eos.Gamma_poly_tab[j-1]-1)
+        
+        # Third line of the boxed equation above
+        aux_jp0 = eos.K_poly_tab[j+0]*eos.rho_poly_tab[j-1]**(eos.Gamma_poly_tab[j+0]-1)/(eos.Gamma_poly_tab[j+0]-1)
+        
+        # Boxed equation above
+        eos.eps_integ_const_tab[j] = eos.eps_integ_const_tab[j-1] + aux_jm1 - aux_jp0
+        
+    return
+
 # Function     : compute_P_poly_tab()
 # Author(s)    : Leo Werneck
 # Description  : This function populates the array eos.P_poly_tab,
@@ -133,20 +187,24 @@ def set_up_EOS_parameters__complete_set_of_input_variables(neos,rho_poly_tab,Gam
         sys.exit(2)
 
     # Create the arrays to store the values of K_poly_tab and eps_integ_const_tab
-    K_poly_tab = [0 for i in range(neos)]
-    P_poly_tab = [0 for i in range(neos-1)]
+    K_poly_tab          = [0 for i in range(neos)]
+    P_poly_tab          = [0 for i in range(neos-1)]
+    eps_integ_const_tab = [0 for i in range(neos)]
     
     # Create the EOS "struct" (named tuple)
-    from collections import namedtuple
-    eos_struct = namedtuple("eos_struct","neos rho_poly_tab Gamma_poly_tab K_poly_tab P_poly_tab")
-    eos = eos_struct(neos,rho_poly_tab,Gamma_poly_tab,K_poly_tab,P_poly_tab)
-
+    eos_struct = namedtuple("eos_struct","neos rho_poly_tab Gamma_poly_tab K_poly_tab P_poly_tab eps_integ_const_tab")
+    eos = eos_struct(neos,rho_poly_tab,Gamma_poly_tab,K_poly_tab,P_poly_tab,eps_integ_const_tab)
+    
     # Step 1: Determine K_poly_tab. For the details, please see the implementation
     #         of the function impose_continuity_on_P_cold() below.
     impose_continuity_on_P_cold(eos,K_poly_tab0)
     
     # Step 2: Determine eps_integ_const_tab. For the details, please see the
     #         implementation of the function impose_continuity_on_eps_cold() below.
+    impose_continuity_on_eps_cold(eos)
+    
+    # Step 3: Determine P_poly_tab. For the details, please see the implementation
+    #         of the function compute_P_poly_tab() below.
     compute_P_poly_tab(eos)
     
     return eos
@@ -235,11 +293,18 @@ def set_up_EOS_parameters__Read_et_al_input_variables(log_of_P4,Gamma_4,Gamma_5,
     for j in range(3,neos-1):
         P_poly_tab[j]   = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j])
         K_poly_tab[j+1] = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j] - Gamma_poly_tab[j+1])
+        
+    # Allocate memory for the integration constants of eps_cold
+    eps_integ_const_tab = [0 for i in range(neos)]
     
     # Create the EOS "struct" (named tuple)
-    eos_struct = namedtuple("eos_struct","neos rho_poly_tab Gamma_poly_tab K_poly_tab P_poly_tab")
+    eos_struct = namedtuple("eos_struct","neos rho_poly_tab Gamma_poly_tab K_poly_tab P_poly_tab eps_integ_const_tab")
+    eos = eos_struct(neos,rho_poly_tab,Gamma_poly_tab,K_poly_tab,P_poly_tab,eps_integ_const_tab)
     
-    return eos_struct(neos,rho_poly_tab,Gamma_poly_tab,K_poly_tab,P_poly_tab)
+    # Populate the integration constants of eps_cold
+    impose_continuity_on_eps_cold(eos)
+    
+    return eos
 
 # Function     : Polytrope_EOS__compute_P_cold_from_rhob()
 # Author(s)    : Leo Werneck
@@ -269,6 +334,76 @@ def Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon):
     # | P_cold = K_j * rho_b^(Gamma_j) |
     # .--------------------------------.
     return eos.K_poly_tab[j]*rho_baryon**eos.Gamma_poly_tab[j]
+
+# Function     : Polytrope_EOS__compute_eps_cold_from_rhob()
+# Author(s)    : Leo Werneck
+# Description  : This function computes eps_cold for a polytropic EOS
+# Dependencies : polytropic_index_from_rhob()
+#
+# Inputs       : eos              - named tuple containing the following:
+#                  neos           - number of EOSs to be used (single polytrope = 1)
+#                  rho_poly_tab   - values of rho distinguish one EOS from the
+#                                   other (not required for a single polytrope)
+#                  Gamma_poly_tab - values of Gamma to be used within each EOS
+#                  K_poly_tab     - value of K to be used within each EOS
+#                  P_poly_tab     - values of P used to distinguish one EOS from
+#                                   the other (not required for a single polytrope)
+#                rho_baryon       - the value of rho for which we want to
+#                                   compute P_cold
+#
+# Outputs      : eps_cold         - for a single or piecewise polytropic EOS
+
+def Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_baryon):
+    
+    # Compute the polytropic index from rho_baryon
+    j = polytropic_index_from_rhob(eos, rho_baryon)
+
+    # Compute P_cold
+    P_cold = Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon)
+
+    # Return the value of P_cold for a polytropic EOS
+    # .----------------------------------------.
+    # | eps_cold = P_cold/( rhob*(Gamma_j-1) ) |
+    # .----------------------------------------.
+    return P_cold/(rho_baryon*(eos.Gamma_poly_tab[j] - 1.0))
+
+# Function     : Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold()
+# Author(s)    : Leo Werneck
+# Description  : This function computes rho_b and eps_cold for a polytropic EOS
+# Dependencies : polytropic_index_from_P()
+#                Polytrope_EOS__compute_rhob_from_P_cold()
+#
+# Inputs       : eos              - named tuple containing the following:
+#                  neos           - number of EOSs to be used (single polytrope = 1)
+#                  rho_poly_tab   - values of rho distinguish one EOS from the
+#                                   other (not required for a single polytrope)
+#                  Gamma_poly_tab - values of Gamma to be used within each EOS
+#                  K_poly_tab     - value of K to be used within each EOS
+#                  P_poly_tab     - values of P used to distinguish one EOS from
+#                                   the other (not required for a single polytrope)
+#                P                - the value of P for which we want to
+#                                   compute rho_b
+#
+# Outputs      : rho_baryon       - for a single or piecewise polytropic EOS
+
+def Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P):
+    
+    # Compute the polytropic index from P and set Gamma
+    j     = polytropic_index_from_P(eos,P)
+    Gamma = eos.Gamma_poly_tab[j]
+    # Compute the value of rho_b for a polytropic EOS
+    # .----------------------------------.
+    # | rho_b = (P_cold/K_j)^(1/Gamma_j) |
+    # .----------------------------------.
+    rho_b = (P/eos.K_poly_tab[j])**(1.0/Gamma)
+    
+    # Compute the value of eps_cold for a polytropic EOS
+    # .-------------------------------------------------.
+    # | eps_cold = C_j + P_cold/(rho_b*( Gamma_j - 1 )) |
+    # .-------------------------------------------------.
+    eps_cold = eos.eps_integ_const_tab[j] + (P/rho_b*(Gamma - 1))
+    
+    return rho_b, eps_cold
 
 # Function     : Polytrope_EOS__compute_rhob_from_P_cold()
 # Author(s)    : Leo Werneck

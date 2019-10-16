@@ -52,12 +52,19 @@ def TOV_Solver(eos,
         nu   = y[2]
         rbar = y[3]
 
+        # Set up polytropic auxiliary variables
         j = ppeos.polytropic_index_from_P(eos,P)
-        Gamma = eos.Gamma_poly_tab[j]
-        Gam1  = Gamma-1.0
 
-        rho_baryon = ppeos.Polytrope_EOS__compute_rhob_from_P_cold(eos,P)
-        rho = rho_baryon + P/Gam1 # rho is the *total* mass-energy density!
+        # Compute rho_b and eps_cold, to be used below
+        # to compute rho_(total)
+        rho_baryon, eps_cold = ppeos.Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P)
+
+        # Compute rho, the *total* mass-energy density:
+        # .------------------------------.
+        # | rho = (1 + eps)*rho_(baryon) |
+        # .------------------------------.
+        # with eps = eps_cold, for the initial data.
+        rho = (1.0 + eps_cold)*rho_baryon
 
         if( r_Schw < 1e-4 or m <= 0.): 
             m = 4*math.pi/3. * rho*r_Schw**3
