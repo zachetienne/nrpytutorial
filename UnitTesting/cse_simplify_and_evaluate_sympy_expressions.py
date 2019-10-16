@@ -64,7 +64,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
             random.seed(int(hashlib.md5(str(var).encode()).hexdigest(), 16))
             # Store the random value in free_symbols_dict as a mpf
             free_symbols_dict[var] = mpf(random.random())
-            logging.debug(' ...Setting '+str(var)+' to the random value: '+str(free_symbols_dict[var]))
+            # Warning: might slow Travis CI too much: logging.debug(' ...Setting '+str(var)+' to the random value: '+str(free_symbols_dict[var]))
 
     # Initialize calculated_dict and simplified_expression_dict
     calculated_dict = dict()
@@ -76,7 +76,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     for var, expression in expanded_variable_dict.items():
         # Using SymPy's cse algorithm to optimize our value substitution
         replaced, reduced = cse(expression, order='none')
-        logging.debug(' var = '+str(var)+' |||| replaced = '+str(replaced))
+        # Warning: might slow Travis CI too much: logging.debug(' var = '+str(var)+' |||| replaced = '+str(replaced))
 
         # Calculate our result_value
         result_value = calculate_value(free_symbols_dict, replaced, reduced)
@@ -115,16 +115,16 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
         keys = old.free_symbols
         for key in keys:
             upd = old.subs(key, free_symbols_dict[key])
-            logging.debug(' free_symbols_dict: replacing key = '+str(key)+' with '+str(free_symbols_dict[key])+' ; updated '+str(old)+' with '+str(sp.mathematica_code(upd)))
+            # Warning: might slow Travis CI too much: logging.debug(' free_symbols_dict: replacing key = '+str(key)+' with '+str(free_symbols_dict[key])+' ; updated '+str(old)+' with '+str(sp.mathematica_code(upd)))
             old = upd
         free_symbols_dict[new] = old
 
     # Evaluating expression after cse optimization substitution
     keys = reduced.free_symbols
     for key in keys:
-        logging.debug(' reduced: replacing key = '+str(key)+' with '+str(free_symbols_dict[key]))
+        # Warning: might slow Travis CI too much: logging.debug(' reduced: replacing key = '+str(key)+' with '+str(free_symbols_dict[key]))
         reduced_new = reduced.subs(key, free_symbols_dict[key])
-        logging.debug(' reduced result: at key = '+str(key)+' replacing reduced = '+str(reduced)+' with '+str(reduced_new))
+        # Warning: might slow Travis CI too much: logging.debug(' reduced result: at key = '+str(key)+' replacing reduced = '+str(reduced)+' with '+str(reduced_new))
         reduced = reduced_new
 
 
@@ -138,7 +138,7 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
     # Set the precision back
     mp.dps = precision
 
-    logging.debug(' result = '+str(res)+' |||| precision = '+str(precision))
+    # Warning: might slow Travis CI too much: logging.debug(' result = '+str(res)+' |||| precision = '+str(precision))
 
     return res
 
