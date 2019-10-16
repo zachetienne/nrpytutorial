@@ -11,9 +11,8 @@
 
 # Inputs:
 # * Output data file name
+# * eos, a named tuple containing all EOS parameters.
 # * rho_baryon_central, the central density of the TOV star.
-# * n, the polytropic equation of state index. n=1 models cold, degenerate neutron star matter.
-# * K_Polytrope, the polytropic constant.
 # * Verbose output toggle (default = True)
 
 # Output: An initial data file (default file name = "outputTOVpolytrope.txt") that well
@@ -39,10 +38,11 @@ import sys
 import Polytropic_EOSs_Python_Module as ppeos
 
 # Step 2: The TOV equations
-def TOV_Solver(outfile = "outputTOVpolytrope.txt",
+def TOV_Solver(eos,
+               outfile = "outputTOVpolytrope.txt",
                rho_baryon_central=0.129285,
-               rho_poly_tab=[],Gamma_poly_tab=[2.0], K_poly_tab0=1.0,
-               verbose = True ):
+               verbose = True,
+               return_M_and_RSchw = False):
 
     def TOV_rhs(r_Schw, y) : 
     # In \tilde units
@@ -53,7 +53,7 @@ def TOV_Solver(outfile = "outputTOVpolytrope.txt",
         rbar = y[3]
 
         j = ppeos.polytropic_index_from_P(eos,P)
-        Gamma = Gamma_poly_tab[j]
+        Gamma = eos.Gamma_poly_tab[j]
         Gam1  = Gamma-1.0
 
         rho_baryon = ppeos.Polytrope_EOS__compute_rhob_from_P_cold(eos,P)
@@ -125,7 +125,7 @@ def TOV_Solver(outfile = "outputTOVpolytrope.txt",
         #   then copies the data over... over and over... super inefficient.
         r_SchwArr_np     = np.array(r_SchwArr)
         PArr_np          = np.array(PArr)
-        rho_baryonArr_np = np.array(PArr)
+        rho_baryonArr_np = np.array(PArr) # This is just to initialize the array
         for j in range(len(PArr_np)):
             # Compute rho_b from P
             rho_baryonArr_np[j] = ppeos.Polytrope_EOS__compute_rhob_from_P_cold(eos,PArr_np[j])
@@ -139,8 +139,9 @@ def TOV_Solver(outfile = "outputTOVpolytrope.txt",
         for i in range(len(rho_baryonArr_np)):
             j = ppeos.polytropic_index_from_P(eos,PArr_np[j])
             rhoArr_np.append(rho_baryonArr_np[i] + PArr_np[i]/(eos.Gamma_poly_tab[j] - 1.))
-
-        print(len(r_SchwArr_np),len(rhoArr_np),len(PArr_np),len(mArr_np),len(exp2phiArr_np))
+        
+        if verbose:
+            print(len(r_SchwArr_np),len(rhoArr_np),len(PArr_np),len(mArr_np),len(exp2phiArr_np))
         # Special thanks to Leonardo Werneck for pointing out this issue with zip()
         if sys.version_info[0] < 3:
             np.savetxt(outfile, zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np), 
@@ -150,12 +151,6 @@ def TOV_Solver(outfile = "outputTOVpolytrope.txt",
                        fmt="%.15e")
 
         return R_Schw, M
-
-    # Set neos from input variables
-    neos = len(Gamma_poly_tab)
-    
-    # Set polytropic quantities
-    eos = ppeos.set_up_EOS_parameters__complete_set_of_input_variables(neos,rho_poly_tab,Gamma_poly_tab,K_poly_tab0)
     
     # Set initial condition from rho_baryon_central
     P_initial_condition = ppeos.Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon_central)
@@ -163,5 +158,7 @@ def TOV_Solver(outfile = "outputTOVpolytrope.txt",
     # Integrate the initial condition
     R_Schw_TOV, M_TOV = integrateStar(eos, P_initial_condition, True)
     if verbose:
-        print("Just generated a TOV star with R_Schw = " + str(R_Schw_TOV) + " , M = " + str(M_TOV) + " , M/R_Schw = "
-              + str(M_TOV / R_Schw_TOV) + " .")
+        print("Just generated a TOV star with R_Schw = %.15e , M = %.15e , M/R_Schw = %.15e ." %(R_Schw_TOV,M_TOV,(M_TOV / R_Schw_TOV)))
+        
+    if return_M_and_RSchw:
+        return M_TOV, R_Schw_TOV
