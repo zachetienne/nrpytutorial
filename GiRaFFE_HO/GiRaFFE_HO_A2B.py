@@ -11,9 +11,8 @@ DIM = 3
 par.set_parval_from_str("grid::DIM",DIM)
 
 def GiRaFFE_HO_A2B(outdir): 
-    # Import the GiRaFFE_HO_v2 module and run its function to build BU
-    import GiRaFFE_HO.GiRaFFE_Higher_Order_v2 as gho
-    gho.GiRaFFE_Higher_Order_v2()
+    # Register the gridfunction gammadet. This determinant will be calculated separately
+    gammadet = gri.register_gridfunctions("AUXEVOL","gammadet")
     # Import the Levi-Civita symbol and build the corresponding tensor.
     # We already have a handy function to define the Levi-Civita symbol in WeylScalars
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
@@ -24,7 +23,7 @@ def GiRaFFE_HO_A2B(outdir):
             for k in range(DIM):
                 LCijk = LeviCivitaDDD[i][j][k]
                 #LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gho.gammadet)
-                LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gho.gammadet)
+                LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
 
     # We can use this function to compactly reset to expressions to print at each FD order.
     def set_BU_to_print():
@@ -32,6 +31,8 @@ def GiRaFFE_HO_A2B(outdir):
                 lhrh(lhs=gri.gfaccess("out_gfs","BU1"),rhs=BU[1]),\
                 lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])]    
 
+    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
+    BU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","BU")
     AD_dD = ixp.declarerank2("AD_dD","nosym")
     BU = ixp.zerorank1() # BU is already registered as a gridfunction, but we need to zero its values and declare it in this scope.
 

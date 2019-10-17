@@ -21,7 +21,7 @@
 // Declare boundary condition FACE_UPDATE function,
 // which fills in the ghost zones with successively
 // lower order finite differencing
-void AtoB(const int ORDER, const int Nxx_plus_2NGHOSTS[3], const REAL *in_gfs, REAL *aux_gfs, const REAL dxx[3],
+void AtoB(const int ORDER, const int Nxx_plus_2NGHOSTS[3], const REAL *in_gfs, REAL *auxevol_gfs, const REAL dxx[3],
           const int i0min, const int i0max, 
           const int i1min, const int i1max, 
           const int i2min, const int i2max, 
@@ -91,36 +91,36 @@ void AtoB(const int ORDER, const int Nxx_plus_2NGHOSTS[3], const REAL *in_gfs, R
     exit(1);
   }
 }
-void driver_A_to_B(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3], const REAL dxx[3],const REAL *in_gfs,REAL *aux_gfs) {
+void driver_A_to_B(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3], const REAL dxx[3],const REAL *in_gfs,REAL *auxevol_gfs) {
   
   int ORDER = NGHOSTS*2;
   for(int ii=0;ii<Nxx_plus_2NGHOSTS[2]*Nxx_plus_2NGHOSTS[1]*Nxx_plus_2NGHOSTS[0];ii++) {
-      aux_gfs[IDX4pt(BU0GF,ii)] = 1.0 / 0.0;
-      aux_gfs[IDX4pt(BU1GF,ii)] = 1.0 / 0.0;
-      aux_gfs[IDX4pt(BU2GF,ii)] = 1.0 / 0.0;
+      auxevol_gfs[IDX4pt(BU0GF,ii)] = 1.0 / 0.0;
+      auxevol_gfs[IDX4pt(BU1GF,ii)] = 1.0 / 0.0;
+      auxevol_gfs[IDX4pt(BU2GF,ii)] = 1.0 / 0.0;
   }
 
   //printf("Starting A to B driver with Order = %d...\n",ORDER);
   int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
   int imax[3] = { Nxx[0]+NGHOSTS, Nxx[1]+NGHOSTS, Nxx[2]+NGHOSTS };
-  AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, aux_gfs,dxx, imin[0],imax[0],imin[1],imax[1],imin[2],imax[2], NUL,NUL,NUL);
+  AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, auxevol_gfs,dxx, imin[0],imax[0],imin[1],imax[1],imin[2],imax[2], NUL,NUL,NUL);
   while(ORDER>0) {
       // After updating each face, adjust imin[] and imax[] 
       //   to reflect the newly-updated face extents.
       ORDER -= 2;
-      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, aux_gfs,dxx, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); 
+      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, auxevol_gfs,dxx, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); 
       if(ORDER!=0) imin[0]--;
-      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, aux_gfs,dxx, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); 
+      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, auxevol_gfs,dxx, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); 
       if(ORDER!=0) imax[0]++;
 
-      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, aux_gfs,dxx, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); 
+      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, auxevol_gfs,dxx, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); 
       if(ORDER!=0) imin[1]--;
-      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, aux_gfs,dxx, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); 
+      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, auxevol_gfs,dxx, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); 
       if(ORDER!=0) imax[1]++;
 
-      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, aux_gfs,dxx, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
+      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, auxevol_gfs,dxx, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
       if(ORDER!=0) imin[2]--;
-      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, aux_gfs,dxx, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
+      AtoB(ORDER, Nxx_plus_2NGHOSTS, in_gfs, auxevol_gfs,dxx, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
       if(ORDER!=0) imax[2]++;
     }
 }
