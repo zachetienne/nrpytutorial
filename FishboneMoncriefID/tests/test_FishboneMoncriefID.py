@@ -7,7 +7,7 @@ def test_FishboneMoncriefID():
 
     module_name = 'FishBoneMoncriefID'
 
-    function_and_global_dict = {'FishboneMoncriefID()': ['hm1', 'rho_initial', 'IDalpha', 'IDgammaDD', 'IDKDD', 'IDbetaU', 'IDValencia3velocityU']}
+    function_and_global_dict = {'FishboneMoncriefID()': ['hm1', 'rho_initial', 'uBL4U', 'uKS4U', 'IDalpha', 'IDgammaDD', 'IDKDD', 'IDbetaU', 'IDValencia3velocityU']}
 
     create_test(module, module_name, function_and_global_dict)
 
