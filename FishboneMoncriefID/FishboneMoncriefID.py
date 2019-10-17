@@ -99,6 +99,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     u_ptp   = -sp.sqrt(1 + u_pphip**2)
 
     # Next compute spatial components of 4-velocity in Boyer-Lindquist coordinates:
+    global uBL4D
     uBL4D = ixp.zerorank1(DIM=4) # Components 1 and 2: u_r = u_theta = 0
     # Eq 2.12 (typo): u_(phi) = e^(-psi) u_phi -> u_phi = e^(psi) u_(phi)
     uBL4D[3] = sp.sqrt(exp2psi)*u_pphip
