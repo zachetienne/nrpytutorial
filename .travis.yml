@@ -11,6 +11,15 @@ matrix:
         - pip install mpmath sympy testfixtures
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
+    - name: "SymPy-dev, Ubuntu Linux Xenial pypy2.7-6.0"
+      os: linux
+      dist: xenial
+      python: pypy2.7-6.0
+      install:
+        - pip install mpmath testfixtures
+        - pip install git+https://github.com/sympy/sympy
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
+
     - name: "Ubuntu Linux Xenial pypy3.5-6.0"
       os: linux
       dist: xenial
