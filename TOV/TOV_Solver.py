@@ -42,8 +42,36 @@ def TOV_Solver(eos,
                outfile = "outputTOVpolytrope.txt",
                rho_baryon_central=0.129285,
                verbose = True,
-               return_M_and_RSchw = False):
+               return_M_and_RSchw = False,
+               unit_system = "Geometrized"):
 
+    # Set the units to be used in the solver
+    # Default is Geometrized, as before
+    if unit_system=="Geometrized":
+        G = 1.0 # Gravitational constant
+        c = 1.0 # Speed of light
+        c2 = c*c
+        c4 = c2*c2
+        G_over_c2 = G/c2
+        G_over_c4 = G/c4
+    elif unit_system=="cgs":
+        G  = 6.67430e-08 # cm^(3) g^(-1) s^(-2)) # Gravitational Constant
+        c  = 2.99790e+10 # cm s^(-1)             # Speed of light
+        c2 = c*c
+        c4 = c2*c2
+        G_over_c2 = G/c2
+        G_over_c4 = G/c4
+    elif unit_system=="SI":
+        G  = 6.67430e-11 # N m^2 kg^(-2) # Gravitational Constant
+        c  = 2.99790e+08 # m/s           # Speed of light
+        c2 = c*c
+        c4 = c2*c2
+        G_over_c2 = G/c2
+        G_over_c4 = G/c4
+    else:
+        print("Unsupported unit system: "+unit_system+".")
+        sys.exit(1)
+    
     def TOV_rhs(r_Schw, y) : 
     # In \tilde units
     #
@@ -68,11 +96,11 @@ def TOV_Solver(eos,
 
         if( r_Schw < 1e-4 or m <= 0.): 
             m = 4*math.pi/3. * rho*r_Schw**3
-            dPdrSchw = -(rho + P)*(4.*math.pi/3.*r_Schw*rho + 4.*math.pi*r_Schw*P)/(1.-8.*math.pi*rho*r_Schw*r_Schw)
-            drbardrSchw = 1./(1. - 8.*math.pi*rho*r_Schw*r_Schw)**0.5
+            dPdrSchw = -(c2*rho + P)*(4.*math.pi/3.*r_Schw*rho*G_over_c2 + 4.*math.pi*r_Schw*P*G_over_c4)/(1.-8.*math.pi*rho*r_Schw*r_Schw*G_over_c2)
+            drbardrSchw = 1./(1. - 8.*math.pi*rho*r_Schw*r_Schw*G_over_c2)**0.5
         else:
-            dPdrSchw = -(rho + P)*(m + 4.*math.pi*r_Schw**3*P)/(r_Schw*r_Schw*(1.-2.*m/r_Schw))
-            drbardrSchw = 1./(1. - 2.*m/r_Schw)**0.5*rbar/r_Schw
+            dPdrSchw = -(c2*rho + P)*(m*G_over_c2 + 4.*math.pi*r_Schw**3*P*G_over_c4)/(r_Schw*r_Schw*(1.-2.*m/r_Schw*G_over_c2))
+            drbardrSchw = 1./(1. - 2.*m/r_Schw*G_over_c2)**0.5*rbar/r_Schw
 
         dmdrSchw  =  4.*math.pi*r_Schw*r_Schw*rho
         dnudrSchw = -2./(P + rho)*dPdrSchw
