@@ -293,7 +293,40 @@ def set_up_EOS_parameters__Read_et_al_input_variables(log_of_P4,Gamma_4,Gamma_5,
     for j in range(3,neos-1):
         P_poly_tab[j]   = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j])
         K_poly_tab[j+1] = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j] - Gamma_poly_tab[j+1])
+    
+    # Now we start the rescale process, making rhob and P dimensionless.
+    # This involves setting rho_nuclear (i.e. the highest value of rhob_tab)
+    # and K_nucluear (the value of K_poly used in the "last" EOS) to unity:
+    # .---------------------------------.--------------------------------.
+    # | Kpoly_dimensionless[neos-1] = 1 | rhob_dimensionless[neos-2] = 1 |
+    # .---------------------------------.--------------------------------.
+    rhob_dimensionless  = [1.0 for i in range(neos-1)]
+    K_poly_tab[neos-1] = 1.0
+    
+    # We then impose a "ratio preserving rescaling" of rhob:
+    #
+    # rhob_dimensionless[j] / rhob[j] = rhob_dimensionless[j-1] / rhob[j-1]
+    #
+    # which implies the relation
+    # .-----------------------------------------------------------------------.
+    # | rhob_dimensionless[j-1] = (rhob[j-1]/rhob[j]) * rhob_dimensionless[j] |
+    # .-----------------------------------------------------------------------.
+    for j in range(neos-2,0,-1):
+        rhob_dimensionless[j-1] = (rho_poly_tab[j-1]/rho_poly_tab[j]) * rhob_dimensionless[j]
+
+    rho_poly_tab = rhob_dimensionless
+    
+    # Demanding that the pressure be everywhere continuous then imposes
+    # .-------------------------------------------------------------------------------------------.
+    # | K_dimensionless[j-1] = K_dimensionless[j]/rhob_dimensionless[j-1]^(Gamma[j-1] - Gamma[j]) |
+    # .-------------------------------------------------------------------------------------------.
+    for j in range(neos-1,0,-1):
+        K_poly_tab[j-1] = K_poly_tab[j]/rho_poly_tab[j-1]**(Gamma_poly_tab[j-1]-Gamma_poly_tab[j])
         
+    # Finally, recompute P_poly_tab
+    for j in range(neos-1):
+        P_poly_tab[j] = K_poly_tab[j]*rho_poly_tab[j]**(Gamma_poly_tab[j])
+    
     # Allocate memory for the integration constants of eps_cold
     eps_integ_const_tab = [0 for i in range(neos)]
     

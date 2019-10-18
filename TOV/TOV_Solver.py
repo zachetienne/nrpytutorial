@@ -42,35 +42,7 @@ def TOV_Solver(eos,
                outfile = "outputTOVpolytrope.txt",
                rho_baryon_central=0.129285,
                verbose = True,
-               return_M_and_RSchw = False,
-               unit_system = "Geometrized"):
-
-    # Set the units to be used in the solver
-    # Default is Geometrized, as before
-    if unit_system=="Geometrized":
-        G = 1.0 # Gravitational constant
-        c = 1.0 # Speed of light
-        c2 = c*c
-        c4 = c2*c2
-        G_over_c2 = G/c2
-        G_over_c4 = G/c4
-    elif unit_system=="cgs":
-        G  = 6.67430e-08 # cm^(3) g^(-1) s^(-2)) # Gravitational Constant
-        c  = 2.99790e+10 # cm s^(-1)             # Speed of light
-        c2 = c*c
-        c4 = c2*c2
-        G_over_c2 = G/c2
-        G_over_c4 = G/c4
-    elif unit_system=="SI":
-        G  = 6.67430e-11 # N m^2 kg^(-2) # Gravitational Constant
-        c  = 2.99790e+08 # m/s           # Speed of light
-        c2 = c*c
-        c4 = c2*c2
-        G_over_c2 = G/c2
-        G_over_c4 = G/c4
-    else:
-        print("Unsupported unit system: "+unit_system+".")
-        sys.exit(1)
+               return_M_and_RSchw = False):
     
     def TOV_rhs(r_Schw, y) : 
     # In \tilde units
@@ -79,12 +51,14 @@ def TOV_Solver(eos,
         m    = y[1]
         nu   = y[2]
         rbar = y[3]
-        print("P = %.5e" %P)
+
+        # Set up polytropic auxiliary variables
+        j = ppeos.polytropic_index_from_P(eos,P)
+
         # Compute rho_b and eps_cold, to be used below
         # to compute rho_(total)
         rho_baryon, eps_cold = ppeos.Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P)
 
-        print("rho_b = %.5e | eps_cold = %.5e " %(rho_baryon, eps_cold))
         # Compute rho, the *total* mass-energy density:
         # .------------------------------.
         # | rho = (1 + eps)*rho_(baryon) |
@@ -94,14 +68,14 @@ def TOV_Solver(eos,
 
         if( r_Schw < 1e-4 or m <= 0.): 
             m = 4*math.pi/3. * rho*r_Schw**3
-            dPdrSchw = -(c2*rho + P)*(4.*math.pi/3.*r_Schw*rho*G_over_c2 + 4.*math.pi*r_Schw*P*G_over_c4)/(1.-8.*math.pi*rho*r_Schw*r_Schw*G_over_c2)
-            drbardrSchw = 1./(1. - 8.*math.pi*rho*r_Schw*r_Schw*G_over_c2)**0.5
+            dPdrSchw = -(rho + P)*(4.*math.pi/3.*r_Schw*rho + 4.*math.pi*r_Schw*P)/(1.-8.*math.pi*rho*r_Schw*r_Schw)
+            drbardrSchw = 1./(1. - 8.*math.pi*rho*r_Schw*r_Schw)**0.5
         else:
-            dPdrSchw = -(c2*rho + P)*(m*G_over_c2 + 4.*math.pi*r_Schw**3*P*G_over_c4)/(r_Schw*r_Schw*(1.-2.*m/r_Schw*G_over_c2))
-            drbardrSchw = 1./(1. - 2.*m/r_Schw*G_over_c2)**0.5*rbar/r_Schw
+            dPdrSchw = -(rho + P)*(m + 4.*math.pi*r_Schw**3*P)/(r_Schw*r_Schw*(1.-2.*m/r_Schw))
+            drbardrSchw = 1./(1. - 2.*m/r_Schw)**0.5*rbar/r_Schw
 
         dmdrSchw  =  4.*math.pi*r_Schw*r_Schw*rho
-        dnudrSchw = -2./(P + c2*rho)*dPdrSchw
+        dnudrSchw = -2./(P + rho)*dPdrSchw
         return [dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw]
 
     def integrateStar( eos, P, dumpData = False ):
@@ -137,21 +111,21 @@ def TOV_Solver(eos,
 
         # Apply integration constant to ensure rbar is continuous across TOV surface
         for ii in range(len(rbarArr)):
-            rbarArr[ii] *= 0.5*(np.sqrt(R_Schw*(R_Schw - 2.0*M*G_over_c2)) + R_Schw - M*G_over_c2) / rbarArr[-1]
+            rbarArr[ii] *= 0.5*(np.sqrt(R_Schw*(R_Schw - 2.0*M)) + R_Schw - M) / rbarArr[-1]
 
         nuArr_np = np.array(nuArr)
         # Rescale solution to nu so that it satisfies BC: exp(nu(R))=exp(nutilde-nu(r=R)) * (1 - 2m(R)/R)
         #   Thus, nu(R) = (nutilde - nu(r=R)) + log(1 - 2*m(R)/R)
-        nuArr_np = nuArr_np - nuArr_np[-1] + math.log(1.-2.*mArr[-1]*G_over_c2/r_SchwArr[-1])
+        nuArr_np = nuArr_np - nuArr_np[-1] + math.log(1.-2.*mArr[-1]/r_SchwArr[-1])
 
         r_SchwArrExtend_np = 10.**(np.arange(0.01,5.0,0.01))*r_SchwArr[-1]
 
         r_SchwArr.extend(r_SchwArrExtend_np)
         mArr.extend(r_SchwArrExtend_np*0. + M)
         PArr.extend(r_SchwArrExtend_np*0.)
-        exp2phiArr_np = np.append( np.exp(nuArr_np), 1. - 2.*M*G_over_c2/r_SchwArrExtend_np)
-        nuArr.extend(np.log(1. - 2.*M*G_over_c2/r_SchwArrExtend_np))
-        rbarArr.extend( 0.5*(np.sqrt(r_SchwArrExtend_np**2 - 2.*M*G_over_c2*r_SchwArrExtend_np) + r_SchwArrExtend_np - M*G_over_c2) )
+        exp2phiArr_np = np.append( np.exp(nuArr_np), 1. - 2.*M/r_SchwArrExtend_np)
+        nuArr.extend(np.log(1. - 2.*M/r_SchwArrExtend_np))
+        rbarArr.extend( 0.5*(np.sqrt(r_SchwArrExtend_np**2 - 2.*M*r_SchwArrExtend_np) + r_SchwArrExtend_np - M) )
 
         # Appending to a Python array does what one would reasonably expect.
         #   Appending to a numpy array allocates space for a new array with size+1,
@@ -187,8 +161,7 @@ def TOV_Solver(eos,
     
     # Set initial condition from rho_baryon_central
     P_initial_condition = ppeos.Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon_central)
-    print("P_init = %.15e" %P_initial_condition)
-    print("rho_init = %.15e" %rho_baryon_central)
+    
     # Integrate the initial condition
     R_Schw_TOV, M_TOV = integrateStar(eos, P_initial_condition, True)
     if verbose:
