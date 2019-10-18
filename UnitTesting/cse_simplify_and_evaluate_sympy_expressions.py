@@ -76,6 +76,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     for var, expression in expanded_variable_dict.items():
         # Using SymPy's cse algorithm to optimize our value substitution
         replaced, reduced = cse(expression, order='none')
+
         # Warning: might slow Travis CI too much: logging.debug(' var = '+str(var)+' |||| replaced = '+str(replaced))
 
         # Calculate our result_value
@@ -102,6 +103,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
 # value for reduced[0] using value substitution between [free_symbols_dict] and [replaced] at a precision of
 # [precision] * [precision_factor]
 def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
+    # Warning: might slow Travis CI too much: logging.debug(' PRE free symbols_dict: '+str(free_symbols_dict))
 
     # We only care about the first argument of [reduced]
     reduced = reduced[0]
@@ -110,17 +112,20 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
     mp.dps = precision_factor * precision
 
     # Replacing old expressions with new expressions and storing result in free_symbols_dict
-    import sympy as sp
     for new, old in replaced:
         keys = old.free_symbols
         for key in keys:
             upd = old.subs(key, free_symbols_dict[key])
-            # Warning: might slow Travis CI too much: logging.debug(' free_symbols_dict: replacing key = '+str(key)+' with '+str(free_symbols_dict[key])+' ; updated '+str(old)+' with '+str(sp.mathematica_code(upd)))
+            # Warning: might slow Travis CI too much: logging.debug(' free_symbols_dict: replacing key = '+str(key)+' with '+str(free_symbols_dict[key])+' ; updated '+str(old)+' with '+str(upd))
             old = upd
+        # Warning: might slow Travis CI too much: logging.debug(' dict '+ str(new)+ ' updated with = '+str(old))
         free_symbols_dict[new] = old
-
+    
+    # Warning: might slow Travis CI too much: logging.debug(' free symbols_dict: '+str(free_symbols_dict))
+    # Warning: might slow Travis CI too much: logging.debug(' replaced: '+str(replaced))
     # Evaluating expression after cse optimization substitution
     keys = reduced.free_symbols
+    # Warning: might slow Travis CI too much: logging.debug(' free symbols remaining: '+str(keys))
     for key in keys:
         # Warning: might slow Travis CI too much: logging.debug(' reduced: replacing key = '+str(key)+' with '+str(free_symbols_dict[key]))
         reduced_new = reduced.subs(key, free_symbols_dict[key])
