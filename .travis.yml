@@ -3,18 +3,19 @@ language: python
 
 matrix:
   include:
-    # - name: "SymPy-dev: Ubuntu Linux Xenial pypy3.5-6.0"
-    #   os: linux
-    #   dist: xenial
-    #   python: pypy3.5-6.0
-    #   install:
-    #     - pip install mpmath testfixtures
-    #     - git clone https://github.com/sympy/sympy
-    #     - cd sympy
-    #     - git revert c1e25a445f1c27829ea8cf0e04dbdd6d749834ce
-    #     - cd ..
-    #     - pip install git+file:///sympy/
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+    - name: "SymPy-dev: Ubuntu Linux Xenial pypy3.5-6.0"
+      os: linux
+      dist: xenial
+      python: pypy3.5-6.0
+      install:
+        - pip install mpmath testfixtures
+        - git clone https://github.com/sympy/sympy
+        - cd sympy
+        - wget http://astro.phys.wvu.edu/zetienne/sympy_add_fix.diff
+        - cat sympy_add_fix.diff | patch -p1
+        - cd ..
+        - pip install git+file://`pwd`/sympy/
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
 
     - name: "Ubuntu Linux Xenial pypy2.7-6.0"
       os: linux
