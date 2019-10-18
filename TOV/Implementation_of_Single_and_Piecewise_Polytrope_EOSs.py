@@ -432,7 +432,8 @@ def Polytrope_EOS__compute_rhob_from_P_cold(eos,P):
     # .----------------------------------.
     # | rho_b = (P_cold/K_j)^(1/Gamma_j) |
     # .----------------------------------.
-    return (P/eos.K_poly_tab[j])**(1.0/eos.Gamma_poly_tab[j])
+    rho_b = (P/eos.K_poly_tab[j])**(1.0/eos.Gamma_poly_tab[j])
+    return rho_b
 
 # Function     : polytropic_index_from_rhob()
 # Author(s)    : Leo Werneck and Zach Etienne
