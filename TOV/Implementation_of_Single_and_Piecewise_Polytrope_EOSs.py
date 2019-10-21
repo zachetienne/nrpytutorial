@@ -232,7 +232,7 @@ def set_up_EOS_parameters__complete_set_of_input_variables(neos,rho_poly_tab,Gam
 #                  P_poly_tab     - values of P used to distinguish one EOS from
 #                                   the other (not required for a single polytrope)
 
-def set_up_EOS_parameters__Read_et_al_input_variables(log_of_P4,Gamma_4,Gamma_5,Gamma_6):
+def set_up_EOS_parameters__Read_et_al_input_variables(EOSname):
 
     # Set up the number of polytropic EOSs, which is
     # fixed at seven for this type of input
@@ -252,15 +252,25 @@ def set_up_EOS_parameters__Read_et_al_input_variables(log_of_P4,Gamma_4,Gamma_5,
     # |  10^(15.0)   | Gamma_5 |     K_5     | P_5 |
     # |       -      | Gamma_6 |     K_6     |  -  |
     # .--------------.---------.-------------.-----.
+    #
+    # Load up the NRPy+ dictionary containing information about the Read et al.
+    # EOS tables (table III in Read et al. - https://arxiv.org/pdf/0812.2163.pdf)
+    import TOV.Piecewise_Polytrope__dict as PPdict
+    log_of_p4 = PPdict.EOS_Read_et_al_dict[EOSname].log_of_p4
+    Gamma4    = PPdict.EOS_Read_et_al_dict[EOSname].Gamma4
+    Gamma5    = PPdict.EOS_Read_et_al_dict[EOSname].Gamma5
+    Gamma6    = PPdict.EOS_Read_et_al_dict[EOSname].Gamma6
+    
     # Set up the speed of light and change the units of the input pressure
-    log_of_P4     -= 2.0*np.log10(2.9979e10)
+    c = 2.9979e10 # cm/s -- cgs units
+    log_of_p4 -= 2.0*np.log10(c)
     
     # Set up tabulated polytropic values following the table above
     # and the user input. All quantities which are still unknown are
     # set to absurd values to make sure they are overwritten
     rho_poly_tab   = [2.440340e+07, 3.78358e+11, 2.62780e+12, -1e30  , 10**(14.7)     , 10**(15.0)]
-    P_poly_tab     = [-1e30       , -1e30      , -1e30      , -1e30  , 10**(log_of_P4), -1e30     ]
-    Gamma_poly_tab = [1.58425     , 1.28733    , 0.62223    , 1.35692, Gamma_4        , Gamma_5, Gamma_6]
+    P_poly_tab     = [-1e30       , -1e30      , -1e30      , -1e30  , 10**(log_of_p4), -1e30     ]
+    Gamma_poly_tab = [1.58425     , 1.28733    , 0.62223    , 1.35692, Gamma4         , Gamma5, Gamma6]
     K_poly_tab     = [6.80110e-09 , -1e30      , -1e30      , -1e30  , -1e30          , -1e30  , -1e30]
     
     # Compute {K_1,K_2,K_3}, using
