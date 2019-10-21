@@ -66,8 +66,11 @@ def TOV_Solver(eos,
         # with eps = eps_cold, for the initial data.
         rho = (1.0 + eps_cold)*rho_baryon
         
+#         m = 4*math.pi/3. * rho*r_Schw**3
         if( r_Schw < 1e-4 or m <= 0.): 
-            m = 4*math.pi/3. * rho*r_Schw**3
+            # From https://github.com/natj/tov/blob/master/tov.py#L33:
+            # dPdr = -cgs.G*(eden + P/cgs.c**2)*(m + 4.0*pi*r**3*P/cgs.c**2)
+            # dPdr = dPdr/(r*(r - 2.0*cgs.G*m/cgs.c**2))
             dPdrSchw = -(rho + P)*(4.*math.pi/3.*r_Schw*rho + 4.*math.pi*r_Schw*P)/(1.-8.*math.pi*rho*r_Schw*r_Schw)
             drbardrSchw = 1./(1. - 8.*math.pi*rho*r_Schw*r_Schw)**0.5
         else:
@@ -81,8 +84,9 @@ def TOV_Solver(eos,
     def integrateStar( eos, P, dumpData = False ):
         integrator = si.ode(TOV_rhs).set_integrator('dop853')
         y0 = [P, 0., 0., 0.]
-        integrator.set_initial_value(y0,0.)
-        dr_Schw = 1e-6
+        r_Schw = 0.
+        integrator.set_initial_value(y0,r_Schw)
+        dr_Schw = 1e-5
         P = y0[0]
 
         PArr      = []
@@ -91,16 +95,15 @@ def TOV_Solver(eos,
         nuArr     = []
         rbarArr   = []
 
-        r_Schw = 0.
         nsteps = 0
         
         while integrator.successful() and P > 1e-9*y0[0] : 
             P, m, nu, rbar = integrator.integrate(r_Schw + dr_Schw)
-            r_Schw = integrator.t
+            r_Schw += dr_Schw
 
-            dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw = TOV_rhs( r_Schw+dr_Schw, [P,m,nu,rbar])
+            dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw = TOV_rhs( r_Schw, [P,m,nu,rbar])
             dr_Schw = 0.1*min(abs(P/dPdrSchw), abs(m/dmdrSchw))
-            dr_Schw = min(dr_Schw, 5e-5)
+            dr_Schw = min(dr_Schw, 5e-4)
             PArr.append(P)
             r_SchwArr.append(r_Schw)
             mArr.append(m)
