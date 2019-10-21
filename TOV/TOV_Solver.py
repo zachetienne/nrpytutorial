@@ -86,7 +86,7 @@ def TOV_Solver(eos,
         y0 = [P, 0., 0., 0.]
         r_Schw = 0.
         integrator.set_initial_value(y0,r_Schw)
-        dr_Schw = 1e-5
+        dr_Schw = 1e-6
         P = y0[0]
 
         PArr      = []
@@ -97,13 +97,14 @@ def TOV_Solver(eos,
 
         nsteps = 0
         
-        while integrator.successful() and P > 1e-9*y0[0] : 
+        while integrator.successful() and P > 1e-19*y0[0] : 
             P, m, nu, rbar = integrator.integrate(r_Schw + dr_Schw)
+            # Update the value of r_Schw to the latest integrated value
             r_Schw += dr_Schw
 
             dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw = TOV_rhs( r_Schw, [P,m,nu,rbar])
             dr_Schw = 0.1*min(abs(P/dPdrSchw), abs(m/dmdrSchw))
-            dr_Schw = min(dr_Schw, 5e-4)
+            dr_Schw = min(dr_Schw, 5e-5)
             PArr.append(P)
             r_SchwArr.append(r_Schw)
             mArr.append(m)

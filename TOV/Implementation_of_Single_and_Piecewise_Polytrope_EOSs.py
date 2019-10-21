@@ -59,6 +59,43 @@ def impose_continuity_on_P_cold(eos,K_poly_tab0):
         
     return
 
+# Function     : compute_P_poly_tab()
+# Author(s)    : Leo Werneck
+# Description  : This function populates the array eos.P_poly_tab,
+#                used to distinguish which EOS we are using in the
+#                case of a piecewise polytropic EOS
+# Dependencies : none
+#
+# Inputs       : eos              - named tuple containing the following:
+#                  neos           - number of EOSs to be used (single polytrope = 1)
+#                  rho_poly_tab   - values of rho used to distinguish one EOS from
+#                                   the other (not required for a single polytrope)
+#                  Gamma_poly_tab - values of Gamma to be used within each EOS
+#                  K_poly_tab     - value of K to be used within each EOS
+#                  P_poly_tab     - uninitialized, see output variable below
+#
+# Outputs      : eos.P_poly_tab   - values of P used to distinguish one EOS from
+#                                   the other (not required for a single polytrope)
+
+def compute_P_poly_tab(eos):
+    
+    # We now compute the values of P_poly_tab that are used
+    # to find the appropriate polytropic index and, thus,
+    # EOS we must use.
+    # First, if we have a single polytrope EOS, we need to
+    # do nothing.
+    if eos.neos==1:
+        return
+    
+    # For the case of a piecewise polytropic EOS, we have
+    # .---------------------------.
+    # | P_j = K_j*rho_j^(Gamma_j) |
+    # .---------------------------.
+    for j in range(eos.neos-1):
+        eos.P_poly_tab[j] = eos.K_poly_tab[j]*eos.rho_poly_tab[j]**(eos.Gamma_poly_tab[j])
+        
+    return
+
 # Function     : impose_continuity_on_eps_cold()
 # Author(s)    : Leo Werneck
 # Description  : This function populates the array eps_integ_const_tab
@@ -101,52 +138,16 @@ def impose_continuity_on_eps_cold(eos):
     # |     + K_(j-1)*rho_(j-1)^( Gamma_(j-1) - 1 )/( Gamma_(j-1) - 1 ) |
     # |     - K_(j+0)*rho_(j-1)^( Gamma_(j+0) - 1 )/( Gamma_(j+0) - 1 ) |
     # .-----------------------------------------------------------------.
+    eos.eps_integ_const_tab[0] = 0.0
     for j in range(1,eos.neos):
         # Second line of the boxed equation above
-        aux_jm1 = eos.K_poly_tab[j-1]*eos.rho_poly_tab[j-1]**(eos.Gamma_poly_tab[j-1]-1)/(eos.Gamma_poly_tab[j-1]-1)
+        aux_jm1 = eos.K_poly_tab[j-1]*eos.rho_poly_tab[j-1]**(eos.Gamma_poly_tab[j-1]-1.0)/(eos.Gamma_poly_tab[j-1]-1)
         
         # Third line of the boxed equation above
-        aux_jp0 = eos.K_poly_tab[j+0]*eos.rho_poly_tab[j-1]**(eos.Gamma_poly_tab[j+0]-1)/(eos.Gamma_poly_tab[j+0]-1)
+        aux_jp0 = eos.K_poly_tab[j+0]*eos.rho_poly_tab[j-1]**(eos.Gamma_poly_tab[j+0]-1.0)/(eos.Gamma_poly_tab[j+0]-1)
         
         # Boxed equation above
         eos.eps_integ_const_tab[j] = eos.eps_integ_const_tab[j-1] + aux_jm1 - aux_jp0
-        
-    return
-
-# Function     : compute_P_poly_tab()
-# Author(s)    : Leo Werneck
-# Description  : This function populates the array eos.P_poly_tab,
-#                used to distinguish which EOS we are using in the
-#                case of a piecewise polytropic EOS
-# Dependencies : none
-#
-# Inputs       : eos              - named tuple containing the following:
-#                  neos           - number of EOSs to be used (single polytrope = 1)
-#                  rho_poly_tab   - values of rho used to distinguish one EOS from
-#                                   the other (not required for a single polytrope)
-#                  Gamma_poly_tab - values of Gamma to be used within each EOS
-#                  K_poly_tab     - value of K to be used within each EOS
-#                  P_poly_tab     - uninitialized, see output variable below
-#
-# Outputs      : eos.P_poly_tab   - values of P used to distinguish one EOS from
-#                                   the other (not required for a single polytrope)
-
-def compute_P_poly_tab(eos):
-    
-    # We now compute the values of P_poly_tab that are used
-    # to find the appropriate polytropic index and, thus,
-    # EOS we must use.
-    # First, if we have a single polytrope EOS, we need to
-    # do nothing.
-    if eos.neos==1:
-        return
-    
-    # For the case of a piecewise polytropic EOS, we have
-    # .---------------------------.
-    # | P_j = K_j*rho_j^(Gamma_j) |
-    # .---------------------------.
-    for j in range(eos.neos-1):
-        eos.P_poly_tab[j] = eos.K_poly_tab[j]*eos.rho_poly_tab[j]**(eos.Gamma_poly_tab[j])
         
     return
 
@@ -293,39 +294,40 @@ def set_up_EOS_parameters__Read_et_al_input_variables(log_of_P4,Gamma_4,Gamma_5,
     for j in range(3,neos-1):
         P_poly_tab[j]   = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j])
         K_poly_tab[j+1] = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j] - Gamma_poly_tab[j+1])
-    
-    # Now we start the rescale process, making rhob and P dimensionless.
-    # This involves setting rho_nuclear (i.e. the highest value of rhob_tab)
-    # and K_nucluear (the value of K_poly used in the "last" EOS) to unity:
-    # .---------------------------------.--------------------------------.
-    # | Kpoly_dimensionless[neos-1] = 1 | rhob_dimensionless[neos-2] = 1 |
-    # .---------------------------------.--------------------------------.
-    rhob_dimensionless  = [1.0 for i in range(neos-1)]
-    K_poly_tab[neos-1] = 1.0
-    
-    # We then impose a "ratio preserving rescaling" of rhob:
+     
+    # We impose a "ratio preserving rescaling" of rhob:
     #
-    # rhob_dimensionless[j] / rhob[j] = rhob_dimensionless[j-1] / rhob[j-1]
+    # rhob_rescaled[j] / rhob[j] = rhob_rescaled[j-1] / rhob[j-1]
     #
     # which implies the relation
-    # .-----------------------------------------------------------------------.
-    # | rhob_dimensionless[j-1] = (rhob[j-1]/rhob[j]) * rhob_dimensionless[j] |
-    # .-----------------------------------------------------------------------.
+    # .-------------------------------------------------------------.
+    # | rhob_rescaled[j-1] = (rhob[j-1]/rhob[j]) * rhob_rescaled[j] |
+    # .-------------------------------------------------------------.
+    # after setting rhob_nuclear_rescaled = 1
+    rhob_rescaled  = [1.0 for i in range(neos-1)]
     for j in range(neos-2,0,-1):
-        rhob_dimensionless[j-1] = (rho_poly_tab[j-1]/rho_poly_tab[j]) * rhob_dimensionless[j]
-
-    rho_poly_tab = rhob_dimensionless
+        rhob_rescaled[j-1] = (rho_poly_tab[j-1]/rho_poly_tab[j]) * rhob_rescaled[j]
+    
+    # Now because the values of P and rho given by Read et al. are already
+    # in the same units, namely (g/cm^3), the ratio P/rho should be invariant
+    # under this rescalling procedure. Therefore
+    # .---------------------------------------------------------------------.
+    # | P_rescaled[j] = (rhob_rescaled[j]/rhob_readetal[j]) * P_readetal[j] |
+    # .---------------------------------------------------------------------.
+    P_rescaled = [0.0 for i in range(neos-1)]
+    for j in range(neos-1):
+        P_rescaled[j] = (rhob_rescaled[j]/rho_poly_tab[j]) * P_poly_tab[j]
+    
+    rho_poly_tab = rhob_rescaled
+    P_poly_tab   = P_rescaled
     
     # Demanding that the pressure be everywhere continuous then imposes
     # .-------------------------------------------------------------------------------------------.
     # | K_dimensionless[j-1] = K_dimensionless[j]/rhob_dimensionless[j-1]^(Gamma[j-1] - Gamma[j]) |
     # .-------------------------------------------------------------------------------------------.
-    for j in range(neos-1,0,-1):
-        K_poly_tab[j-1] = K_poly_tab[j]/rho_poly_tab[j-1]**(Gamma_poly_tab[j-1]-Gamma_poly_tab[j])
-        
-    # Finally, recompute P_poly_tab
-    for j in range(neos-1):
-        P_poly_tab[j] = K_poly_tab[j]*rho_poly_tab[j]**(Gamma_poly_tab[j])
+    K_poly_tab[0] = P_poly_tab[0]/rho_poly_tab[0]**(Gamma_poly_tab[0])
+    for j in range(1,neos):
+        K_poly_tab[j] = K_poly_tab[j-1]*rho_poly_tab[j-1]**(Gamma_poly_tab[j-1]-Gamma_poly_tab[j])
     
     # Allocate memory for the integration constants of eps_cold
     eps_integ_const_tab = [0 for i in range(neos)]
@@ -368,6 +370,35 @@ def Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon):
     # .--------------------------------.
     return eos.K_poly_tab[j]*rho_baryon**eos.Gamma_poly_tab[j]
 
+# Function     : Polytrope_EOS__compute_rhob_from_P_cold()
+# Author(s)    : Leo Werneck
+# Description  : This function computes rho_b for a polytropic EOS
+# Dependencies : polytropic_index_from_P()
+#
+# Inputs       : eos              - named tuple containing the following:
+#                  neos           - number of EOSs to be used (single polytrope = 1)
+#                  rho_poly_tab   - values of rho distinguish one EOS from the
+#                                   other (not required for a single polytrope)
+#                  Gamma_poly_tab - values of Gamma to be used within each EOS
+#                  K_poly_tab     - value of K to be used within each EOS
+#                  P_poly_tab     - values of P used to distinguish one EOS from
+#                                   the other (not required for a single polytrope)
+#                P                - the value of P for which we want to
+#                                   compute rho_b
+#
+# Outputs      : rho_baryon       - for a single or piecewise polytropic EOS
+
+def Polytrope_EOS__compute_rhob_from_P_cold(eos,P):
+    
+    # Compute the polytropic index from P
+    j = polytropic_index_from_P(eos,P)
+    
+    # Return the value of rho_b for a polytropic EOS
+    # .----------------------------------.
+    # | rho_b = (P_cold/K_j)^(1/Gamma_j) |
+    # .----------------------------------.
+    return (P/eos.K_poly_tab[j])**(1.0/eos.Gamma_poly_tab[j])
+
 # Function     : Polytrope_EOS__compute_eps_cold_from_rhob()
 # Author(s)    : Leo Werneck
 # Description  : This function computes eps_cold for a polytropic EOS
@@ -395,10 +426,10 @@ def Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_baryon):
     P_cold = Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon)
 
     # Return the value of P_cold for a polytropic EOS
-    # .----------------------------------------.
-    # | eps_cold = P_cold/( rhob*(Gamma_j-1) ) |
-    # .----------------------------------------.
-    return eos.eps_integ_const_tab[j] + P_cold/(rho_baryon*(eos.Gamma_poly_tab[j] - 1.0))
+    # .----------------------------------------------.
+    # | eps_cold = C_j + P_cold/( rhob*(Gamma_j-1) ) |
+    # .----------------------------------------------.
+    return ( eos.eps_integ_const_tab[j] + P_cold/(rho_baryon*(eos.Gamma_poly_tab[j] - 1.0)) )
 
 # Function     : Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold()
 # Author(s)    : Leo Werneck
@@ -436,37 +467,7 @@ def Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P):
     # .-------------------------------------------------.
     eps_cold = eos.eps_integ_const_tab[j] + (P/(rho_b*(Gamma - 1)))
     
-    return rho_b, eps_cold # Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_b)
-
-# Function     : Polytrope_EOS__compute_rhob_from_P_cold()
-# Author(s)    : Leo Werneck
-# Description  : This function computes rho_b for a polytropic EOS
-# Dependencies : polytropic_index_from_P()
-#
-# Inputs       : eos              - named tuple containing the following:
-#                  neos           - number of EOSs to be used (single polytrope = 1)
-#                  rho_poly_tab   - values of rho distinguish one EOS from the
-#                                   other (not required for a single polytrope)
-#                  Gamma_poly_tab - values of Gamma to be used within each EOS
-#                  K_poly_tab     - value of K to be used within each EOS
-#                  P_poly_tab     - values of P used to distinguish one EOS from
-#                                   the other (not required for a single polytrope)
-#                P                - the value of P for which we want to
-#                                   compute rho_b
-#
-# Outputs      : rho_baryon       - for a single or piecewise polytropic EOS
-
-def Polytrope_EOS__compute_rhob_from_P_cold(eos,P):
-    
-    # Compute the polytropic index from P
-    j = polytropic_index_from_P(eos,P)
-    
-    # Return the value of rho_b for a polytropic EOS
-    # .----------------------------------.
-    # | rho_b = (P_cold/K_j)^(1/Gamma_j) |
-    # .----------------------------------.
-    rho_b = (P/eos.K_poly_tab[j])**(1.0/eos.Gamma_poly_tab[j])
-    return rho_b
+    return rho_b,Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_b)
 
 # Function     : polytropic_index_from_rhob()
 # Author(s)    : Leo Werneck and Zach Etienne
@@ -523,4 +524,3 @@ def polytropic_index_from_P(eos, P_in):
             polytropic_index += (P_in > eos.P_poly_tab[j])
             
     return polytropic_index
-
