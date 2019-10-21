@@ -56,8 +56,8 @@ def TOV_Solver(eos,
         # to compute rho_(total)
         rho_baryon, eps_cold = ppeos.Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P)
         
-        with open("rhob_P_cold_and_eps_cold.dat","a+") as file:
-            file.write(str(r_Schw).format("%.15e")+"  "+str(rho_baryon).format("%.15e")+"  "+str(P).format("%.15e")+"  "+str(eps_cold).format("%.15e")+"\n")
+#         with open("rhob_P_cold_and_eps_cold.dat","a+") as file:
+#             file.write(str(r_Schw).format("%.15e")+"  "+str(rho_baryon).format("%.15e")+"  "+str(P).format("%.15e")+"  "+str(eps_cold).format("%.15e")+"\n")
 
         # Compute rho, the *total* mass-energy density:
         # .------------------------------.
@@ -82,11 +82,12 @@ def TOV_Solver(eos,
         return [dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw]
 
     def integrateStar( eos, P, dumpData = False ):
-        integrator = si.ode(TOV_rhs).set_integrator('dop853')
+        integrator = si.ode(TOV_rhs).set_integrator('dop853')#,rtol=1e-4,atol=1e-4)
+#         integrator = si.ode(TOV_rhs).set_integrator('dopri5',rtol=1e-4)
         y0 = [P, 0., 0., 0.]
         r_Schw = 0.
         integrator.set_initial_value(y0,r_Schw)
-        dr_Schw = 1e-6
+        dr_Schw = 1e-5
         P = y0[0]
 
         PArr      = []
@@ -104,7 +105,7 @@ def TOV_Solver(eos,
 
             dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw = TOV_rhs( r_Schw, [P,m,nu,rbar])
             dr_Schw = 0.1*min(abs(P/dPdrSchw), abs(m/dmdrSchw))
-            dr_Schw = min(dr_Schw, 5e-5)
+            dr_Schw = min(dr_Schw, 1e-2)
             PArr.append(P)
             r_SchwArr.append(r_Schw)
             mArr.append(m)
