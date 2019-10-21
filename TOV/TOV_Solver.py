@@ -52,12 +52,12 @@ def TOV_Solver(eos,
         nu   = y[2]
         rbar = y[3]
 
-        # Set up polytropic auxiliary variables
-        j = ppeos.polytropic_index_from_P(eos,P)
-
         # Compute rho_b and eps_cold, to be used below
         # to compute rho_(total)
         rho_baryon, eps_cold = ppeos.Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P)
+        
+        with open("rhob_P_cold_and_eps_cold.dat","a+") as file:
+            file.write(str(r_Schw).format("%.15e")+"  "+str(rho_baryon).format("%.15e")+"  "+str(P).format("%.15e")+"  "+str(eps_cold).format("%.15e")+"\n")
 
         # Compute rho, the *total* mass-energy density:
         # .------------------------------.
@@ -65,7 +65,7 @@ def TOV_Solver(eos,
         # .------------------------------.
         # with eps = eps_cold, for the initial data.
         rho = (1.0 + eps_cold)*rho_baryon
-
+        
         if( r_Schw < 1e-4 or m <= 0.): 
             m = 4*math.pi/3. * rho*r_Schw**3
             dPdrSchw = -(rho + P)*(4.*math.pi/3.*r_Schw*rho + 4.*math.pi*r_Schw*P)/(1.-8.*math.pi*rho*r_Schw*r_Schw)
@@ -82,7 +82,7 @@ def TOV_Solver(eos,
         integrator = si.ode(TOV_rhs).set_integrator('dop853')
         y0 = [P, 0., 0., 0.]
         integrator.set_initial_value(y0,0.)
-        dr_Schw = 1e-5
+        dr_Schw = 1e-6
         P = y0[0]
 
         PArr      = []
@@ -92,14 +92,15 @@ def TOV_Solver(eos,
         rbarArr   = []
 
         r_Schw = 0.
-
+        nsteps = 0
+        
         while integrator.successful() and P > 1e-9*y0[0] : 
             P, m, nu, rbar = integrator.integrate(r_Schw + dr_Schw)
             r_Schw = integrator.t
 
             dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw = TOV_rhs( r_Schw+dr_Schw, [P,m,nu,rbar])
             dr_Schw = 0.1*min(abs(P/dPdrSchw), abs(m/dmdrSchw))
-            dr_Schw = min(dr_Schw, 1e-2)
+            dr_Schw = min(dr_Schw, 5e-5)
             PArr.append(P)
             r_SchwArr.append(r_Schw)
             mArr.append(m)

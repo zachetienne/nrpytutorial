@@ -434,7 +434,7 @@ def Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P):
     # .-------------------------------------------------.
     # | eps_cold = C_j + P_cold/(rho_b*( Gamma_j - 1 )) |
     # .-------------------------------------------------.
-    eps_cold = eos.eps_integ_const_tab[j] + (P/rho_b*(Gamma - 1))
+    eps_cold = eos.eps_integ_const_tab[j] + (P/(rho_b*(Gamma - 1)))
     
     return rho_b, eps_cold
 
