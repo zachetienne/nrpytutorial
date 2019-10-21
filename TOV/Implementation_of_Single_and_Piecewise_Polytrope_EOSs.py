@@ -398,7 +398,7 @@ def Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_baryon):
     # .----------------------------------------.
     # | eps_cold = P_cold/( rhob*(Gamma_j-1) ) |
     # .----------------------------------------.
-    return P_cold/(rho_baryon*(eos.Gamma_poly_tab[j] - 1.0))
+    return eos.eps_integ_const_tab[j] + P_cold/(rho_baryon*(eos.Gamma_poly_tab[j] - 1.0))
 
 # Function     : Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold()
 # Author(s)    : Leo Werneck
@@ -436,7 +436,7 @@ def Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P):
     # .-------------------------------------------------.
     eps_cold = eos.eps_integ_const_tab[j] + (P/(rho_b*(Gamma - 1)))
     
-    return rho_b, eps_cold
+    return rho_b, eps_cold # Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_b)
 
 # Function     : Polytrope_EOS__compute_rhob_from_P_cold()
 # Author(s)    : Leo Werneck
