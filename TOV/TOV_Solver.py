@@ -40,11 +40,12 @@ import Implementation_of_Single_and_Piecewise_Polytrope_EOSs as ppeos
 # Step 2: The TOV equations
 def TOV_Solver(eos,
                outfile = "outputTOVpolytrope.txt",
-               rho_baryon_central=0.129285,
+               rho_baryon_central = 0.129285,
                verbose = True,
                return_M_and_RSchw = False,
-               accuracy="medium",
-               integrator_type="default"):
+               accuracy = "medium",
+               integrator_type = "default",
+               no_output_File = False):
     
     def TOV_rhs(r_Schw, y) : 
     # In \tilde units
@@ -146,6 +147,9 @@ def TOV_Solver(eos,
         M = mArr[-1]
         R_Schw = r_SchwArr[-1]
 
+        if no_output_File == True:
+            return R_Schw, M
+            
         # Apply integration constant to ensure rbar is continuous across TOV surface
         for ii in range(len(rbarArr)):
             rbarArr[ii] *= 0.5*(np.sqrt(R_Schw*(R_Schw - 2.0*M)) + R_Schw - M) / rbarArr[-1]
