@@ -429,6 +429,9 @@ def Polytrope_EOS__compute_rhob_from_P_cold(eos,P):
 
 def Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_baryon):
     
+    if rho_baryon == 0.0:
+        return 0.0
+    
     # Compute the polytropic index from rho_baryon
     j = polytropic_index_from_rhob(eos, rho_baryon)
 
@@ -471,13 +474,7 @@ def Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P):
     # .----------------------------------.
     rho_b = (P/eos.K_poly_tab[j])**(1.0/Gamma)
     
-    # Compute the value of eps_cold for a polytropic EOS
-    # .-------------------------------------------------.
-    # | eps_cold = C_j + P_cold/(rho_b*( Gamma_j - 1 )) |
-    # .-------------------------------------------------.
-    eps_cold = eos.eps_integ_const_tab[j] + (P/(rho_b*(Gamma - 1)))
-    
-    return rho_b,Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_b)
+    return rho_b, Polytrope_EOS__compute_eps_cold_from_rhob(eos, rho_b)
 
 # Function     : polytropic_index_from_rhob()
 # Author(s)    : Leo Werneck and Zach Etienne

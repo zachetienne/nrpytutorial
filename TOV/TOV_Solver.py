@@ -180,9 +180,10 @@ def TOV_Solver(eos,
 
         # Compute the *total* mass-energy density (as opposed to the *baryonic* mass density)
         rhoArr_np = []
-        for i in range(len(rho_baryonArr_np)):
-            j = ppeos.polytropic_index_from_P(eos,PArr_np[j])
-            rhoArr_np.append(rho_baryonArr_np[i] + PArr_np[i]/(eos.Gamma_poly_tab[j] - 1.))
+        for i in range(len(PArr)):
+            rho_baryon, eps_cold = ppeos.Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,PArr[i])
+            rho = (1.0 + eps_cold ) * rho_baryon
+            rhoArr_np.append(rho)
 
         if verbose:
             print(len(r_SchwArr_np),len(rhoArr_np),len(rho_baryonArr_np),len(PArr_np),len(mArr_np),len(exp2phiArr_np))
