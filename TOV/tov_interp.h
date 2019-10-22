@@ -176,6 +176,8 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
   }
 }
 
+// To compile, run:
+//  gcc -Ofast tov_interp.c -o tov_interp -DSTANDALONE_UNIT_TEST
 #ifdef STANDALONE_UNIT_TEST
 int main() {
 
