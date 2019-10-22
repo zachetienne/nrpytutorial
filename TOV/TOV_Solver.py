@@ -42,7 +42,9 @@ def TOV_Solver(eos,
                outfile = "outputTOVpolytrope.txt",
                rho_baryon_central=0.129285,
                verbose = True,
-               return_M_and_RSchw = False):
+               return_M_and_RSchw = False,
+               accuracy="medium",
+               integrator_type="default"):
     
     def TOV_rhs(r_Schw, y) : 
     # In \tilde units
@@ -82,12 +84,41 @@ def TOV_Solver(eos,
         return [dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw]
 
     def integrateStar( eos, P, dumpData = False ):
-        integrator = si.ode(TOV_rhs).set_integrator('dop853')#,rtol=1e-4,atol=1e-4)
+        
+        if accuracy == "medium":
+            min_step_size = 1e-5
+            max_step_size = 1e-2
+            integrator    = 'dop853'
+        elif accuracy == "low":
+            min_step_size = 1e-3
+            max_step_size = 1e-1
+            integrator    = 'dopri5'
+        elif accuracy == "verylow":
+            min_step_size = 1e-1
+            max_step_size = 5e-1
+            integrator    = 'dopri5'
+        elif accuracy == "high":
+            min_step_size = 1e-5
+            max_step_size = 1e-5
+            integrator    = 'dop853'
+        elif accuracy == "veryhigh":
+            min_step_size = 1e-7
+            max_step_size = 1e-6
+            integrator    = 'dop853'
+        else:
+            print("Unknown accuracy option: "+str(accuracy))
+            
+        if integrator_type == "default":
+            pass
+        else:
+            integrator = integrator_type
+        
+        integrator = si.ode(TOV_rhs).set_integrator(integrator)#,rtol=1e-4,atol=1e-4)
 #         integrator = si.ode(TOV_rhs).set_integrator('dopri5',rtol=1e-4)
         y0 = [P, 0., 0., 0.]
         r_Schw = 0.
         integrator.set_initial_value(y0,r_Schw)
-        dr_Schw = 1e-5
+        dr_Schw = min_step_size
         P = y0[0]
 
         PArr      = []
@@ -105,7 +136,7 @@ def TOV_Solver(eos,
 
             dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw = TOV_rhs( r_Schw, [P,m,nu,rbar])
             dr_Schw = 0.1*min(abs(P/dPdrSchw), abs(m/dmdrSchw))
-            dr_Schw = min(dr_Schw, 1e-2)
+            dr_Schw = min(dr_Schw, max_step_size)
             PArr.append(P)
             r_SchwArr.append(r_Schw)
             mArr.append(m)
@@ -152,15 +183,16 @@ def TOV_Solver(eos,
         for i in range(len(rho_baryonArr_np)):
             j = ppeos.polytropic_index_from_P(eos,PArr_np[j])
             rhoArr_np.append(rho_baryonArr_np[i] + PArr_np[i]/(eos.Gamma_poly_tab[j] - 1.))
-        
+
         if verbose:
-            print(len(r_SchwArr_np),len(rhoArr_np),len(PArr_np),len(mArr_np),len(exp2phiArr_np))
+            print(len(r_SchwArr_np),len(rhoArr_np),len(rho_baryonArr_np),len(PArr_np),len(mArr_np),len(exp2phiArr_np))
+            
         # Special thanks to Leonardo Werneck for pointing out this issue with zip()
         if sys.version_info[0] < 3:
-            np.savetxt(outfile, zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np), 
+            np.savetxt(outfile, zip(r_SchwArr_np,rhoArr_np,rho_baryonArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np), 
                        fmt="%.15e")
         else:
-            np.savetxt(outfile, list(zip(r_SchwArr_np,rhoArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)), 
+            np.savetxt(outfile, list(zip(r_SchwArr_np,rhoArr_np,rho_baryonArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)), 
                        fmt="%.15e")
 
         return R_Schw, M
