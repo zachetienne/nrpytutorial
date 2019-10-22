@@ -74,8 +74,12 @@ def find_cmax_cmin(flux_dirn,gamma_faceUU,beta_faceU,alpha_face,gammadet_face):
     #          lapse alpha_face, metric determinant gammadet_face
     # Outputs: maximum and minimum characteristic speeds cmax and cmin
     # First, we need to find the characteristic speeds on each face
-    cpr,cmr = find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
-    cpl,cml = find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
+    find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
+    cpr = cplus
+    cmr = cminus
+    find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
+    cpl = cplus
+    cml = cminus
     
     # The following algorithms have been verified with random floats:
     
@@ -92,7 +96,7 @@ def find_cmax_cmin(flux_dirn,gamma_faceUU,beta_faceU,alpha_face,gammadet_face):
 # gridfunctions. You could also do this with only one point, but then you'd 
 # need to declare everything as a Cparam in NRPy+
 
-def HLLE_solver(flux_dirn, mom_comp): 
+def HLLE_solver(flux_dirn, mom_comp, alpha_face, gammadet_face, gamma_faceDD, gamma_faceUU, beta_faceU, Valenciav_rU, B_rU, Valenciav_lU, B_lU): 
     # This solves the Riemann problem for the mom_comp component of the momentum
     # flux StildeD in the flux_dirn direction.
 
@@ -105,8 +109,12 @@ def HLLE_solver(flux_dirn, mom_comp):
 
     # Using the function coded above, we find the speed-limited v^i and u^0 on both 
     # left and right faces.
-    Valenciav_rU,u4upperZero_r = compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_rU)
-    Valenciav_lU,u4upperZero_l = compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_lU)
+    compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_rU)
+    Valenciav_rU = rescaledValenciavU
+    u4upperZero_r = rescaledu0
+    compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_lU)
+    Valenciav_lU = rescaledValenciavU
+    u4upperZero_l = rescaledu0
 
     # Note the Kronecker delta symbol in the above; let's create it real quick:
     # We'll zero-offset everything here, unlike in the original GiRaFFE.
@@ -172,16 +180,16 @@ def HLLE_solver(flux_dirn, mom_comp):
     st_j_r = alpha_sqrt_gamma * (smallb2_r*u4upperZero_r*u_rD[mom_comp] - smallb4_rU[0]*smallb4_rD[mom_comp+1])
     st_j_l = alpha_sqrt_gamma * (smallb2_l*u4upperZero_l*u_lD[mom_comp] - smallb4_lU[0]*smallb4_lD[mom_comp+1])
     
-    cmaxL,cminL = find_cmax_cmin(flux_dirn,gamma_faceUU,beta_faceU,alpha_face,gammadet_face)
+    find_cmax_cmin(flux_dirn,gamma_faceUU,beta_faceU,alpha_face,gammadet_face)
     
     # st_j_flux = (c_\min f_R + c_\max f_L - c_\min c_\max ( st_j_r - st_j_l )) / (c_\min + c_\max)
-    return (cminL*Fr + cmaxL*Fl - cminL*cmaxL*(st_j_r-st_j_l) )/(cmaxL + cminL)
+    return (cmin*Fr + cmax*Fl - cmin*cmax*(st_j_r-st_j_l) )/(cmax + cmin)
 
 global calculate_Stilde_flux
 # Zach says: Patrick -- check on whether gamma_faceDD is an exact (within roundoff) inverse of gamma_faceUU. Otherwise make it so!
-def calculate_Stilde_flux(flux_dirn, inputs_provided=False, alpha_face=None,gammadet_face=None,gamma_faceDD=None,gamma_faceUU=None,beta_faceU=None,Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None):
+def calculate_Stilde_flux(flux_dirn, inputs_provided=False, alpha_face=None, gammadet_face=None, gamma_faceDD=None, gamma_faceUU=None, beta_faceU=None, Valenciav_rU=None, B_rU=None, Valenciav_lU=None, B_lU=None):
 
-    if inputs_provided==False:
+    if not inputs_provided:
         # We will pass values of the gridfunction on the cell faces into the function. This requires us
         # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
         alpha_face,gammadet_face = gri.register_gridfunctions("AUXEVOL",["alpha_face","gammadet_face"])
@@ -208,4 +216,4 @@ def calculate_Stilde_flux(flux_dirn, inputs_provided=False, alpha_face=None,gamm
 
     # TODO: PASS alpha_face=None,gammadet_face=None,gamma_faceDD=None,gamma_faceUU=None,beta_faceU=None,Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None into HLLE solver
     for mom_comp in range(DIM):
-        Stilde_fluxD[mom_comp] = HLLE_solver(flux_dirn,mom_comp)
+        Stilde_fluxD[mom_comp] = HLLE_solver(flux_dirn,mom_comp,alpha_face, gammadet_face, gamma_faceDD, gamma_faceUU, beta_faceU, Valenciav_rU, B_rU, Valenciav_lU, B_lU)
