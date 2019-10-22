@@ -28,7 +28,7 @@ int count_num_lines_in_file(FILE *in1Dpolytrope) {
   return numlines_in_file;
 }
 
-int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_Schw_arr,REAL *rho_arr,REAL *P_arr,REAL *M_arr,REAL *expnu_arr,REAL *exp4phi_arr,REAL *rbar_arr) {
+int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_Schw_arr,REAL *rho_arr,REAL *rho_baryon_arr,REAL *P_arr,REAL *M_arr,REAL *expnu_arr,REAL *exp4phi_arr,REAL *rbar_arr) {
   char * line = NULL;
 
   size_t len = 0;
@@ -47,13 +47,14 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_Schw_arr,REAL *rho_ar
     //     the originally defined character array, as pointed to by token.
 
     token=strtok(line, delimiters); if(token==NULL) { printf("BADDDD\n"); return 1; }
-    r_Schw_arr[which_line]  = strtod(token, NULL); token = strtok( NULL, delimiters );
-    rho_arr[which_line]     = strtod(token, NULL); token = strtok( NULL, delimiters );
-    P_arr[which_line]       = strtod(token, NULL); token = strtok( NULL, delimiters );
-    M_arr[which_line]       = strtod(token, NULL); token = strtok( NULL, delimiters );
-    expnu_arr[which_line]   = strtod(token, NULL); token = strtok( NULL, delimiters );
-    exp4phi_arr[which_line] = strtod(token, NULL); token = strtok( NULL, delimiters );
-    rbar_arr[which_line]    = strtod(token, NULL);
+    r_Schw_arr[which_line]     = strtod(token, NULL); token = strtok( NULL, delimiters );
+    rho_arr[which_line]        = strtod(token, NULL); token = strtok( NULL, delimiters );
+    rho_baryon_arr[which_line] = strtod(token, NULL); token = strtok( NULL, delimiters );
+    P_arr[which_line]          = strtod(token, NULL); token = strtok( NULL, delimiters );
+    M_arr[which_line]          = strtod(token, NULL); token = strtok( NULL, delimiters );
+    expnu_arr[which_line]      = strtod(token, NULL); token = strtok( NULL, delimiters );
+    exp4phi_arr[which_line]    = strtod(token, NULL); token = strtok( NULL, delimiters );
+    rbar_arr[which_line]       = strtod(token, NULL);
 
     which_line++;
   }
