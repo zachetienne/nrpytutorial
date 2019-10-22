@@ -35,7 +35,7 @@ import numpy as np
 import scipy.integrate as si
 import math
 import sys
-import Implementation_of_Single_and_Piecewise_Polytrope_EOSs as ppeos
+import Polytropic_EOSs as ppeos
 
 # Step 2: The TOV equations
 def TOV_Solver(eos,
