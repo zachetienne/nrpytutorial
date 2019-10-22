@@ -547,7 +547,7 @@ def polytropic_index_from_P(eos, P_in):
 #                                   the other (not required for a single polytrope)
 # Output(s)    : parameter file to be used by IllinoisGRMHD
 
-def generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename,Gamma_thermal=None, K_single_polytrope=1.0,Gamma_single_polytrope=2.0):
+def generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename,Gamma_thermal=None,EOS_struct=None,K_single_polytrope=1.0,Gamma_single_polytrope=2.0):
     with open(outfilename,"w") as file:
         file.write("""
 #.-------------------------------------------------------------------------.
@@ -596,8 +596,61 @@ IllinoisGRMHD::Gamma_ppoly_tab_in[0] = """+str(Gamma_single_polytrope)+"""
 # Set Gamma_th
 IllinoisGRMHD::Gamma_th = """+str(Gamma_single_polytrope)+"""
 """)
+    elif EOSname == "piecewise":
+        if EOS_struct == None:
+            print("Error: Please set the EOS named tuple. Usage:")
+            print("generate_IllinoisGRMHD_EOS_parameter_file(\"piecewise\",outfilename,Gamma_thermal=Gamma_th,EOS_struct=eos_named_tuple)")
+            sys.exit(1)
+            
+        if Gamma_thermal == None:
+            print("Error: Please set Gamma_thermal. Usage:")
+            print("generate_IllinoisGRMHD_EOS_parameter_file(\"piecewise\",outfilename,Gamma_thermal=Gamma_th,EOS_struct=eos_named_tuple)")
+            sys.exit(2)
+
+        with open(outfilename,"a") as file:
+            file.write("""#
+#.---------------------------------------.
+#| EOS Type: Generic Piecewise Polytrope |
+#.---------------------------------------.
+#| Required parameters:                  |      
+#|  - EOS_struct                         |
+#|  - Gamma_thermal                      |
+#|                                       |
+#| IllinoisGRMHD parameters set:         |
+#|  - neos                               |
+#|  - K_ppoly_tab0                       |
+#|  - rho_ppoly_tab_in[j]   0<=j<=neos-2 |
+#|  - Gamma_ppoly_tab_in[j] 0<=j<=neos-1 |
+#|  - Gamma_th                           |
+#.---------------------------------------.
+#
+# Set up the number of polytropic EOSs.
+IllinoisGRMHD::neos = %d
+
+# Set K_ppoly_tab0
+IllinoisGRMHD::K_ppoly_tab0 = %.15e
+
+# Set rho_ppoly_tab_in""" %(EOS_struct.neos,EOS_struct.rho_poly_tab[0]))
+            for j in range(EOS_struct.neos-1):
+                file.write("""
+IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
+            file.write("""
+
+# Set Gamma_ppoly_tab_in""")
+            for j in range(EOS_struct.neos):
+                file.write("""
+IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
+            file.write("""
+
+# Set Gamma_th
+IllinoisGRMHD::Gamma_th = %.15e""" %(Gamma_thermal))
             
     else:
+        import Piecewise_Polytrope__dict
+        if EOSname not in Piecewise_Polytrope__dict.EOS_Read_et_al_dict:
+            print("ERROR: Unknown EOS name "+EOSname)
+            sys.exit(3)
+
         if Gamma_thermal == None:
             print("Error: Please set Gamma_thermal. Usage:")
             print("generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename,Gamma_thermal=None)")
@@ -626,17 +679,17 @@ IllinoisGRMHD::Gamma_th = """+str(Gamma_single_polytrope)+"""
 #|  https://arxiv.org/pdf/0812.2163.pdf  |
 #.---------------------------------------.
 #| Note that while we use the values in  |
-#| Read et al. (2009) are used to obtain |
-#| the parameters below, they are not    |
-#| exactly the same values from their    |
-#| tables, since we have changed them    |
-#| using a different normalization.      |
+#| Read et al. (2009), we write them in  |
+#| geometrized units where G = 1 = c. We |
+#| also normalize the nuclear density to |
+#| unity.                                |
 #| You can read more about this in the   |
 #| following NRPy+ tutorial module:      |
 #| Tutorial-TOV-Piecewise_Polytrope_EOSs |
 #.---------------------------------------.
 #| Required parameters:                  |      
 #|  - EOS name                           |
+#|  - Gamma_thermal                      |
 #|                                       |
 #| IllinoisGRMHD parameters set:         |
 #|  - neos                               |
