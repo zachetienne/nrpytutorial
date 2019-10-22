@@ -64,8 +64,8 @@ int read_datafile__set_arrays(FILE *in1Dpolytrope, REAL *r_Schw_arr,REAL *rho_ar
 
 
 void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int interp_stencil_size,
-                        const int numlines_in_file,const REAL *r_Schw_arr,const REAL *rho_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,const REAL *exp4phi_arr,const REAL *rbar_arr,
-                        REAL *rho,REAL *P,REAL *M,REAL *expnu,REAL *exp4phi) {
+                        const int numlines_in_file,const REAL *r_Schw_arr,const REAL *rho_arr,const REAL *rho_baryon_arr,const REAL *P_arr,const REAL *M_arr,const REAL *expnu_arr,const REAL *exp4phi_arr,const REAL *rbar_arr,
+                        REAL *rho,REAL *rho_baryon,REAL *P,REAL *M,REAL *expnu,REAL *exp4phi) {
   // Find interpolation index using Bisection root-finding algorithm:
   int bisection_idx_finder(const REAL rr, const int numlines_in_file, const REAL *rbar_arr) {
     int x1 = 0;
@@ -149,6 +149,7 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
 
   // Then perform the interpolation:
   *rho = 0.0;
+  *rho_baryon = 0.0;
   *P = 0.0;
   *M = 0.0;
   *expnu = 0.0;
@@ -156,20 +157,22 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
 
   REAL r_Schw = 0.0;
   for(int i=idxmin;i<idxmin+interp_stencil_size;i++) {
-    r_Schw   += l_i_of_r[i-idxmin] * r_Schw_arr[i];
-    *rho     += l_i_of_r[i-idxmin] * rho_arr[i];
-    *P       += l_i_of_r[i-idxmin] * P_arr[i];
-    *M       += l_i_of_r[i-idxmin] * M_arr[i];
-    *expnu   += l_i_of_r[i-idxmin] * expnu_arr[i];
-    *exp4phi += l_i_of_r[i-idxmin] * exp4phi_arr[i];
+    r_Schw      += l_i_of_r[i-idxmin] * r_Schw_arr[i];
+    *rho        += l_i_of_r[i-idxmin] * rho_arr[i];
+    *rho_baryon += l_i_of_r[i-idxmin] * rho_baryon_arr[i];
+    *P          += l_i_of_r[i-idxmin] * P_arr[i];
+    *M          += l_i_of_r[i-idxmin] * M_arr[i];
+    *expnu      += l_i_of_r[i-idxmin] * expnu_arr[i];
+    *exp4phi    += l_i_of_r[i-idxmin] * exp4phi_arr[i];
   }
 
   if(rrbar > Rbar) {
-    *rho   = 0;
-    *P     = 0;
-    *M     = M_arr[Rbar_idx+1];
-    *expnu = 1. - 2.*(*M) / r_Schw;
-    *exp4phi = pow(r_Schw / rrbar,2.0);
+    *rho        = 0;
+    *rho_baryon = 0;
+    *P          = 0;
+    *M          = M_arr[Rbar_idx+1];
+    *expnu      = 1. - 2.*(*M) / r_Schw;
+    *exp4phi    = pow(r_Schw / rrbar,2.0);
   }
 }
 
@@ -189,16 +192,17 @@ int main() {
   int numlines_in_file = count_num_lines_in_file(in1Dpolytrope);
 
   // Allocate space for all data arrays:
-  REAL *r_Schw_arr  = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
-  REAL *rho_arr     = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
-  REAL *P_arr       = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
-  REAL *M_arr       = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
-  REAL *expnu_arr   = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
-  REAL *exp4phi_arr = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
-  REAL *rbar_arr    = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *r_Schw_arr     = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *rho_arr        = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *rho_baryon_arr = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *P_arr          = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *M_arr          = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *expnu_arr      = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *exp4phi_arr    = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
+  REAL *rbar_arr       = (REAL *)malloc(sizeof(REAL)*numlines_in_file);
 
   // Read from the data file, filling in arrays
-  if(read_datafile__set_arrays(in1Dpolytrope, r_Schw_arr,rho_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,rbar_arr) == 1) {
+  if(read_datafile__set_arrays(in1Dpolytrope, r_Schw_arr,rho_arr,rho_baryon_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,rbar_arr) == 1) {
     fprintf(stderr,"ERROR WHEN READING FILE %s!\n",filename);
     exit(1);
   }
@@ -226,14 +230,15 @@ int main() {
     drand48_r(&randBuffer,&rrbar);
     //rrbar *= 10.; //rbar_arr[numlines_in_file-1];
     rrbar = rrbar*0.1 + 0.8; //rbar_arr[numlines_in_file-1];
-    REAL rho,P,M,expnu,exp4phi;
-    TOV_interpolate_1D(rrbar,Rbar,Rbar_idx,4,  numlines_in_file,r_Schw_arr,rho_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,rbar_arr,  &rho,&P,&M,&expnu,&exp4phi);
-    printf("%e %e %e %e %e %e\n",rrbar,rho,P,M,expnu,exp4phi);
+    REAL rho,rho_baryon,P,M,expnu,exp4phi;
+    TOV_interpolate_1D(rrbar,Rbar,Rbar_idx,4,  numlines_in_file,r_Schw_arr,rho_arr,rho_baryon_arr,P_arr,M_arr,expnu_arr,exp4phi_arr,rbar_arr,  &rho,&rho_baryon,&P,&M,&expnu,&exp4phi);
+    printf("%e %e %e %e %e %e %e\n",rrbar,rho,rho_baryon,P,M,expnu,exp4phi);
   }
 
   // Free the malloc()'s!
   free(r_Schw_arr);
   free(rho_arr);
+  free(rho_baryon_arr);
   free(P_arr);
   free(M_arr);
   free(expnu_arr);
