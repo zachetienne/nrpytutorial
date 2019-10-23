@@ -214,6 +214,5 @@ def calculate_Stilde_flux(flux_dirn, inputs_provided=False, alpha_face=None, gam
     global Stilde_fluxD
     Stilde_fluxD = ixp.zerorank3()
 
-    # TODO: PASS alpha_face=None,gammadet_face=None,gamma_faceDD=None,gamma_faceUU=None,beta_faceU=None,Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None into HLLE solver
     for mom_comp in range(DIM):
         Stilde_fluxD[mom_comp] = HLLE_solver(flux_dirn,mom_comp,alpha_face, gammadet_face, gamma_faceDD, gamma_faceUU, beta_faceU, Valenciav_rU, B_rU, Valenciav_lU, B_lU)
