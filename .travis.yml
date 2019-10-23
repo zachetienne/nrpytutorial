@@ -9,14 +9,7 @@ matrix:
       python: pypy2.7-6.0
       install:
         - pip install mpmath testfixtures
-        # - git clone https://github.com/sympy/sympy
-        # - cd sympy
-        # - wget http://astro.phys.wvu.edu/zetienne/sympy_add_fix.diff
-        # - cat sympy_add_fix.diff | patch -p1
-        # - git commit -a -m "blah"
-        # - cd ..
-        # - pip install -U git+file://`pwd`/sympy/
-        - pip install -U git+https://github.com/zachetienne/sympy/
+        - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
     - name: "Ubuntu Linux Xenial pypy2.7-6.0"
