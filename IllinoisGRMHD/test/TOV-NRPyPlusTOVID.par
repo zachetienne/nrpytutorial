@@ -15,8 +15,12 @@ ActiveThorns = "ID_converter_ILGRMHD Convert_to_HydroBase Seed_Magnetic_Fields"
 # Seed_Magnetic_Fields::A_b = 0.644       |  8th digit, versus A_b=0.64428596382321
 # Seed_Magnetic_Fields::A_b = 0.6442859   | 12th digit, versus A_b=0.64428596382321
 # ID_converter_ILGRMHD::random_pert=1e-15 | 12th digit
+#Seed_Magnetic_Fields::enable_IllinoisGRMHD_staggered_A_fields = 1
+#Seed_Magnetic_Fields::A_b = 0.64428596382321 # Should yield 1/beta = b^2/(2P) ~ 0.001
+
 Seed_Magnetic_Fields::enable_IllinoisGRMHD_staggered_A_fields = 1
-Seed_Magnetic_Fields::A_b = 0.64428596382321 # Should yield 1/beta = b^2/(2P) ~ 0.001
+Seed_Magnetic_Fields::A_b = 0 # Zero magnetic field
+
 #ID_converter_ILGRMHD::random_pert = 1e-15
 
 Carpet::veryverbose = "yes"
@@ -43,20 +47,15 @@ CoordBase::boundary_size_z_upper = 3
 grid::avoid_origin = "no"
 CartGrid3D::type         = "coordbase"
 CoordBase::domainsize = "minmax"
-CoordBase::xmin = -12*0.27 + 1.0*0.27/16.0
-CoordBase::ymin = -12*0.27 + 1.0*0.27/16.0
-CoordBase::zmin = -12*0.27 + 1.0*0.27/16.0
-CoordBase::xmax =  12*0.27 + 1.0*0.27/16.0
-CoordBase::ymax =  12*0.27 + 1.0*0.27/16.0
-CoordBase::zmax =  12*0.27 + 1.0*0.27/16.0
-CoordBase::dx   =  1.0*0.27
-CoordBase::dy   =  1.0*0.27
-CoordBase::dz   =  1.0*0.27
-
-CarpetRegrid2::num_levels_1 = 4
-CarpetRegrid2::radius_1[1]  = 6.0*0.27
-CarpetRegrid2::radius_1[2]  = 3.0*0.27
-CarpetRegrid2::radius_1[3]  = 1.5*0.27
+CoordBase::xmin = -11.9375
+CoordBase::ymin = -11.9375
+CoordBase::zmin = -11.9375
+CoordBase::xmax =  12.0625
+CoordBase::ymax =  12.0625
+CoordBase::zmax =  12.0625
+CoordBase::dx   =   1.0
+CoordBase::dy   =   1.0
+CoordBase::dz   =   1.0
 
 TmunuBase::stress_energy_storage = yes
 TmunuBase::stress_energy_at_RHS  = yes
@@ -71,9 +70,9 @@ ADMBase::metric_type     = "physical"
 
 SpaceMask::use_mask      = "yes"
 
-cactus::cctk_itlast         = 2
-#Cactus::terminate           = "time"
-#Cactus::cctk_final_time     = 10
+#cactus::cctk_itlast         = 2
+Cactus::terminate           = "time"
+Cactus::cctk_final_time     = 10
 
 Carpet::domain_from_coordbase = "yes"
 Carpet::enable_all_storage       = no
@@ -95,6 +94,11 @@ Carpet::prolongation_order_time  = 2
 
 CarpetRegrid2::regrid_every = 0
 CarpetRegrid2::num_centres  = 1
+
+CarpetRegrid2::num_levels_1 = 4
+CarpetRegrid2::radius_1[1]  = 6.0
+CarpetRegrid2::radius_1[2]  = 3.0
+CarpetRegrid2::radius_1[3]  = 1.5
 
 time::dtfac = 0.5
 MoL::ODE_Method             = "rk4"
@@ -223,80 +227,62 @@ HydroBase::initial_hydro         = "NRPyPlusTOVID"
 #| *Warning*: it is highly recommended not to change this section manually |
 #.-------------------------------------------------------------------------.
 #
-#.---------------------------------------.
-#|     EOS Type: Piecewise Polytrope     |
-#.---------------------------------------.
-#|           EOS name: APR4              |
-#.---------------------------------------.
-#|  Reference: Table II and III in       | 
-#|    Read et al. PRD 79,124032 (2009)   |
-#|  https://arxiv.org/pdf/0812.2163.pdf  |
-#.---------------------------------------.
-#| Note that while we use the values in  |
-#| Read et al. (2009), we write them in  |
-#| geometrized units where G = 1 = c. We |
-#| also normalize the nuclear density to |
-#| unity.                                |
-#| You can read more about this in the   |
-#| following NRPy+ tutorial module:      |
-#| Tutorial-TOV-Piecewise_Polytrope_EOSs |
-#.---------------------------------------.
-#| Required parameters:                  |      
-#|  - EOS name                           |
-#|  - Gamma_thermal                      |
-#|                                       |
-#| IllinoisGRMHD parameters set:         |
-#|  - neos                               |
-#|  - K_ppoly_tab0                       |
-#|  - rho_ppoly_tab_in[j]   0<=j<=neos-2 |
-#|  - Gamma_ppoly_tab_in[j] 0<=j<=neos-1 |
-#|  - Gamma_th                           |
-#|  - tau_atm                            |
-#|  - rho_b_atm                          |
-#|                                       |
-#| NRPyPlusTOVID parameters set:         |
-#|  - rho_atmosphere                     |
-#|  - Gamma_atmosphere                   |
-#|  - K_atmosphere                       |
-#.---------------------------------------.
+#.-------------------------------.
+#|  EOS Type: Single Polytrope   |
+#.-------------------------------.
+#| Required parameters:          |      
+#|   - K_single_polytrope        |
+#|   - Gamma_single_polytrope    |
+#|   - tau_atmosphere            |
+#|   - rho_atmosphere            |
+#|                               |
+#| IllinoisGRMHD parameters set: |
+#|   - neos                      |
+#|   - K_ppoly_tab0              |
+#|   - rho_ppoly_tab_in[0]       |
+#|   - Gamma_ppoly_tab_in[0]     |
+#|   - Gamma_th                  |
+#|   - tau_atm                   |
+#|   - rho_b_atm                 |
+#|                               |
+#| NRPyPlusTOVID parameters set: |
+#|   - rho_atmosphere            |
+#|   - Gamma_atmosphere          |
+#|   - K_atmosphere              |
+#|-------------------------------|
+#| For single polytropes, we     |
+#| always assume:                |
+#| Gamma_th = Gamma_poly_tab     |
+#.-------------------------------.
 #
 # Set up initial data file name
-NRPyPlusTOVID::TOV_filename = "outputTOVpolytrope-APR4.txt"
+NRPyPlusTOVID::TOV_filename = "outputTOVpolytrope.txt"
 
-# Set up the number of polytropic EOSs.
-IllinoisGRMHD::neos = 7
+# Set the number of EOSs to 1 (single polytrope)
+IllinoisGRMHD::neos = 1
 
 # Set atmospheric value of tau
 IllinoisGRMHD::tau_atm = 4.876083025795607e-12
-
-# Set K_ppoly_tab0 and K_atmosphere
-IllinoisGRMHD::K_ppoly_tab0 = 3.947563825424740e+00
-NRPyPlusTOVID::K_atmosphere = 3.947563825424740e+00
 
 # Set atmospheric value of rho
 IllinoisGRMHD::rho_b_atm      = 1.292852735094440e-10
 NRPyPlusTOVID::rho_atmosphere = 1.292852735094440e-10
 
-# Set rho_ppoly_tab_in
-IllinoisGRMHD::rho_ppoly_tab_in[0] = 2.440340000000000e-08
-IllinoisGRMHD::rho_ppoly_tab_in[1] = 3.783580000000001e-04
-IllinoisGRMHD::rho_ppoly_tab_in[2] = 2.627800000000000e-03
-IllinoisGRMHD::rho_ppoly_tab_in[3] = 1.511985835268594e-01
-IllinoisGRMHD::rho_ppoly_tab_in[4] = 5.011872336272715e-01
-IllinoisGRMHD::rho_ppoly_tab_in[5] = 1.000000000000000e+00
+# Set K_ppoly_tab0 and K_atmosphere
+IllinoisGRMHD::K_ppoly_tab0 = 1.000000000000000e+00
+NRPyPlusTOVID::K_atmosphere = 1.000000000000000e+00
 
-# Set Gamma_atmosphere and Gamma_ppoly_tab_in
-NRPyPlusTOVID::Gamma_atmosphere      = 1.584250000000000e+00
-IllinoisGRMHD::Gamma_ppoly_tab_in[0] = 1.584250000000000e+00
-IllinoisGRMHD::Gamma_ppoly_tab_in[1] = 1.287330000000000e+00
-IllinoisGRMHD::Gamma_ppoly_tab_in[2] = 6.222299999999999e-01
-IllinoisGRMHD::Gamma_ppoly_tab_in[3] = 1.356920000000000e+00
-IllinoisGRMHD::Gamma_ppoly_tab_in[4] = 2.830000000000000e+00
-IllinoisGRMHD::Gamma_ppoly_tab_in[5] = 3.445000000000000e+00
-IllinoisGRMHD::Gamma_ppoly_tab_in[6] = 3.348000000000000e+00
+# Set Gamma_ppoly_tab_in[0]  and Gamma_atmosphere
+IllinoisGRMHD::Gamma_ppoly_tab_in[0] = 2.000000000000000e+00
+NRPyPlusTOVID::Gamma_atmosphere      = 2.000000000000000e+00
 
-# Set Gamma_th
-IllinoisGRMHD::Gamma_th = 1.800000000000000e+00
+# Set Gamma_thermal
+# (must be the same as Gamma_ppoly_tab for a single polytrope)
+IllinoisGRMHD::Gamma_th = 2.000000000000000e+00
+
+# Set rho_ppoly_tab_in[0] to zero
+# (for a single polytrope this value is not used)
+IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
 
 #.--------------------------------.
 #| End of NRPy+ generated section |
