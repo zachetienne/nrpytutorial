@@ -603,6 +603,9 @@ def generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename, \
 #| Gamma_th = Gamma_poly_tab     |
 #.-------------------------------.
 #
+# Set up initial data file name
+NRPyPlusTOVID::TOV_filename = "outputTOVpolytrope.txt"
+
 # Set the number of EOSs to 1 (single polytrope)
 IllinoisGRMHD::neos = 1
 
@@ -654,9 +657,10 @@ IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
             print("generate_IllinoisGRMHD_EOS_parameter_file(\"piecewise\",outfilename,Gamma_thermal=Gamma_th,EOS_struct=eos_named_tuple)")
             sys.exit(2)
             
-        atm_index = polytropic_index_from_rhob(EOS_struct,rho_atmosphere)
-        Gamma_atm = EOS_struct.Gamma_poly_tab[atm_index]
-        Kpoly_atm = EOS_struct.K_poly_tab[atm_index]
+        atm_index  = polytropic_index_from_rhob(EOS_struct,rho_atmosphere)
+        Gamma_atm  = EOS_struct.Gamma_poly_tab[atm_index]
+        Kpoly_atm  = EOS_struct.K_poly_tab[atm_index]
+        IDfilename = "outputTOVpolytrope-"+EOSname+".txt"
         
         with open(outfilename,"a") as file:
             file.write("""#
@@ -684,6 +688,9 @@ IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
 #|  - K_atmosphere                       |
 #.---------------------------------------.
 #
+# Set up initial data file name
+NRPyPlusTOVID::TOV_filename = \"%s\"
+
 # Set up the number of polytropic EOSs.
 IllinoisGRMHD::neos = %d
 
@@ -698,7 +705,7 @@ NRPyPlusTOVID::K_atmosphere = %.15e
 IllinoisGRMHD::rho_b_atm      = %.15e
 NRPyPlusTOVID::rho_atmosphere = %.15e
 
-# Set rho_ppoly_tab_in""" %(EOS_struct.neos,tau_atmosphere,EOS_struc.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
+# Set rho_ppoly_tab_in""" %(IDfilename,EOS_struct.neos,tau_atmosphere,EOS_struc.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
             for j in range(EOS_struct.neos-1):
                 file.write("""
 IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
@@ -731,10 +738,11 @@ IllinoisGRMHD::Gamma_th = %.15e
             print("generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename,Gamma_thermal=None)")
             sys.exit(1)
 
-        eos = set_up_EOS_parameters__Read_et_al_input_variables(EOSname)
-        atm_index = polytropic_index_from_rhob(eos,rho_atmosphere)
-        Gamma_atm = eos.Gamma_poly_tab[atm_index]
-        Kpoly_atm = eos.K_poly_tab[atm_index]
+        eos        = set_up_EOS_parameters__Read_et_al_input_variables(EOSname)
+        atm_index  = polytropic_index_from_rhob(eos,rho_atmosphere)
+        Gamma_atm  = eos.Gamma_poly_tab[atm_index]
+        Kpoly_atm  = eos.K_poly_tab[atm_index]
+        IDfilename = "outputTOVpolytrope-"+EOSname+".txt"
 
         # This is done for cosmetic purposes, so that parameter files
         # of different EOS names all look the same.
@@ -783,6 +791,9 @@ IllinoisGRMHD::Gamma_th = %.15e
 #|  - Gamma_atmosphere                   |
 #|  - K_atmosphere                       |
 #.---------------------------------------.
+#
+# Set up initial data file name
+NRPyPlusTOVID::TOV_filename = \"%s\"
 
 # Set up the number of polytropic EOSs.
 IllinoisGRMHD::neos = %d
@@ -798,7 +809,7 @@ NRPyPlusTOVID::K_atmosphere = %.15e
 IllinoisGRMHD::rho_b_atm      = %.15e
 NRPyPlusTOVID::rho_atmosphere = %.15e
 
-# Set rho_ppoly_tab_in""" %(eos.neos,tau_atmosphere,eos.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
+# Set rho_ppoly_tab_in""" %(IDfilename,eos.neos,tau_atmosphere,eos.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
             for j in range(eos.neos-1):
                 file.write("""
 IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,eos.rho_poly_tab[j]))
