@@ -547,12 +547,13 @@ def polytropic_index_from_P(eos, P_in):
 #                                   the other (not required for a single polytrope)
 # Output(s)    : parameter file to be used by IllinoisGRMHD
 
-def generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename,
-                                              Gamma_thermal=None,
-                                              EOS_struct=None,
-                                              tau_atmosphere=4.876083025795607e-12,
-                                              rho_atmosphere=1.292852735094440e-10,
-                                              K_single_polytrope=1.0,Gamma_single_polytrope=2.0):
+def generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename, \
+                                              Gamma_thermal=None,  \
+                                              EOS_struct=None, \
+                                              tau_atmosphere=4.876083025795607e-12, \
+                                              rho_atmosphere=1.292852735094440e-10, \
+                                              K_single_polytrope=1.0, \
+                                              Gamma_single_polytrope=2.0):
     
     with open(outfilename,"w") as file:
         file.write("""
@@ -580,7 +581,6 @@ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 #| Required parameters:          |      
 #|   - K_single_polytrope        |
 #|   - Gamma_single_polytrope    |
-#|   - Gamma_thermal             |
 #|   - tau_atmosphere            |
 #|   - rho_atmosphere            |
 #|                               |
@@ -590,8 +590,8 @@ vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 #|   - rho_ppoly_tab_in[0]       |
 #|   - Gamma_ppoly_tab_in[0]     |
 #|   - Gamma_th                  |
-#|   - tau_atmosphere            |
-#|   - rho_atmosphere            |
+#|   - tau_atm                   |
+#|   - rho_b_atm                 |
 #|                               |
 #| NRPyPlusTOVID parameters set: |
 #|   - rho_atmosphere            |
@@ -610,8 +610,8 @@ IllinoisGRMHD::neos = 1
 IllinoisGRMHD::tau_atm = %.15e
 
 # Set atmospheric value of rho
-IllinoisGRMHD::rho_b_atm      = %.15
-NRPyPlusTOVID::rho_atmosphere = %.15
+IllinoisGRMHD::rho_b_atm      = %.15e
+NRPyPlusTOVID::rho_atmosphere = %.15e
 
 # Set K_ppoly_tab0 and K_atmosphere
 IllinoisGRMHD::K_ppoly_tab0 = %.15e
@@ -628,22 +628,21 @@ IllinoisGRMHD::Gamma_th = %.15e
 # Set rho_ppoly_tab_in[0] to zero
 # (for a single polytrope this value is not used)
 IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
-#
+
 #.--------------------------------.
 #| End of NRPy+ generated section |
 #.--------------------------------.
 #
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-"""%(tau_atmosphere,          \ # sets IllinoisGRMHD::tau_atm
-     rho_atmosphere,          \ # sets IllinoisGRMHD::rho_b_atm 
-     rho_atmosphere,          \ # sets NRPyPlusTOVID::rho_atmosphere
-     K_single_polytrope,      \ # sets IllinoisGRMHD::K_ppoly_tab0
-     K_single_polytrope,      \ # sets NRPyPlusTOVID::K_atmosphere
-     Gamma_single_polytrope,  \ # sets IllinoisGRMHD::Gamma_ppoly_tab_in[0]
-     Gamma_single_polytrope,  \ # sets NRPyPlusTOVID::Gamma_atmosphere
-     Gamma_single_polytrope))   # sets IllinoisGRMHD::Gamma_th    
+"""%(tau_atmosphere,          # sets IllinoisGRMHD::tau_atm
+     rho_atmosphere,          # sets IllinoisGRMHD::rho_b_atm 
+     rho_atmosphere,          # sets NRPyPlusTOVID::rho_atmosphere
+     K_single_polytrope,      # sets IllinoisGRMHD::K_ppoly_tab0
+     K_single_polytrope,      # sets NRPyPlusTOVID::K_atmosphere
+     Gamma_single_polytrope,  # sets IllinoisGRMHD::Gamma_ppoly_tab_in[0]
+     Gamma_single_polytrope,  # sets NRPyPlusTOVID::Gamma_atmosphere
+     Gamma_single_polytrope)) # sets IllinoisGRMHD::Gamma_th
 
-            
     elif EOSname == "piecewise":
         if EOS_struct == None:
             print("Error: Please set the EOS named tuple. Usage:")
@@ -654,7 +653,11 @@ IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
             print("Error: Please set Gamma_thermal. Usage:")
             print("generate_IllinoisGRMHD_EOS_parameter_file(\"piecewise\",outfilename,Gamma_thermal=Gamma_th,EOS_struct=eos_named_tuple)")
             sys.exit(2)
-
+            
+        atm_index = polytropic_index_from_rhob(EOS_struct,rho_atmosphere)
+        Gamma_atm = EOS_struct.Gamma_poly_tab[atm_index]
+        Kpoly_atm = EOS_struct.K_poly_tab[atm_index]
+        
         with open(outfilename,"a") as file:
             file.write("""#
 #.---------------------------------------.
@@ -663,6 +666,8 @@ IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
 #| Required parameters:                  |      
 #|  - EOS_struct                         |
 #|  - Gamma_thermal                      |
+#|  - tau_atmosphere                     |
+#|  - rho_atmosphere                     |
 #|                                       |
 #| IllinoisGRMHD parameters set:         |
 #|  - neos                               |
@@ -670,21 +675,37 @@ IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
 #|  - rho_ppoly_tab_in[j]   0<=j<=neos-2 |
 #|  - Gamma_ppoly_tab_in[j] 0<=j<=neos-1 |
 #|  - Gamma_th                           |
+#|  - tau_atm                            |
+#|  - rho_b_atm                          |
+#.---------------------------------------.
+#| NRPyPlusTOVID parameters set:         |
+#|  - rho_atmosphere                     |
+#|  - Gamma_atmosphere                   |
+#|  - K_atmosphere                       |
 #.---------------------------------------.
 #
 # Set up the number of polytropic EOSs.
 IllinoisGRMHD::neos = %d
 
-# Set K_ppoly_tab0
-IllinoisGRMHD::K_ppoly_tab0 = %.15e
+# Set atmospheric value of tau
+IllinoisGRMHD::tau_atm = %.15e
 
-# Set rho_ppoly_tab_in""" %(EOS_struct.neos,EOS_struct.rho_poly_tab[0]))
+# Set K_ppoly_tab0 and K_atmosphere
+IllinoisGRMHD::K_ppoly_tab0 = %.15e
+NRPyPlusTOVID::K_atmosphere = %.15e
+
+# Set atmospheric value of rho
+IllinoisGRMHD::rho_b_atm      = %.15e
+NRPyPlusTOVID::rho_atmosphere = %.15e
+
+# Set rho_ppoly_tab_in""" %(EOS_struct.neos,tau_atmosphere,EOS_struc.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
             for j in range(EOS_struct.neos-1):
                 file.write("""
 IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
             file.write("""
 
-# Set Gamma_ppoly_tab_in""")
+# Set Gamma_atmosphere and Gamma_ppoly_tab_in
+NRPyPlusTOVID::Gamma_atmosphere      = %.15e""" %(Gamma_atm))
             for j in range(EOS_struct.neos):
                 file.write("""
 IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
@@ -692,7 +713,7 @@ IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j
 
 # Set Gamma_th
 IllinoisGRMHD::Gamma_th = %.15e
-#
+
 #.--------------------------------.
 #| End of NRPy+ generated section |
 #.--------------------------------.
@@ -711,6 +732,9 @@ IllinoisGRMHD::Gamma_th = %.15e
             sys.exit(1)
 
         eos = set_up_EOS_parameters__Read_et_al_input_variables(EOSname)
+        atm_index = polytropic_index_from_rhob(eos,rho_atmosphere)
+        Gamma_atm = eos.Gamma_poly_tab[atm_index]
+        Kpoly_atm = eos.K_poly_tab[atm_index]
 
         # This is done for cosmetic purposes, so that parameter files
         # of different EOS names all look the same.
@@ -751,21 +775,37 @@ IllinoisGRMHD::Gamma_th = %.15e
 #|  - rho_ppoly_tab_in[j]   0<=j<=neos-2 |
 #|  - Gamma_ppoly_tab_in[j] 0<=j<=neos-1 |
 #|  - Gamma_th                           |
+#|  - tau_atm                            |
+#|  - rho_b_atm                          |
+#|                                       |
+#| NRPyPlusTOVID parameters set:         |
+#|  - rho_atmosphere                     |
+#|  - Gamma_atmosphere                   |
+#|  - K_atmosphere                       |
 #.---------------------------------------.
-#
+
 # Set up the number of polytropic EOSs.
-IllinoisGRMHD::neos = 7
+IllinoisGRMHD::neos = %d
 
-# Set K_ppoly_tab0
+# Set atmospheric value of tau
+IllinoisGRMHD::tau_atm = %.15e
+
+# Set K_ppoly_tab0 and K_atmosphere
 IllinoisGRMHD::K_ppoly_tab0 = %.15e
+NRPyPlusTOVID::K_atmosphere = %.15e
 
-# Set rho_ppoly_tab_in""" %(eos.rho_poly_tab[0]))
+# Set atmospheric value of rho
+IllinoisGRMHD::rho_b_atm      = %.15e
+NRPyPlusTOVID::rho_atmosphere = %.15e
+
+# Set rho_ppoly_tab_in""" %(eos.neos,tau_atmosphere,eos.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
             for j in range(eos.neos-1):
                 file.write("""
 IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,eos.rho_poly_tab[j]))
             file.write("""
 
-# Set Gamma_ppoly_tab_in""")
+# Set Gamma_atmosphere and Gamma_ppoly_tab_in
+NRPyPlusTOVID::Gamma_atmosphere      = %.15e""" %(Gamma_atm))
             for j in range(eos.neos):
                 file.write("""
 IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,eos.Gamma_poly_tab[j]))
@@ -773,7 +813,7 @@ IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,eos.Gamma_poly_tab[j]))
 
 # Set Gamma_th
 IllinoisGRMHD::Gamma_th = %.15e
-#
+
 #.--------------------------------.
 #| End of NRPy+ generated section |
 #.--------------------------------.
