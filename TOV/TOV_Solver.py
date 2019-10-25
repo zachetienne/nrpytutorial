@@ -146,15 +146,16 @@ def TOV_Solver(eos,
 
         M      = mArr[-1]
         R_Schw = r_SchwArr[-1]
-        R_iso  = rbarArr[-1]
-
-        if no_output_File == True:
-            return M, R_Schw, R_iso
+        # Must multiply integration constant to get R_iso to ensure rbar(==R_iso) continuous across TOV surface
+        R_iso = rbarArr[-1]*0.5*(np.sqrt(R_Schw*(R_Schw - 2.0*M)) + R_Schw - M) / rbarArr[-1]
             
         # Apply integration constant to ensure rbar is continuous across TOV surface
         for ii in range(len(rbarArr)):
             rbarArr[ii] *= 0.5*(np.sqrt(R_Schw*(R_Schw - 2.0*M)) + R_Schw - M) / rbarArr[-1]
 
+        if no_output_File == True:
+            return M, R_Schw, R_iso
+    
         nuArr_np = np.array(nuArr)
         # Rescale solution to nu so that it satisfies BC: exp(nu(R))=exp(nutilde-nu(r=R)) * (1 - 2m(R)/R)
         #   Thus, nu(R) = (nutilde - nu(r=R)) + log(1 - 2*m(R)/R)
