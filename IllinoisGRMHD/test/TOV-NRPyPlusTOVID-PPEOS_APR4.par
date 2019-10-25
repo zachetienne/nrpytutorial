@@ -79,7 +79,7 @@ SpaceMask::use_mask      = "yes"
 
 #cactus::cctk_itlast         = 2
 Cactus::terminate           = "time"
-Cactus::cctk_final_time     = 5.6
+Cactus::cctk_final_time     = 6.26029815034659933561 # 10.0 for Gam2 (with M(Gam2) = 1.405031497682765e-01) -- t_f/M = 71.172781652; so with M(APR4) = 8.795916086122126e-02, t_f/M = 71.172781652 -> t_f = 6.26029815034659933561
 
 Carpet::domain_from_coordbase = "yes"
 Carpet::enable_all_storage       = no
