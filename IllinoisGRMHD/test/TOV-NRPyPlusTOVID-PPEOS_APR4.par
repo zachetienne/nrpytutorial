@@ -46,20 +46,23 @@ CoordBase::boundary_size_z_upper = 3
 grid::avoid_origin = "no"
 CartGrid3D::type         = "coordbase"
 CoordBase::domainsize = "minmax"
-CoordBase::xmin = -12*0.27 + 1.0*0.27/32.0
-CoordBase::ymin = -12*0.27 + 1.0*0.27/32.0
-CoordBase::zmin = -12*0.27 + 1.0*0.27/32.0
-CoordBase::xmax =  12*0.27 + 1.0*0.27/32.0
-CoordBase::ymax =  12*0.27 + 1.0*0.27/32.0
-CoordBase::zmax =  12*0.27 + 1.0*0.27/32.0
-CoordBase::dx   =  1.0*0.27*0.5
-CoordBase::dy   =  1.0*0.27*0.5
-CoordBase::dz   =  1.0*0.27*0.5
+# isotropic radius of Gam2 with rho_central = 2.0: 8.100079558158075e-01
+# isotropic radius of APR4 with rho_central = 2.0: 1.666816701580447e-01
+# -> R_iso(APR4) / R_iso(Gam2) = 0.205777818552621
+CoordBase::xmin = -12*0.205777818552621 + 1.0*0.205777818552621*0.5/16.0
+CoordBase::ymin = -12*0.205777818552621 + 1.0*0.205777818552621*0.5/16.0
+CoordBase::zmin = -12*0.205777818552621 + 1.0*0.205777818552621*0.5/16.0
+CoordBase::xmax =  12*0.205777818552621 + 1.0*0.205777818552621*0.5/16.0
+CoordBase::ymax =  12*0.205777818552621 + 1.0*0.205777818552621*0.5/16.0
+CoordBase::zmax =  12*0.205777818552621 + 1.0*0.205777818552621*0.5/16.0
+CoordBase::dx   =  1.0*0.205777818552621*0.5
+CoordBase::dy   =  1.0*0.205777818552621*0.5
+CoordBase::dz   =  1.0*0.205777818552621*0.5
 
 CarpetRegrid2::num_levels_1 = 4
-CarpetRegrid2::radius_1[1]  = 6.0*0.27
-CarpetRegrid2::radius_1[2]  = 3.0*0.27
-CarpetRegrid2::radius_1[3]  = 1.5*0.27
+CarpetRegrid2::radius_1[1]  = 6.0*0.205777818552621
+CarpetRegrid2::radius_1[2]  = 3.0*0.205777818552621
+CarpetRegrid2::radius_1[3]  = 1.5*0.205777818552621
 
 TmunuBase::stress_energy_storage = yes
 TmunuBase::stress_energy_at_RHS  = yes
@@ -277,8 +280,8 @@ IllinoisGRMHD::K_ppoly_tab0 = 3.947563825424740e+00
 NRPyPlusTOVID::K_atmosphere = 3.947563825424740e+00
 
 # Set atmospheric value of rho
-IllinoisGRMHD::rho_b_atm      = 1.292852735094440e-10
-NRPyPlusTOVID::rho_atmosphere = 1.292852735094440e-10
+IllinoisGRMHD::rho_b_atm      = 2e-9
+NRPyPlusTOVID::rho_atmosphere = 2e-9
 
 # Set rho_ppoly_tab_in
 IllinoisGRMHD::rho_ppoly_tab_in[0] = 2.440340000000000e-08
@@ -336,8 +339,8 @@ IOScalar::outScalar_vars     = "
 #  Carpet::physical_time_per_hour
 #"
 
-IOASCII::out1D_every        = -1
-IOASCII::one_file_per_group = yes
+IOASCII::out1D_every        = 16
+IOASCII::one_file_per_group = no
 IOASCII::output_symmetry_points = no
 IOASCII::out3D_ghosts           = no
 IOASCII::out3D_outer_ghosts     = no
