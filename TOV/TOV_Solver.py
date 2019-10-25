@@ -42,7 +42,7 @@ def TOV_Solver(eos,
                outfile = "outputTOVpolytrope.txt",
                rho_baryon_central = 0.129285,
                verbose = True,
-               return_M_and_RSchw = False,
+               return_M_RSchw_and_Riso = False,
                accuracy = "medium",
                integrator_type = "default",
                no_output_File = False):
@@ -144,11 +144,12 @@ def TOV_Solver(eos,
             nuArr.append(nu)
             rbarArr.append(rbar)
 
-        M = mArr[-1]
+        M      = mArr[-1]
         R_Schw = r_SchwArr[-1]
+        R_iso  = rbarArr[-1]
 
         if no_output_File == True:
-            return R_Schw, M
+            return M, R_Schw, R_iso
             
         # Apply integration constant to ensure rbar is continuous across TOV surface
         for ii in range(len(rbarArr)):
@@ -200,15 +201,19 @@ def TOV_Solver(eos,
             np.savetxt(outfile, list(zip(r_SchwArr_np,rhoArr_np,rho_baryonArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)), 
                        fmt="%.15e")
 
-        return R_Schw, M
+        return M, R_Schw, R_iso
     
     # Set initial condition from rho_baryon_central
     P_initial_condition = ppeos.Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon_central)
     
     # Integrate the initial condition
-    R_Schw_TOV, M_TOV = integrateStar(eos, P_initial_condition, True)
+    M_TOV, R_Schw_TOV, R_iso_TOV = integrateStar(eos, P_initial_condition, True)
     if verbose:
-        print("Just generated a TOV star with R_Schw = %.15e , M = %.15e , M/R_Schw = %.15e ." %(R_Schw_TOV,M_TOV,(M_TOV / R_Schw_TOV)))
+        print("""Just generated a TOV star with 
+* M        = %.15e ,
+* R_Schw   = %.15e , 
+* R_iso    = %.15e , 
+* M/R_Schw = %.15e \n""" %(M_TOV,R_Schw_TOV,R_iso_TOV,(M_TOV / R_Schw_TOV)))
         
-    if return_M_and_RSchw:
-        return M_TOV, R_Schw_TOV
+    if return_M_RSchw_and_Riso:
+        return M_TOV, R_Schw_TOV, R_iso_TOV
