@@ -77,9 +77,9 @@ ADMBase::metric_type     = "physical"
 
 SpaceMask::use_mask      = "yes"
 
-cactus::cctk_itlast         = 2
-#Cactus::terminate           = "time"
-#Cactus::cctk_final_time     = 5.6
+#cactus::cctk_itlast         = 2
+Cactus::terminate           = "time"
+Cactus::cctk_final_time     = 5.6
 
 Carpet::domain_from_coordbase = "yes"
 Carpet::enable_all_storage       = no

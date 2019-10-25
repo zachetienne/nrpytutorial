@@ -23,7 +23,7 @@ Seed_Magnetic_Fields::A_b = 0 # Zero magnetic field
 
 #ID_converter_ILGRMHD::random_pert = 1e-15
 
-Carpet::veryverbose = "yes"
+#Carpet::veryverbose = "yes"
 
 CarpetLib::support_staggered_operators = "yes"
 IllinoisGRMHD::conserv_to_prims_debug = 0
@@ -70,9 +70,9 @@ ADMBase::metric_type     = "physical"
 
 SpaceMask::use_mask      = "yes"
 
-cactus::cctk_itlast         = 2
-#Cactus::terminate           = "time"
-#Cactus::cctk_final_time     = 10
+#cactus::cctk_itlast         = 2
+Cactus::terminate           = "time"
+Cactus::cctk_final_time     = 10
 
 Carpet::domain_from_coordbase = "yes"
 Carpet::enable_all_storage       = no
@@ -319,8 +319,8 @@ IOScalar::outScalar_vars     = "
 #  Carpet::physical_time_per_hour
 #"
 
-IOASCII::out1D_every        = -1
-IOASCII::one_file_per_group = yes
+IOASCII::out1D_every        = 16
+IOASCII::one_file_per_group = no
 IOASCII::output_symmetry_points = no
 IOASCII::out3D_ghosts           = no
 IOASCII::out3D_outer_ghosts     = no
