@@ -77,21 +77,20 @@ def compute_S_tildeD(alpha, sqrtgammaDET, T4UD):
 
 # Step 4: Define the fluxes for the GRHD equations
 # Step 4.a: RHO_STAR FLUX
-def compute_rho_star_flux(vU, rho_star):
+def compute_rho_star_fluxU(vU, rho_star):
     global rho_star_fluxU
     rho_star_fluxU = ixp.zerorank1(DIM=3)
     for j in range(3):
         rho_star_fluxU[j] = rho_star*vU[j]
 
 # Step 4.b: TAUTILDE FLUX
-def compute_tau_tilde_flux(alpha, sqrtgammaDET, vU,T4UU):
+def compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU,T4UU):
     tau_tilde_fluxU = ixp.zerorank1(DIM=3)
     for j in range(3):
         tau_tilde_fluxU[j] = alpha**2*sqrtgammaDET*T4UU[0][j+1] - rho_star*vU[j]
 
 # Step 4.c: STILDE FLUX
-def compute_S_tilde_flux(gammaDD,betaU,alpha, sqrtgammaDET, T4UU):
-
+def compute_S_tilde_fluxUD(gammaDD,betaU,alpha, sqrtgammaDET, T4UU):
     Stilde_fluxUD = ixp.zerorank2(DIM=3)
     for j in range(3):
         for i in range(3):
