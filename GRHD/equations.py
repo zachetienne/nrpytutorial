@@ -37,7 +37,7 @@ def compute_T4UU(gammaDD,betaU,alpha, rho_b,P,epsilon,u4U):
 # Step 2.c: Define T^{mu}_{nu} (a 4-dimensional tensor)
 def compute_T4UD(gammaDD,betaU,alpha, T4UU):
     global T4UD
-    # Next compute T^mu_nu = T^{mu delta} g_{delta nu}, needed for Stilde flux.
+    # Next compute T^mu_nu = T^{mu delta} g_{delta nu}, needed for S_tilde flux.
     # First we'll need g_{alpha nu} in terms of ADM quantities:
     import BSSN.ADMBSSN_tofrom_4metric as AB4m
     AB4m.g4DD_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
@@ -77,25 +77,26 @@ def compute_S_tildeD(alpha, sqrtgammaDET, T4UD):
 
 # Step 4: Define the fluxes for the GRHD equations
 # Step 4.a: RHO_STAR FLUX
-def compute_rho_star_flux(vU, rho_star):
+def compute_rho_star_fluxU(vU, rho_star):
     global rho_star_fluxU
     rho_star_fluxU = ixp.zerorank1(DIM=3)
     for j in range(3):
         rho_star_fluxU[j] = rho_star*vU[j]
 
 # Step 4.b: TAUTILDE FLUX
-def compute_tau_tilde_flux(alpha, sqrtgammaDET, vU,T4UU):
+def compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU,T4UU):
+    global tau_tilde_fluxU
     tau_tilde_fluxU = ixp.zerorank1(DIM=3)
     for j in range(3):
         tau_tilde_fluxU[j] = alpha**2*sqrtgammaDET*T4UU[0][j+1] - rho_star*vU[j]
 
 # Step 4.c: STILDE FLUX
-def compute_S_tilde_flux(gammaDD,betaU,alpha, sqrtgammaDET, T4UU):
-
-    Stilde_fluxUD = ixp.zerorank2(DIM=3)
+def compute_S_tilde_fluxUD(gammaDD,betaU,alpha, sqrtgammaDET, T4UU):
+    global S_tilde_fluxUD
+    S_tilde_fluxUD = ixp.zerorank2(DIM=3)
     for j in range(3):
         for i in range(3):
-            Stilde_fluxUD[j][i] = alpha*sqrtgammaDET*T4UD[j+1][i+1]
+            S_tilde_fluxUD[j][i] = alpha*sqrtgammaDET*T4UD[j+1][i+1]
 
 # Step 5: Define source terms on RHSs of GRHD equations
 # Step 5.a: tau_tilde RHS source term s
@@ -147,14 +148,14 @@ def compute_g4DDdD(gammaDD,betaU,alpha, gammaDD_dD,betaU_dD,alpha_dD):
                 # Recall that g4DD[i][j] = gammaDD[i][j]
                 g4DDdD[i+1][j+1][k+1] = gammaDD_dD[i][j][k]
 
-# Step 5.c: Stilde source terms
-def compute_Stilde_source_termD(alpha, sqrtgammaDET,g4DDdD, T4UU):
-    global Stilde_source_termD
-    Stilde_source_termD = ixp.zerorank1(DIM=3)
+# Step 5.c: S_tilde source terms
+def compute_S_tilde_source_termD(alpha, sqrtgammaDET,g4DDdD, T4UU):
+    global S_tilde_source_termD
+    S_tilde_source_termD = ixp.zerorank1(DIM=3)
     for i in range(3):
         for mu in range(4):
             for nu in range(4):
-                Stilde_source_termD[i] += sp.Rational(1,2)*alpha*sqrtgammaDET*T4UU[mu][nu]*g4DDdD[mu][nu][i+1]
+                S_tilde_source_termD[i] += sp.Rational(1,2)*alpha*sqrtgammaDET*T4UU[mu][nu]*g4DDdD[mu][nu][i+1]
 
 # Step 6: Compute u^{mu} in terms of v^i; apply Lorentz factor speed limit
 def u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, vU):
@@ -169,4 +170,4 @@ def u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, vU):
     u4_ito_3velsU = ixp.zerorank1(DIM=4)
     u4_ito_3velsU[0] = GSf.rescaledu0
     for i in range(3):
-        u4_ito_3velsU[i] = GSf.rescaledu0 * (alpha * GSf.rescaledValenciavU[i] - betaU[i])
+        u4_ito_3velsU[i+1] = GSf.rescaledu0 * (alpha * GSf.rescaledValenciavU[i] - betaU[i])
