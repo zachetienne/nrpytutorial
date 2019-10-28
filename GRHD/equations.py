@@ -170,4 +170,4 @@ def u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, vU):
     u4_ito_3velsU = ixp.zerorank1(DIM=4)
     u4_ito_3velsU[0] = GSf.rescaledu0
     for i in range(3):
-        u4_ito_3velsU[i] = GSf.rescaledu0 * (alpha * GSf.rescaledValenciavU[i] - betaU[i])
+        u4_ito_3velsU[i+1] = GSf.rescaledu0 * (alpha * GSf.rescaledValenciavU[i] - betaU[i])
