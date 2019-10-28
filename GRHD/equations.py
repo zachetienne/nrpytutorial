@@ -161,7 +161,7 @@ def compute_S_tilde_source_termD(alpha, sqrtgammaDET,g4DDdD, T4UU):
 def u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, vU):
     global u4_ito_3velsU
 
-    import GiRaFFE_HO.S_tilde_flux as GSf
+    import GiRaFFE_HO.Stilde_flux as GSf
     ValenciavU = ixp.zerorank1()
     for i in range(3):
         ValenciavU[i] = (vU[i] + betaU[i]) / alpha
