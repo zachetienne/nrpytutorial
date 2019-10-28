@@ -173,3 +173,48 @@ def u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, vU):
     u4_ito_3velsU[0] = GSf.rescaledu0
     for i in range(3):
         u4_ito_3velsU[i+1] = GSf.rescaledu0 * (alpha * GSf.rescaledValenciavU[i] - betaU[i])
+
+def generate_everything_for_UnitTesting():
+    # First define hydrodynamical quantities
+    u4U = ixp.declarerank1("u4U", DIM=4)
+    rho_b, P, epsilon = sp.symbols('rho_b P epsilon', real=True)
+
+    # Then ADM quantities
+    gammaDD = ixp.declarerank2("gammaDD", "sym01", DIM=3)
+    KDD = ixp.declarerank2("KDD", "sym01", DIM=3)
+    betaU = ixp.declarerank1("betaU", DIM=3)
+    alpha = sp.symbols('alpha', real=True)
+
+    # First compute stress-energy tensor T4UU and T4UD:
+    compute_T4UU(gammaDD, betaU, alpha, rho_b, P, epsilon, u4U)
+    compute_T4UD(gammaDD, betaU, alpha, T4UU)
+
+    # Next sqrt(gamma)
+    compute_sqrtgammaDET(gammaDD)
+
+    # Compute conservative variables in terms of primitive variables
+    compute_rho_star(alpha, sqrtgammaDET, rho_b, u4U)
+    compute_tau_tilde(alpha, sqrtgammaDET, T4UU, rho_star)
+    compute_S_tildeD(alpha, sqrtgammaDET, T4UD)
+
+    # Then compute v^i from u^mu
+    compute_vU_from_u4U__no_speed_limit(u4U)
+
+    # Next compute fluxes of conservative variables
+    compute_rho_star_fluxU(vU, rho_star)
+    compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU, T4UU)
+    compute_S_tilde_fluxUD(gammaDD, betaU, alpha, sqrtgammaDET, T4UU)
+
+    # Then declare derivatives & compute g4DDdD
+    gammaDD_dD = ixp.declarerank3("gammaDD_dD", "sym01", DIM=3)
+    betaU_dD = ixp.declarerank2("betaU_dD", "nosym", DIM=3)
+    alpha_dD = ixp.declarerank1("alpha_dD", DIM=3)
+    compute_g4DDdD(gammaDD, betaU, alpha, gammaDD_dD, betaU_dD, alpha_dD)
+
+    # Then compute source terms on tau_tilde and S_tilde equations
+    compute_s_source_term(KDD, betaU, alpha, sqrtgammaDET, alpha_dD, T4UU)
+    compute_S_tilde_source_termD(alpha, sqrtgammaDET, g4DDdD, T4UU)
+
+    # Finally compute the 4-velocities in terms of an input 3-velocity testvU
+    testvU = ixp.declarerank1("testvU", DIM=3)
+    u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, testvU)
