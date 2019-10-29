@@ -21,6 +21,11 @@ def compute_u0_noif(gammaDD,alpha,ValenciavU):
     
     # R = gamma_{ij} v^i v^j
     R = par.Cparameters("#define",thismodule,"TINYDOUBLE",1e-100)
+    # We initialize R to TINYDOUBLE instead of 0 to avoid a 0/0 below,
+    #    in the case that ValenciavU == 0 for all Valencia 3-velocities.
+    # "Those tiny *doubles* make me warm all over
+    #  with a feeling that I'm gonna love you till the end of time."
+    #    - Adapted from Connie Francis' "Tiny Bubbles"
     for i in range(DIM):
         for j in range(DIM):
             R += gammaDD[i][j]*ValenciavU[i]*ValenciavU[j]
@@ -35,9 +40,6 @@ def compute_u0_noif(gammaDD,alpha,ValenciavU):
     # If Rmax>R, then Rmax = 0.5*(Rmax+R-Rmax+R) = R
     # If R>Rmax, then Rmax = 0.5*(Rmax+R+Rmax-R) = Rmax
     # If R==TINYDOUBLE, then Rmax = 0.5*(Rmax-Rmax) = 0, since, e.g., 10 +/- 1e-100 = 10 exactly in double precision
-    # "Those tiny *doubles* make me warm all over
-    #  with a feeling that I'm gonna love you till the end of time."
-    #    - Adapted from Connie Francis' "Tiny Bubbles"
     Rmax =  sp.Rational(1,2)*(Rmax+R-sp.Abs(Rmax-R))
 
     # With our rescaled Rmax, v^i = sqrt{Rmax/R} v^i
