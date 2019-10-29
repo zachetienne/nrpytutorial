@@ -20,7 +20,7 @@ def compute_u0_noif(gammaDD,alpha,ValenciavU):
     # Outputs: u^0, speed-limited ValenciavU
     
     # R = gamma_{ij} v^i v^j
-    R = sp.sympify(0)
+    R = par.Cparameters("#define",thismodule,"TINYDOUBLE",1e-100)
     for i in range(DIM):
         for j in range(DIM):
             R += gammaDD[i][j]*ValenciavU[i]*ValenciavU[j]
@@ -34,6 +34,10 @@ def compute_u0_noif(gammaDD,alpha,ValenciavU):
     # Now, we set Rmax = min(Rmax,R):
     # If Rmax>R, then Rmax = 0.5*(Rmax+R-Rmax+R) = R
     # If R>Rmax, then Rmax = 0.5*(Rmax+R+Rmax-R) = Rmax
+    # If R==TINYDOUBLE, then Rmax = 0.5*(Rmax-Rmax) = 0, since, e.g., 10 +/- 1e-100 = 10 exactly in double precision
+    # "Those tiny *doubles* make me warm all over
+    #  with a feeling that I'm gonna love you till the end of time."
+    #    - Adapted from Connie Francis' "Tiny Bubbles"
     Rmax =  sp.Rational(1,2)*(Rmax+R-sp.Abs(Rmax-R))
 
     # With our rescaled Rmax, v^i = sqrt{Rmax/R} v^i
@@ -41,6 +45,9 @@ def compute_u0_noif(gammaDD,alpha,ValenciavU):
 
     rescaledValenciavU = ixp.zerorank1()
     for i in range(DIM):
+        # If R == TINYDOUBLE, then Rmax=0,R=1e-100, and we get Rmax/R=0.
+        #   If your velocities are of order 1e-100 and this is physically
+        #   meaningful, there must be something wrong with your unit conversion.
         rescaledValenciavU[i] = ValenciavU[i]*sp.sqrt(Rmax/R)
 
     # We stick with the "rescaled" version since we redefine Rmax as detailed above
