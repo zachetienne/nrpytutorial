@@ -67,7 +67,7 @@ def g4DD_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None):
             g4DD[mu][nu] = gammaDD[mu - 1][nu - 1]
 
 # g^{mu nu} in terms of BSSN (if inputvars=="BSSN") or ADM (if inputvars=="ADM") variables.
-def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None):
+def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None, gammaUU=None):
     # Step 0: Declare g4UU as globals, to make interfacing with other modules/functions easier
     global g4UU
 
@@ -81,7 +81,8 @@ def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None):
 
     # Step 3: Construct g4UU = g^{mu nu}
     # Step 3.a: Compute gammaUU based on provided gammaDD:
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    if gammaUU==None:
+        gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
 
     # Then evaluate g4UU:
     g4UU = ixp.zerorank2(DIM=4)
