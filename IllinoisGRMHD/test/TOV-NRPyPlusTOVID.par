@@ -11,6 +11,10 @@ ActiveThorns = "CarpetIOASCII CarpetIOScalar CarpetIOHDF5 CarpetIOBasic"
 ActiveThorns = "IllinoisGRMHD"
 ActiveThorns = "ID_converter_ILGRMHD Convert_to_HydroBase Seed_Magnetic_Fields"
 
+ActiveThorns = "NRPyPlusTOVID"
+NRPyPlusTOVID::Pressure_depletion_factor = 0.0 # 0 = Disable pressure depletion; 0.01 -> 1% pressure depletion. Used to collapse NSs.
+
+
 # Perturbation size                       | Expected difference after 80 iterations
 # Seed_Magnetic_Fields::A_b = 0.644       |  8th digit, versus A_b=0.64428596382321
 # Seed_Magnetic_Fields::A_b = 0.6442859   | 12th digit, versus A_b=0.64428596382321
@@ -199,8 +203,6 @@ Dissipation::vars = "
 
 # init parameters
 InitBase::initial_data_setup_method = "init_some_levels"
-
-ActiveThorns = "NRPyPlusTOVID"
 
 ADMBase::initial_data            = "NRPyPlusTOVID"
 
