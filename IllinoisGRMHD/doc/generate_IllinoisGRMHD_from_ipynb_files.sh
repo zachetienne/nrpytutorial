@@ -3,6 +3,11 @@
 NUM_JOBS=4
 
 count=0
+mkdir ../src
+mkdir ../Convert_to_HydroBase
+mkdir ../Convert_to_HydroBase/src
+mkdir ../ID_converter_ILGRMHD
+mkdir ../ID_converter_ILGRMHD/src
 for i in *.ipynb; do
     echo Executing $i ...
     jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $i &
