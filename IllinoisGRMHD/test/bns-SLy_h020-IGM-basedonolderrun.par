@@ -1,5 +1,6 @@
 ## This Einstein Toolkit parameter file was constructed
-## by Zachariah Etienne, with the help of Bruno Giacomazzo.
+## by Zachariah Etienne, with the help of Leonardo Werneck
+#  and Bruno Giacomazzo.
 
 ActiveThorns = "ADMBase ADMCoupling ADMMacros AEILocalInterp AHFinderDirect Boundary Carpet CarpetInterp CarpetIOASCII CarpetIOBasic CarpetIOHDF5 CarpetIOScalar CarpetLib CarpetReduce CarpetRegrid2 CarpetSlab CartGrid3D CoordBase CoordGauge CycleClock EOS_Base EOS_Omni Fortran GenericFD GSL HDF5 HydroBase InitBase IOUtil LocalInterp LocalReduce LoopControl MoL MPI NaNChecker Slab SpaceMask SphericalSurface StaticConformal SymBase SystemStatistics TerminationTrigger Time Timers TmunuBase Vectors zlib Meudon_Bin_NS IllinoisGRMHD ID_converter_ILGRMHD Lorene SummationByParts VolumeIntegrals_GRMHD smallbPoynET convert_to_HydroBase Seed_Magnetic_Fields_BNS particle_tracerET multipole weylscal4 VolumeIntegrals_vacuBK QuasiLocalMeasures Outflow"
 
