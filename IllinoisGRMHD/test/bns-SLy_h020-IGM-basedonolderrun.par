@@ -1,0 +1,836 @@
+ActiveThorns = "ADMBase ADMCoupling ADMMacros AEILocalInterp AHFinderDirect Boundary Carpet CarpetInterp CarpetIOASCII CarpetIOBasic CarpetIOHDF5 CarpetIOScalar CarpetLib CarpetReduce CarpetRegrid2 CarpetSlab CartGrid3D CoordBase CoordGauge CycleClock EOS_Base EOS_Omni Fortran GenericFD GSL HDF5 HydroBase InitBase IOUtil LocalInterp LocalReduce LoopControl MoL MPI NaNChecker Slab SpaceMask SphericalSurface StaticConformal SymBase SystemStatistics TerminationTrigger Time Timers TmunuBase Vectors zlib Meudon_Bin_NS IllinoisGRMHD ID_converter_ILGRMHD Lorene SummationByParts VolumeIntegrals_GRMHD smallbPoynET convert_to_HydroBase Seed_Magnetic_Fields_BNS particle_tracerET multipole weylscal4 VolumeIntegrals_vacuBK QuasiLocalMeasures"
+
+# ActiveThorns = "interp_arbgrid_MO_ETK"
+# interp_arbgrid_MO_ETK::interp_out_iteration = 444416
+# # x,y,z coordinates of BH at 444416: -0.380324 0.663700 1.067264
+# interp_arbgrid_MO_ETK::x_center = -0.380324
+# interp_arbgrid_MO_ETK::y_center =  0.663700
+# interp_arbgrid_MO_ETK::z_center =  1.067264
+# interp_arbgrid_MO_ETK::beta_offsetU0 = -0.00036819 ## a               = -0.00036819      +/- 3.088e-07    (0.08387%)
+# interp_arbgrid_MO_ETK::beta_offsetU1 = 0.00034224  ## a               = 0.00034224       +/- 2.395e-07    (0.06998%) 
+# interp_arbgrid_MO_ETK::beta_offsetU2 = 0.000989779 ## a               = 0.000989779      +/- 1.657e-06    (0.1674%)
+
+
+ActiveThorns = "BaikalETK NewRad"
+# Parameters of thorn ADMBase (implementing ADMBase)
+ADMBase::evolution_method         = "BaikalETK"
+ADMBase::lapse_evolution_method   = "BaikalETK"
+ADMBase::shift_evolution_method   = "BaikalETK"
+ADMBase::dtlapse_evolution_method = "BaikalETK"
+ADMBase::dtshift_evolution_method = "BaikalETK"
+
+# Parameters of thorn ADMBase (implementing ADMBase)
+ADMBase::initial_data             = "Meudon_Bin_NS"
+ADMBase::initial_dtlapse          = "zero" #"Meudon_Bin_NS"
+ADMBase::initial_dtshift          = "zero" #"Meudon_Bin_NS"
+ADMBase::initial_lapse            = "Meudon_Bin_NS"
+ADMBase::initial_shift            = "zero" #"Meudon_Bin_NS"
+
+ADMBase::metric_type              = "physical"
+
+
+# Needed for PunctureTracker:
+ADMBase::metric_timelevels = 3
+ADMBase::lapse_timelevels  = 3
+ADMBase::shift_timelevels  = 3
+
+BaikalETK::diss_strength = 0.2
+BaikalETK::eta           = 0.3333333333333333333333333333 # M_ADM = 3.0 -> eta = 1/3 = 1.0/M
+
+
+#ActiveThorns = "interp_sph_grids_ETK"
+
+#interp_sph_grids_ETK::interp_out_iteration = 200000
+
+convert_to_HydroBase::convert_to_HydroBase_every = 16 # needed for particle tracer
+
+smallbPoynET::smallbPoynET_compute_every = 256
+
+# A_b = 1e1 -> b^2/(2 P) = 0.00273
+# If 1% -> 1e17G, then 0.01% = 1e-4 -> 1e15G .
+# Then A_b = 1e1 -> b^2/(2 P) = 0.00273 -> A_b=2 -> 1e15G
+ #### 2
+
+Seed_Magnetic_Fields_BNS::enable_IllinoisGRMHD_staggered_A_fields = "yes"
+# Bruno used A_b = 2.2. So we need to use A_b = 2.2/sqrt(4*3.1415926535) = 0.62060854190253
+#Seed_Magnetic_Fields_BNS::A_b = 0.62060854190253
+# Bruno used A_b = 2.2. So we need to use A_b = 2.2*sqrt(4*3.1415926535) = 7.7987969439842706E00
+##Seed_Magnetic_Fields_BNS::A_b = 7.7987969439842706E00
+Seed_Magnetic_Fields_BNS::A_b = 0.00000000000000000000000000 # <- SET TO ZERO INITIAL MAGNETIC FIELDS.
+Seed_Magnetic_Fields_BNS::n_s = 2.0
+## Set to 4% initial max pressure, which is 0.000113824867150113*0.04 = .00000455299468600452
+Seed_Magnetic_Fields_BNS::P_cut = 0.00000455299468600452
+Seed_Magnetic_Fields_BNS::have_two_NSs_along_x_axis = "yes"
+
+particle_tracerET::num_particles=5000
+particle_tracerET::density_max=0.000959482674936154
+particle_tracerET::seed_particles_inside_sphere__radius=50
+particle_tracerET::update_RK4_freq = 16
+particle_tracerET::out_of_bounds_xyz = 800.0
+
+Meudon_Bin_NS::filename="resu.d"
+
+VolumeIntegrals_GRMHD::NumIntegrals = 6
+VolumeIntegrals_GRMHD::VolIntegral_out_every = 256 # to be consistent with frequency of Carpet regridding
+VolumeIntegrals_GRMHD::enable_file_output = 1
+VolumeIntegrals_GRMHD::outVolIntegral_dir = "volume_integration"
+VolumeIntegrals_GRMHD::verbose = 1
+# The AMR centre will only track the first referenced integration quantities that track said centre.
+#   Thus, centeroflapse output will not feed back into the AMR centre positions.
+VolumeIntegrals_GRMHD::Integration_quantity_keyword[1] = "one"
+VolumeIntegrals_GRMHD::Integration_quantity_keyword[2] = "centerofmass"
+VolumeIntegrals_GRMHD::Integration_quantity_keyword[3] = "one"
+VolumeIntegrals_GRMHD::Integration_quantity_keyword[4] = "centerofmass"
+VolumeIntegrals_GRMHD::Integration_quantity_keyword[5] = "one"
+VolumeIntegrals_GRMHD::Integration_quantity_keyword[6] = "restmass"
+
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [2] = -15.2
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [2] =  13.5
+VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[2] =  0
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [3] = -15.2
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [3] =  13.5
+VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[3] =  0
+
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [4] =  15.2
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [4] =  13.5
+VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[4] =  1
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [5] =  15.2
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [5] =  13.5
+VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[5] =  1
+
+######################
+VolumeIntegrals_vacuBK::NumIntegrals                          = 13
+VolumeIntegrals_vacuBK::VolIntegral_out_every                 = 256 # to be consistent with frequency of Carpet regridding
+VolumeIntegrals_vacuBK::enable_file_output                    = 1
+VolumeIntegrals_vacuBK::outVolIntegral_dir                    = "volume_integration"
+VolumeIntegrals_vacuBK::verbose                               = 1
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[1]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[2]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[3]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[4]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[5]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[6]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[7]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[8]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[9]       = "H_M_CnstraintsL2"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[10]       = "ADM_Mass"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[11]       = "ADM_Mass"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[12]       = "ADM_Mass"
+VolumeIntegrals_vacuBK::Integration_quantity_keyword[13]       = "ADM_Mass"
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[2] = 4.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[3] = 8.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[4] = 16.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[5] = 32.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[6] = 64.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[7] = 128.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[8] = 256.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[9] = 512.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[11] = 100.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[12] = 200.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[13] = 300.
+
+VolumeIntegrals_vacuBK::enable_time_reparameterization        = "no"
+VolumeIntegrals_vacuBK::VIv_time_reparam_t0                   = 10
+VolumeIntegrals_vacuBK::VIv_time_reparam_w                    = 5
+######################
+
+
+# ## EOS PARAMS: MAKE SURE THESE ARE CONSISTENT!
+# ID_converter_ILGRMHD::Gamma_Initial = 2.0
+# ID_converter_ILGRMHD::K_Initial     = 123.64110496340211
+
+# IllinoisGRMHD::neos=1
+# IllinoisGRMHD::gamma_th=2.0
+# IllinoisGRMHD::K_poly=123.64110496340211
+
+
+
+## OTHER PARAMS:
+IllinoisGRMHD::conserv_to_prims_debug = 0
+IllinoisGRMHD::Psi6threshold = 60.0
+IllinoisGRMHD::damp_lorenz = 0. #0.625 # 1.5/Delta t_max. Here, Delta t_max = 2.4 -> 0.625
+IllinoisGRMHD::tau_atm=1e-8 #4.876083025795607e-12
+IllinoisGRMHD::rho_b_atm = 1e-13 # changed to be consistent with Bruno's run
+IllinoisGRMHD::rho_b_max = 0.004
+#IllinoisGRMHD::rho_b_max = 0.0025
+#IllinoisGRMHD::rho_b_max = 0.005
+#IllinoisGRMHD::rho_b_max = 1e5
+#IllinoisGRMHD::tau_stildefix_enable = 0
+#IllinoisGRMHD::Matter_BC = 1
+#IllinoisGRMHD::EM_BC = 1
+IllinoisGRMHD::Symmetry = "none"
+
+IllinoisGRMHD::update_Tmunu = "yes"
+
+HydroBase::initial_Avec = "zero"
+HydroBase::initial_Aphi = "zero"
+
+carpet::veryverbose="no"
+
+# Parameters of thorn ADMMacros (implementing ADMMacros)
+ADMMacros::spatial_order = 4
+
+# Parameters of thorn AHFinderDirect (implementing AHFinderDirect)
+ahfinderdirect::find_after_individual_time[1] = 3000
+ahfinderdirect::find_after_individual_time[2] = 3000
+ahfinderdirect::find_every               = 32
+ahfinderdirect::geometry_interpolator_name = "Lagrange polynomial interpolation"
+ahfinderdirect::geometry_interpolator_pars = "order=4"
+ahfinderdirect::initial_guess__coord_sphere__radius[1] = 1
+ahfinderdirect::initial_guess__coord_sphere__radius[2] = 3
+ahfinderdirect::initial_guess__coord_sphere__x_center[1] = 0
+ahfinderdirect::initial_guess__coord_sphere__x_center[2] = 0
+ahfinderdirect::initial_guess__coord_sphere__y_center[1] = 0
+ahfinderdirect::initial_guess__coord_sphere__z_center[1] = 0
+ahfinderdirect::max_allowable_horizon_radius[1] = 15
+ahfinderdirect::max_allowable_horizon_radius[2] = 15
+ahfinderdirect::max_allowable_theta_growth_iterations = 10
+ahfinderdirect::max_allowable_theta_nonshrink_iterations = 10
+ahfinderdirect::max_newton_iterations__initial = 50
+ahfinderdirect::max_newton_iterations__subsequent = 50
+ahfinderdirect::move_origins             = yes
+ahfinderdirect::n_horizons               = 2
+ahfinderdirect::origin_x[1]              = 0
+ahfinderdirect::origin_x[2]              = 0
+ahfinderdirect::output_h_every           = 128
+ahfinderdirect::predict_origin_movement  = yes
+ahfinderdirect::reset_horizon_after_not_finding[1] = no
+ahfinderdirect::reset_horizon_after_not_finding[2] = no
+ahfinderdirect::reshape_while_moving     = yes
+ahfinderdirect::surface_interpolator_name = "Lagrange polynomial interpolation"
+ahfinderdirect::surface_interpolator_pars = "order=4"
+AHFinderDirect::verbose_level            = "algorithm details"
+ahfinderdirect::which_surface_to_store_info[1] = 0
+ahfinderdirect::which_surface_to_store_info[2] = 1
+
+# Parameters of thorn Boundary (implementing boundary)
+Boundary::radpower = 2
+
+
+Cactus::cctk_full_warnings = "yes"
+Cactus::cctk_run_title     = "X1_00_Whisky"
+#Cactus::max_runtime        = 4290  #  71.5 hours
+#Cactus::terminate          = "never" ##"runtime"
+#Cactus::cctk_final_time     = 3000.00
+Cactus::cctk_itlast = 10000000
+#Cactus::terminate           = "time"
+
+# Parameters of thorn Carpet (implementing Driver)
+Carpet::check_for_poison         = "no"
+Carpet::convergence_level        = 0
+Carpet::domain_from_coordbase    = "yes"
+Carpet::enable_all_storage       = "no"
+Carpet::ghost_size               = 3
+Carpet::init_fill_timelevels     = "yes"
+Carpet::init_3_timelevels        = "no"
+Carpet::max_refinement_levels    = 10
+Carpet::output_timers_every      = 512
+Carpet::poison_new_timelevels    = "yes"
+Carpet::prolongation_order_space = 5
+Carpet::prolongation_order_time  = 2
+###Carpet::schedule_barriers        = "yes"
+Carpet::storage_verbose          = "no"
+###Carpet::sync_barriers            = "yes"
+# Bruno doesn't use this, instead uses dtfac=0.35.
+Carpet::time_refinement_factors  = "[1,2,4,4,8,16,32,64,128,256]" # N_repeats = 1 (see dtfac below)
+Carpet::use_buffer_zones         = "yes"
+Carpet::verbose                  = "no"
+
+
+# Parameters of thorn CarpetInterp (implementing interp)
+CarpetInterp::check_tree_search = "no"
+CarpetInterp::tree_search       = "yes"
+
+# Parameters of thorn CarpetIOASCII (implementing IOASCII)
+CarpetIOASCII::one_file_per_group     = "no"
+CarpetIOASCII::out0D_every            = 256
+CarpetIOASCII::out0D_vars             = "
+  Carpet::physical_time_per_hour
+  outflow::outflow_flux[0]
+  outflow::outflow_flux[1]
+  outflow::outflow_flux[2]
+  outflow::outflow_flux[3]
+  outflow::outflow_flux[4]
+  outflow::outflow_flux[5]
+  outflow::outflow_flux[6]
+  QuasiLocalMeasures::qlm_scalars 
+  SphericalSurface::sf_active
+"
+CarpetIOASCII::out1D_d                = "no"
+CarpetIOASCII::out1D_every            = 1024
+CarpetIOASCII::out1D_vars             = "
+  IllinoisGRMHD::rho_b
+  IllinoisGRMHD::P
+  IllinoisGRMHD::vx
+  IllinoisGRMHD::vy
+  IllinoisGRMHD::vz
+  IllinoisGRMHD::Ax
+  IllinoisGRMHD::Ay
+  IllinoisGRMHD::Az
+  IllinoisGRMHD::Bx
+  IllinoisGRMHD::By
+  IllinoisGRMHD::Bz
+  smallbPoynET::smallb2
+  ADMBase::lapse
+  CarpetReduce::weight
+  BaikalETK::HGF
+  BaikalETK::MU0GF
+  BaikalETK::MU1GF
+  BaikalETK::MU2GF
+"
+
+CarpetIOASCII::out2D_every            = 1024
+CarpetIOASCII::out2D_vars             = "
+#  ADMBase::curv
+#  ADMBase::lapse
+#  ADMBase::metric
+#  ADMBase::shift
+  IllinoisGRMHD::rho_b
+  IllinoisGRMHD::P
+  IllinoisGRMHD::vx
+  IllinoisGRMHD::vy
+  IllinoisGRMHD::vz
+  IllinoisGRMHD::Bx
+  IllinoisGRMHD::By
+  IllinoisGRMHD::Bz
+  IllinoisGRMHD::failure_checker
+  weylscal4::psi4r
+#  HydroBase::eps
+#  HydroBase::rho
+#  HydroBase::vel
+#  HydroBase::w_lorentz
+#  SphericalSurface::sf_radius{out_every=24}
+  smallbPoynET::smallb2
+#  smallbPoynET::smallbx
+#  smallbPoynET::smallby
+#  smallbPoynET::smallbz
+  smallbPoynET::minus_one_minus_u_0
+"
+CarpetIOASCII::out3D_ghosts           = "no"
+CarpetIOASCII::output_symmetry_points = "no"
+
+# Parameters of thorn CarpetIOBasic (implementing IOBasic)
+CarpetIOBasic::outInfo_every      = 128
+CarpetIOBasic::outInfo_reductions = "maximum"
+CarpetIOBasic::outInfo_vars       = "
+  Carpet::physical_time_per_hour
+  Carpet::physical_time_per_hour
+  BaikalETK::trKGF
+  BaikalETK::cfGF
+  IllinoisGRMHD::rho_b
+  IllinoisGRMHD::failure_checker
+"
+
+# Parameters of thorn CarpetIOHDF5 (implementing IOHDF5)
+CarpetIOHDF5::checkpoint                    = "yes"
+CarpetIOHDF5::compression_level             = 0
+CarpetIOHDF5::one_file_per_group            = "yes"
+CarpetIOHDF5::open_one_input_file_at_a_time = "yes"
+CarpetIOHDF5::out2D_every                   = -1
+CarpetIOHDF5::out2D_vars                    = "
+  IllinoisGRMHD::grmhd_primitives_allbutBi
+  IllinoisGRMHD::grmhd_primitives_Bi
+  BaikalETK::HGF
+"
+CarpetIOHDF5::out_every                     = 4096
+CarpetIOHDF5::out_vars                      = "
+  IllinoisGRMHD::grmhd_primitives_allbutBi
+  IllinoisGRMHD::grmhd_primitives_Bi
+  IllinoisGRMHD::failure_checker
+  smallbPoynET::smallb2
+  smallbPoynET::minus_one_minus_u_0
+"
+
+# Parameters of thorn CarpetIOScalar (implementing IOScalar)
+CarpetIOScalar::one_file_per_group   = "no"
+CarpetIOScalar::outScalar_every      = 256
+CarpetIOScalar::outScalar_reductions = "minimum maximum average norm1 norm2"
+CarpetIOScalar::outScalar_vars       = "
+  IllinoisGRMHD::rho_b
+  IllinoisGRMHD::P
+  IllinoisGRMHD::vx
+  IllinoisGRMHD::vy
+  IllinoisGRMHD::vz
+  IllinoisGRMHD::Bx
+  IllinoisGRMHD::By
+  IllinoisGRMHD::Bz
+  smallbPoynET::smallb2
+  smallbPoynET::minus_one_minus_u_0
+  ADMBase::alp
+  BaikalETK::HGF
+  BaikalETK::MU0GF
+  BaikalETK::MU1GF
+  BaikalETK::MU2GF
+"
+
+# Parameters of thorn CarpetLib (implementing CarpetLib)
+###CarpetLib::max_allowed_memory_MB = 13500 # max memory per MPI process (4 MPI per node should be around (64-10)/4 = 13.5)
+CarpetLib::support_staggered_operators = "yes"
+
+## To avoid dreaded error "Message size 7031044800 bigger than supported by PSM2 API. Max = 4294967296"
+CarpetLib::combine_recompose = "no"
+
+CarpetLib::poison_new_memory    = "yes"
+#CarpetLib::poison_value         = 114
+CarpetLib::print_memstats_every = -1
+
+# Parameters of thorn CarpetMask (implementing CarpetMask)
+#CarpetMask::excluded_surface[0]        = 0
+#CarpetMask::excluded_surface[1]        = 1
+#CarpetMask::excluded_surface[2]        = 2
+#CarpetMask::excluded_surface_factor[0] = 1
+#CarpetMask::excluded_surface_factor[1] = 1
+#CarpetMask::excluded_surface_factor[2] = 1
+#CarpetMask::verbose                    = "no"
+
+# Parameters of thorn CarpetReduce (implementing reduce)
+CarpetReduce::verbose = "no"
+
+CarpetRegrid2::freeze_unaligned_levels = "yes"
+CarpetRegrid2::movement_threshold_1    = 0.10
+CarpetRegrid2::movement_threshold_2    = 0.10
+CarpetRegrid2::num_centres             = 7
+CarpetRegrid2::num_levels_1            = 8
+CarpetRegrid2::num_levels_2            = 8
+CarpetRegrid2::num_levels_3            = 8
+CarpetRegrid2::num_levels_4            = 8
+CarpetRegrid2::num_levels_5            = 8
+CarpetRegrid2::num_levels_6            = 8
+CarpetRegrid2::num_levels_7            = 8 # 9
+CarpetRegrid2::position_x_1            = -15.2
+CarpetRegrid2::position_x_2            =  15.2
+
+carpetregrid2::radius_1[1]               = 1920
+carpetregrid2::radius_1[2]               = 960
+carpetregrid2::radius_1[3]               = 168 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_1[4]               = 96
+carpetregrid2::radius_1[5]               = 48
+carpetregrid2::radius_1[6]               = 18
+carpetregrid2::radius_1[7]               = 12
+carpetregrid2::radius_1[8]               = 6
+carpetregrid2::radius_1[9]               = 3
+
+carpetregrid2::radius_2[1]               = 1920
+carpetregrid2::radius_2[2]               = 960
+carpetregrid2::radius_2[3]               = 168 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_2[4]               = 96
+carpetregrid2::radius_2[5]               = 48
+carpetregrid2::radius_2[6]               = 18
+carpetregrid2::radius_2[7]               = 12
+
+CarpetRegrid2::position_x_3            = 10.0
+CarpetRegrid2::position_y_3            = 10.0
+carpetregrid2::radius_3[1]               = 1920
+carpetregrid2::radius_3[2]               = 960
+carpetregrid2::radius_3[3]               = 168 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_3[4]               = 96
+carpetregrid2::radius_3[5]               = 48
+carpetregrid2::radius_3[6]               = 18
+carpetregrid2::radius_3[7]               = 12
+
+CarpetRegrid2::position_x_4            =-10.0
+CarpetRegrid2::position_y_4            = 10.0
+carpetregrid2::radius_4[1]               = 1920
+carpetregrid2::radius_4[2]               = 960
+carpetregrid2::radius_4[3]               = 168 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_4[4]               = 96
+carpetregrid2::radius_4[5]               = 48
+carpetregrid2::radius_4[6]               = 18
+carpetregrid2::radius_4[7]               = 12
+
+CarpetRegrid2::position_x_5            =-10.0
+CarpetRegrid2::position_y_5            =-10.0
+carpetregrid2::radius_5[1]               = 1920
+carpetregrid2::radius_5[2]               = 960
+carpetregrid2::radius_5[3]               = 168 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_5[4]               = 96
+carpetregrid2::radius_5[5]               = 48
+carpetregrid2::radius_5[6]               = 18
+carpetregrid2::radius_5[7]               = 12
+
+CarpetRegrid2::position_x_6            = 10.0
+CarpetRegrid2::position_y_6            =-10.0
+carpetregrid2::radius_6[1]               = 1920
+carpetregrid2::radius_6[2]               = 960
+carpetregrid2::radius_6[3]               = 168 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_6[4]               = 96
+carpetregrid2::radius_6[5]               = 48
+carpetregrid2::radius_6[6]               = 18
+carpetregrid2::radius_6[7]               = 12
+
+CarpetRegrid2::position_x_7            = 0.0
+CarpetRegrid2::position_y_7            = 0.0
+carpetregrid2::radius_7[1]               = 1920
+carpetregrid2::radius_7[2]               = 960
+carpetregrid2::radius_7[3]               = 168 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_7[4]               = 96
+carpetregrid2::radius_7[5]               = 48
+carpetregrid2::radius_7[6]               = 18
+carpetregrid2::radius_7[7]               = 12
+#############carpetregrid2::radius_7[8]               =  6.0
+
+
+CarpetRegrid2::regrid_every            = 256
+CarpetRegrid2::symmetry_rotating180    = "no"
+CarpetRegrid2::verbose                 = "no"
+
+# Parameters of thorn CarpetTracker (implementing CarpetTracker)
+#CarpetTracker::surface[0] = 0
+#CarpetTracker::surface[1] = 1
+#CarpetTracker::verbose    = "no"
+
+# Parameters of thorn CartGrid3D (implementing grid)
+CartGrid3D::type = "coordbase"
+
+CoordBase::boundary_size_x_lower     = 3
+CoordBase::boundary_size_x_upper     = 3
+CoordBase::boundary_size_y_lower     = 3
+CoordBase::boundary_size_y_upper     = 3
+CoordBase::boundary_size_z_lower     = 3
+CoordBase::boundary_size_z_upper     = 3
+CoordBase::domainsize                = "minmax"
+CoordBase::dx                        = 16.0 # 19.2
+CoordBase::dy                        = 16.0 # 19.2
+CoordBase::dz                        = 16.0 # 19.2
+CoordBase::spacing                   = "gridspacing"  # "gridspacing" or "numcells"
+CoordBase::xmax                      =  3840.
+CoordBase::xmin                      = -3840.
+CoordBase::ymax                      =  3840.
+CoordBase::ymin                      = -3840.
+CoordBase::zmax                      =  3840.
+CoordBase::zmin                      = -3840.
+
+
+# Parameters of thorn HydroBase (implementing HydroBase)
+#HydroBase::evolution_method  = "whisky"
+#HydroBase::prolongation_type = "ENO"
+HydroBase::timelevels        = 1
+
+# Parameters of thorn InitBase (implementing InitBase)
+InitBase::initial_data_setup_method = "init_all_levels"
+
+# Parameters of thorn IOUtil (implementing IO)
+IOUtil::checkpoint_dir          = ABEoutput_directory-$parfile
+#IOUtil::checkpoint_every_walltime_hours = 5.0 #11.7
+IOUtil::checkpoint_keep         = 1
+IOUtil::recover_and_remove      = "yes" ## should remove only after the next checkpoint is successfully written.
+IOUtil::checkpoint_on_terminate = "yes"
+IOUtil::out_dir                 = ABEoutput_directory-$parfile
+IOUtil::out_fileinfo            = "none"
+IOUtil::parfile_write           = "generate"
+IOUtil::recover                 = "autoprobe"
+IOUtil::recover_dir             = ABEoutput_directory-$parfile
+
+
+# Parameters of thorn MoL (implementing MethodOfLines)
+MoL::MoL_Intermediate_Steps                     = 4
+MoL::MoL_Num_Scratch_Levels                     = 1
+MoL::ODE_Method                                 = "RK4"
+MoL::run_MoL_PostStep_in_Post_Recover_Variables = "no"
+
+# Parameters of thorn NaNChecker (implementing NaNChecker)
+NaNChecker::action_if_found = "terminate"
+NaNChecker::check_every     = 64000
+NaNChecker::check_vars      = "
+  IllinoisGRMHD::grmhd_conservatives
+  ADMBase::curv 
+#  ADMBase::dtlapse # <- SHOULD NEVER BE SET IN STANDARD 1+LOG LAPSE.
+  ADMBase::dtshift
+  ADMBase::lapse 
+  ADMBase::metric 
+  ADMBase::shift 
+  BaikalETK::hDD00GF
+"
+NaNChecker::verbose         = "all"
+
+# Parameters of thorn OutsideMask (implementing OutsideMask)
+##OutsideMask::OutsideMask_Distance_GF = "yes"
+
+# Parameters of thorn PunctureTracker (implementing PunctureTracker)
+#PunctureTracker::initial_x[0]                   = -4.2383499999999996177
+#PunctureTracker::initial_x[1]                   = 4.2383499999999996177
+#PunctureTracker::track[0]                       = "yes"
+#PunctureTracker::track[1]                       = "yes"
+#PunctureTracker::verbose                        = "yes"
+#PunctureTracker::which_surface_to_store_info[0] = 0
+#PunctureTracker::which_surface_to_store_info[1] = 1
+
+#------------------sphericalsurface--------------------------------------------
+
+sphericalsurface::nsurfaces              = 7
+
+sphericalsurface::maxnphi                = 240
+sphericalsurface::maxntheta              = 140
+sphericalsurface::nghostsphi[0]          = 2
+sphericalsurface::nghostsphi[1]          = 2
+sphericalsurface::nghostsphi[2]          = 2
+sphericalsurface::nghostsphi[3]          = 2
+sphericalsurface::nghostsphi[4]          = 2
+sphericalsurface::nghostsphi[5]          = 2
+sphericalsurface::nghostsphi[6]          = 2
+
+
+sphericalsurface::nghoststheta[0]        = 2
+sphericalsurface::nghoststheta[1]        = 2
+sphericalsurface::nghoststheta[2]        = 2
+sphericalsurface::nghoststheta[3]        = 2
+sphericalsurface::nghoststheta[4]        = 2
+sphericalsurface::nghoststheta[5]        = 2
+sphericalsurface::nghoststheta[6]        = 2
+
+
+sphericalsurface::nphi[0]                = 96
+sphericalsurface::nphi[1]                = 96
+sphericalsurface::nphi[2]                = 96
+sphericalsurface::nphi[3]                = 96
+sphericalsurface::nphi[4]                = 96
+sphericalsurface::nphi[5]                = 96
+sphericalsurface::nphi[6]                = 96
+
+sphericalsurface::ntheta[0]              = 55
+sphericalsurface::ntheta[1]              = 55
+sphericalsurface::ntheta[2]              = 55
+sphericalsurface::ntheta[3]              = 55
+sphericalsurface::ntheta[4]              = 55
+sphericalsurface::ntheta[5]              = 55
+sphericalsurface::ntheta[6]              = 55
+
+sphericalsurface::radius[2]              = 800
+sphericalsurface::radius[3]              =  15
+sphericalsurface::radius[4]              =  50
+sphericalsurface::radius[5]              = 100
+sphericalsurface::radius[6]              = 200
+sphericalsurface::radius[7]              = 300
+sphericalsurface::radius[8]              = 400
+
+sphericalsurface::set_spherical[2]       = yes
+sphericalsurface::set_spherical[3]       = yes
+sphericalsurface::set_spherical[4]       = yes
+sphericalsurface::set_spherical[5]       = yes
+sphericalsurface::set_spherical[6]       = yes
+
+sphericalsurface::symmetric_z[0]         = no
+sphericalsurface::symmetric_z[1]         = no
+sphericalsurface::symmetric_z[2]         = no
+sphericalsurface::symmetric_z[3]         = no
+sphericalsurface::symmetric_z[4]         = no
+sphericalsurface::symmetric_z[5]         = no
+sphericalsurface::symmetric_z[6]         = no
+
+
+#------------------quasilocalmeasures------------------------------------------
+
+# Parameters of thorn QuasiLocalMeasures
+QuasiLocalMeasures::interpolator         = "Lagrange polynomial interpolation"
+QuasiLocalMeasures::interpolator_options = "order=4"
+QuasiLocalMeasures::spatial_order        = 4
+QuasiLocalMeasures::num_surfaces     = 4
+QuasiLocalMeasures::surface_index[0] = 0
+QuasiLocalMeasures::surface_index[1] = 1
+QuasiLocalMeasures::surface_index[2] = 2
+QuasiLocalMeasures::surface_index[3] = 8
+
+
+# Parameters of thorn ReflectionSymmetry (implementing ReflectionSymmetry)
+#ReflectionSymmetry::avoid_origin_x = "no"
+#ReflectionSymmetry::avoid_origin_y = "no"
+#ReflectionSymmetry::avoid_origin_z = "no"
+#ReflectionSymmetry::reflection_x   = "no"
+#ReflectionSymmetry::reflection_y   = "no"
+#ReflectionSymmetry::reflection_z   = "yes"
+
+# Parameters of thorn SpaceMask (implementing SpaceMask)
+SpaceMask::use_mask = "yes"
+
+# Parameters of thorn TerminationTrigger (implementing TerminationTrigger)
+TerminationTrigger::create_termination_file = "yes"
+TerminationTrigger::max_walltime            = 23.5 # IN HOURS
+TerminationTrigger::on_remaining_walltime   = 30  # IN MINUTES
+TerminationTrigger::termination_file        = "TERMINATE"
+TerminationTrigger::termination_from_file   = "yes"
+
+# Parameters of thorn Time (implementing time)
+Time::dtfac = 0.175 # == 0.35 (Courant factor) * (1/2)^N_repeats (from time_refinement_factors above)
+
+# Parameters of thorn TmunuBase (implementing TmunuBase)
+TmunuBase::prolongation_type     = "none"
+TmunuBase::stress_energy_at_RHS  = "yes"
+TmunuBase::stress_energy_storage = "yes"
+TmunuBase::timelevels            = 1
+
+#------------------multipole---------------------------------------------------
+multipole::l_max                         = 4
+multipole::nphi                          = 240
+multipole::nradii                        = 6
+multipole::ntheta                        = 120
+multipole::out_every                     = 64
+multipole::output_ascii                  = yes
+multipole::output_hdf5                   = yes
+multipole::radius[0]                     = 50
+multipole::radius[1]                     = 100
+multipole::radius[2]                     = 200.
+multipole::radius[3]                     = 300.
+multipole::radius[4]                     = 500.
+multipole::radius[5]                     = 850.
+multipole::variables                     = "WeylScal4::Psi4r{sw=-2 cmplx='WeylScal4::Psi4i' name='psi4'} 
+#  BNSAnalysis::rflux_unbnd
+#  whisky::poynting_scalar
+"
+
+#------------------weylscal4---------------------------------------------------
+weylscal4::fd_order                      = "4th"
+weylscal4::calc_scalars                  = "psis"
+weylscal4::calc_invariants               = "always"
+
+################################
+#############################################################
+# Outflows
+#############################################################
+Outflow::compute_every        = 64
+Outflow::num_detectors        = 7
+#Outflow::surface_index[0]     = 0
+#Outflow::surface_index[1]     = 1
+Outflow::surface_index[0]     = 2
+Outflow::surface_index[1]     = 3
+Outflow::surface_index[2]     = 4
+Outflow::surface_index[3]     = 5
+Outflow::surface_index[4]     = 6
+Outflow::surface_index[5]     = 7
+Outflow::surface_index[6]     = 8
+#Outflow::extra_variables      = "grid::x grid::y"
+Outflow::interpolator_name    = "Lagrange polynomial interpolation"
+Outflow::interpolator_pars    = "order=4"
+#Outflow::output_2d_data       = "yes"
+#Outflow::out_format           = ".7e"
+Outflow::verbose              = 0
+
+
+
+#################################
+##### TRIGGER ***********
+
+# IDEA FROM https://www.einsteintoolkit.org/gallery/bns/nsnstohmns.par
+
+ActiveThorns = "Trigger"
+Trigger::Trigger_Number = 1
+
+Trigger::Trigger_Checked_Variable[0]="ADMBase::alp"
+Trigger::Trigger_Reduction       [0]="minimum"
+Trigger::Trigger_Relation        [0]="<"
+Trigger::Trigger_Checked_Value   [0]=0.1
+Trigger::Trigger_Reaction        [0]="steerscalar"
+Trigger::Trigger_Steered_Scalar      [0] = "CarpetRegrid2::num_levels[0]" # == num_levels_1
+Trigger::Trigger_Steered_Scalar_Value[0] = "10"
+
+#################################
+
+
+# Parameters of thorn EOS_Omni (implementing hybrid EOS, used in setting up Meudon_Bin_NS ID)
+EOS_Omni::hybrid_gamma_th = 1.75
+EOS_Omni::n_pieces = 7
+EOS_Omni::hybrid_gamma[0] = 1.584250000000000e+00
+EOS_Omni::hybrid_gamma[1] = 1.287330000000000e+00
+EOS_Omni::hybrid_gamma[2] = 6.222299999999999e-01
+EOS_Omni::hybrid_gamma[3] = 1.356920000000000e+00
+EOS_Omni::hybrid_gamma[4] = 3.005000000000000e+00
+EOS_Omni::hybrid_gamma[5] = 2.988000000000000e+00
+EOS_Omni::hybrid_gamma[6] = 2.851000000000000e+00
+
+EOS_Omni::hybrid_k0 = 3.947563825424741e+00
+
+EOS_Omni::hybrid_rho[0] = 2.440340000000000e-08
+EOS_Omni::hybrid_rho[1] = 3.783580000000000e-04
+EOS_Omni::hybrid_rho[2] = 2.627800000000000e-03
+EOS_Omni::hybrid_rho[3] = 1.462289452376913e-01
+EOS_Omni::hybrid_rho[4] = 5.011872336272715e-01
+EOS_Omni::hybrid_rho[5] = 1.000000000000000e+00
+
+# Set Gamma_th to 1.75 FOR CONSISTENCY WITH WHISKY
+IllinoisGRMHD::Gamma_th = 1.75
+
+
+#vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+#
+#.-------------------------------------------------------------------------.
+#| IllinoisGRMHD Equation of State (EOS) parameter file Generated by NRPy+ |
+#|-------------------------------------------------------------------------|
+#|         This section of the parameter file has been generated by        |
+#|                 the TOV/Polytropic_EOSs.py NRPy+ module                 |
+#|-------------------------------------------------------------------------|
+#|    Recommended reading: Tutorial-TOV-Piecewise_Polytrope_EOSs.ipynb     |
+#|-------------------------------------------------------------------------|
+#| NRPy+ repositoryon github: https://github.com/zachetienne/nrpytutorial/ |
+#|-------------------------------------------------------------------------|
+#| *Warning*: it is highly recommended not to change this section manually |
+#.-------------------------------------------------------------------------.
+#
+#.---------------------------------------.
+#|     EOS Type: Piecewise Polytrope     |
+#.---------------------------------------.
+#|           EOS name: SLy               |
+#.---------------------------------------.
+#|  Reference: Table II and III in       | 
+#|    Read et al. PRD 79,124032 (2009)   |
+#|  https://arxiv.org/pdf/0812.2163.pdf  |
+#.---------------------------------------.
+#| Note that while we use the values in  |
+#| Read et al. (2009), we write them in  |
+#| geometrized units where G = 1 = c. We |
+#| also normalize the nuclear density to |
+#| unity.                                |
+#| You can read more about this in the   |
+#| following NRPy+ tutorial module:      |
+#| Tutorial-TOV-Piecewise_Polytrope_EOSs |
+#.---------------------------------------.
+#| Required parameters:                  |      
+#|  - EOS name                           |
+#|  - Gamma_thermal                      |
+#|                                       |
+#| IllinoisGRMHD parameters set:         |
+#|  - neos                               |
+#|  - K_ppoly_tab0                       |
+#|  - rho_ppoly_tab_in[j]   0<=j<=neos-2 |
+#|  - Gamma_ppoly_tab_in[j] 0<=j<=neos-1 |
+#|  - Gamma_th                           |
+#|  - tau_atm                            |
+#|  - rho_b_atm                          |
+#|                                       |
+#.---------------------------------------.
+#
+# Set up initial data file name
+
+# Set up the number of polytropic EOSs.
+IllinoisGRMHD::neos = 7
+
+# Set atmospheric value of tau
+IllinoisGRMHD::tau_atm = 4.876083025795607e-12
+
+# Set K_ppoly_tab0 and K_atmosphere
+IllinoisGRMHD::K_ppoly_tab0 = 3.947563825424741e+00
+
+# Set atmospheric value of rho
+IllinoisGRMHD::rho_b_atm      = 1.292852735094440e-10
+
+# Set rho_ppoly_tab_in
+IllinoisGRMHD::rho_ppoly_tab_in[0] = 2.440340000000000e-08
+IllinoisGRMHD::rho_ppoly_tab_in[1] = 3.783580000000000e-04
+IllinoisGRMHD::rho_ppoly_tab_in[2] = 2.627800000000000e-03
+IllinoisGRMHD::rho_ppoly_tab_in[3] = 1.462289452376913e-01
+IllinoisGRMHD::rho_ppoly_tab_in[4] = 5.011872336272715e-01
+IllinoisGRMHD::rho_ppoly_tab_in[5] = 1.000000000000000e+00
+
+# Set Gamma_atmosphere and Gamma_ppoly_tab_in
+IllinoisGRMHD::Gamma_ppoly_tab_in[0] = 1.584250000000000e+00
+IllinoisGRMHD::Gamma_ppoly_tab_in[1] = 1.287330000000000e+00
+IllinoisGRMHD::Gamma_ppoly_tab_in[2] = 6.222299999999999e-01
+IllinoisGRMHD::Gamma_ppoly_tab_in[3] = 1.356920000000000e+00
+IllinoisGRMHD::Gamma_ppoly_tab_in[4] = 3.005000000000000e+00
+IllinoisGRMHD::Gamma_ppoly_tab_in[5] = 2.988000000000000e+00
+IllinoisGRMHD::Gamma_ppoly_tab_in[6] = 2.851000000000000e+00
+
+
+#.--------------------------------.
+#| End of NRPy+ generated section |
+#.--------------------------------.
+#
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
