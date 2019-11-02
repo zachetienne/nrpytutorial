@@ -1,4 +1,7 @@
-ActiveThorns = "ADMBase ADMCoupling ADMMacros AEILocalInterp AHFinderDirect Boundary Carpet CarpetInterp CarpetIOASCII CarpetIOBasic CarpetIOHDF5 CarpetIOScalar CarpetLib CarpetReduce CarpetRegrid2 CarpetSlab CartGrid3D CoordBase CoordGauge CycleClock EOS_Base EOS_Omni Fortran GenericFD GSL HDF5 HydroBase InitBase IOUtil LocalInterp LocalReduce LoopControl MoL MPI NaNChecker Slab SpaceMask SphericalSurface StaticConformal SymBase SystemStatistics TerminationTrigger Time Timers TmunuBase Vectors zlib Meudon_Bin_NS IllinoisGRMHD ID_converter_ILGRMHD Lorene SummationByParts VolumeIntegrals_GRMHD smallbPoynET convert_to_HydroBase Seed_Magnetic_Fields_BNS particle_tracerET multipole weylscal4 VolumeIntegrals_vacuBK QuasiLocalMeasures"
+## This Einstein Toolkit parameter file was constructed
+## by Zachariah Etienne, with the help of Bruno Giacomazzo.
+
+ActiveThorns = "ADMBase ADMCoupling ADMMacros AEILocalInterp AHFinderDirect Boundary Carpet CarpetInterp CarpetIOASCII CarpetIOBasic CarpetIOHDF5 CarpetIOScalar CarpetLib CarpetReduce CarpetRegrid2 CarpetSlab CartGrid3D CoordBase CoordGauge CycleClock EOS_Base EOS_Omni Fortran GenericFD GSL HDF5 HydroBase InitBase IOUtil LocalInterp LocalReduce LoopControl MoL MPI NaNChecker Slab SpaceMask SphericalSurface StaticConformal SymBase SystemStatistics TerminationTrigger Time Timers TmunuBase Vectors zlib Meudon_Bin_NS IllinoisGRMHD ID_converter_ILGRMHD Lorene SummationByParts VolumeIntegrals_GRMHD smallbPoynET convert_to_HydroBase Seed_Magnetic_Fields_BNS particle_tracerET multipole weylscal4 VolumeIntegrals_vacuBK QuasiLocalMeasures Outflow"
 
 # ActiveThorns = "interp_arbgrid_MO_ETK"
 # interp_arbgrid_MO_ETK::interp_out_iteration = 444416
@@ -68,7 +71,7 @@ particle_tracerET::seed_particles_inside_sphere__radius=50
 particle_tracerET::update_RK4_freq = 16
 particle_tracerET::out_of_bounds_xyz = 800.0
 
-Meudon_Bin_NS::filename="resu.d"
+Meudon_Bin_NS::filename="resu-sly-1.35M-0.038-61x33x32.d"
 
 VolumeIntegrals_GRMHD::NumIntegrals = 6
 VolumeIntegrals_GRMHD::VolIntegral_out_every = 256 # to be consistent with frequency of Carpet regridding
@@ -149,8 +152,8 @@ VolumeIntegrals_vacuBK::VIv_time_reparam_w                    = 5
 IllinoisGRMHD::conserv_to_prims_debug = 0
 IllinoisGRMHD::Psi6threshold = 60.0
 IllinoisGRMHD::damp_lorenz = 0. #0.625 # 1.5/Delta t_max. Here, Delta t_max = 2.4 -> 0.625
-IllinoisGRMHD::tau_atm=1e-8 #4.876083025795607e-12
-IllinoisGRMHD::rho_b_atm = 1e-13 # changed to be consistent with Bruno's run
+##IllinoisGRMHD::tau_atm=1e-8 #4.876083025795607e-12
+##IllinoisGRMHD::rho_b_atm = 1e-13 # changed to be consistent with Bruno's run
 IllinoisGRMHD::rho_b_max = 0.004
 #IllinoisGRMHD::rho_b_max = 0.0025
 #IllinoisGRMHD::rho_b_max = 0.005
