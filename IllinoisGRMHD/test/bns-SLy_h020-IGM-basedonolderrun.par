@@ -88,17 +88,17 @@ VolumeIntegrals_GRMHD::Integration_quantity_keyword[4] = "centerofmass"
 VolumeIntegrals_GRMHD::Integration_quantity_keyword[5] = "one"
 VolumeIntegrals_GRMHD::Integration_quantity_keyword[6] = "restmass"
 
-VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [2] = -15.2
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [2] = -17.7466
 VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [2] =  13.5
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[2] =  0
-VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [3] = -15.2
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [3] = -17.7466
 VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [3] =  13.5
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[3] =  0
 
-VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [4] =  15.2
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [4] =  17.7466
 VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [4] =  13.5
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[4] =  1
-VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [5] =  15.2
+VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [5] =  17.7466
 VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [5] =  13.5
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[5] =  1
 
@@ -401,8 +401,8 @@ CarpetRegrid2::num_levels_4            = 8
 CarpetRegrid2::num_levels_5            = 8
 CarpetRegrid2::num_levels_6            = 8
 CarpetRegrid2::num_levels_7            = 8 # 9
-CarpetRegrid2::position_x_1            = -15.2
-CarpetRegrid2::position_x_2            =  15.2
+CarpetRegrid2::position_x_1            = -17.7466
+CarpetRegrid2::position_x_2            =  17.7466
 
 carpetregrid2::radius_1[1]               = 1920
 carpetregrid2::radius_1[2]               = 960
@@ -561,7 +561,7 @@ NaNChecker::verbose         = "all"
 
 #------------------sphericalsurface--------------------------------------------
 
-sphericalsurface::nsurfaces              = 7
+sphericalsurface::nsurfaces              = 9
 
 sphericalsurface::maxnphi                = 240
 sphericalsurface::maxntheta              = 140
@@ -572,6 +572,8 @@ sphericalsurface::nghostsphi[3]          = 2
 sphericalsurface::nghostsphi[4]          = 2
 sphericalsurface::nghostsphi[5]          = 2
 sphericalsurface::nghostsphi[6]          = 2
+sphericalsurface::nghostsphi[7]          = 2
+sphericalsurface::nghostsphi[8]          = 2
 
 
 sphericalsurface::nghoststheta[0]        = 2
@@ -581,6 +583,8 @@ sphericalsurface::nghoststheta[3]        = 2
 sphericalsurface::nghoststheta[4]        = 2
 sphericalsurface::nghoststheta[5]        = 2
 sphericalsurface::nghoststheta[6]        = 2
+sphericalsurface::nghoststheta[7]        = 2
+sphericalsurface::nghoststheta[8]        = 2
 
 
 sphericalsurface::nphi[0]                = 96
@@ -590,6 +594,8 @@ sphericalsurface::nphi[3]                = 96
 sphericalsurface::nphi[4]                = 96
 sphericalsurface::nphi[5]                = 96
 sphericalsurface::nphi[6]                = 96
+sphericalsurface::nphi[7]                = 96
+sphericalsurface::nphi[8]                = 96
 
 sphericalsurface::ntheta[0]              = 55
 sphericalsurface::ntheta[1]              = 55
@@ -598,6 +604,8 @@ sphericalsurface::ntheta[3]              = 55
 sphericalsurface::ntheta[4]              = 55
 sphericalsurface::ntheta[5]              = 55
 sphericalsurface::ntheta[6]              = 55
+sphericalsurface::ntheta[7]              = 55
+sphericalsurface::ntheta[8]              = 55
 
 sphericalsurface::radius[2]              = 800
 sphericalsurface::radius[3]              =  15
@@ -612,6 +620,8 @@ sphericalsurface::set_spherical[3]       = yes
 sphericalsurface::set_spherical[4]       = yes
 sphericalsurface::set_spherical[5]       = yes
 sphericalsurface::set_spherical[6]       = yes
+sphericalsurface::set_spherical[7]       = yes
+sphericalsurface::set_spherical[8]       = yes
 
 sphericalsurface::symmetric_z[0]         = no
 sphericalsurface::symmetric_z[1]         = no
@@ -620,6 +630,8 @@ sphericalsurface::symmetric_z[3]         = no
 sphericalsurface::symmetric_z[4]         = no
 sphericalsurface::symmetric_z[5]         = no
 sphericalsurface::symmetric_z[6]         = no
+sphericalsurface::symmetric_z[7]         = no
+sphericalsurface::symmetric_z[8]         = no
 
 
 #------------------quasilocalmeasures------------------------------------------
