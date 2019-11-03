@@ -73,6 +73,7 @@ particle_tracerET::update_RK4_freq = 16
 particle_tracerET::out_of_bounds_xyz = 800.0
 
 Meudon_Bin_NS::filename="resu-sly-1.35M-0.038-61x33x32.d"
+Meudon_Bin_NS::eos_table = "Hybrid"
 
 VolumeIntegrals_GRMHD::NumIntegrals = 6
 VolumeIntegrals_GRMHD::VolIntegral_out_every = 256 # to be consistent with frequency of Carpet regridding
