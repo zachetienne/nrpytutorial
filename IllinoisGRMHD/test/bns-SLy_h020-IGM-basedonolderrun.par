@@ -15,6 +15,10 @@ ActiveThorns = "ADMBase ADMCoupling ADMMacros AEILocalInterp AHFinderDirect Boun
 # interp_arbgrid_MO_ETK::beta_offsetU2 = 0.000989779 ## a               = 0.000989779      +/- 1.657e-06    (0.1674%)
 
 
+## R_orig_run = 18.4339 
+## R_SLy      = 12.12
+## ratio = 12.12/18.4339 = 0.65748430880063361524
+
 ActiveThorns = "BaikalETK NewRad"
 # Parameters of thorn ADMBase (implementing ADMBase)
 ADMBase::evolution_method         = "BaikalETK"
@@ -70,7 +74,7 @@ particle_tracerET::num_particles=5000
 particle_tracerET::density_max=0.000959482674936154
 particle_tracerET::seed_particles_inside_sphere__radius=50
 particle_tracerET::update_RK4_freq = 16
-particle_tracerET::out_of_bounds_xyz = 800.0
+particle_tracerET::out_of_bounds_xyz = 800.0*0.65748430880063361524
 
 Meudon_Bin_NS::filename="resu-sly-1.35M-0.038-61x33x32.d"
 Meudon_Bin_NS::eos_table = "Hybrid"
@@ -90,17 +94,17 @@ VolumeIntegrals_GRMHD::Integration_quantity_keyword[5] = "one"
 VolumeIntegrals_GRMHD::Integration_quantity_keyword[6] = "restmass"
 
 VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [2] = -17.7466
-VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [2] =  13.5
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [2] =  13.5*0.65748430880063361524
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[2] =  0
 VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [3] = -17.7466
-VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [3] =  13.5
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [3] =  13.5*0.65748430880063361524
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[3] =  0
 
 VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [4] =  17.7466
-VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [4] =  13.5
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [4] =  13.5*0.65748430880063361524
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[4] =  1
 VolumeIntegrals_GRMHD::volintegral_sphere__center_x_initial         [5] =  17.7466
-VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [5] =  13.5
+VolumeIntegrals_GRMHD::volintegral_inside_sphere__radius            [5] =  13.5*0.65748430880063361524
 VolumeIntegrals_GRMHD::amr_centre__tracks__volintegral_inside_sphere[5] =  1
 
 ######################
@@ -122,17 +126,17 @@ VolumeIntegrals_vacuBK::Integration_quantity_keyword[10]       = "ADM_Mass"
 VolumeIntegrals_vacuBK::Integration_quantity_keyword[11]       = "ADM_Mass"
 VolumeIntegrals_vacuBK::Integration_quantity_keyword[12]       = "ADM_Mass"
 VolumeIntegrals_vacuBK::Integration_quantity_keyword[13]       = "ADM_Mass"
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[2] = 4.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[3] = 8.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[4] = 16.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[5] = 32.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[6] = 64.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[7] = 128.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[8] = 256.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[9] = 512.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[11] = 100.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[12] = 200.
-VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[13] = 300.
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[2] = 4.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[3] = 8.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[4] = 16.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[5] = 32.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[6] = 64.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[7] = 128.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[8] = 256.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[9] = 512.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[11] = 100.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[12] = 200.*0.65748430880063361524
+VolumeIntegrals_vacuBK::volintegral_outside_sphere__radius[13] = 300.*0.65748430880063361524
 
 VolumeIntegrals_vacuBK::enable_time_reparameterization        = "no"
 VolumeIntegrals_vacuBK::VIv_time_reparam_t0                   = 10
@@ -405,74 +409,74 @@ CarpetRegrid2::num_levels_7            = 8 # 9
 CarpetRegrid2::position_x_1            = -17.7466
 CarpetRegrid2::position_x_2            =  17.7466
 
-carpetregrid2::radius_1[1]               = 1920
-carpetregrid2::radius_1[2]               = 960
-carpetregrid2::radius_1[3]               = 168 # <- Zach fix for integer # gridpoints
-carpetregrid2::radius_1[4]               = 96
-carpetregrid2::radius_1[5]               = 48
-carpetregrid2::radius_1[6]               = 18
-carpetregrid2::radius_1[7]               = 12
-carpetregrid2::radius_1[8]               = 6
-carpetregrid2::radius_1[9]               = 3
+carpetregrid2::radius_1[1]               = 1920*0.65748430880063361524
+carpetregrid2::radius_1[2]               = 960*0.65748430880063361524
+carpetregrid2::radius_1[3]               = 168*0.65748430880063361524 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_1[4]               = 96*0.65748430880063361524
+carpetregrid2::radius_1[5]               = 48*0.65748430880063361524
+carpetregrid2::radius_1[6]               = 18*0.65748430880063361524
+carpetregrid2::radius_1[7]               = 12*0.65748430880063361524
+carpetregrid2::radius_1[8]               = 6*0.65748430880063361524
+carpetregrid2::radius_1[9]               = 3*0.65748430880063361524
 
-carpetregrid2::radius_2[1]               = 1920
-carpetregrid2::radius_2[2]               = 960
-carpetregrid2::radius_2[3]               = 168 # <- Zach fix for integer # gridpoints
-carpetregrid2::radius_2[4]               = 96
-carpetregrid2::radius_2[5]               = 48
-carpetregrid2::radius_2[6]               = 18
-carpetregrid2::radius_2[7]               = 12
+carpetregrid2::radius_2[1]               = 1920*0.65748430880063361524
+carpetregrid2::radius_2[2]               = 960*0.65748430880063361524
+carpetregrid2::radius_2[3]               = 168*0.65748430880063361524 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_2[4]               = 96*0.65748430880063361524
+carpetregrid2::radius_2[5]               = 48*0.65748430880063361524
+carpetregrid2::radius_2[6]               = 18*0.65748430880063361524
+carpetregrid2::radius_2[7]               = 12*0.65748430880063361524
 
-CarpetRegrid2::position_x_3            = 10.0
-CarpetRegrid2::position_y_3            = 10.0
-carpetregrid2::radius_3[1]               = 1920
-carpetregrid2::radius_3[2]               = 960
-carpetregrid2::radius_3[3]               = 168 # <- Zach fix for integer # gridpoints
-carpetregrid2::radius_3[4]               = 96
-carpetregrid2::radius_3[5]               = 48
-carpetregrid2::radius_3[6]               = 18
-carpetregrid2::radius_3[7]               = 12
+CarpetRegrid2::position_x_3            = 10.0*0.65748430880063361524
+CarpetRegrid2::position_y_3            = 10.0*0.65748430880063361524
+carpetregrid2::radius_3[1]               = 1920*0.65748430880063361524
+carpetregrid2::radius_3[2]               = 960*0.65748430880063361524
+carpetregrid2::radius_3[3]               = 168*0.65748430880063361524 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_3[4]               = 96*0.65748430880063361524
+carpetregrid2::radius_3[5]               = 48*0.65748430880063361524
+carpetregrid2::radius_3[6]               = 18*0.65748430880063361524
+carpetregrid2::radius_3[7]               = 12*0.65748430880063361524
 
-CarpetRegrid2::position_x_4            =-10.0
-CarpetRegrid2::position_y_4            = 10.0
-carpetregrid2::radius_4[1]               = 1920
-carpetregrid2::radius_4[2]               = 960
-carpetregrid2::radius_4[3]               = 168 # <- Zach fix for integer # gridpoints
-carpetregrid2::radius_4[4]               = 96
-carpetregrid2::radius_4[5]               = 48
-carpetregrid2::radius_4[6]               = 18
-carpetregrid2::radius_4[7]               = 12
+CarpetRegrid2::position_x_4            =-10.0*0.65748430880063361524
+CarpetRegrid2::position_y_4            = 10.0*0.65748430880063361524
+carpetregrid2::radius_4[1]               = 1920*0.65748430880063361524
+carpetregrid2::radius_4[2]               = 960*0.65748430880063361524
+carpetregrid2::radius_4[3]               = 168*0.65748430880063361524 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_4[4]               = 96*0.65748430880063361524
+carpetregrid2::radius_4[5]               = 48*0.65748430880063361524
+carpetregrid2::radius_4[6]               = 18*0.65748430880063361524
+carpetregrid2::radius_4[7]               = 12*0.65748430880063361524
 
-CarpetRegrid2::position_x_5            =-10.0
-CarpetRegrid2::position_y_5            =-10.0
-carpetregrid2::radius_5[1]               = 1920
-carpetregrid2::radius_5[2]               = 960
-carpetregrid2::radius_5[3]               = 168 # <- Zach fix for integer # gridpoints
-carpetregrid2::radius_5[4]               = 96
-carpetregrid2::radius_5[5]               = 48
-carpetregrid2::radius_5[6]               = 18
-carpetregrid2::radius_5[7]               = 12
+CarpetRegrid2::position_x_5            =-10.0*0.65748430880063361524
+CarpetRegrid2::position_y_5            =-10.0*0.65748430880063361524
+carpetregrid2::radius_5[1]               = 1920*0.65748430880063361524
+carpetregrid2::radius_5[2]               = 960*0.65748430880063361524
+carpetregrid2::radius_5[3]               = 168*0.65748430880063361524 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_5[4]               = 96*0.65748430880063361524
+carpetregrid2::radius_5[5]               = 48*0.65748430880063361524
+carpetregrid2::radius_5[6]               = 18*0.65748430880063361524
+carpetregrid2::radius_5[7]               = 12*0.65748430880063361524
 
-CarpetRegrid2::position_x_6            = 10.0
-CarpetRegrid2::position_y_6            =-10.0
-carpetregrid2::radius_6[1]               = 1920
-carpetregrid2::radius_6[2]               = 960
-carpetregrid2::radius_6[3]               = 168 # <- Zach fix for integer # gridpoints
-carpetregrid2::radius_6[4]               = 96
-carpetregrid2::radius_6[5]               = 48
-carpetregrid2::radius_6[6]               = 18
-carpetregrid2::radius_6[7]               = 12
+CarpetRegrid2::position_x_6            = 10.0*0.65748430880063361524
+CarpetRegrid2::position_y_6            =-10.0*0.65748430880063361524
+carpetregrid2::radius_6[1]               = 1920*0.65748430880063361524
+carpetregrid2::radius_6[2]               = 960*0.65748430880063361524
+carpetregrid2::radius_6[3]               = 168*0.65748430880063361524 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_6[4]               = 96*0.65748430880063361524
+carpetregrid2::radius_6[5]               = 48*0.65748430880063361524
+carpetregrid2::radius_6[6]               = 18*0.65748430880063361524
+carpetregrid2::radius_6[7]               = 12*0.65748430880063361524
 
 CarpetRegrid2::position_x_7            = 0.0
 CarpetRegrid2::position_y_7            = 0.0
-carpetregrid2::radius_7[1]               = 1920
-carpetregrid2::radius_7[2]               = 960
-carpetregrid2::radius_7[3]               = 168 # <- Zach fix for integer # gridpoints
-carpetregrid2::radius_7[4]               = 96
-carpetregrid2::radius_7[5]               = 48
-carpetregrid2::radius_7[6]               = 18
-carpetregrid2::radius_7[7]               = 12
-#############carpetregrid2::radius_7[8]               =  6.0
+carpetregrid2::radius_7[1]               = 1920*0.65748430880063361524
+carpetregrid2::radius_7[2]               = 960*0.65748430880063361524
+carpetregrid2::radius_7[3]               = 168*0.65748430880063361524 # <- Zach fix for integer # gridpoints
+carpetregrid2::radius_7[4]               = 96*0.65748430880063361524
+carpetregrid2::radius_7[5]               = 48*0.65748430880063361524
+carpetregrid2::radius_7[6]               = 18*0.65748430880063361524
+carpetregrid2::radius_7[7]               = 12*0.65748430880063361524
+#############carpetregrid2::radius_7[8]               =  6.0*0.65748430880063361524
 
 
 CarpetRegrid2::regrid_every            = 256
@@ -494,22 +498,22 @@ CoordBase::boundary_size_y_upper     = 3
 CoordBase::boundary_size_z_lower     = 3
 CoordBase::boundary_size_z_upper     = 3
 CoordBase::domainsize                = "minmax"
-CoordBase::dx                        = 16.0 # 19.2
-CoordBase::dy                        = 16.0 # 19.2
-CoordBase::dz                        = 16.0 # 19.2
+CoordBase::dx                        = 16.0*0.65748430880063361524 # 19.2
+CoordBase::dy                        = 16.0*0.65748430880063361524 # 19.2
+CoordBase::dz                        = 16.0*0.65748430880063361524 # 19.2
 CoordBase::spacing                   = "gridspacing"  # "gridspacing" or "numcells"
-CoordBase::xmax                      =  3840.
-CoordBase::xmin                      = -3840.
-CoordBase::ymax                      =  3840.
-CoordBase::ymin                      = -3840.
-CoordBase::zmax                      =  3840.
-CoordBase::zmin                      = -3840.
+CoordBase::xmax                      =  3840.*0.65748430880063361524
+CoordBase::xmin                      = -3840.*0.65748430880063361524
+CoordBase::ymax                      =  3840.*0.65748430880063361524
+CoordBase::ymin                      = -3840.*0.65748430880063361524
+CoordBase::zmax                      =  3840.*0.65748430880063361524
+CoordBase::zmin                      = -3840.*0.65748430880063361524
 
 
 # Parameters of thorn HydroBase (implementing HydroBase)
 #HydroBase::evolution_method  = "whisky"
 #HydroBase::prolongation_type = "ENO"
-HydroBase::timelevels        = 1
+HydroBase::timelevels        = 3
 
 # Parameters of thorn InitBase (implementing InitBase)
 InitBase::initial_data_setup_method = "init_all_levels"
@@ -667,7 +671,7 @@ TerminationTrigger::termination_file        = "TERMINATE"
 TerminationTrigger::termination_from_file   = "yes"
 
 # Parameters of thorn Time (implementing time)
-Time::dtfac = 0.175 # == 0.35 (Courant factor) * (1/2)^N_repeats (from time_refinement_factors above)
+Time::dtfac = 0.225 # == 0.45 (Courant factor) * (1/2)^N_repeats (from time_refinement_factors above)
 
 # Parameters of thorn TmunuBase (implementing TmunuBase)
 TmunuBase::prolongation_type     = "none"
