@@ -26,7 +26,8 @@ def BaikalETK_codegen(outrootdir = "BaikalETK/",
               FD_order=4, # Finite difference order: even numbers only, starting with 2. 12 is generally unstable
               LapseCondition  = "OnePlusLog", # Set the standard 1+log lapse condition
               ShiftCondition  = "GammaDriving2ndOrder_NoCovariant", # Set the standard, second-order advecting-shift,
-                                                                   # Gamma-driving shift condition
+                                                                    # Gamma-driving shift condition
+              add_stress_energy_source_terms = False,  # Enable stress-energy terms?
               default_KO_strength = 0.1 # default Kreiss-Oliger dissipation strength; adjustable within thorn's param.ccl.
               ):
     # Create directory for BaikalETK thorn & subdirectories in case they don't exist.
@@ -37,9 +38,6 @@ def BaikalETK_codegen(outrootdir = "BaikalETK/",
     # Set spatial dimension (must be 3 for BSSN)
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
-
-    # Enable stress-energy terms?
-    add_stress_energy_source_terms = False
 
     # Step 2: Set some core parameters, including CoordSystem MoL timestepping algorithm,
     #                                 FD order, floating point precision, and CFL factor:
@@ -628,43 +626,43 @@ schedule BaikalETK_BSSN_to_ADM in MoL_PostStep after BaikalETK_ApplyBCs before A
 """)
             if add_stress_energy_source_terms == True:
                 file.write("""
-        schedule driver_BSSN_T4UU in MoL_PseudoEvolution before BaikalETK_BSSN_constraints
-        {
-          LANG: C
-          OPTIONS: Local
-        } "MoL_PseudoEvolution: Compute T4UU, needed for BSSN constraints"
-        """)
+schedule driver_BSSN_T4UU in MoL_PseudoEvolution before BaikalETK_BSSN_constraints
+{
+  LANG: C
+  OPTIONS: Local
+} "MoL_PseudoEvolution: Compute T4UU, needed for BSSN constraints"
+""")
             file.write("""
 
-        schedule BaikalETK_BSSN_constraints in MoL_PseudoEvolution
-        {
-          LANG: C
-          OPTIONS: Local
-        } "Compute BSSN (Hamiltonian and momentum) constraints"
+schedule BaikalETK_BSSN_constraints in MoL_PseudoEvolution
+{
+  LANG: C
+  OPTIONS: Local
+} "Compute BSSN (Hamiltonian and momentum) constraints"
 
-        schedule BaikalETK_BoundaryConditions_aux_gfs in MoL_PseudoEvolution after BaikalETK_BSSN_constraints
-        {
-          LANG: C
-          OPTIONS: LOCAL # Needed so that cctk_nghostzones[0] (the number of boundary points) is defined.
-                         #  In other words, don't use LEVEL mode here, or the number of boundary points
-                         #  filled may not match the actual number of ghost zones. Weird, huh?
-          SYNC: aux_variables
-        } "Enforce symmetry BCs in constraint computation"
+schedule BaikalETK_BoundaryConditions_aux_gfs in MoL_PseudoEvolution after BaikalETK_BSSN_constraints
+{
+  LANG: C
+  OPTIONS: LOCAL # Needed so that cctk_nghostzones[0] (the number of boundary points) is defined.
+                 #  In other words, don't use LEVEL mode here, or the number of boundary points
+                 #  filled may not match the actual number of ghost zones. Weird, huh?
+  SYNC: aux_variables
+} "Enforce symmetry BCs in constraint computation"
 
-        """)
+""")
             if add_stress_energy_source_terms == True:
                 file.write("""
-        schedule BaikalETK_BSSN_to_ADM in MoL_PseudoEvolution after BaikalETK_BoundaryConditions_aux_gfs
-        {
-          LANG: C
-          OPTIONS: Local
-        } "Perform BSSN-to-ADM conversion in MoL_PseudoEvolution. Needed for proper HydroBase integration."
-        """)
+schedule BaikalETK_BSSN_to_ADM in MoL_PseudoEvolution after BaikalETK_BoundaryConditions_aux_gfs
+{
+  LANG: C
+  OPTIONS: Local
+} "Perform BSSN-to-ADM conversion in MoL_PseudoEvolution. Needed for proper HydroBase integration."
+""")
             file.write("""
-        schedule GROUP ApplyBCs as BaikalETK_auxgfs_ApplyBCs in MoL_PseudoEvolution after BaikalETK_BoundaryConditions_aux_gfs
-        {
-        } "Apply boundary conditions"
-        """)
+schedule GROUP ApplyBCs as BaikalETK_auxgfs_ApplyBCs in MoL_PseudoEvolution after BaikalETK_BoundaryConditions_aux_gfs
+{
+} "Apply boundary conditions"
+""")
 
     # Step 4: C driver functions for ETK registration & NRPy+-generated kernels
     make_code_defn_list = []
@@ -1011,17 +1009,17 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
 
     with open(append_to_make_code_defn_list("BSSN_to_ADM.c"), "w") as file:
         file.write("""
-    #include <math.h>
+#include <math.h>
 
-    #include "cctk.h"
-    #include "cctk_Arguments.h"
-    #include "cctk_Parameters.h"
+#include "cctk.h"
+#include "cctk_Arguments.h"
+#include "cctk_Parameters.h"
 
-    void BaikalETK_BSSN_to_ADM(CCTK_ARGUMENTS) {
-        DECLARE_CCTK_ARGUMENTS;
-        DECLARE_CCTK_PARAMETERS;
+void BaikalETK_BSSN_to_ADM(CCTK_ARGUMENTS) {
+    DECLARE_CCTK_ARGUMENTS;
+    DECLARE_CCTK_PARAMETERS;
 
-    """)
+""")
         btoa_lhrh = []
         for i in range(DIM):
             for j in range(i, DIM):
@@ -1219,10 +1217,10 @@ void driver_BSSN_T4UU(CCTK_ARGUMENTS) {
     # Step 4.g: make.code.defn: List of all C driver functions needed to compile BaikalETK
     with open(os.path.join(outdir, "make.code.defn"), "w") as file:
         file.write("""
-    # Main make.code.defn file for thorn BaikalETK
+# Main make.code.defn file for thorn BaikalETK
 
-    # Source files in this directory
-    SRCS =""")
+# Source files in this directory
+SRCS =""")
         filestring = ""
         for i in range(len(make_code_defn_list)):
             filestring += "      " + make_code_defn_list[i]
