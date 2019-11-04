@@ -1,7 +1,7 @@
 # As documented in the NRPy+ tutorial module
-#   Tutorial-GRHD_Equations-Cartesian-new.ipynb
+#   Tutorial-GRFFE_Equations-Cartesian-new.ipynb
 #   this module will construct useful quantities
-#   for the IllinoisGRMHD implementation of
+#   for the GiRaFFE implementation of
 #   general relativistic force-free
 #   electrodynamics (GRFFE)
 #
