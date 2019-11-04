@@ -92,7 +92,7 @@ def compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU,T4UU):
         tau_tilde_fluxU[j] = alpha**2*sqrtgammaDET*T4UU[0][j+1] - rho_star*vU[j]
 
 # Step 4.d: S_tilde flux
-def compute_S_tilde_fluxUD(gammaDD,betaU,alpha, sqrtgammaDET, T4UU):
+def compute_S_tilde_fluxUD(alpha, sqrtgammaDET, T4UD):
     global S_tilde_fluxUD
     S_tilde_fluxUD = ixp.zerorank2(DIM=3)
     for j in range(3):
@@ -115,8 +115,8 @@ def compute_s_source_term(KDD,betaU,alpha, sqrtgammaDET,alpha_dD, T4UU):
 
 # Step 5.b: Define source term on RHS of $\tilde{S}_i$ equation
 # Step 5.b.i: Compute g_{mu nu, i}, needed for the S tilde source term
-def compute_g4DDdD(gammaDD,betaU,alpha, gammaDD_dD,betaU_dD,alpha_dD):
-    global g4DDdD
+def compute_g4DD_zerotimederiv_dD(gammaDD,betaU,alpha, gammaDD_dD,betaU_dD,alpha_dD):
+    global g4DD_zerotimederiv_dD
     # Eq. 2.121 in B&S
     betaD = ixp.zerorank1()
     for i in range(3):
@@ -133,31 +133,31 @@ def compute_g4DDdD(gammaDD,betaU,alpha, gammaDD_dD,betaU_dD,alpha_dD):
                 betaDdD[i][k] += gammaDD_dD[i][j][k]*betaU[j] + gammaDD[i][j]*betaU_dD[j][k]
 
     # Eq. 2.122 in B&S
-    g4DDdD = ixp.zerorank3(DIM=4)
+    g4DD_zerotimederiv_dD = ixp.zerorank3(DIM=4)
     for k in range(3):
         # Recall that g4DD[0][0] = -alpha^2 + betaU[j]*betaD[j]
-        g4DDdD[0][0][k+1] += -2*alpha*alpha_dD[k]
+        g4DD_zerotimederiv_dD[0][0][k+1] += -2*alpha*alpha_dD[k]
         for j in range(3):
-            g4DDdD[0][0][k+1] += betaU_dD[j][k]*betaD[j] + betaU[j]*betaDdD[j][k]
+            g4DD_zerotimederiv_dD[0][0][k+1] += betaU_dD[j][k]*betaD[j] + betaU[j]*betaDdD[j][k]
 
     for i in range(3):
         for k in range(3):
             # Recall that g4DD[i][0] = g4DD[0][i] = betaD[i]
-            g4DDdD[i+1][0][k+1] = g4DDdD[0][i+1][k+1] = betaDdD[i][k]
+            g4DD_zerotimederiv_dD[i+1][0][k+1] = g4DD_zerotimederiv_dD[0][i+1][k+1] = betaDdD[i][k]
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 # Recall that g4DD[i][j] = gammaDD[i][j]
-                g4DDdD[i+1][j+1][k+1] = gammaDD_dD[i][j][k]
+                g4DD_zerotimederiv_dD[i+1][j+1][k+1] = gammaDD_dD[i][j][k]
 
 # Step 5.b.ii: S_tilde source terms
-def compute_S_tilde_source_termD(alpha, sqrtgammaDET,g4DDdD, T4UU):
+def compute_S_tilde_source_termD(alpha, sqrtgammaDET,g4DD_zerotimederiv_dD, T4UU):
     global S_tilde_source_termD
     S_tilde_source_termD = ixp.zerorank1(DIM=3)
     for i in range(3):
         for mu in range(4):
             for nu in range(4):
-                S_tilde_source_termD[i] += sp.Rational(1,2)*alpha*sqrtgammaDET*T4UU[mu][nu]*g4DDdD[mu][nu][i+1]
+                S_tilde_source_termD[i] += sp.Rational(1,2)*alpha*sqrtgammaDET*T4UU[mu][nu]*g4DD_zerotimederiv_dD[mu][nu][i+1]
 
 # Step 6: Convert v^i into u^\mu, applying a speed limiter, courtesy Patrick Nelson
 def u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, vU):
@@ -203,17 +203,17 @@ def generate_everything_for_UnitTesting():
     # Next compute fluxes of conservative variables
     compute_rho_star_fluxU(vU, rho_star)
     compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU, T4UU)
-    compute_S_tilde_fluxUD(gammaDD, betaU, alpha, sqrtgammaDET, T4UU)
+    compute_S_tilde_fluxUD( alpha, sqrtgammaDET,     T4UD)
 
-    # Then declare derivatives & compute g4DDdD
+    # Then declare derivatives & compute g4DD_zerotimederiv_dD
     gammaDD_dD = ixp.declarerank3("gammaDD_dD", "sym01", DIM=3)
     betaU_dD = ixp.declarerank2("betaU_dD", "nosym", DIM=3)
     alpha_dD = ixp.declarerank1("alpha_dD", DIM=3)
-    compute_g4DDdD(gammaDD, betaU, alpha, gammaDD_dD, betaU_dD, alpha_dD)
+    compute_g4DD_zerotimederiv_dD(gammaDD, betaU, alpha, gammaDD_dD, betaU_dD, alpha_dD)
 
     # Then compute source terms on tau_tilde and S_tilde equations
     compute_s_source_term(KDD, betaU, alpha, sqrtgammaDET, alpha_dD, T4UU)
-    compute_S_tilde_source_termD(alpha, sqrtgammaDET, g4DDdD, T4UU)
+    compute_S_tilde_source_termD(alpha, sqrtgammaDET, g4DD_zerotimederiv_dD, T4UU)
 
     # Finally compute the 4-velocities in terms of an input 3-velocity testvU
     testvU = ixp.declarerank1("testvU", DIM=3)

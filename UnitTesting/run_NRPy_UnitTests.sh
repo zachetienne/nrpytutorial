@@ -40,6 +40,7 @@ rerun_if_fail=false
 $PYTHONEXEC UnitTesting/Test_UnitTesting/test_functions.py
 
 add_test UnitTesting/Test_UnitTesting/test_module.py
+add_test GRHD/tests/test_GRHD.py
 add_test BSSN/tests/test_BSSN.py
 add_test FishboneMoncriefID/tests/test_FishboneMoncriefID.py
 add_test GiRaFFE_HO/tests/test_GiRaFFE_HO.py
