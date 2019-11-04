@@ -83,3 +83,47 @@ def compute_TEM4UD(gammaDD,betaU,alpha, TEM4UU):
         for nu in range(4):
             for delta in range(4):
                 TEM4UD[mu][nu] += TEM4UU[mu][delta]*AB4m.g4DD[delta][nu]
+
+def generate_everything_for_UnitTesting():
+    # First define hydrodynamical quantities
+    u4U = ixp.declarerank1("u4U", DIM=4)
+    B_tildeU = ixp.declarerank1("B_tildeU", DIM=3)
+
+    # Then ADM quantities
+    gammaDD = ixp.declarerank2("gammaDD", "sym01", DIM=3)
+    betaU = ixp.declarerank1("betaU", DIM=3)
+    alpha = sp.symbols('alpha', real=True)
+
+    # Then numerical constant
+    sqrt4pi = sp.symbols('sqrt4pi', real=True)
+
+    # First compute stress-energy tensor T4UU and T4UD:
+    import GRHD.equations as GHeq
+    GHeq.compute_sqrtgammaDET(gammaDD)
+    compute_B_notildeU(GHeq.sqrtgammaDET, B_tildeU)
+    compute_smallb4U(gammaDD, betaU, alpha, u4U, B_notildeU, sqrt4pi)
+    compute_smallbsquared(gammaDD, betaU, alpha, smallb4U)
+
+    compute_TEM4UU(gammaDD, betaU, alpha, smallb4U, smallbsquared, u4U)
+    compute_TEM4UD(gammaDD, betaU, alpha, TEM4UU)
+
+    # Compute conservative variables in terms of primitive variables
+    GHeq.compute_S_tildeD(alpha, GHeq.sqrtgammaDET, TEM4UD)
+    global S_tildeD
+    S_tildeD = GHeq.S_tildeD
+
+    # Next compute fluxes of conservative variables
+    GHeq.compute_S_tilde_fluxUD(alpha, GHeq.sqrtgammaDET, TEM4UD)
+    global S_tilde_fluxUD
+    S_tilde_fluxUD = GHeq.S_tilde_fluxUD
+
+    # Then declare derivatives & compute g4DDdD
+    gammaDD_dD = ixp.declarerank3("gammaDD_dD", "sym01", DIM=3)
+    betaU_dD = ixp.declarerank2("betaU_dD", "nosym", DIM=3)
+    alpha_dD = ixp.declarerank1("alpha_dD", DIM=3)
+    GHeq.compute_g4DD_zerotimederiv_dD(gammaDD, betaU, alpha, gammaDD_dD, betaU_dD, alpha_dD)
+
+    # Finally compute source terms on tau_tilde and S_tilde equations
+    GHeq.compute_S_tilde_source_termD(alpha, GHeq.sqrtgammaDET, GHeq.g4DD_zerotimederiv_dD, TEM4UU)
+    global S_tilde_source_termD
+    S_tilde_source_termD = GHeq.S_tilde_source_termD
