@@ -246,7 +246,6 @@ def symm_matrix_inverter4x4(a):
     outINV = [[sp.sympify(0) for i in range(4)] for j in range(4)]
 
     # First fill in the upper-triangle of the gPhysINV matrix...
-              
     outINV[0][0] = (-a[1][3]*a[1][3]*a[2][2] + 2*a[1][2]*a[1][3]*a[2][3] - a[1][1]*a[2][3]*a[2][3] - a[1][2]*a[1][2]*a[3][3] + a[1][1]*a[2][2]*a[3][3])/outDET
     outINV[1][1] = (-a[0][3]*a[0][3]*a[2][2] + 2*a[0][2]*a[0][3]*a[2][3] - a[0][0]*a[2][3]*a[2][3] - a[0][2]*a[0][2]*a[3][3] + a[0][0]*a[2][2]*a[3][3])/outDET
     outINV[2][2] = (-a[0][3]*a[0][3]*a[1][1] + 2*a[0][1]*a[0][3]*a[1][3] - a[0][0]*a[1][3]*a[1][3] - a[0][1]*a[0][1]*a[3][3] + a[0][0]*a[1][1]*a[3][3])/outDET
@@ -265,7 +264,7 @@ def symm_matrix_inverter4x4(a):
     outINV[3][0] = outINV[0][3]
     outINV[3][1] = outINV[1][3]
     outINV[3][2] = outINV[2][3]
-    
+
     return outINV, outDET
 
 
