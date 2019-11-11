@@ -283,23 +283,27 @@ def BaikalETK_codegen(outrootdir = "BaikalETK/",
         print("Finished gamma constraint C codegen in " + str(end - start) + " seconds.")
 
     # Step 2.d: Generate all C codes in parallel
+    # Step 2.d.0: Import the multiprocessing module.
     import multiprocessing
+    
+    # Step 2.d.1: Create a list of functions we wish to evaluate in parallel
+    funcs = [BSSN_RHSs,Ricci,Hamiltonian,gammadet]
+    # Step 2.d.1.a: Define master function for parallelization.
+    #           Note that lambdifying this doesn't work in Python 3
+    def master_func(arg):
+        funcs[arg]()
 
-    # if __name__ == '__main__':
-    RHS = multiprocessing.Process(target=BSSN_RHSs)
-    Ric = multiprocessing.Process(target=Ricci)
-    con = multiprocessing.Process(target=BSSNconstraints)
-    gam = multiprocessing.Process(target=gammadet)
-
-    RHS.start()
-    Ric.start()
-    con.start()
-    gam.start()
-
-    RHS.join()
-    Ric.join()
-    con.join()
-    gam.join()
+    # Step 2.d.2: Evaluate list of functions in parallel if allowed; 
+    #         otherwise fallback to serial evaluation:
+    try:
+#            if __name__ == '__main__':
+        pool = multiprocessing.Pool()
+        pool.map(master_func,range(len(funcs)))
+    except:
+        # If multiprocessing didn't work for whatever reason,
+        #        evaluate functions in serial.
+        for func in funcs:
+            func()import multiprocessing
 
     # Step 3: ETK .ccl file generation
     # Step 3.a: param.ccl: specify free parameters within BaikalETK
