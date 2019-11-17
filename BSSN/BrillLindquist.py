@@ -83,6 +83,6 @@ def BrillLindquist(ComputeADMGlobalsOnly = False,returnfunctionversion=1):
 
     global returnfunction
     if returnfunctionversion == 1:
-        returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
+        returnfunction =   bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
     elif returnfunctionversion == 2:
-        returnfunction = bIDf.BSSN_ID_function_stringv2(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU)
+        returnfunction = bIDf.BSSN_ID_function_stringv2(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)

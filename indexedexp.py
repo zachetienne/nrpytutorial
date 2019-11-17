@@ -116,7 +116,7 @@ def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     gf_list = []
     for i in range(DIM):
         gf_list.append(str(IDX_OBJ_TMP[i]))
-    gri.register_gridfunctions(gf_type, gf_list, is_indexed=True)
+    gri.register_gridfunctions(gf_type, gf_list, rank=1, is_indexed=True, DIM=DIM)
 
     # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP
@@ -163,7 +163,7 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
                     save = False
             if save == True:
                 gf_list.append(str(IDX_OBJ_TMP[i][j]))
-    gri.register_gridfunctions(gf_type,gf_list, is_indexed=True)
+    gri.register_gridfunctions(gf_type,gf_list,rank=2, is_indexed=True, DIM=DIM)
 
     # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP
@@ -289,5 +289,49 @@ def generic_matrix_inverter3x3(a):
     for i in range(3):
         for j in range(3):
             outINV[i][j] /= outDET
+
+    return outINV, outDET
+
+def generic_matrix_inverter4x4(a):
+    # A = {{a00, a01, a02, a03},
+    #      {a10, a11, a12, a13},
+    #      {a20, a21, a22, a23},
+    #      {a30, a31, a32, a33}}
+    # A // MatrixForm
+    # CForm[FullSimplify[Det[A]]] >>> t2.txt
+    # cat t2.txt | sed "s/ //g" |sed "s/ //g;s/\([0-3]\)/[\1]/g"
+    outDET = a[0][1]*a[1][3]*a[2][2]*a[3][0]-a[0][1]*a[1][2]*a[2][3]*a[3][0]-a[0][0]*a[1][3]*a[2][2]*a[3][1]+ \
+             a[0][0]*a[1][2]*a[2][3]*a[3][1]-a[0][1]*a[1][3]*a[2][0]*a[3][2]+a[0][0]*a[1][3]*a[2][1]*a[3][2]+ \
+             a[0][1]*a[1][0]*a[2][3]*a[3][2]-a[0][0]*a[1][1]*a[2][3]*a[3][2]+ \
+        a[0][3]*(a[1][2]*a[2][1]*a[3][0]-a[1][1]*a[2][2]*a[3][0]-a[1][2]*a[2][0]*a[3][1]+a[1][0]*a[2][2]*a[3][1]+
+                 a[1][1]*a[2][0]*a[3][2]-a[1][0]*a[2][1]*a[3][2])+ \
+             (a[0][1]*a[1][2]*a[2][0]-a[0][0]*a[1][2]*a[2][1]-a[0][1]*a[1][0]*a[2][2]+a[0][0]*a[1][1]*a[2][2])*a[3][3]+\
+        a[0][2]*(-(a[1][3]*a[2][1]*a[3][0])+a[1][1]*a[2][3]*a[3][0]+a[1][3]*a[2][0]*a[3][1]-a[1][0]*a[2][3]*a[3][1]-
+                 a[1][1]*a[2][0]*a[3][3]+a[1][0]*a[2][1]*a[3][3])
+
+    outINV = [[sp.sympify(0) for i in range(4)] for j in range(4)]
+
+    # CForm[FullSimplify[Inverse[A]*Det[A]]] >>> t.txt
+    # cat t.txt | sed "s/,/\n/g;s/List(//g;s/))/)/g;s/)//g;s/(//g"|grep -v ^$|sed "s/ //g;s/\([0-3]\)/[\1]/g"| awk '{line[NR]=$0}END{count=1;for(i=0;i<4;i++) { for(j=0;j<4;j++) { printf "outINV[%d][%d] = %s\n", i,j,line[count];count++; }}}'
+    outINV[0][0] = -a[1][3]*a[2][2]*a[3][1]+a[1][2]*a[2][3]*a[3][1]+a[1][3]*a[2][1]*a[3][2]-a[1][1]*a[2][3]*a[3][2]-a[1][2]*a[2][1]*a[3][3]+a[1][1]*a[2][2]*a[3][3]
+    outINV[0][1] =  a[0][3]*a[2][2]*a[3][1]-a[0][2]*a[2][3]*a[3][1]-a[0][3]*a[2][1]*a[3][2]+a[0][1]*a[2][3]*a[3][2]+a[0][2]*a[2][1]*a[3][3]-a[0][1]*a[2][2]*a[3][3]
+    outINV[0][2] = -a[0][3]*a[1][2]*a[3][1]+a[0][2]*a[1][3]*a[3][1]+a[0][3]*a[1][1]*a[3][2]-a[0][1]*a[1][3]*a[3][2]-a[0][2]*a[1][1]*a[3][3]+a[0][1]*a[1][2]*a[3][3]
+    outINV[0][3] =  a[0][3]*a[1][2]*a[2][1]-a[0][2]*a[1][3]*a[2][1]-a[0][3]*a[1][1]*a[2][2]+a[0][1]*a[1][3]*a[2][2]+a[0][2]*a[1][1]*a[2][3]-a[0][1]*a[1][2]*a[2][3]
+    outINV[1][0] =  a[1][3]*a[2][2]*a[3][0]-a[1][2]*a[2][3]*a[3][0]-a[1][3]*a[2][0]*a[3][2]+a[1][0]*a[2][3]*a[3][2]+a[1][2]*a[2][0]*a[3][3]-a[1][0]*a[2][2]*a[3][3]
+    outINV[1][1] = -a[0][3]*a[2][2]*a[3][0]+a[0][2]*a[2][3]*a[3][0]+a[0][3]*a[2][0]*a[3][2]-a[0][0]*a[2][3]*a[3][2]-a[0][2]*a[2][0]*a[3][3]+a[0][0]*a[2][2]*a[3][3]
+    outINV[1][2] =  a[0][3]*a[1][2]*a[3][0]-a[0][2]*a[1][3]*a[3][0]-a[0][3]*a[1][0]*a[3][2]+a[0][0]*a[1][3]*a[3][2]+a[0][2]*a[1][0]*a[3][3]-a[0][0]*a[1][2]*a[3][3]
+    outINV[1][3] = -a[0][3]*a[1][2]*a[2][0]+a[0][2]*a[1][3]*a[2][0]+a[0][3]*a[1][0]*a[2][2]-a[0][0]*a[1][3]*a[2][2]-a[0][2]*a[1][0]*a[2][3]+a[0][0]*a[1][2]*a[2][3]
+    outINV[2][0] = -a[1][3]*a[2][1]*a[3][0]+a[1][1]*a[2][3]*a[3][0]+a[1][3]*a[2][0]*a[3][1]-a[1][0]*a[2][3]*a[3][1]-a[1][1]*a[2][0]*a[3][3]+a[1][0]*a[2][1]*a[3][3]
+    outINV[2][1] =  a[0][3]*a[2][1]*a[3][0]-a[0][1]*a[2][3]*a[3][0]-a[0][3]*a[2][0]*a[3][1]+a[0][0]*a[2][3]*a[3][1]+a[0][1]*a[2][0]*a[3][3]-a[0][0]*a[2][1]*a[3][3]
+    outINV[2][2] = -a[0][3]*a[1][1]*a[3][0]+a[0][1]*a[1][3]*a[3][0]+a[0][3]*a[1][0]*a[3][1]-a[0][0]*a[1][3]*a[3][1]-a[0][1]*a[1][0]*a[3][3]+a[0][0]*a[1][1]*a[3][3]
+    outINV[2][3] =  a[0][3]*a[1][1]*a[2][0]-a[0][1]*a[1][3]*a[2][0]-a[0][3]*a[1][0]*a[2][1]+a[0][0]*a[1][3]*a[2][1]+a[0][1]*a[1][0]*a[2][3]-a[0][0]*a[1][1]*a[2][3]
+    outINV[3][0] =  a[1][2]*a[2][1]*a[3][0]-a[1][1]*a[2][2]*a[3][0]-a[1][2]*a[2][0]*a[3][1]+a[1][0]*a[2][2]*a[3][1]+a[1][1]*a[2][0]*a[3][2]-a[1][0]*a[2][1]*a[3][2]
+    outINV[3][1] = -a[0][2]*a[2][1]*a[3][0]+a[0][1]*a[2][2]*a[3][0]+a[0][2]*a[2][0]*a[3][1]-a[0][0]*a[2][2]*a[3][1]-a[0][1]*a[2][0]*a[3][2]+a[0][0]*a[2][1]*a[3][2]
+    outINV[3][2] =  a[0][2]*a[1][1]*a[3][0]-a[0][1]*a[1][2]*a[3][0]-a[0][2]*a[1][0]*a[3][1]+a[0][0]*a[1][2]*a[3][1]+a[0][1]*a[1][0]*a[3][2]-a[0][0]*a[1][1]*a[3][2]
+    outINV[3][3] = -a[0][2]*a[1][1]*a[2][0]+a[0][1]*a[1][2]*a[2][0]+a[0][2]*a[1][0]*a[2][1]-a[0][0]*a[1][2]*a[2][1]-a[0][1]*a[1][0]*a[2][2]+a[0][0]*a[1][1]*a[2][2]
+
+    for mu in range(4):
+        for nu in range(4):
+            outINV[mu][nu] /= outDET
 
     return outINV, outDET

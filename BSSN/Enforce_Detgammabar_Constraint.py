@@ -13,6 +13,7 @@ import finite_difference as fin
 import reference_metric as rfm
 import BSSN.BSSN_quantities as Bq
 import loop as lp
+import os
 
 def Enforce_Detgammabar_Constraint_symb_expressions():
     # Set spatial dimension (must be 3 for BSSN)
@@ -45,7 +46,7 @@ def Enforce_Detgammabar_Constraint_symb_expressions():
     for i in range(DIM):
         for j in range(DIM):
             hprimeDD[i][j] = \
-                (sp.Abs(rfm.detgammahat) / detgammabar) ** (sp.Rational(1, 3)) * (KroneckerDeltaDD[i][j] + hDD[i][j]) \
+                (nrpyAbs(rfm.detgammahat) / detgammabar) ** (sp.Rational(1, 3)) * (KroneckerDeltaDD[i][j] + hDD[i][j]) \
                 - KroneckerDeltaDD[i][j]
 
     enforce_detg_constraint_symb_expressions = [
@@ -58,26 +59,23 @@ def Enforce_Detgammabar_Constraint_symb_expressions():
 
     return enforce_detg_constraint_symb_expressions
 
-def output_Enforce_Detgammabar_Constraint_Ccode(outdir="BSSN/"):
-
+def output_Enforce_Detgammabar_Constraint_Ccode(outdir="BSSN/",version="old", exprs=""):
     # Step 0: Check if outdir is string; error out if not.
     check_if_string__error_if_not(outdir,"outdir")
 
-    enforce_detg_constraint_symb_expressions = Enforce_Detgammabar_Constraint_symb_expressions()
-
-    enforce_gammadet_string = fin.FD_outputC("returnstring", enforce_detg_constraint_symb_expressions,
-                                             params="outCverbose=False,preindent=0,includebraces=False")
-
-    with open(outdir+"enforce_detgammabar_constraint.h", "w") as file:
-        indent = "   "
-        file.write(
-            "void enforce_detgammabar_constraint(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3], REAL *in_gfs) {\n\n")
-        file.write(lp.loop(["i2", "i1", "i0"], ["0", "0", "0"],
-                           ["Nxx_plus_2NGHOSTS[2]", "Nxx_plus_2NGHOSTS[1]", "Nxx_plus_2NGHOSTS[0]"],
-                           ["1", "1", "1"], ["#pragma omp parallel for",
-                                             "    const REAL xx2 = xx[2][i2];",
-                                             "        const REAL xx1 = xx[1][i1];"], "",
-                           "const REAL xx0 = xx[0][i0];\n" + enforce_gammadet_string))
-        file.write("}\n")
-
-    print("Output C implementation of det(gammabar) constraint to file "+outdir+"enforce_detgammabar_constraint.h")
+    desc = "Enforce det(gammabar) = det(gammahat) constraint."
+    name = "enforce_detgammabar_constraint"
+    if version == "old":
+        outCfunction(
+            outfile=os.path.join(outdir, name + ".h"), desc=desc, name=name,
+            params ="const int Nxx_plus_2NGHOSTS[3],REAL *xx[3], REAL *in_gfs",
+            body   =fin.FD_outputC("returnstring", Enforce_Detgammabar_Constraint_symb_expressions(),
+                                params="outCverbose=False,preindent=0,includebraces=False"),
+            loopopts="AllPoints,Read_xxs,oldloops", opts="DisableCparameters")
+    elif version == "new":
+        outCfunction(
+            outfile=os.path.join(outdir, name + ".h"), desc=desc, name=name,
+            params="const rfm_struct *restrict rfmstruct,const paramstruct *restrict params, REAL *restrict in_gfs",
+            body=fin.FD_outputC("returnstring", exprs,
+                                params="outCverbose=False,preindent=1,includebraces=False").replace("IDX4", "IDX4S"),
+            loopopts="InteriorPoints,Enable_rfm_precompute")

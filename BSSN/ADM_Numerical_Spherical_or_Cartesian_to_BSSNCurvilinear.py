@@ -19,7 +19,7 @@ import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities; gamm
 import os, sys                    # Standard Python modules for multiplatform OS-level functions
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name, 
-                                                           Ccodesdir = "BSSN", pointer_to_ID_inputs=False):
+                                                          Ccodesdir = "BSSN", pointer_to_ID_inputs=False,loopopts=",oldloops"):
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
     #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
     #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
@@ -152,43 +152,58 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
 
     # Step 5.A: Output files containing finite-differenced lambdas.
     outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
-    lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs","lambdaU0"),rhs=lambdaU[0]),
-                           lhrh(lhs=gri.gfaccess("in_gfs","lambdaU1"),rhs=lambdaU[1]),
-                           lhrh(lhs=gri.gfaccess("in_gfs","lambdaU2"),rhs=lambdaU[2])]
-    lambdaU_expressions_FDout = fin.FD_outputC("returnstring",lambdaU_expressions, outCparams)
+    lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs", "lambdaU0"), rhs=lambdaU[0]),
+                           lhrh(lhs=gri.gfaccess("in_gfs", "lambdaU1"), rhs=lambdaU[1]),
+                           lhrh(lhs=gri.gfaccess("in_gfs", "lambdaU2"), rhs=lambdaU[2])]
 
-    with open(os.path.join(Ccodesdir,"ID_BSSN_lambdas.h"), "w") as file:
-        file.write("""
-void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],const REAL dxx[3],REAL *in_gfs) {\n""")
-        file.write(lp.loop(["i2","i1","i0"],["NGHOSTS","NGHOSTS","NGHOSTS"],
-                           ["NGHOSTS+Nxx[2]","NGHOSTS+Nxx[1]","NGHOSTS+Nxx[0]"],
-                           ["1","1","1"],["const REAL invdx0 = 1.0/dxx[0];\n"+
-                                          "const REAL invdx1 = 1.0/dxx[1];\n"+
-                                          "const REAL invdx2 = 1.0/dxx[2];\n"+
-                                          "#pragma omp parallel for",
-                                          "    const REAL xx2 = xx[2][i2];",
-                                          "        const REAL xx1 = xx[1][i1];"],"",
-                                         "const REAL xx0 = xx[0][i0];\n"+lambdaU_expressions_FDout))
-        file.write("}\n")
+    desc = "Output lambdaU[i] for BSSN, built using finite-difference derivatives."
+    name = "ID_BSSN_lambdas"
+    params = "const paramstruct *restrict params,REAL *restrict xx[3],REAL *restrict in_gfs"
+    preloop = ""
+    opts = ""
+    idx4replace = "IDX4S"
+    if "oldloops" in loopopts:
+        params = "const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],const REAL dxx[3],REAL *in_gfs"
+        opts = "DisableCparameters"
+        idx4replace = "IDX4"
+        preloop = """
+const REAL invdx0 = 1.0/dxx[0];
+const REAL invdx1 = 1.0/dxx[1];
+const REAL invdx2 = 1.0/dxx[2];
+"""
+    outCfunction(
+        outfile=os.path.join(Ccodesdir, name + ".h"), desc=desc, name=name, params=params,
+        preloop=preloop,
+        body=fin.FD_outputC("returnstring", lambdaU_expressions, outCparams).replace("IDX4",idx4replace),
+        loopopts="InteriorPoints,Read_xxs"+loopopts, opts=opts)
 
     # Step 5: Output all ADM-to-BSSN expressions to a C function. This function
     #         must first call the ID_ADM_SphorCart() defined above. Using these
     #         Spherical or Cartesian data, it sets up all quantities needed for
     #         BSSNCurvilinear initial data, *except* $\lambda^i$, which must be
     #         computed from numerical data using finite-difference derivatives.
-    with open(os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "w") as file:
-        file.write("void ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(const REAL xx0xx1xx2[3],")
-        if pointer_to_ID_inputs == True:
-            file.write("ID_inputs *other_inputs,")
-        else:
-            file.write("ID_inputs other_inputs,")
-        file.write("""
+    ID_inputs_param = "ID_inputs other_inputs,"
+    if pointer_to_ID_inputs == True:
+        ID_inputs_param = "ID_inputs *other_inputs,"
+
+    desc = "Write BSSN variables in terms of ADM variables at a given point xx0,xx1,xx2"
+    name = "ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs"
+    opts = ""
+    params = "const paramstruct *restrict params, "
+    if "oldloops" in loopopts:
+        opts = "DisableCparameters"
+        params = ""
+    params += "const REAL xx0xx1xx2[3]," + ID_inputs_param + """
                     REAL *hDD00,REAL *hDD01,REAL *hDD02,REAL *hDD11,REAL *hDD12,REAL *hDD22,
                     REAL *aDD00,REAL *aDD01,REAL *aDD02,REAL *aDD11,REAL *aDD12,REAL *aDD22,
                     REAL *trK, 
                     REAL *vetU0,REAL *vetU1,REAL *vetU2,
                     REAL *betU0,REAL *betU1,REAL *betU2,
-                    REAL *alpha,  REAL *cf) {
+                    REAL *alpha,  REAL *cf"""
+    outCparams = "preindent=1,outCverbose=False,includebraces=False"
+    outCfunction(
+        outfile=os.path.join(Ccodesdir, name + ".h"), desc=desc, name=name, params=params,
+        body="""
       REAL gammaSphorCartDD00,gammaSphorCartDD01,gammaSphorCartDD02,
            gammaSphorCartDD11,gammaSphorCartDD12,gammaSphorCartDD22;
       REAL KSphorCartDD00,KSphorCartDD01,KSphorCartDD02,
@@ -198,51 +213,50 @@ void ID_BSSN_lambdas(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],REAL *xx[3]
       const REAL xx0 = xx0xx1xx2[0];
       const REAL xx1 = xx0xx1xx2[1];
       const REAL xx2 = xx0xx1xx2[2];
-      REAL xyz_or_rthph[3];\n""")
-    outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
-    outputC(r_th_ph_or_Cart_xyz_oID_xx[0:3], ["xyz_or_rthph[0]", "xyz_or_rthph[1]", "xyz_or_rthph[2]"],
-            os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), outCparams + ",CSE_enable=False")
-    with open(os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "a") as file:
-        file.write("      "+ADM_input_function_name+"""(xyz_or_rthph, other_inputs,
-                      &gammaSphorCartDD00,&gammaSphorCartDD01,&gammaSphorCartDD02,
-                      &gammaSphorCartDD11,&gammaSphorCartDD12,&gammaSphorCartDD22,
-                      &KSphorCartDD00,&KSphorCartDD01,&KSphorCartDD02,
-                      &KSphorCartDD11,&KSphorCartDD12,&KSphorCartDD22,
-                      &alphaSphorCart,&betaSphorCartU0,&betaSphorCartU1,&betaSphorCartU2,
-                      &BSphorCartU0,&BSphorCartU1,&BSphorCartU2);
-        // Next compute all rescaled BSSN curvilinear quantities:\n""")
-    outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
-    outputC([hDD[0][0], hDD[0][1], hDD[0][2], hDD[1][1], hDD[1][2], hDD[2][2],
-             aDD[0][0], aDD[0][1], aDD[0][2], aDD[1][1], aDD[1][2], aDD[2][2],
-             trK, vetU[0], vetU[1], vetU[2], betU[0], betU[1], betU[2],
-             alpha, cf],
-            ["*hDD00", "*hDD01", "*hDD02", "*hDD11", "*hDD12", "*hDD22",
-             "*aDD00", "*aDD01", "*aDD02", "*aDD11", "*aDD12", "*aDD22",
-             "*trK", "*vetU0", "*vetU1", "*vetU2", "*betU0", "*betU1", "*betU2",
-             "*alpha", "*cf"],
-            os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), params=outCparams)
-    with open(os.path.join(Ccodesdir,"ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs.h"), "a") as file:
-        file.write("}\n")
+      REAL xyz_or_rthph[3];\n""" +
+             outputC(r_th_ph_or_Cart_xyz_oID_xx[0:3], ["xyz_or_rthph[0]", "xyz_or_rthph[1]", "xyz_or_rthph[2]"],
+                     "returnstring",
+                     outCparams + ",CSE_enable=False") + "      " + ADM_input_function_name + """(xyz_or_rthph, other_inputs,
+                       &gammaSphorCartDD00,&gammaSphorCartDD01,&gammaSphorCartDD02,
+                       &gammaSphorCartDD11,&gammaSphorCartDD12,&gammaSphorCartDD22,
+                       &KSphorCartDD00,&KSphorCartDD01,&KSphorCartDD02,
+                       &KSphorCartDD11,&KSphorCartDD12,&KSphorCartDD22,
+                       &alphaSphorCart,&betaSphorCartU0,&betaSphorCartU1,&betaSphorCartU2,
+                       &BSphorCartU0,&BSphorCartU1,&BSphorCartU2);
+      // Next compute all rescaled BSSN curvilinear quantities:\n""" +
+             outputC([hDD[0][0], hDD[0][1], hDD[0][2], hDD[1][1], hDD[1][2], hDD[2][2],
+                      aDD[0][0], aDD[0][1], aDD[0][2], aDD[1][1], aDD[1][2], aDD[2][2],
+                      trK, vetU[0], vetU[1], vetU[2], betU[0], betU[1], betU[2],
+                      alpha, cf],
+                     ["*hDD00", "*hDD01", "*hDD02", "*hDD11", "*hDD12", "*hDD22",
+                      "*aDD00", "*aDD01", "*aDD02", "*aDD11", "*aDD12", "*aDD22",
+                      "*trK", "*vetU0", "*vetU1", "*vetU2", "*betU0", "*betU1", "*betU2",
+                      "*alpha", "*cf"], "returnstring", params=outCparams),
+        opts = opts)
 
     # Step 5.a: Output the driver function for the above
     #           function ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs()
     # Next write the driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs():
-    with open(os.path.join(Ccodesdir,"ID_BSSN__ALL_BUT_LAMBDAs.h"), "w") as file:
-        file.write("void ID_BSSN__ALL_BUT_LAMBDAs(const int Nxx_plus_2NGHOSTS[3],REAL *xx[3],")
-        if pointer_to_ID_inputs == True:
-            file.write("ID_inputs *other_inputs,")
-        else:
-            file.write("ID_inputs other_inputs,")
-        file.write("REAL *in_gfs) {\n")
-        file.write(lp.loop(["i2", "i1", "i0"], ["0", "0", "0"],
-                           ["Nxx_plus_2NGHOSTS[2]", "Nxx_plus_2NGHOSTS[1]", "Nxx_plus_2NGHOSTS[0]"],
-                           ["1", "1", "1"], ["#pragma omp parallel for",
-                                             "    const REAL xx2 = xx[2][i2];",
-                                             "        const REAL xx1 = xx[1][i1];"], "",
-                           """const REAL xx0 = xx[0][i0];
+    desc = """Driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(), 
+which writes BSSN variables in terms of ADM variables at a given point xx0,xx1,xx2"""
+    name = "ID_BSSN__ALL_BUT_LAMBDAs"
+    params = "const paramstruct *restrict params,REAL *restrict xx[3]," + ID_inputs_param + "REAL *in_gfs"
+    opts = ""
+    funccallparams = "params, "
+    idx3replace   = "IDX3S"
+    idx4ptreplace = "IDX4ptS"
+    if "oldloops" in loopopts:
+        params = "const int Nxx_plus_2NGHOSTS[3],REAL *xx[3]," + ID_inputs_param + "REAL *in_gfs"
+        opts = "DisableCparameters"
+        funccallparams = ""
+        idx3replace   = "IDX3"
+        idx4ptreplace = "IDX4pt"
+    outCfunction(
+        outfile=os.path.join(Ccodesdir, name + ".h"), desc=desc, name=name, params=params,
+        body="""
 const int idx = IDX3(i0,i1,i2);
 const REAL xx0xx1xx2[3] = {xx0,xx1,xx2};
-ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(xx0xx1xx2,other_inputs,
+ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(""".replace("IDX3",idx3replace)+funccallparams+"""xx0xx1xx2,other_inputs,
                     &in_gfs[IDX4pt(HDD00GF,idx)],&in_gfs[IDX4pt(HDD01GF,idx)],&in_gfs[IDX4pt(HDD02GF,idx)],
                     &in_gfs[IDX4pt(HDD11GF,idx)],&in_gfs[IDX4pt(HDD12GF,idx)],&in_gfs[IDX4pt(HDD22GF,idx)],
                     &in_gfs[IDX4pt(ADD00GF,idx)],&in_gfs[IDX4pt(ADD01GF,idx)],&in_gfs[IDX4pt(ADD02GF,idx)],
@@ -251,6 +265,6 @@ ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(xx0xx1xx2,other_inputs,
                     &in_gfs[IDX4pt(VETU0GF,idx)],&in_gfs[IDX4pt(VETU1GF,idx)],&in_gfs[IDX4pt(VETU2GF,idx)],
                     &in_gfs[IDX4pt(BETU0GF,idx)],&in_gfs[IDX4pt(BETU1GF,idx)],&in_gfs[IDX4pt(BETU2GF,idx)],
                     &in_gfs[IDX4pt(ALPHAGF,idx)],&in_gfs[IDX4pt(CFGF,idx)]);
-"""))
-        file.write("}\n")
+""".replace("IDX4pt",idx4ptreplace),
+        loopopts="AllPoints,Read_xxs"+loopopts, opts=opts)
 
