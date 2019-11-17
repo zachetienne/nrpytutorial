@@ -334,22 +334,14 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 outC_function_prototype_dict = {}
 outC_function_dict           = {}
 
-<<<<<<< HEAD
 def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts=""):
-=======
-def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop=""):
->>>>>>> 90846cca6d30f72e2c442505f38f2c311ddc3667
     if name == None or params == None or body == None:
         print("Cfunction() error: strings must be provided for function name, parameters, and body")
         sys.exit(1)
     func_prototype = type+" "+name+"("+params+")"
 
     include_Cparams_str = ""
-<<<<<<< HEAD
     if not "DisableCparameters" in opts:
-=======
-    if "DisableCparameters" not in loopopts:
->>>>>>> 90846cca6d30f72e2c442505f38f2c311ddc3667
         if "EnableSIMD" in loopopts:
             include_Cparams_str = "#include \"set_Cparameters-SIMD.h\"\n"
         else:
@@ -362,19 +354,11 @@ def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loo
 
     return func_prototype+";",complete_func
 
-<<<<<<< HEAD
 def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts=""):
     outC_function_prototype_dict[name],outC_function_dict[name] = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts)
 
 def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts=""):
     ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts)
-=======
-def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop=""):
-    outC_function_prototype_dict[name],outC_function_dict[name] = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop)
-
-def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop=""):
-    ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop)
->>>>>>> 90846cca6d30f72e2c442505f38f2c311ddc3667
     if outfile == "returnstring":
         return Cfunc
     with open(outfile,"w") as file:
