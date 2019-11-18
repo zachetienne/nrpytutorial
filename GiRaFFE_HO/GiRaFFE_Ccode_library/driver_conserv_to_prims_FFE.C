@@ -47,11 +47,7 @@ void GiRaFFE_HO_compute_conservatives(const REAL gxxL,const REAL gxyL,const REAL
 // Assuming idx = IDX3(i,j,k). Much faster if idx can be reused over and over:
 #define IDX4pt(g,idx)   ( (idx) + (Nxx_plus_2NGHOSTS[0]*Nxx_plus_2NGHOSTS[1]*Nxx_plus_2NGHOSTS[2]) * (g) )
 
-void GiRaFFE_HO_update_metric_det_inverse(const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3],REAL *xx[3],REAL *aux_gfs) {
-
 #include "metric_quantities.h"
-
-}
 void GiRaFFE_HO_conserv_to_prims_FFE(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3],
                                      REAL *xx[3], REAL *in_gfs, REAL *aux_gfs) {
   //printf("Starting conservative-to-primitive solver...\n");
