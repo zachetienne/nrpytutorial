@@ -50,7 +50,6 @@ add_test Maxwell/tests/test_Maxwell.py
 add_test ScalarWave/tests/test_ScalarWave.py
 add_test ScalarWaveCurvilinear/tests/test_ScalarWaveCurvilinear.py
 add_test tests/test_reference_metric.py
-add_test TOV/tests/test_TOV.py
 add_test u0_smallb_Poynting__Cartesian/tests/test_u0_smallb_Poynting__Cartesian.py
 add_test WeylScal4NRPy/tests/test_WeylScal4NRPy.py
 

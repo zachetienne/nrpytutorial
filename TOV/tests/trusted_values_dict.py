@@ -1,8 +1,0 @@
-from mpmath import mpf, mp, mpc
-from UnitTesting.standard_constants import precision
-
-mp.dps = precision
-trusted_values_dict = {}
-
-# Generated on: 2019-08-09
-trusted_values_dict['TOV_ADM_T4UUmunu__TOV_ADM_T4UUmunu__True__globals'] = {'r': mpf('0.323547944290903721764607325894758'), 'th': mpf('0.713725233596488539689062235993333'), 'ph': mpf('0.924602887309922349956536891113501'), 'gammaSphDD[0][0]': mpf('0.643896027263809345164702335750917'), 'gammaSphDD[0][1]': mpf('0.0'), 'gammaSphDD[0][2]': mpf('0.0'), 'gammaSphDD[1][0]': mpf('0.0'), 'gammaSphDD[1][1]': mpf('0.31329289979419074117171625043082'), 'gammaSphDD[1][2]': mpf('0.0'), 'gammaSphDD[2][0]': mpf('0.0'), 'gammaSphDD[2][1]': mpf('0.0'), 'gammaSphDD[2][2]': mpf('0.13426865063613979235478856097507'), 'KSphDD[0][0]': mpf('0.0'), 'KSphDD[0][1]': mpf('0.0'), 'KSphDD[0][2]': mpf('0.0'), 'KSphDD[1][0]': mpf('0.0'), 'KSphDD[1][1]': mpf('0.0'), 'KSphDD[1][2]': mpf('0.0'), 'KSphDD[2][0]': mpf('0.0'), 'KSphDD[2][1]': mpf('0.0'), 'KSphDD[2][2]': mpf('0.0'), 'alphaSph': mpf('0.369243514372335730132682584287032'), 'betaSphU[0]': mpf('0.0'), 'betaSphU[1]': mpf('0.0'), 'betaSphU[2]': mpf('0.0'), 'BSphU[0]': mpf('0.0'), 'BSphU[1]': mpf('0.0'), 'BSphU[2]': mpf('0.0'), 'T4UU[0][0]': mpf('2.33497104493940462166266281711084'), 'T4UU[0][1]': mpf('0.0'), 'T4UU[0][2]': mpf('0.0'), 'T4UU[0][3]': mpf('0.0'), 'T4UU[1][0]': mpf('0.0'), 'T4UU[1][1]': mpf('1.36810174375392109250997953561582'), 'T4UU[1][2]': mpf('0.0'), 'T4UU[1][3]': mpf('0.0'), 'T4UU[2][0]': mpf('0.0'), 'T4UU[2][1]': mpf('0.0'), 'T4UU[2][2]': mpf('2.81179458032573748345816258828729'), 'T4UU[2][3]': mpf('0.0'), 'T4UU[3][0]': mpf('0.0'), 'T4UU[3][1]': mpf('0.0'), 'T4UU[3][2]': mpf('0.0'), 'T4UU[3][3]': mpf('6.56084107140592986851471182244227')}
