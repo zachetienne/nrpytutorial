@@ -4,16 +4,15 @@
 #         zachetie **at** gmail **dot* com
 
 # Step P1: import all needed modules from NRPy+:
-import sympy as sp
-import NRPy_param_funcs as par
-from outputC import *
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-import reference_metric as rfm
-import BSSN.BSSN_quantities as Bq
-import loop as lp
-import os
+from outputC import *             # NRPy+: Core C code output module
+import finite_difference as fin   # NRPy+: Finite difference C code generation module
+import grid as gri                # NRPy+: Functions having to do with numerical grids
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import sympy as sp                # SymPy, Python's core symbolic algebra package
+import BSSN.BSSN_quantities as Bq # NRPy+: BSSN quantities
+import os                         # Standard Python modules for multiplatform OS-level functions
+
 
 def Enforce_Detgammabar_Constraint_symb_expressions():
     # Set spatial dimension (must be 3 for BSSN)
