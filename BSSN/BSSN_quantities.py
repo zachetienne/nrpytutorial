@@ -4,11 +4,12 @@
 #         zachetie **at** gmail **dot* com
 
 # Step 1: Import all needed modules from NRPy+:
-import NRPy_param_funcs as par
-import sympy as sp
-import indexedexp as ixp
-import grid as gri
-import reference_metric as rfm
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri                # NRPy+: Functions having to do with numerical grids
+import reference_metric as rfm    # NRPy+: Reference metric support
+import sys                        # Standard Python modules for multiplatform OS-level functions
 
 # Step 1.a: Set the coordinate system for the numerical grid
 #  DO NOT SET IN STANDALONE PYTHON MODULE
@@ -173,7 +174,7 @@ def detgammabar_and_derivs():
 
     if par.parval_from_str(thismodule + "::detgbarOverdetghat_equals_one") == "False":
         print("Error: detgbarOverdetghat_equals_one=\"False\" is not fully implemented yet.")
-        exit(1)
+        sys.exit(1)
     ## Approach for implementing detgbarOverdetghat_equals_one=False:
     #     detgbarOverdetghat = gri.register_gridfunctions("AUX", ["detgbarOverdetghat"])
     #     detgbarOverdetghatInitial = gri.register_gridfunctions("AUX", ["detgbarOverdetghatInitial"])
@@ -509,7 +510,7 @@ def phi_and_derivs():
     cf_choice = par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf")
     if not (cf_choice == "phi" or cf_choice == "W" or cf_choice == "chi"):
         print("Error: EvolvedConformalFactor_cf == " + par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") + " unsupported!")
-        exit(1)
+        sys.exit(1)
 
     # Step 9.b: Define phi_dBarD = phi_dD (since phi is a scalar) and phi_dBarDD (covariant derivative)
     #          \bar{D}_i \bar{D}_j \phi = \phi_{;\bar{i}\bar{j}} = \bar{D}_i \phi_{,j}

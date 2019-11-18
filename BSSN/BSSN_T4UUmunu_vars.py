@@ -5,10 +5,8 @@
 #         zachetie **at** gmail **dot* com
 
 # Step P1: import all needed modules from NRPy+:
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import reference_metric as rfm
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri                # NRPy+: Functions having to do with numerical grids
 
 def define_BSSN_T4UUmunu_rescaled_source_terms():
     # Step 0: First check to see if this function has already been called.

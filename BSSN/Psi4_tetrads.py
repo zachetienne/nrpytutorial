@@ -9,12 +9,10 @@
 #          and Patrick Nelson
 
 # Step 1.a: import all needed modules from NRPy+:
-import sympy as sp
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-import reference_metric as rfm
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
 
 # Step 1.b: Initialize TetradChoice parameter
 thismodule = __name__

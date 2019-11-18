@@ -6,17 +6,15 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-thismodule = __name__
 # Step 1: Initialize needed Python/NRPy+ modules
-import sympy as sp
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import reference_metric as rfm
-from outputC import *
-import finite_difference as fin
-import BSSN.BSSN_quantities as Bq
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities
 import BSSN.BSSN_T4UUmunu_vars as BTmunu
+
+thismodule = __name__
 
 def BSSN_constraints(add_T4UUmunu_source_terms=False):
     # Step 1.a: Set spatial dimension (must be 3 for BSSN, as BSSN is
@@ -106,10 +104,7 @@ def BSSN_constraints(add_T4UUmunu_source_terms=False):
         for j in range(DIM):
             MU[i] += -sp.Rational(2,3)*Bq.gammabarUU[i][j]*trK_dD[j]
 
-    # First define aDD_dD:
-    aDD_dD = ixp.declarerank3("aDD_dD", "sym01")
-
-    # Then evaluate the conformal covariant derivative \bar{D}_j \bar{A}_{lm}
+    # Next evaluate the conformal covariant derivative \bar{D}_j \bar{A}_{lm}
     AbarDD_dBarD = ixp.zerorank3()
     for i in range(DIM):
         for j in range(DIM):

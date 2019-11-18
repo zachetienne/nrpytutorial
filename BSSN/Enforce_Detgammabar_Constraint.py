@@ -9,8 +9,8 @@ import finite_difference as fin   # NRPy+: Finite difference C code generation m
 import grid as gri                # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
-import sympy as sp                # SymPy, Python's core symbolic algebra package
-import BSSN.BSSN_quantities as Bq # NRPy+: BSSN quantities
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities
 import os                         # Standard Python modules for multiplatform OS-level functions
 
 

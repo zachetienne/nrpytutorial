@@ -12,12 +12,13 @@
 #         zachetie **at** gmail **dot* com
 
 # Step 1.a: import all needed modules from NRPy+:
-import sympy as sp
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-import reference_metric as rfm
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import sys                        # Standard Python modules for multiplatform OS-level functions
+import BSSN.BSSN_quantities as Bq # NRPy+: This module depends on the parameter EvolvedConformalFactor_cf,
+                                  #        which is defined in BSSN.BSSN_quantities
 
 have_already_called_BSSN_RHSs_function = False
 
@@ -190,7 +191,7 @@ def BSSN_RHSs():
     else:
         print("Error: EvolvedConformalFactor_cf == " +
               par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") + " unsupported!")
-        exit(1)
+        sys.exit(1)
 
     # Step 5: right-hand side of trK (trace of extrinsic curvature):
     # \partial_t K = \beta^k \partial_k K <- TERM 1

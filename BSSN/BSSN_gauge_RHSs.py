@@ -80,7 +80,7 @@ def BSSN_gauge_RHSs():
             alpha_rhs = 6 * sp.exp(6 * cf) * Brhs.cf_rhs
         else:
             print("Error LapseEvolutionOption==HarmonicSlicing unsupported for EvolvedConformalFactor_cf!=(W or phi)")
-            exit(1)
+            sys.exit(1)
 
     # Step 2.c: Frozen lapse
     #    \partial_t \alpha = 0
@@ -89,7 +89,7 @@ def BSSN_gauge_RHSs():
         
     else:
         print("Error: "+thismodule + "::LapseEvolutionOption == "+LapseEvolOption+" not supported!")
-        exit(1)
+        sys.exit(1)
 
     # Step 3.a: Set \partial_t \beta^i
     # First check that ShiftEvolutionOption parameter choice is supported.
@@ -101,7 +101,7 @@ def BSSN_gauge_RHSs():
         ShiftEvolOption != "GammaDriving1stOrder_Covariant" and \
         ShiftEvolOption != "GammaDriving1stOrder_Covariant__Hatted":
         print("Error: ShiftEvolutionOption == " + ShiftEvolOption + " unsupported!")
-        exit(1)
+        sys.exit(1)
 
     # Next import expressions from BSSN_quantities
     BU = Bq.BU

@@ -14,6 +14,7 @@ import reference_metric as rfm    # NRPy+: Reference metric support
 import sys                        # Standard Python modules for multiplatform OS-level functions
 import BSSN.BSSN_quantities as Bq # NRPy+: This module depends on the parameter EvolvedConformalFactor_cf,
                                   #        which is defined in BSSN.BSSN_quantities
+
 # Step 1.a: Set DIM=3, as we're using a 3+1 decomposition of Einstein's equations
 DIM=3
 
@@ -139,7 +140,7 @@ def cf_from_gammaDD(gammaDD):
     else:
         print("Error EvolvedConformalFactor_cf type = \"" + par.parval_from_str(
             "EvolvedConformalFactor_cf") + "\" unknown.")
-        exit(1)
+        sys.exit(1)
 
 # Step 2.e: Rescale beta^i and B^i according to the prescription described in
 #         the [BSSN in curvilinear coordinates tutorial module](Tutorial-BSSNCurvilinear.ipynb)

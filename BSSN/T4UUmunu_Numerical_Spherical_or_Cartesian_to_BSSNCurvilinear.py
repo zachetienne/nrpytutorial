@@ -9,15 +9,18 @@
 #         zachetie **at** gmail **dot* com
 
 # Step P1: Import needed modules
-import sympy as sp
-import NRPy_param_funcs as par
-from outputC import *
-import indexedexp as ixp
-import reference_metric as rfm
-import loop as lp
-import grid as gri
-import finite_difference as fin
-import BSSN.BSSN_RHSs as bssnrhs  # The EvolvedConformalFactor_cf parameter is used below
+from outputC import *             # NRPy+: Core C code output module
+import finite_difference as fin   # NRPy+: Finite difference C code generation module
+import grid as gri                # NRPy+: Functions having to do with numerical grids
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
+import BSSN.BSSN_quantities as Bq # NRPy+: This module depends on the parameter EvolvedConformalFactor_cf,
+                                  #        which is defined in BSSN.BSSN_quantities
+import sys                        # Standard Python modules for multiplatform OS-level functions
+import BSSN.BSSN_RHSs as bssnrhs  # NRPy+: BSSN RHS quantities
+import loop as lp # NRPy+: Helper module for writing C-code loops
 
 def T4UUmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
                                                               Tmunu_input_function_name,
@@ -131,7 +134,7 @@ def T4UUmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
     if rfm.have_already_called_reference_metric_function == False:
         print("Error. Called Tmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear() without")
         print("       first setting up reference metric, by calling rfm.reference_metric().")
-        exit(1)
+        sys.exit(1)
 
     # Step 1: All input quantities are in terms of r,th,ph or x,y,z. We want them in terms
     #         of xx0,xx1,xx2, so here we call sympify_integers__replace_rthph() to replace
@@ -145,7 +148,7 @@ def T4UUmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
         r_th_ph_or_Cart_xyz_oID_xx = rfm.xxCart
     else:
         print("Error: Can only convert ADM Cartesian or Spherical initial data to BSSN Curvilinear coords.")
-        exit(1)
+        sys.exit(1)
 
     # Next apply Jacobian transformations to convert into the (xx0,xx1,xx2) basis
 
@@ -236,7 +239,7 @@ def T4UUmunu_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear(CoordType_in,
         cf = (gammaDET / gammabarDET) ** (-sp.Rational(1, 6))
     else:
         print("Error EvolvedConformalFactor_cf type = \"" + par.parval_from_str("EvolvedConformalFactor_cf") + "\" unknown.")
-        exit(1)
+        sys.exit(1)
 
     # Step 4: Rescale tensorial quantities according to the prescription described in
     #         the [BSSN in curvilinear coordinates tutorial module](Tutorial-BSSNCurvilinear.ipynb)
