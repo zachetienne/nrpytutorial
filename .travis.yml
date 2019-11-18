@@ -103,3 +103,20 @@ matrix:
       python: nightly
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
+    - name: "Ubuntu Linux Bionic Python 3.6.7"
+      os: linux
+      dist: bionic
+      python: 3.6.7
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Bionic Python 3.7.1"
+      os: linux
+      dist: bionic
+      python: 3.7.1
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Bionic Python 3.8"
+      os: linux
+      dist: bionic
+      python: 3.8
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
