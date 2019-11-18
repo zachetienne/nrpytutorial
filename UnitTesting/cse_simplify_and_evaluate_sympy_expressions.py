@@ -126,14 +126,18 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
     keys = reduced.free_symbols
     # Warning: might slow Travis CI too much: logging.debug(' free symbols remaining: '+str(keys))
 
-    # Declare the nrpyAbs function, which is used in place of SymPy's Abs() function,
-    #    to prevent SymPy from trying to expand or complicate absolute value expressions.
-    nrpyAbs = Function('nrpyAbs')
 
     for key in keys:
         # Warning: might slow Travis CI too much: logging.debug(' reduced: replacing key = '+str(key)+' with '+str(free_symbols_dict[key]))
-        reduced = reduced.subs(key, free_symbols_dict[key]).subs(nrpyAbs,Abs)
+        reduced = reduced.subs(key, free_symbols_dict[key])
         # Warning: might slow Travis CI too much: logging.debug(' reduced result: at key = '+str(key)+' replacing reduced = '+str(reduced)+' with '+str(reduced_new))
+
+    # Declare the nrpyAbs function, which is used in place of SymPy's Abs() function,
+    #    to prevent SymPy from trying to expand or complicate absolute value expressions.
+    nrpyAbs = Function('nrpyAbs')
+    # Now replace all instances of nrpyAbs() with SymPy's Abs(), so we can convert
+    #    expressions to mpf's or mpc's.
+    reduced = reduced.subs(nrpyAbs,Abs)
 
     # Adding our variable, value pair to our calculated_dict
     try:
