@@ -1,4 +1,4 @@
-# As documented in the NRPy+ tutorial module
+# As documented in the NRPy+ tutorial notebook
 # Tutorial-cmdline_helper.ipynb, this Python script 
 # provides a multi-platform means to run executables,
 # remove files, and compile code.
