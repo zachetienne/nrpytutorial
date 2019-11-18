@@ -40,7 +40,7 @@ def compute_u0_noif(gammaDD,alpha,ValenciavU):
     # If Rmax>R, then Rmax = 0.5*(Rmax+R-Rmax+R) = R
     # If R>Rmax, then Rmax = 0.5*(Rmax+R+Rmax-R) = Rmax
     # If R==TINYDOUBLE, then Rmax = 0.5*(Rmax-Rmax) = 0, since, e.g., 10 +/- 1e-100 = 10 exactly in double precision
-    Rmax =  sp.Rational(1,2)*(Rmax+R-sp.Abs(Rmax-R))
+    Rmax =  sp.Rational(1,2)*(Rmax+R-nrpyAbs(Rmax-R))
 
     # With our rescaled Rmax, v^i = sqrt{Rmax/R} v^i
     global rescaledValenciavU,rescaledu0
@@ -72,7 +72,7 @@ def find_cp_cm(lapse,shifti,gupii):
     # Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
     # negative value to the sqrt function.
     detm = b*b - 4*a*c
-    detm = sp.sqrt(sp.Rational(1,2)*(detm + sp.Abs(detm)))
+    detm = sp.sqrt(sp.Rational(1,2)*(detm + nrpyAbs(detm)))
     global cplus,cminus
     cplus  = sp.Rational(1,2)*(-b/a + detm/a)
     cminus = sp.Rational(1,2)*(-b/a - detm/a)
@@ -94,12 +94,12 @@ def find_cmax_cmin(flux_dirn,gamma_faceUU,beta_faceU,alpha_face,gammadet_face):
     
     global cmax,cmin
     # Now, we need to set cmax to the larger of cpr,cpl, and 0
-    cmax = sp.Rational(1,2)*(cpr+cpl+sp.Abs(cpr-cpl))
-    cmax = sp.Rational(1,2)*(cmax+sp.Abs(cmax))
+    cmax = sp.Rational(1,2)*(cpr+cpl+nrpyAbs(cpr-cpl))
+    cmax = sp.Rational(1,2)*(cmax+nrpyAbs(cmax))
     
     # And then, set cmin to the smaller of cmr,cml, and 0
-    cmin =  sp.Rational(1,2)*(cmr+cml-sp.Abs(cmr-cml))
-    cmin = -sp.Rational(1,2)*(cmin-sp.Abs(cmin))
+    cmin =  sp.Rational(1,2)*(cmr+cml-nrpyAbs(cmr-cml))
+    cmin = -sp.Rational(1,2)*(cmin-nrpyAbs(cmin))
 
 # We'll rewrite this assuming that we've passed the entire reconstructed
 # gridfunctions. You could also do this with only one point, but then you'd 
