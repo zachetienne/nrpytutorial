@@ -58,23 +58,19 @@ def Enforce_Detgammabar_Constraint_symb_expressions():
 
     return enforce_detg_constraint_symb_expressions
 
-def output_Enforce_Detgammabar_Constraint_Ccode(outdir="BSSN/",version="old", exprs=""):
+def output_Enforce_Detgammabar_Constraint_Ccode(outdir="BSSN/", exprs="", Read_xxs=False):
     # Step 0: Check if outdir is string; error out if not.
     check_if_string__error_if_not(outdir,"outdir")
 
     desc = "Enforce det(gammabar) = det(gammahat) constraint."
     name = "enforce_detgammabar_constraint"
-    if version == "old":
-        outCfunction(
-            outfile=os.path.join(outdir, name + ".h"), desc=desc, name=name,
-            params ="const int Nxx_plus_2NGHOSTS[3],REAL *xx[3], REAL *in_gfs",
-            body   =fin.FD_outputC("returnstring", Enforce_Detgammabar_Constraint_symb_expressions(),
-                                params="outCverbose=False,preindent=0,includebraces=False"),
-            loopopts="AllPoints,Read_xxs,oldloops", opts="DisableCparameters")
-    elif version == "new":
-        outCfunction(
-            outfile=os.path.join(outdir, name + ".h"), desc=desc, name=name,
-            params="const rfm_struct *restrict rfmstruct,const paramstruct *restrict params, REAL *restrict in_gfs",
-            body=fin.FD_outputC("returnstring", exprs,
-                                params="outCverbose=False,preindent=1,includebraces=False").replace("IDX4", "IDX4S"),
-            loopopts="InteriorPoints,Enable_rfm_precompute")
+    params = "const rfm_struct *restrict rfmstruct,const paramstruct *restrict params, REAL *restrict in_gfs"
+    loopopts = "AllPoints,Enable_rfm_precompute"
+    if Read_xxs:
+        params = "const paramstruct *restrict params, REAL *restrict xx[3], REAL *restrict in_gfs"
+        loopopts = "AllPoints,Read_xxs"
+    outCfunction(
+        outfile=os.path.join(outdir, name + ".h"), desc=desc, name=name, params=params,
+        body=fin.FD_outputC("returnstring", exprs,
+                            params="outCverbose=False,preindent=1,includebraces=False").replace("IDX4", "IDX4S"),
+        loopopts=loopopts)

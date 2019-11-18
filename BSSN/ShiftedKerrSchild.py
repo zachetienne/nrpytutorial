@@ -15,14 +15,11 @@
 # * The black hole spin parameter, a
  
 
-# Step P0: Load needed modules
-import sympy as sp
-import NRPy_param_funcs as par
-from outputC import *
-import indexedexp as ixp
-import reference_metric as rfm
+# Step 1: Initialize core Python/NRPy+ modules
+import sympy as sp             # SymPy: The Python computer algebra package upon which NRPy+ depends
+import NRPy_param_funcs as par # NRPy+: Parameter interface
+import indexedexp as ixp       # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
-import BSSN.BSSN_ID_function_string as bIDf
 
 thismodule = __name__
 
@@ -133,5 +130,6 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
         AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
                                                                     gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
+    import BSSN.BSSN_ID_function_string as bIDf
     global returnfunction
-    returnfunction = bIDf.BSSN_ID_function_string(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU)
+    returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)

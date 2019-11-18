@@ -26,12 +26,10 @@
 # * Once the above variables have been set in Cartesian coordinates, we will apply the appropriate coordinate transformations and tensor rescalings ([described in the BSSN NRPy+ tutorial module](Tutorial-BSSNCurvilinear.ipynb))
 
 # Step 1: Initialize core Python/NRPy+ modules
-import sympy as sp
-import NRPy_param_funcs as par
-from outputC import *
-import indexedexp as ixp
+import sympy as sp             # SymPy: The Python computer algebra package upon which NRPy+ depends
+import NRPy_param_funcs as par # NRPy+: Parameter interface
+import indexedexp as ixp       # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
-import BSSN.BSSN_ID_function_string as bIDf
 
 thismodule = __name__
 
@@ -47,7 +45,7 @@ BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"], 1.0)
 
 # ComputeADMGlobalsOnly == True will only set up the ADM global quantities.
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
-def BrillLindquist(ComputeADMGlobalsOnly = False,returnfunctionversion=1):
+def BrillLindquist(ComputeADMGlobalsOnly = False):
     global Cartxyz,gammaCartDD, KCartDD, alphaCart, betaCartU, BCartU
     
     # Step 2: Setting up Brill-Lindquist initial data
@@ -81,8 +79,6 @@ def BrillLindquist(ComputeADMGlobalsOnly = False,returnfunctionversion=1):
         AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian",Cartxyz, 
                                                                     gammaCartDD,KCartDD,alphaCart,betaCartU,BCartU)
 
+    import BSSN.BSSN_ID_function_string as bIDf
     global returnfunction
-    if returnfunctionversion == 1:
-        returnfunction =   bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
-    elif returnfunctionversion == 2:
-        returnfunction = bIDf.BSSN_ID_function_stringv2(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
+    returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
