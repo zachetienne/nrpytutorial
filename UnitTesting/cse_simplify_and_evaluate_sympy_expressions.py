@@ -2,7 +2,7 @@
 # This is because we need SymPy to evaluate that expression, not mpmath.
 from mpmath import mp, mpf, sqrt, pi, mpc, fabs
 import random
-from sympy import cse, N
+from sympy import cse, N, Abs, Function
 import UnitTesting.standard_constants as standard_constants
 import logging
 import hashlib
@@ -12,7 +12,6 @@ import hashlib
 
 # Setting precision
 precision = standard_constants.precision
-
 
 # cse_simplify_and_evaluate_sympy_expressions gets self.expanded_variable_dict by calling expand_variable_dict() on
 # self.variable_dict. It then gets every free symbol in the resulting expanded_variable_dict and assigns them random,
@@ -126,12 +125,15 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
     # Evaluating expression after cse optimization substitution
     keys = reduced.free_symbols
     # Warning: might slow Travis CI too much: logging.debug(' free symbols remaining: '+str(keys))
+
+    # Declare the nrpyAbs function, which is used in place of SymPy's Abs() function,
+    #    to prevent SymPy from trying to expand or complicate absolute value expressions.
+    nrpyAbs = Function('nrpyAbs')
+
     for key in keys:
         # Warning: might slow Travis CI too much: logging.debug(' reduced: replacing key = '+str(key)+' with '+str(free_symbols_dict[key]))
-        reduced_new = reduced.subs(key, free_symbols_dict[key])
+        reduced = reduced.subs(key, free_symbols_dict[key]).subs(nrpyAbs,Abs)
         # Warning: might slow Travis CI too much: logging.debug(' reduced result: at key = '+str(key)+' replacing reduced = '+str(reduced)+' with '+str(reduced_new))
-        reduced = reduced_new
-
 
     # Adding our variable, value pair to our calculated_dict
     try:
