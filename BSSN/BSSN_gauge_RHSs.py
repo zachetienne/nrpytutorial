@@ -15,20 +15,15 @@
 #         zachetie **at** gmail **dot* com
 
 # Step 1: Import all needed modules from NRPy+:
-import sympy as sp
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-import reference_metric as rfm
-import sys
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities
+import BSSN.BSSN_RHSs as Brhs     # NRPy+: Constructs BSSN right-hand-side expressions
+import sys                        # Standard Python modules for multiplatform OS-level functions
 
-# Step 1.a: Load BSSN quantities module
-import BSSN.BSSN_quantities as Bq
-# Step 1.b: Load BSSN RHSs module
-import BSSN.BSSN_RHSs as Brhs
-
-# Step 1.c: Declare/initialize parameters for this module
+# Step 1.a: Declare/initialize parameters for this module
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "LapseEvolutionOption", "OnePlusLog"))
 par.initialize_param(par.glb_param("char", thismodule, "ShiftEvolutionOption", "GammaDriving2ndOrder_Covariant"))

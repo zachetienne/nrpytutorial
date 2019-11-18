@@ -8,14 +8,13 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 # Step P1: Initialize core Python/NRPy+ modules
-import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 from outputC import *             # NRPy+: Core C code output module
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 import finite_difference as fin   # NRPy+: Finite difference C code generation module
 import grid as gri                # NRPy+: Functions having to do with numerical grids
-import loop as lp                 # NRPy+: Generate C code loops
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
-import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities; gammabarUU & GammabarUDD needed below
+import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities; e.g., gammabarUU & GammabarUDD needed below
 import os, sys                    # Standard Python modules for multiplatform OS-level functions
 
 def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name, 

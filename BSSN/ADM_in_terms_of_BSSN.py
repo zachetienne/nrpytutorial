@@ -7,12 +7,11 @@
 #         zachetie **at** gmail **dot* com
 
 # Step 1.a: import all needed modules from NRPy+:
-import sympy as sp
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-import reference_metric as rfm
+from outputC import *             # NRPy+: Core C code output module
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm    # NRPy+: Reference metric support
+import sys                        # Standard Python module for multiplatform OS-level functions
 
 def ADM_in_terms_of_BSSN():
     global gammaDD, gammaDDdD, gammaDDdDD, gammaUU, detgamma, GammaUDD, KDD, KDDdD
@@ -57,7 +56,7 @@ def ADM_in_terms_of_BSSN():
         exp4phi = (1 / cf ** 2)
     else:
         print("Error EvolvedConformalFactor_cf type = \"" + par.parval_from_str("EvolvedConformalFactor_cf") + "\" unknown.")
-        exit(1)
+        sys.exit(1)
 
     for i in range(DIM):
         for j in range(DIM):
@@ -86,7 +85,7 @@ def ADM_in_terms_of_BSSN():
                 phidDD[i][j] = sp.Rational(1,2)*( exp4phi*cf_dD[i]*cf_dD[j] - exp2phi*cf_dDD[i][j] )
     else:
         print("Error EvolvedConformalFactor_cf type = \""+par.parval_from_str("EvolvedConformalFactor_cf")+"\" unknown.")
-        exit(1)
+        sys.exit(1)
 
     exp4phidD  = ixp.zerorank1()
     exp4phidDD = ixp.zerorank2()
