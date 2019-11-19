@@ -6,12 +6,10 @@
 #   Tutorial-WeylScalarsInvariants-Cartesian
 
 # Step 1: import all needed modules from NRPy+:
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-from outputC import *
-import sympy as sp
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri                # NRPy+: Functions having to do with numerical grids
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
 
 # Step 2: Initialize WeylScalars parameters
 thismodule = __name__

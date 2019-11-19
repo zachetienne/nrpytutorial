@@ -13,7 +13,6 @@ import sympy as sp                # SymPy: The Python computer algebra package u
 import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities
 import os                         # Standard Python modules for multiplatform OS-level functions
 
-
 def Enforce_Detgammabar_Constraint_symb_expressions():
     # Set spatial dimension (must be 3 for BSSN)
     DIM = 3

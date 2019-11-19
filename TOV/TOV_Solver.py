@@ -31,11 +31,10 @@
 # R_Schw refers to the Schwarzschild radius
 
 # Step 1: Import needed Python/NRPy+ modules
-import numpy as np
-import scipy.integrate as si
-import math
-import sys
-import TOV.Polytropic_EOSs as ppeos
+import numpy as np                  # NumPy: A numerical methods module for Python
+import scipy.integrate as si        # SciPy: Python module for mathematics, science, and engineering applications
+import math, sys                    # Standard Python modules for math; multiplatform OS-level functions
+import TOV.Polytropic_EOSs as ppeos # NRPy+: Piecewise polytrope equation of state support
 
 # Step 2: The TOV equations
 def TOV_Solver(eos,

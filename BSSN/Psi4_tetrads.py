@@ -13,6 +13,7 @@ import sympy as sp                # SymPy: The Python computer algebra package u
 import NRPy_param_funcs as par    # NRPy+: Parameter interface
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
+import sys                        # Standard Python modules for multiplatform OS-level functions
 
 # Step 1.b: Initialize TetradChoice parameter
 thismodule = __name__
@@ -26,7 +27,7 @@ def Psi4_tetrads():
     # Step 1.c: Check if tetrad choice is implemented:
     if par.parval_from_str(thismodule+"::TetradChoice") != "QuasiKinnersley":
         print("ERROR: "+thismodule+"::TetradChoice = "+par.parval_from_str("TetradChoice")+" currently unsupported!")
-        exit(1)
+        sys.exit(1)
 
     # Step 1.d: Given the chosen coordinate system, set up
     #           corresponding reference metric and needed
@@ -129,7 +130,7 @@ def Psi4_tetrads():
             return v3U[a]
         else:
             print("ERROR: unknown vector!")
-            exit(1)
+            sys.exit(1)
 
     def update_omega(omegaDD, i,j, v1U,v2U,v3U,gammaDD):
         omegaDD[i][j] = sp.sympify(0)

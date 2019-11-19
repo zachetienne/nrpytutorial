@@ -15,9 +15,8 @@
 #   https://en.wikipedia.org/w/index.php?title=Spin-weighted_spherical_harmonics&oldid=853425244
 
 # Step 1: Initialize needed Python/NRPy+ modules 
-import sympy as sp
-import NRPy_param_funcs as par
-from outputC import *
+from outputC import *             # NRPy+: Core C code output module
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 
 def SpinWeight_minus2_SphHarmonics(maximum_l=8,filename="SpinWeight_minus2_SphHarmonics/SpinWeight_minus2_SphHarmonics.h"):
     # Step 2: Defining the Goldberg function

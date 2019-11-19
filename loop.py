@@ -1,4 +1,10 @@
-import sys
+# This module contains infrastructure for generating
+#   C-code loops of arbitrary dimension
+
+# Author: Zachariah B. Etienne
+#         zachetie **at** gmail **dot* com
+
+import sys                         # Standard Python modules for multiplatform OS-level functions
 
 # loop1D() is just a special case of loop(), and in fact is called by loop().
 #   For documentation on the inputs, see loop()'s documentation below.
@@ -87,6 +93,8 @@ def loop(idxvar,lower,upper,incr,OpenMPpragma,tabprefix="",loopguts=""):
         return header,footer
     return header+loopgutsout+footer
 
+# Automatic generation of C-code loops around an arbitrarily
+#     defined loop body.
 def simple_loop(loopopts, body):
     if loopopts == "":
         return body
@@ -103,7 +111,7 @@ def simple_loop(loopopts, body):
             i2i1i0_maxs = ["NGHOSTS+Nxx[2]", "NGHOSTS+Nxx[1]", "NGHOSTS+Nxx[0]"]
     else:
         print("Error: loopopts given, but no points over which to loop were specified.")
-        exit(1)
+        sys.exit(1)
 
     Read_1Darrays = ["", "", ""]
     if "Read_xxs" in loopopts:
@@ -118,7 +126,7 @@ def simple_loop(loopopts, body):
     if "Enable_rfm_precompute" in loopopts:
         if "Read_xxs" in loopopts:
             print("Error: Enable_rfm_precompute and Read_xxs cannot both be enabled.")
-            exit(1)
+            sys.exit(1)
         if "EnableSIMD" in loopopts:
             Read_1Darrays = ["#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"",
                              "#include \"rfm_files/rfm_struct__SIMD_outer_read1.h\"",

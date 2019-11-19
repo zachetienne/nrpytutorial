@@ -8,7 +8,6 @@
 #         zachetie **at** gmail **dot* com
 
 # Step P0: Import needed Python/NRPy+ modules
-from outputC import *             # NRPy+: Core C code output module
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
