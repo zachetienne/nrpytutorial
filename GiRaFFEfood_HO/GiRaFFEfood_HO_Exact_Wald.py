@@ -87,7 +87,7 @@ def GiRaFFEfood_HO_Exact_Wald():
     # Initialize all components of A and E in the *spherical basis* to zero
     ASphD = ixp.zerorank1()
     ESphD = ixp.zerorank1()
-    if IDchoice is "Exact_Wald":
+    if IDchoice=="Exact_Wald":
         ASphD[2] = (r * r * sp.sin(theta)**2)/2
         ESphD[2] = 2 * M * sp.sin(theta)**2 / sp.sqrt(1+2*M/r)
     else:
