@@ -77,41 +77,47 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
                             parity_type.append(int(gf.name[-1]))  # = 0 for e.g., b4^0; = 1 for e.g., beta^1, etc.
                     elif gf.rank == 2:
                         if gf.DIM == 3:
-                            if gf.name[-2] == "0" and gf.name[-1] == "0":
-                                # element of a list; a[-2] the
-                                # second-to-last element, etc.
+                            # element of a list; a[-2] the
+                            # second-to-last element, etc.
+                            idx0 = gf.name[-2]
+                            idx1 = gf.name[-1]
+                            if idx0 == "0" and idx1 == "0":
                                 parity_type.append(4)
-                            elif gf.name[-2] == "0" and gf.name[-1] == "1":
+                            elif (idx0 == "0" and idx1 == "1") or (idx0 == "1" and idx1 == "0"):
                                 parity_type.append(5)
-                            elif gf.name[-2] == "0" and gf.name[-1] == "2":
+                            elif (idx0 == "0" and idx1 == "2") or (idx0 == "2" and idx1 == "0"):
                                 parity_type.append(6)
-                            elif gf.name[-2] == "1" and gf.name[-1] == "1":
+                            elif idx0 == "1" and idx1 == "1":
                                 parity_type.append(7)
-                            elif gf.name[-2] == "1" and gf.name[-1] == "2":
+                            elif (idx0 == "1" and idx1 == "2") or (idx0 == "2" and idx1 == "1"):
                                 parity_type.append(8)
-                            elif gf.name[-2] == "2" and gf.name[-1] == "2":
+                            elif idx0 == "2" and idx1 == "2":
                                 parity_type.append(9)
                         elif gf.DIM == 4:
+                            idx0 = gf.name[-2]
+                            idx1 = gf.name[-1]
                             # g4DD00 = g_{tt} : parity type = 0
                             # g4DD01 = g_{tx} : parity type = 1
                             # g4DD02 = g_{ty} : parity type = 2
                             # g4DD0a = g_{ta} : parity type = a
-                            if gf.name[-2] == "0":
-                                parity_type.append(int(gf.name[-1]))
-                            elif gf.name[-2] == "1" and gf.name[-1] == "1":
+                            if idx0 == "0":
+                                parity_type.append(int(idx1))
+                            elif idx1 == "0":
+                                parity_type.append(int(idx0))
+                            if idx0 == "1" and idx1 == "1":
                                 parity_type.append(4)
-                            elif gf.name[-2] == "1" and gf.name[-1] == "2":
+                            elif (idx0 == "1" and idx1 == "2") or (idx0 == "2" and idx1 == "1"):
                                 parity_type.append(5)
-                            elif gf.name[-2] == "1" and gf.name[-1] == "3":
+                            elif (idx0 == "1" and idx1 == "3") or (idx0 == "3" and idx1 == "1"):
                                 parity_type.append(6)
-                            elif gf.name[-2] == "2" and gf.name[-1] == "2":
+                            elif idx0 == "2" and idx1 == "2":
                                 parity_type.append(7)
-                            elif gf.name[-2] == "2" and gf.name[-1] == "3":
+                            elif (idx0 == "2" and idx1 == "3") or (idx0 == "3" and idx1 == "2"):
                                 parity_type.append(8)
-                            elif gf.name[-2] == "3" and gf.name[-1] == "3":
+                            elif idx0 == "3" and idx1 == "3":
                                 parity_type.append(9)
                     if len(parity_type) == parity_type__orig_len:
-                        print("Error: Could not figure out parity type for "+gf.type+" gridfunction: " + gf.name,gf.DIM,gf.name[-2],gf.name[-1],gf.rank)
+                        print("Error: Could not figure out parity type for "+gf.gftype+" gridfunction: " + gf.name,gf.DIM,gf.name[-2],gf.name[-1],gf.rank)
                         sys.exit(1)
         if len(parity_type) != len(list_of_gf_names):
             print("Error: For some reason the length of the parity types list did not match the length of the gf list.")
