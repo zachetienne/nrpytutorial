@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set proper path
-export PYTHONPATH=`pwd`:`pwd`/UnitTesting
+export PYTHONPATH=`pwd`:`pwd`/UnitTesting:`pwd`/in_progress
 
 # Make sure the Python interpreter to use was passed in
 if [ -z "$1" ]
