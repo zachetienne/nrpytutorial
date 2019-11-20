@@ -1,0 +1,279 @@
+## mclachlan tov_static
+ActiveThorns = "Time MoL"
+ActiveThorns = "Coordbase CartGrid3d Boundary StaticConformal"
+ActiveThorns = "SymBase ADMBase TmunuBase HydroBase InitBase ADMCoupling ADMMacros"
+ActiveThorns = "IOUtil"
+#ActiveThorns = "Formaline"
+ActiveThorns = "SpaceMask CoordGauge Constants LocalReduce aeilocalinterp LoopControl"
+ActiveThorns = "Carpet CarpetLib CarpetReduce CarpetRegrid2 CarpetInterp"
+ActiveThorns = "CarpetIOASCII CarpetIOScalar CarpetIOHDF5 CarpetIOBasic"
+
+ActiveThorns = "IllinoisGRMHD"
+ActiveThorns = "ID_converter_ILGRMHD Convert_to_HydroBase Seed_Magnetic_Fields"
+
+# Perturbation size                       | Expected difference after 80 iterations
+# Seed_Magnetic_Fields::A_b = 0.644       |  8th digit, versus A_b=0.64428596382321
+# Seed_Magnetic_Fields::A_b = 0.6442859   | 12th digit, versus A_b=0.64428596382321
+# ID_converter_ILGRMHD::random_pert=1e-15 | 12th digit
+Seed_Magnetic_Fields::enable_IllinoisGRMHD_staggered_A_fields = 1
+Seed_Magnetic_Fields::A_b = 0.64428596382321 # Should yield 1/beta = b^2/(2P) ~ 0.001
+#ID_converter_ILGRMHD::random_pert = 1e-15
+
+#Carpet::veryverbose = "yes"
+
+CarpetLib::support_staggered_operators = "yes"
+IllinoisGRMHD::conserv_to_prims_debug = 0
+IllinoisGRMHD::Psi6threshold = 1e100
+IllinoisGRMHD::damp_lorenz = 0.1
+
+IllinoisGRMHD::tau_atm=4.876083025795607e-12
+IllinoisGRMHD::rho_b_atm = 1.292852735094440e-10
+
+
+# grid parameters
+driver::ghost_size = 3
+CoordBase::boundary_size_x_lower = 3
+CoordBase::boundary_size_y_lower = 3
+CoordBase::boundary_size_z_lower = 3
+CoordBase::boundary_size_x_upper = 3
+CoordBase::boundary_size_y_upper = 3
+CoordBase::boundary_size_z_upper = 3
+#CoordBase::boundary_shiftout_z_lower = 1
+
+#grid::domain = "bitant"
+#grid::bitant_plane = "xy"
+grid::avoid_origin = "no"
+CartGrid3D::type         = "coordbase"
+CoordBase::domainsize = "minmax"
+CoordBase::xmin = -11.9375
+CoordBase::ymin = -11.9375
+CoordBase::zmin = -11.9375
+CoordBase::xmax =  12.0625
+CoordBase::ymax =  12.0625
+CoordBase::zmax =  12.0625
+CoordBase::dx   =   1.0
+CoordBase::dy   =   1.0
+CoordBase::dz   =   1.0
+
+TmunuBase::stress_energy_storage = yes
+TmunuBase::stress_energy_at_RHS  = yes
+TmunuBase::timelevels            =  1
+TmunuBase::prolongation_type     = none
+
+HydroBase::timelevels            = 3
+
+ADMMacros::spatial_order = 4
+
+ADMBase::metric_type     = "physical"
+
+SpaceMask::use_mask      = "yes"
+
+cactus::cctk_itlast = 2
+#Cactus::terminate           = "time"
+#Cactus::cctk_final_time     = 10000
+
+Carpet::domain_from_coordbase = "yes"
+Carpet::enable_all_storage       = no
+Carpet::use_buffer_zones         = "yes"
+
+Carpet::poison_new_timelevels    = "yes"
+Carpet::check_for_poison         = "no"
+
+Carpet::init_3_timelevels        = no
+Carpet::init_fill_timelevels     = "yes"
+
+CarpetLib::poison_new_memory = "yes"
+CarpetLib::poison_value      = 114
+
+# system specific Carpet paramters
+Carpet::max_refinement_levels    = 4
+Carpet::prolongation_order_space = 5
+Carpet::prolongation_order_time  = 2
+
+CarpetRegrid2::regrid_every = 0
+CarpetRegrid2::num_centres  = 1
+
+CarpetRegrid2::num_levels_1 = 4
+CarpetRegrid2::radius_1[1]  = 6.0
+CarpetRegrid2::radius_1[2]  = 3.0
+CarpetRegrid2::radius_1[3]  = 1.5
+
+time::dtfac = 0.5
+MoL::ODE_Method             = "rk4"
+MoL::MoL_Intermediate_Steps = 4
+MoL::MoL_Num_Scratch_Levels = 1
+
+# check all physical variables for NaNs
+ActiveThorns = "NaNChecker"
+NaNChecker::check_every = 1
+NaNChecker::action_if_found = "just warn" #"terminate", "just warn", "abort"
+NaNChecker::check_vars = "
+ ADMBase::metric 
+ ADMBase::lapse 
+ ADMBase::shift
+ IllinoisGRMHD::P
+ IllinoisGRMHD::vx
+ IllinoisGRMHD::vy
+ IllinoisGRMHD::vz
+ IllinoisGRMHD::rho_b
+ IllinoisGRMHD::psi6phi
+ IllinoisGRMHD::Ax
+ IllinoisGRMHD::Ay
+ IllinoisGRMHD::Az
+"
+
+## Lapse Condition:  \partial_t alpha = - alpha K
+## Shift Condition:  \partial_t beta^i = 0
+
+ActiveThorns = "GenericFD NewRad"
+ActiveThorns = "ML_BSSN ML_BSSN_Helper"
+ADMBase::evolution_method        = "ML_BSSN"
+ADMBase::lapse_evolution_method  = "ML_BSSN"
+ADMBase::shift_evolution_method  = "ML_BSSN"
+ADMBase::dtlapse_evolution_method= "ML_BSSN"
+ADMBase::dtshift_evolution_method= "ML_BSSN"
+
+
+#Evolve shift & lapse:
+ML_BSSN::timelevels = 3
+ML_BSSN::harmonicN                      = 1      # 1+log
+ML_BSSN::harmonicF                      = 2.0    # 1+log
+ML_BSSN::ShiftGammaCoeff                = 0.75
+ML_BSSN::BetaDriver                     = 1.0
+ML_BSSN::advectLapse = 1
+ML_BSSN::advectShift = 1
+ML_BSSN::evolveA         = 1
+ML_BSSN::evolveB         = 1
+
+#ML_BSSN::harmonicN           = 1      # 1+log
+#ML_BSSN::harmonicF           = 1.0    # 1+log
+
+#ML_BSSN::ShiftGammaCoeff     = 0.0
+ML_BSSN::AlphaDriver         = 0.0
+#ML_BSSN::BetaDriver          = 0.0
+#ML_BSSN::LapseAdvectionCoeff = 0.0
+#ML_BSSN::ShiftAdvectionCoeff = 0.0
+
+#TESTING: FREEZE LAPSE & SHIFT:
+#ML_BSSN::LapseACoeff         = 0.0
+#ML_BSSN::harmonicF           = 0.0
+#ML_BSSN::ShiftBCoeff = 0.0
+#ML_BSSN::ShiftGammaCoeff = 0.0
+#ML_BSSN::harmonicN = 0.0
+#ML_BSSN::ShiftAdvectionCoeff = 0.0
+#ML_BSSN::LapseAdvectionCoeff = 0.0
+#ML_BSSN::BetaDriver = 0.0
+
+ML_BSSN::MinimumLapse        = 1.0e-8
+
+ML_BSSN::initial_boundary_condition="extrapolate-gammas"
+ML_BSSN::rhs_boundary_condition="NewRad"
+
+ML_BSSN::ML_log_confac_bound = "none"
+ML_BSSN::ML_metric_bound     = "none"
+ML_BSSN::ML_Gamma_bound      = "none"
+ML_BSSN::ML_trace_curv_bound = "none"
+ML_BSSN::ML_curv_bound       = "none"
+ML_BSSN::ML_lapse_bound      = "none"
+ML_BSSN::ML_dtlapse_bound    = "none"
+ML_BSSN::ML_shift_bound      = "none"
+ML_BSSN::ML_dtshift_bound    = "none"
+
+ActiveThorns = "SphericalSurface Dissipation"
+
+SphericalSurface::nsurfaces = 2
+SphericalSurface::maxntheta = 39
+SphericalSurface::maxnphi = 76
+
+SphericalSurface::ntheta      [0] = 39
+SphericalSurface::nphi        [0] = 76
+SphericalSurface::nghoststheta[0] = 2
+SphericalSurface::nghostsphi  [0] = 2
+
+SphericalSurface::ntheta      [1] = 39
+SphericalSurface::nphi        [1] = 76
+SphericalSurface::nghoststheta[1] = 2
+SphericalSurface::nghostsphi  [1] = 2
+
+Dissipation::verbose   = "no"
+Dissipation::epsdis   = 0.01
+Dissipation::vars = "
+        ML_BSSN::ML_log_confac
+        ML_BSSN::ML_metric
+        ML_BSSN::ML_curv
+        ML_BSSN::ML_trace_curv
+        ML_BSSN::ML_Gamma
+        ML_BSSN::ML_lapse
+        ML_BSSN::ML_shift
+"
+
+
+# init parameters
+InitBase::initial_data_setup_method = "init_some_levels"
+
+ActiveThorns = "TOVSolver"
+
+ADMBase::initial_data            = "tov"
+# TESTING:
+#ADMBase::initial_lapse           = "one"
+#ADMBase::initial_shift           = "zero"
+ADMBase::initial_lapse           = "tov"
+ADMBase::initial_shift           = "tov"
+ADMBase::initial_dtlapse         = "zero"
+ADMBase::initial_dtshift         = "zero"
+
+TOVSolver::TOV_Rho_Central[0] = 1.29285309e-1
+TOVSolver::TOV_Gamma       = 2.0
+TOVSolver::TOV_K           = 1.0
+
+IllinoisGRMHD::neos=1
+IllinoisGRMHD::rho_ppoly_tab_in[0]=0.0
+IllinoisGRMHD::Gamma_ppoly_tab_in[0]=2.0
+IllinoisGRMHD::Gamma_th=2.0
+IllinoisGRMHD::K_ppoly_tab0 = 1.0
+
+
+# I/O
+
+IOUtil::checkpoint_dir          = $parfile
+IOUtil::checkpoint_every_walltime_hours = 1000.95
+IOUtil::checkpoint_keep         = 2
+IOUtil::checkpoint_on_terminate = "no"
+IOUtil::out_dir                 = $parfile
+IOUtil::out_fileinfo            = "none"
+IOUtil::parfile_write           = "generate"
+IOUtil::recover                 = "autoprobe"
+IOUtil::recover_dir             = $parfile
+
+IOBasic::outInfo_every = 2
+#IOBasic::outInfo_vars  = "Carpet::physical_time_per_hour HydroBase::rho ML_BSSN::ML_Ham"
+IOBasic::outInfo_vars  = "Carpet::physical_time_per_hour IllinoisGRMHD::rho_b ML_BSSN::ML_Ham"
+
+IOScalar::outScalar_every    = 2
+CarpetIOScalar::outScalar_reductions = "maximum"
+IOScalar::one_file_per_group = no
+IOScalar::outScalar_vars     = "
+ IllinoisGRMHD::rho_b
+"
+
+#CarpetIOASCII::out0D_every            = 2
+#CarpetIOASCII::out0D_vars             = "
+#  Carpet::physical_time_per_hour
+#"
+
+IOASCII::out1D_every        = 1
+IOASCII::one_file_per_group = no
+IOASCII::output_symmetry_points = no
+IOASCII::out3D_ghosts           = no
+IOASCII::out3D_outer_ghosts     = no
+IOASCII::out1D_vars         = "
+ IllinoisGRMHD::P
+ IllinoisGRMHD::vx
+ IllinoisGRMHD::vy
+ IllinoisGRMHD::vz
+ IllinoisGRMHD::rho_b
+ IllinoisGRMHD::psi6phi
+ IllinoisGRMHD::Ax
+ IllinoisGRMHD::Ay
+ IllinoisGRMHD::Az
+"
