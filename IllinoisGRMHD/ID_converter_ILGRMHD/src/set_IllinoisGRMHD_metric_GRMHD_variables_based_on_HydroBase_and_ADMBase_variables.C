@@ -65,18 +65,22 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
          * P = P_cold.
          */
         /* Compute P_cold */
-        int polytropic_index = find_polytropic_K_and_Gamma_index(eos, rho_b[index]);
-        double K_poly     = eos.K_ppoly_tab[polytropic_index];
-        double Gamma_poly = eos.Gamma_ppoly_tab[polytropic_index];
-        double P_cold     = K_poly*pow(rho_b[index],Gamma_poly);
+        const int polytropic_index = find_polytropic_K_and_Gamma_index(eos, rho_b[index]);
+        const double K_poly     = eos.K_ppoly_tab[polytropic_index];
+        const double Gamma_poly = eos.Gamma_ppoly_tab[polytropic_index];
+        const double P_cold     = K_poly*pow(rho_b[index],Gamma_poly);
 
         /* Compare P and P_cold */
         double P_rel_error = fabs(P[index] - P_cold)/P[index];
         if( rho_b[index] > rho_b_atm && P_rel_error > 1e-2 ) {
-
+          const double Gamma_poly_local = log(P[index]/K_poly) / log(rho_b[index]);
           /* Determine the value of Gamma_poly_local associated with P[index] */
-          CCTK_VError(VERR_DEF_PARAMS,"Expected a piecewise polytropic EOS with local Gamma_poly = %.15e, but found a point such that Gamma_poly_local = %.15e.\nError = %e\nrho_b = %e\nrho_b_atm = %e\nP = %e\n",
-                      Gamma_poly, 0.123456, P_rel_error, rho_b[index], rho_b_atm, P[index]);
+          CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+"Expected a PP EOS with local Gamma_poly = %.15e, but found a point such that Gamma_poly_local = %.15e.\n",
+                     Gamma_poly, Gamma_poly_local);
+          CCTK_VWarn(CCTK_WARN_ALERT, __LINE__, __FILE__, CCTK_THORNSTRING,
+"{rho_b; rho_b_atm; P; P_cold; P_rel_Error} = %.10e %e %.10e %.10e %e\n",
+                      rho_b[index], rho_b_atm, P[index],P_cold,P_rel_error);
         }
 
         Ax[index] = Avec[CCTK_GFINDEX4D(cctkGH,i,j,k,0)];
@@ -357,3 +361,4 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
         }
       }
 }
+

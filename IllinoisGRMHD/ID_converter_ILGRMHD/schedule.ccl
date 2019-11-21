@@ -28,3 +28,4 @@ schedule IllinoisGRMHD_conserv_to_prims IN IllinoisGRMHD_ID_Converter as fifth_i
 {
   LANG: C
 } "Compute primitive variables from conservatives. This is non-trivial, requiring a Newton-Raphson root-finder."
+

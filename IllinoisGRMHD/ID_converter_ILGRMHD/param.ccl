@@ -28,3 +28,4 @@ REAL random_pert "Random perturbation atop data"
 BOOLEAN pure_hydro_run "Set the vector potential and corresponding EM gauge quantity to zero"
 {
 } "no"
+

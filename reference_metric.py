@@ -935,3 +935,50 @@ def out_timestep_func_to_file(outfile):
     add_find_timestep_func_to_dict()
     with open(outfile, "w") as file:
         file.write(outC_function_dict["find_timestep"])
+
+def out_default_free_parameters_for_rfm(free_parameters_file,
+                                        domain_size=1.0,sinh_width=0.4,sinhv2_const_dr=0.05,SymTP_bScale=0.5):
+    CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
+
+    with open(free_parameters_file, "a") as file:
+        file.write("""
+// Set free-parameter values.
+
+const REAL domain_size    = """ + str(domain_size) + """;
+const REAL sinh_width     = """ + str(sinh_width) + """;
+const REAL sinhv2_const_dr= """ + str(sinhv2_const_dr) + """;
+const REAL SymTP_bScale   = """ + str(SymTP_bScale) + ";\n")
+
+        coordparams = ""
+        if CoordSystem == "Spherical":
+            coordparams += """
+params.RMAX = domain_size;\n"""
+        elif "SinhSpherical" in CoordSystem:
+            coordparams += """
+params.AMPL = domain_size;
+params.SINHW=  sinh_width;\n"""
+            if CoordSystem == "SinhSphericalv2":
+                coordparams += "        params.const_dr = sinhv2_const_dr;\n"
+        elif "SymTP" in CoordSystem:
+            coordparams += """
+params.bScale =  SymTP_bScale;
+params.AMAX   =  domain_size;\n"""
+            if CoordSystem == "SinhSymTP":
+                coordparams += "        params.SINHWAA = sinh_width;\n"
+        elif CoordSystem == "Cartesian":
+            coordparams += """
+params.xmin = -domain_size, params.xmax = domain_size;
+params.ymin = -domain_size, params.ymax = domain_size;
+params.zmin = -domain_size, params.zmax = domain_size;\n"""
+        elif CoordSystem == "Cylindrical":
+            coordparams += """
+params.ZMIN   = -domain_size;
+params.ZMAX   =  domain_size;
+params.RHOMAX =  domain_size;\n"""
+        elif CoordSystem == "SinhCylindrical":
+            coordparams += """
+params.AMPLRHO = domain_size;
+params.SINHWRHO= sinh_width;
+params.AMPLZ   = domain_size;
+params.SINHWZ  = sinh_width;\n"""
+        file.write(coordparams + "\n")
