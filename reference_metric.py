@@ -975,10 +975,14 @@ params.zmin = -domain_size, params.zmax = domain_size;\n"""
 params.ZMIN   = -domain_size;
 params.ZMAX   =  domain_size;
 params.RHOMAX =  domain_size;\n"""
-        elif CoordSystem == "SinhCylindrical":
+        elif "SinhCylindrical" in CoordSystem:
             coordparams += """
 params.AMPLRHO = domain_size;
 params.SINHWRHO= sinh_width;
 params.AMPLZ   = domain_size;
 params.SINHWZ  = sinh_width;\n"""
+            if CoordSystem == "SinhCylindricalv2":
+                coordparams += """
+params.const_drho = sinhv2_const_dr;
+params.const_dz   = sinhv2_const_dr;\n"""
         file.write(coordparams + "\n")
