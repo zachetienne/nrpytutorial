@@ -160,10 +160,11 @@ def compute_S_tilde_source_termD(alpha, sqrtgammaDET,g4DD_zerotimederiv_dD, T4UU
                 S_tilde_source_termD[i] += sp.Rational(1,2)*alpha*sqrtgammaDET*T4UU[mu][nu]*g4DD_zerotimederiv_dD[mu][nu][i+1]
 
 
-# Step 6.a: Convert Valencia 3-velocity v_{(n)}^i into u^\mu, applying a speed limiter
+# Step 6.a: Convert Valencia 3-velocity v_{(n)}^i into u^\mu, and apply a speed limiter
+#           Speed-limited ValenciavU is output to rescaledValenciavU global.
 def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU):
-    # Inputs:  Metric gammaDD, lapse alpha, Valencia 3-velocity ValenciavU
-    # Outputs: u^0, speed-limited ValenciavU
+    # Inputs:  Metric lapse alpha, shift betaU, 3-metric gammaDD, Valencia 3-velocity ValenciavU
+    # Outputs (as globals): u4U_ito_ValenciavU, rescaledValenciavU
 
     # R = gamma_{ij} v^i v^j
     R = sp.sympify(0)
@@ -171,18 +172,17 @@ def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha
         for j in range(3):
             R += gammaDD[i][j] * ValenciavU[i] * ValenciavU[j]
 
-    thismodule = __name__
+    thismodule = "GRHD"
     # The default value isn't terribly important here, since we'll overwrite in the main C code
     GAMMA_SPEED_LIMIT = par.Cparameters("REAL", thismodule, "GAMMA_SPEED_LIMIT", 10.0)  # Default value based on
     # IllinoisGRMHD.
     # GiRaFFE default = 2000.0
-
     # Rmax = 1 - 1/GAMMA_SPEED_LIMIT^2
-    Rmax = 1 - 1/(GAMMA_SPEED_LIMIT*GAMMA_SPEED_LIMIT)
+    Rmax = 1 - 1 / (GAMMA_SPEED_LIMIT * GAMMA_SPEED_LIMIT)
     # Now, we set Rstar = min(Rmax,R):
     # If Rmax>R, then Rstar = 0.5*(Rmax+R-Rmax+R) = R
     # If R>=Rmax, then Rstar = 0.5*(Rmax+R+Rmax-R) = Rmax
-    Rstar =  sp.Rational(1,2)*(Rmax+R-nrpyAbs(Rmax-R))
+    Rstar = sp.Rational(1, 2) * (Rmax + R - nrpyAbs(Rmax - R))
 
     # We add TINYDOUBLE to R below to avoid a 0/0, which occurs when
     #    ValenciavU == 0 for all Valencia 3-velocity components.
@@ -191,7 +191,8 @@ def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha
     #    - Adapted from Connie Francis' "Tiny Bubbles"
     TINYDOUBLE = par.Cparameters("#define", thismodule, "TINYDOUBLE", 1e-100)
 
-    # With our rescaled Rmax, v^i = sqrt{Rmax/R} v^i
+    # The rescaled (speed-limited) Valencia 3-velocity
+    #     is given by, v_{(n)}^i = sqrt{Rstar/R} v^i
     global rescaledValenciavU
     rescaledValenciavU = ixp.zerorank1()
     for i in range(3):
@@ -200,6 +201,7 @@ def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha
         #   meaningful, there must be something wrong with your unit conversion.
         rescaledValenciavU[i] = ValenciavU[i] * sp.sqrt(Rstar / (R + TINYDOUBLE))
 
+    # Finally compute u^mu in terms of Valenciav^i
     # u^0 = 1/(alpha-sqrt(1-R^*))
     global u4U_ito_ValenciavU
     u4U_ito_ValenciavU = ixp.zerorank1(DIM=4)
@@ -209,16 +211,24 @@ def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha
         u4U_ito_ValenciavU[i + 1] = u4U_ito_ValenciavU[0] * (alpha * rescaledValenciavU[i] - betaU[i])
 
 
-# Step 6.b: Convert v^i into u^\mu, applying a speed limiter
+# Step 6.b: Convert v^i into u^\mu, and apply a speed limiter.
+#           Speed-limited vU is output to rescaledvU global.
 def u4U_in_terms_of_vU__rescale_vU_by_applying_speed_limit(alpha, betaU, gammaDD, vU):
     ValenciavU = ixp.zerorank1()
     for i in range(3):
         ValenciavU[i] = (vU[i] + betaU[i]) / alpha
     u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
+    # Since ValenciavU is written in terms of vU,
+    #   u4U_ito_ValenciavU is actually u4U_ito_vU
     global u4U_ito_vU
     u4U_ito_vU = ixp.zerorank1(DIM=4)
     for mu in range(4):
         u4U_ito_vU[mu] = u4U_ito_ValenciavU[mu]
+    # Finally compute the rescaled (speed-limited) vU
+    global rescaledvU
+    rescaledvU = ixp.zerorank1(DIM=3)
+    for i in range(3):
+        rescaledvU[i] = alpha * rescaledValenciavU[i] - betaU[i]
 
 def generate_everything_for_UnitTesting():
     # First define hydrodynamical quantities

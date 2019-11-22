@@ -8,7 +8,7 @@ def test_equations():
     module_name = 'GRHD'
 
     function_and_global_dict = {'generate_everything_for_UnitTesting()': ['h','T4UU','T4UD','sqrtgammaDET','rho_star','tau_tilde','S_tildeD','vU','rho_star_fluxU','tau_tilde_fluxU','S_tilde_fluxUD',
-                                                                          's_source_term','g4DD_zerotimederiv_dD','S_tilde_source_termD','rescaledValenciavU','u4U_ito_ValenciavU','u4U_ito_vU']}
+                                                                          's_source_term','g4DD_zerotimederiv_dD','S_tilde_source_termD','rescaledValenciavU','u4U_ito_ValenciavU','rescaledvU','u4U_ito_vU']}
 
     create_test(module, module_name, function_and_global_dict)
 
