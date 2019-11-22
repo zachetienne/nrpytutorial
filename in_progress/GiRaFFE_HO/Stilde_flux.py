@@ -104,6 +104,10 @@ def find_cmax_cmin(flux_dirn,gamma_faceUU,beta_faceU,alpha_face,gammadet_face):
 # We'll rewrite this assuming that we've passed the entire reconstructed
 # gridfunctions. You could also do this with only one point, but then you'd 
 # need to declare everything as a Cparam in NRPy+
+import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
+nrpy_dir_path = os.path.join("..")
+if nrpy_dir_path not in sys.path:
+    sys.path.append(nrpy_dir_path)
 
 def HLLE_solver(flux_dirn, mom_comp, alpha_face, gammadet_face, gamma_faceDD, gamma_faceUU, beta_faceU, Valenciav_rU, B_rU, Valenciav_lU, B_lU): 
     # This solves the Riemann problem for the mom_comp component of the momentum
@@ -118,12 +122,27 @@ def HLLE_solver(flux_dirn, mom_comp, alpha_face, gammadet_face, gamma_faceDD, ga
 
     # Using the function coded above, we find the speed-limited v^i and u^0 on both 
     # left and right faces.
-    compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_rU)
-    Valenciav_rU = rescaledValenciavU
-    u4upperZero_r = rescaledu0
-    compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_lU)
-    Valenciav_lU = rescaledValenciavU
-    u4upperZero_l = rescaledu0
+    Method = "New"
+    if Method == "Old":
+        compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_rU)
+        Valenciav_rU = rescaledValenciavU
+        u4upperZero_r = rescaledu0
+
+        compute_u0_noif(gamma_faceDD,alpha_face,Valenciav_lU)
+        Valenciav_lU = rescaledValenciavU
+        u4upperZero_l = rescaledu0
+        
+    else:
+        import GRHD.equations as Ge
+        Ge.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha_face, beta_faceU, gamma_faceDD, 
+                                                                                  Valenciav_rU)
+        Valenciav_rU = Ge.rescaledValenciavU
+        u4upperZero_r = Ge.u4U_ito_ValenciavU[0]
+    
+        Ge.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha_face, beta_faceU, gamma_faceDD, 
+                                                                                  Valenciav_lU)
+        Valenciav_lU = Ge.rescaledValenciavU
+        u4upperZero_l = Ge.u4U_ito_ValenciavU[0]
 
     # Note the Kronecker delta symbol in the above; let's create it real quick:
     # We'll zero-offset everything here, unlike in the original GiRaFFE.
