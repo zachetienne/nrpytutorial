@@ -159,20 +159,66 @@ def compute_S_tilde_source_termD(alpha, sqrtgammaDET,g4DD_zerotimederiv_dD, T4UU
             for nu in range(4):
                 S_tilde_source_termD[i] += sp.Rational(1,2)*alpha*sqrtgammaDET*T4UU[mu][nu]*g4DD_zerotimederiv_dD[mu][nu][i+1]
 
-# Step 6: Convert v^i into u^\mu, applying a speed limiter, courtesy Patrick Nelson
-def u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, vU):
-    global u4_ito_3velsU
 
-    import GiRaFFE_HO.Stilde_flux as GSf
+# Step 6.a: Convert Valencia 3-velocity v_{(n)}^i into u^\mu, applying a speed limiter
+def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU):
+    # Inputs:  Metric gammaDD, lapse alpha, Valencia 3-velocity ValenciavU
+    # Outputs: u^0, speed-limited ValenciavU
+
+    # R = gamma_{ij} v^i v^j
+    R = sp.sympify(0)
+    for i in range(3):
+        for j in range(3):
+            R += gammaDD[i][j] * ValenciavU[i] * ValenciavU[j]
+
+    thismodule = __name__
+    # The default value isn't terribly important here, since we'll overwrite in the main C code
+    GAMMA_SPEED_LIMIT = par.Cparameters("REAL", thismodule, "GAMMA_SPEED_LIMIT", 10.0)  # Default value based on
+    # IllinoisGRMHD.
+    # GiRaFFE default = 2000.0
+
+    # Rmax = 1 - 1/GAMMA_SPEED_LIMIT^2
+    Rmax = 1 - 1/(GAMMA_SPEED_LIMIT*GAMMA_SPEED_LIMIT)
+    # Now, we set Rstar = min(Rmax,R):
+    # If Rmax>R, then Rstar = 0.5*(Rmax+R-Rmax+R) = R
+    # If R>=Rmax, then Rstar = 0.5*(Rmax+R+Rmax-R) = Rmax
+    Rstar =  sp.Rational(1,2)*(Rmax+R-nrpyAbs(Rmax-R))
+
+    # We add TINYDOUBLE to R below to avoid a 0/0, which occurs when
+    #    ValenciavU == 0 for all Valencia 3-velocity components.
+    # "Those tiny *doubles* make me warm all over
+    #  with a feeling that I'm gonna love you till the end of time."
+    #    - Adapted from Connie Francis' "Tiny Bubbles"
+    TINYDOUBLE = par.Cparameters("#define", thismodule, "TINYDOUBLE", 1e-100)
+
+    # With our rescaled Rmax, v^i = sqrt{Rmax/R} v^i
+    global rescaledValenciavU
+    rescaledValenciavU = ixp.zerorank1()
+    for i in range(3):
+        # If R == 0, then Rstar == 0, so Rmax/(R+TINYDOUBLE)=0/1e-100 = 0
+        #   If your velocities are of order 1e-100 and this is physically
+        #   meaningful, there must be something wrong with your unit conversion.
+        rescaledValenciavU[i] = ValenciavU[i] * sp.sqrt(Rstar / (R + TINYDOUBLE))
+
+    # u^0 = 1/(alpha-sqrt(1-R^*))
+    global u4U_ito_ValenciavU
+    u4U_ito_ValenciavU = ixp.zerorank1(DIM=4)
+    u4U_ito_ValenciavU[0] = 1 / (alpha * sp.sqrt(1 - Rstar))
+    # u^i = u^0 ( alpha v^i_{(n)} - beta^i ), where v^i_{(n)} is the Valencia 3-velocity
+    for i in range(3):
+        u4U_ito_ValenciavU[i + 1] = u4U_ito_ValenciavU[0] * (alpha * rescaledValenciavU[i] - betaU[i])
+
+
+# Step 6.b: Convert v^i into u^\mu, applying a speed limiter
+def u4U_in_terms_of_vU__rescale_vU_by_applying_speed_limit(alpha, betaU, gammaDD, vU):
     ValenciavU = ixp.zerorank1()
     for i in range(3):
         ValenciavU[i] = (vU[i] + betaU[i]) / alpha
-
-    GSf.compute_u0_noif(gammaDD, alpha, ValenciavU)
-    u4_ito_3velsU = ixp.zerorank1(DIM=4)
-    u4_ito_3velsU[0] = GSf.rescaledu0
-    for i in range(3):
-        u4_ito_3velsU[i+1] = GSf.rescaledu0 * (alpha * GSf.rescaledValenciavU[i] - betaU[i])
+    u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
+    global u4U_ito_vU
+    u4U_ito_vU = ixp.zerorank1(DIM=4)
+    for mu in range(4):
+        u4U_ito_vU[mu] = u4U_ito_ValenciavU[mu]
 
 def generate_everything_for_UnitTesting():
     # First define hydrodynamical quantities
@@ -215,6 +261,10 @@ def generate_everything_for_UnitTesting():
     compute_s_source_term(KDD, betaU, alpha, sqrtgammaDET, alpha_dD, T4UU)
     compute_S_tilde_source_termD(alpha, sqrtgammaDET, g4DD_zerotimederiv_dD, T4UU)
 
-    # Finally compute the 4-velocities in terms of an input 3-velocity testvU
+    # Then compute the 4-velocities in terms of an input Valencia 3-velocity testValenciavU[i]
+    testValenciavU = ixp.declarerank1("testValenciavU", DIM=3)
+    u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, testValenciavU)
+
+    # Finally compute the 4-velocities in terms of an input 3-velocity testvU[i] = u^i/u^0
     testvU = ixp.declarerank1("testvU", DIM=3)
-    u4U_in_terms_of_vU_apply_speed_limit(alpha, betaU, gammaDD, testvU)
+    u4U_in_terms_of_vU__rescale_vU_by_applying_speed_limit(alpha, betaU, gammaDD, testvU)
