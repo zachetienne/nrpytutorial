@@ -172,16 +172,15 @@ def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha
         for j in range(3):
             R += gammaDD[i][j] * ValenciavU[i] * ValenciavU[j]
 
-    thismodule = "GRHD"
-    # The default value isn't terribly important here, since we'll overwrite in the main C code
+    thismodule = __name__
+    # The default value isn't terribly important here, since we can overwrite in the main C code
     GAMMA_SPEED_LIMIT = par.Cparameters("REAL", thismodule, "GAMMA_SPEED_LIMIT", 10.0)  # Default value based on
-    # IllinoisGRMHD.
+                                                                                        # IllinoisGRMHD.
     # GiRaFFE default = 2000.0
-    # Rmax = 1 - 1/GAMMA_SPEED_LIMIT^2
     Rmax = 1 - 1 / (GAMMA_SPEED_LIMIT * GAMMA_SPEED_LIMIT)
     # Now, we set Rstar = min(Rmax,R):
-    # If Rmax>R, then Rstar = 0.5*(Rmax+R-Rmax+R) = R
-    # If R>=Rmax, then Rstar = 0.5*(Rmax+R+Rmax-R) = Rmax
+    # If R <  Rmax, then Rstar = 0.5*(Rmax+R-Rmax+R) = R
+    # If R >= Rmax, then Rstar = 0.5*(Rmax+R+Rmax-R) = Rmax
     Rstar = sp.Rational(1, 2) * (Rmax + R - nrpyAbs(Rmax - R))
 
     # We add TINYDOUBLE to R below to avoid a 0/0, which occurs when
