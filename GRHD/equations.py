@@ -1,5 +1,5 @@
 # As documented in the NRPy+ tutorial module
-#   Tutorial-GRHD_Equations-Cartesian-new.ipynb
+#   Tutorial-GRHD_Equations-Cartesian.ipynb
 #   this module will construct useful quantities
 #   for the IllinoisGRMHD implementation of
 #   general relativistic hydrodynamics (GRHD)
