@@ -1,3 +1,2 @@
 Failures:
 
-GRHD/tests/test_GRHD.py: test_equations

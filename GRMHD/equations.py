@@ -74,17 +74,25 @@ def generate_everything_for_UnitTesting():
     compute_GRMHD_T4UD(gammaDD,betaU,alpha, GRHDT4UU,GRFFET4UU)
 
     # Compute conservative variables in terms of primitive variables
+    global rho_star,tau_tilde,S_tildeD
     GRHD.compute_rho_star( alpha, GRHD.sqrtgammaDET, rho_b,u4U)
     GRHD.compute_tau_tilde(alpha, GRHD.sqrtgammaDET, T4UU,GRHD.rho_star)
     GRHD.compute_S_tildeD( alpha, GRHD.sqrtgammaDET, T4UD)
+    rho_star = GRHD.rho_star
+    tau_tilde = GRHD.tau_tilde
+    S_tildeD = GRHD.S_tildeD
 
     # Then compute v^i from u^mu
     GRHD.compute_vU_from_u4U__no_speed_limit(u4U)
 
     # Next compute fluxes of conservative variables
+    global rho_star_fluxU,tau_tilde_fluxU,S_tilde_fluxUD
     GRHD.compute_rho_star_fluxU(GRHD.vU, GRHD.rho_star)
     GRHD.compute_tau_tilde_fluxU(alpha, GRHD.sqrtgammaDET, GRHD.vU,T4UU)
     GRHD.compute_S_tilde_fluxUD( alpha, GRHD.sqrtgammaDET,         T4UD)
+    rho_star_fluxU = GRHD.rho_star_fluxU
+    tau_tilde_fluxU = GRHD.tau_tilde_fluxU
+    S_tilde_fluxUD = GRHD.S_tilde_fluxUD
 
     # Then declare derivatives & compute g4DD_zerotimederiv_dD
     gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01",DIM=3)
@@ -93,5 +101,8 @@ def generate_everything_for_UnitTesting():
     GRHD.compute_g4DD_zerotimederiv_dD(gammaDD,betaU,alpha, gammaDD_dD,betaU_dD,alpha_dD)
 
     # Then compute source terms on tau_tilde and S_tilde equations
+    global s_source_term,S_tilde_source_termD
     GRHD.compute_s_source_term(KDD,betaU,alpha, GRHD.sqrtgammaDET,alpha_dD,                   T4UU)
     GRHD.compute_S_tilde_source_termD(   alpha, GRHD.sqrtgammaDET,GRHD.g4DD_zerotimederiv_dD, T4UU)
+    s_source_term = GRHD.s_source_term
+    S_tilde_source_termD = GRHD.S_tilde_source_termD
