@@ -69,7 +69,7 @@ def compute_TEM4UU(gammaDD,betaU,alpha, smallb4U, smallbsquared,u4U):
         for nu in range(4):
             TEM4UU[mu][nu] = smallbsquared*u4U[mu]*u4U[nu] \
                              + sp.Rational(1,2)*smallbsquared*AB4m.g4UU[mu][nu] \
-                             + smallb4U[mu]*smallb4U[nu]
+                             - smallb4U[mu]*smallb4U[nu]
 
 # Step 3.b: Define T^{mu}_{nu} (a 4-dimensional tensor)
 def compute_TEM4UD(gammaDD,betaU,alpha, TEM4UU):
