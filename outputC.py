@@ -21,7 +21,16 @@ outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars
 #    codegen to output our desired fabs().
 nrpyAbs = sp.Function('nrpyAbs')
 custom_functions_for_SymPy_ccode = {
-    "nrpyAbs": "fabs"
+    "nrpyAbs": "fabs",
+    'Pow': [(lambda b, e: e == 2, lambda b, e: '((%s)*(%s))'                % (b,b)),
+            (lambda b, e: e == 3, lambda b, e: '((%s)*(%s)*(%s))'           % (b,b,b)),
+            (lambda b, e: e == 4, lambda b, e: '((%s)*(%s)*(%s)*(%s))'      % (b,b,b,b)),
+            (lambda b, e: e == 5, lambda b, e: '((%s)*(%s)*(%s)*(%s)*(%s))' % (b,b,b,b,b)),
+            (lambda b, e: e ==-2, lambda b, e: '(1/((%s)*(%s)))'                % (b,b)),
+            (lambda b, e: e ==-3, lambda b, e: '(1/((%s)*(%s)*(%s)))'           % (b,b,b)),
+            (lambda b, e: e ==-4, lambda b, e: '(1/((%s)*(%s)*(%s)*(%s)))'      % (b,b,b,b)),
+            (lambda b, e: e ==-5, lambda b, e: '(1/((%s)*(%s)*(%s)*(%s)*(%s)))' % (b,b,b,b,b)),
+            (lambda b, e: e != 2, 'pow')]
 }
 
 # Parameter initialization is called once, within nrpy.py.
