@@ -10,9 +10,9 @@ import NRPy_param_funcs as par
 import grid as gri
 import indexedexp as ixp
 import reference_metric as rfm
-import sys
+import sys, os
 
-def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=True):
+def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=True,Cparamspath=os.path.join("../")):
     # Step 0: Set up reference metric in case it hasn't already been set up.
     #         (Doing it twice hurts nothing).
     rfm.reference_metric()
@@ -50,7 +50,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
     lhs_strings = []
     for i in range(10):
         lhs_strings.append("parity[" + str(i) + "]")
-    outputC(parity, lhs_strings, outdir + "parity_conditions_symbolic_dot_products.h")
+    outputC(parity, lhs_strings, os.path.join(outdir, "parity_conditions_symbolic_dot_products.h"))
 
 
     # Step 2.a: Generate outdir+gridfunction_defines.h file,
@@ -130,7 +130,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
 
     # Step 2.c: Output all gridfunctions to outdir+"/gridfunction_defines.h"
     # ... then append to the file the parity type for each gridfunction.
-    with open(outdir + "/gridfunction_defines.h", "a") as file:
+    with open(os.path.join(outdir, "gridfunction_defines.h"), "a") as file:
         file.write("\n\n/* PARITY TYPES FOR ALL GRIDFUNCTIONS.\n")
         file.write(
             "   SEE \"Tutorial-Start_to_Finish-Curvilinear_BCs.ipynb\" FOR DEFINITIONS. */\n")
@@ -169,7 +169,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
     rfm.reference_metric()
 
     # Step 4: Output C code for the Eigen-Coordinate mapping from xx->Cartesian:
-    rfm.xxCart_h("EigenCoord_xxCart", "../set_Cparameters.h", outdir + "EigenCoord_xxCart.h")
+    rfm.xxCart_h("EigenCoord_xxCart", os.path.join(Cparamspath,"set_Cparameters.h"), os.path.join(outdir, "EigenCoord_xxCart.h"))
 
     # Step 5: Output the Eigen-Coordinate mapping from Cartesian->xx:
     # Step 5.a: Sanity check: First make sure that rfm.Cart_to_xx has been set. Error out if not!
@@ -181,7 +181,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
     # Step 5.b: Output C code for the Eigen-Coordinate mapping from Cartesian->xx:
     outputC([rfm.Cart_to_xx[0], rfm.Cart_to_xx[1], rfm.Cart_to_xx[2]],
             ["Cart_to_xx0_inbounds", "Cart_to_xx1_inbounds", "Cart_to_xx2_inbounds"],
-            outdir + "EigenCoord_Cart_to_xx.h")
+            os.path.join(outdir, "EigenCoord_Cart_to_xx.h"))
 
     # Step 6: Restore reference_metric::CoordSystem back to the original CoordSystem
     par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
