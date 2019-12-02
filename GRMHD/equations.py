@@ -87,8 +87,8 @@ def generate_everything_for_UnitTesting():
 
     # Next compute fluxes of conservative variables
     global rho_star_fluxU,tau_tilde_fluxU,S_tilde_fluxUD
-    GRHD.compute_rho_star_fluxU(GRHD.vU, GRHD.rho_star)
-    GRHD.compute_tau_tilde_fluxU(alpha, GRHD.sqrtgammaDET, GRHD.vU,T4UU)
+    GRHD.compute_rho_star_fluxU(                           GRHD.vU,     GRHD.rho_star)
+    GRHD.compute_tau_tilde_fluxU(alpha, GRHD.sqrtgammaDET, GRHD.vU,T4UU,GRHD.rho_star)
     GRHD.compute_S_tilde_fluxUD( alpha, GRHD.sqrtgammaDET,         T4UD)
     rho_star_fluxU = GRHD.rho_star_fluxU
     tau_tilde_fluxU = GRHD.tau_tilde_fluxU
