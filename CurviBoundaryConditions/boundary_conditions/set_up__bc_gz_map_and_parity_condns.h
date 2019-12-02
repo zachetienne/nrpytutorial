@@ -7,13 +7,15 @@
 void eval_symbolic_dot_products_to_set_parity_conditions(const paramstruct *restrict params,  REAL parity[10], 
                                     const REAL xx0,const REAL xx1,const REAL xx2, 
                                     const REAL xx0_inbounds,const REAL xx1_inbounds,const REAL xx2_inbounds) {
-#include "../set_Cparameters.h"
+#include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
+                                             * accounting for the relative path */
 #include "parity_conditions_symbolic_dot_products.h"
 }
 
 void set_up__bc_gz_map_and_parity_condns(const paramstruct *restrict params, 
                                          REAL *xx[3], gz_map *bc_gz_map,parity_condition *bc_parity_conditions) {
-#include "../set_Cparameters.h"
+#include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
+                                             * accounting for the relative path */
   // xx[0][j] = xxmin[0] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*dxx0;
   // -> xxmin[0] = xx[0][0] - ((REAL)(0-NGHOSTS) + (1.0/2.0))*dxx0
   const REAL xxmin[3] = { xx[0][0] - ((REAL)(0-NGHOSTS) + (1.0/2.0))*dxx0,

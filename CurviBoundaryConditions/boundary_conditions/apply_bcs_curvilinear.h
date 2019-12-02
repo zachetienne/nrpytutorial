@@ -19,7 +19,8 @@ void apply_bcs_curvilinear(const paramstruct *restrict params, const bc_struct *
                            const int NUM_GFS, const int8_t *restrict gfs_parity, REAL *restrict gfs) {
 #pragma omp parallel for
     for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
-#include "../set_Cparameters.h"
+#include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
+                                             * accounting for the relative path */
         for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
             // First apply OUTER boundary conditions,
             //   in case an INNER (parity) boundary point

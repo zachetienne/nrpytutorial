@@ -13,7 +13,8 @@ import reference_metric as rfm   # NRPy+: Reference metric support
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
 
-def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.join("../")):
+def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.join("../"),
+                                   enable_copy_of_static_Ccodes=True):
     # Step P0: Check that Ccodesdir is not the same as CurviBoundaryConditions/boundary_conditions,
     #          to prevent trusted versions of these C codes from becoming contaminated.
     if os.path.join(Ccodesdir) == os.path.join("CurviBoundaryConditions", "boundary_conditions"):
@@ -23,11 +24,17 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
 
     # Step P1: Create the C codes output directory & copy static CurviBC files
     #          from CurviBoundaryConditions/boundary_conditions to Ccodesdir/
-    cmd.mkdir(os.path.join(Ccodesdir))
-    for file in ["apply_bcs_curvilinear.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
-                 "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
-        shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
-                    os.path.join(Ccodesdir))
+    if enable_copy_of_static_Ccodes:
+        cmd.mkdir(os.path.join(Ccodesdir))
+        for file in ["apply_bcs_curvilinear.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
+                     "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
+            shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
+                        os.path.join(Ccodesdir))
+
+    # Step P2: Output correct #include for set_Cparameters.h to
+    #          Ccodesdir/boundary_conditions/RELATIVE_PATH__set_Cparameters.h
+    with open(os.path.join(Ccodesdir, "RELATIVE_PATH__set_Cparameters.h"), "w") as file:
+        file.write("#include \"" + Cparamspath + "/set_Cparameters.h\"\n") # #include's may include forward slashes for paths, even in Windows.
 
     # Step 0: Set up reference metric in case it hasn't already been set up.
     #         (Doing it twice hurts nothing).
