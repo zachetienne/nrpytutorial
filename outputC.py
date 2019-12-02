@@ -22,15 +22,19 @@ outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars
 nrpyAbs = sp.Function('nrpyAbs')
 custom_functions_for_SymPy_ccode = {
     "nrpyAbs": "fabs",
-    'Pow': [(lambda b, e: e == 2, lambda b, e: '((%s)*(%s))'                % (b,b)),
+    'Pow': [(lambda b, e: e == 0.5, lambda b, e: 'sqrt(%s)'     % (b)),
+            (lambda b, e: e == sp.S.One/3, lambda b, e: 'cbrt(%s)' % (b)),
+            (lambda b, e: e == 2, lambda b, e: '((%s)*(%s))'                % (b,b)),
             (lambda b, e: e == 3, lambda b, e: '((%s)*(%s)*(%s))'           % (b,b,b)),
             (lambda b, e: e == 4, lambda b, e: '((%s)*(%s)*(%s)*(%s))'      % (b,b,b,b)),
             (lambda b, e: e == 5, lambda b, e: '((%s)*(%s)*(%s)*(%s)*(%s))' % (b,b,b,b,b)),
-            (lambda b, e: e ==-2, lambda b, e: '(1/((%s)*(%s)))'                % (b,b)),
-            (lambda b, e: e ==-3, lambda b, e: '(1/((%s)*(%s)*(%s)))'           % (b,b,b)),
-            (lambda b, e: e ==-4, lambda b, e: '(1/((%s)*(%s)*(%s)*(%s)))'      % (b,b,b,b)),
-            (lambda b, e: e ==-5, lambda b, e: '(1/((%s)*(%s)*(%s)*(%s)*(%s)))' % (b,b,b,b,b)),
-            (lambda b, e: e != 2, 'pow')]
+            (lambda b, e: e ==-1, lambda b, e: '(1.0/(%s))'                       % (b)),
+            (lambda b, e: e ==-2, lambda b, e: '(1.0/((%s)*(%s)))'                % (b,b)),
+            (lambda b, e: e ==-3, lambda b, e: '(1.0/((%s)*(%s)*(%s)))'           % (b,b,b)),
+            (lambda b, e: e ==-4, lambda b, e: '(1.0/((%s)*(%s)*(%s)*(%s)))'      % (b,b,b,b)),
+            (lambda b, e: e ==-5, lambda b, e: '(1.0/((%s)*(%s)*(%s)*(%s)*(%s)))' % (b,b,b,b,b)),
+            (lambda b, e: e !=-5, 'pow')]
+##    (lambda b, e: e != 2, 'pow')]
 }
 
 # Parameter initialization is called once, within nrpy.py.
@@ -73,7 +77,7 @@ def ccode_postproc(string):
         sys.exit(1)
     # ... then we append the above suffix to standard C math library functions:
     for func in ['pow', 'sqrt', 'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'exp', 'log', 'fabs']:
-        string2 = re.sub(func+'\(', func + cmathsuffix+"(", string); string = string2
+        string2 = re.sub(func+r'\(', func + cmathsuffix+"(", string); string = string2
 
     # Finally, SymPy prefers to output Rationals as long-double fractions.
     #  E.g., Rational(1,3) is output as 1.0L/3.0L.
@@ -81,7 +85,7 @@ def ccode_postproc(string):
     #  and strictly speaking it is useless when we're in double precision.
     # So here we get rid of the "L" suffix on floating point numbers:
     if PRECISION!="long double":
-        string2 = re.sub('([0-9.]+)L/([0-9.]+)L', '(\\1 / \\2)', string); string = string2
+        string2 = re.sub(r'([0-9.]+)L/([0-9.]+)L', '(\\1 / \\2)', string); string = string2
 
     return string
 

@@ -85,7 +85,7 @@ def compute_rho_star_fluxU(vU, rho_star):
         rho_star_fluxU[j] = rho_star*vU[j]
 
 # Step 4.c: tau_tilde flux
-def compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU,T4UU):
+def compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU,T4UU,rho_star):
     global tau_tilde_fluxU
     tau_tilde_fluxU = ixp.zerorank1(DIM=3)
     for j in range(3):
@@ -256,8 +256,8 @@ def generate_everything_for_UnitTesting():
     compute_vU_from_u4U__no_speed_limit(u4U)
 
     # Next compute fluxes of conservative variables
-    compute_rho_star_fluxU(vU, rho_star)
-    compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU, T4UU)
+    compute_rho_star_fluxU(                      vU,       rho_star)
+    compute_tau_tilde_fluxU(alpha, sqrtgammaDET, vU, T4UU, rho_star)
     compute_S_tilde_fluxUD( alpha, sqrtgammaDET,     T4UD)
 
     # Then declare derivatives & compute g4DD_zerotimederiv_dD
