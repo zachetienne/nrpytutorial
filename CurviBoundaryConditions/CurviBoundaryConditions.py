@@ -5,14 +5,30 @@
 #         zachetie **at** gmail **dot* com
 
 # First we import needed core NRPy+ modules
-from outputC import *
-import NRPy_param_funcs as par
-import grid as gri
-import indexedexp as ixp
-import reference_metric as rfm
-import sys, os
+from outputC import *            # NRPy+: Core C code output module
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import grid as gri               # NRPy+: Functions having to do with numerical grids
+import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm   # NRPy+: Reference metric support
+import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
+import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
 
-def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=True,Cparamspath=os.path.join("../")):
+def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.join("../")):
+    # Step P0: Check that Ccodesdir is not the same as CurviBoundaryConditions/boundary_conditions,
+    #          to prevent trusted versions of these C codes from becoming contaminated.
+    if os.path.join(Ccodesdir) == os.path.join("CurviBoundaryConditions", "boundary_conditions"):
+        print("Error: Tried to output boundary conditions C code into CurviBoundaryConditions/boundary_conditions,"
+              "       which is not allowed, to prevent trusted versions of these C codes from becoming contaminated.")
+        sys.exit(1)
+
+    # Step P1: Create the C codes output directory & copy static CurviBC files
+    #          from CurviBoundaryConditions/boundary_conditions to Ccodesdir/
+    cmd.mkdir(os.path.join(Ccodesdir))
+    for file in ["apply_bcs_curvilinear.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
+                 "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
+        shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
+                    os.path.join(Ccodesdir))
+
     # Step 0: Set up reference metric in case it hasn't already been set up.
     #         (Doing it twice hurts nothing).
     rfm.reference_metric()
@@ -50,12 +66,12 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
     lhs_strings = []
     for i in range(10):
         lhs_strings.append("parity[" + str(i) + "]")
-    outputC(parity, lhs_strings, os.path.join(outdir, "parity_conditions_symbolic_dot_products.h"))
+    outputC(parity, lhs_strings, os.path.join(Ccodesdir, "parity_conditions_symbolic_dot_products.h"))
 
 
-    # Step 2.a: Generate outdir+gridfunction_defines.h file,
+    # Step 2.a: Generate Ccodesdir/gridfunction_defines.h file,
     #       containing human-readable gridfunction aliases
-    evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = gri.output__gridfunction_defines_h__return_gf_lists(outdir)
+    evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = gri.output__gridfunction_defines_h__return_gf_lists(Ccodesdir)
 
     # Step 2.b: set the parity conditions on all gridfunctions in gf_list,
     #       based on how many digits are at the end of their names
@@ -128,9 +144,9 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
     aux_parity_type = set_parity_types(auxiliary_variables_list)
     auxevol_parity_type = set_parity_types(auxevol_variables_list)
 
-    # Step 2.c: Output all gridfunctions to outdir+"/gridfunction_defines.h"
+    # Step 2.c: Output all gridfunctions to Ccodesdir+"/gridfunction_defines.h"
     # ... then append to the file the parity type for each gridfunction.
-    with open(os.path.join(outdir, "gridfunction_defines.h"), "a") as file:
+    with open(os.path.join(Ccodesdir, "gridfunction_defines.h"), "a") as file:
         file.write("\n\n/* PARITY TYPES FOR ALL GRIDFUNCTIONS.\n")
         file.write(
             "   SEE \"Tutorial-Start_to_Finish-Curvilinear_BCs.ipynb\" FOR DEFINITIONS. */\n")
@@ -169,7 +185,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
     rfm.reference_metric()
 
     # Step 4: Output C code for the Eigen-Coordinate mapping from xx->Cartesian:
-    rfm.xxCart_h("EigenCoord_xxCart", os.path.join(Cparamspath,"set_Cparameters.h"), os.path.join(outdir, "EigenCoord_xxCart.h"))
+    rfm.xxCart_h("EigenCoord_xxCart", os.path.join(Cparamspath,"set_Cparameters.h"), os.path.join(Ccodesdir, "EigenCoord_xxCart.h"))
 
     # Step 5: Output the Eigen-Coordinate mapping from Cartesian->xx:
     # Step 5.a: Sanity check: First make sure that rfm.Cart_to_xx has been set. Error out if not!
@@ -181,7 +197,7 @@ def Set_up_CurviBoundaryConditions(outdir="CurviBoundaryConditions/",verbose=Tru
     # Step 5.b: Output C code for the Eigen-Coordinate mapping from Cartesian->xx:
     outputC([rfm.Cart_to_xx[0], rfm.Cart_to_xx[1], rfm.Cart_to_xx[2]],
             ["Cart_to_xx0_inbounds", "Cart_to_xx1_inbounds", "Cart_to_xx2_inbounds"],
-            os.path.join(outdir, "EigenCoord_Cart_to_xx.h"))
+            os.path.join(Ccodesdir, "EigenCoord_Cart_to_xx.h"))
 
     # Step 6: Restore reference_metric::CoordSystem back to the original CoordSystem
     par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
