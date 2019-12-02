@@ -23,7 +23,9 @@ nrpyAbs = sp.Function('nrpyAbs')
 custom_functions_for_SymPy_ccode = {
     "nrpyAbs": "fabs",
     'Pow': [(lambda b, e: e == 0.5, lambda b, e: 'sqrt(%s)'     % (b)),
+            (lambda b, e: e ==-0.5, lambda b, e: '(1.0/sqrt(%s))'     % (b)),
             (lambda b, e: e == sp.S.One/3, lambda b, e: 'cbrt(%s)' % (b)),
+            (lambda b, e: e ==-sp.S.One/3, lambda b, e: '(1.0/cbrt(%s))' % (b)),
             (lambda b, e: e == 2, lambda b, e: '((%s)*(%s))'                % (b,b)),
             (lambda b, e: e == 3, lambda b, e: '((%s)*(%s)*(%s))'           % (b,b,b)),
             (lambda b, e: e == 4, lambda b, e: '((%s)*(%s)*(%s)*(%s))'      % (b,b,b,b)),
