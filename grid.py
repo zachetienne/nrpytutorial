@@ -1,10 +1,12 @@
-import NRPy_param_funcs as par
-from collections import namedtuple
-import sympy as sp
-import sys
-
-# grid.py: functions & parameters related to numerical grids:
+# grid.py: functions & parameters related to numerical grids
 # functions: Automatic loop output, output C code needed for gridfunction memory I/O, gridfunction registration
+
+# Author: Zachariah B. Etienne
+#         zachetie **at** gmail **dot* com
+
+import NRPy_param_funcs as par     # NRPy+: Parameter interface
+import sympy as sp                 # Import SymPy, a computer algebra system written entirely in Python
+from collections import namedtuple # Standard Python `collections` module: defines named tuples data structure
 
 # Initialize globals related to the grid
 glb_gridfcs_list = []
