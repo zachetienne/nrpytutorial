@@ -740,6 +740,12 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         readvr_SIMD_outer_str = ["", "", ""]
         readvr_SIMD_inner_str = ["", "", ""]
 
+        # Sort freevars_uniq_vals and freevars_uniq_xx_indep, according to alphabetized freevars_uniq_xx_indep.
+        #    Without this step, the ordering of elements in rfmstruct would be random, and would change each time
+        #    this function was called.
+        if len(freevars_uniq_xx_indep) > 0:
+            freevars_uniq_xx_indep, freevars_uniq_vals = (list(x) for x in zip(*sorted(zip(freevars_uniq_xx_indep, freevars_uniq_vals),key=str)))
+
         # Tease out how many variables each function in freevars_uniq_vals
         which_freevar = 0
         for expr in freevars_uniq_vals:
