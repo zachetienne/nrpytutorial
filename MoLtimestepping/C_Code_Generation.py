@@ -10,10 +10,9 @@
 
 # Step 1: Initialize needed Python/NRPy+ modules
 
-import sympy as sp
-import NRPy_param_funcs as par
+import sympy as sp  # Import SymPy, a computer algebra system written entirely in Python
+import os           # Standard Python module for multiplatform OS-level functions
 from MoLtimestepping.RK_Butcher_Table_Dictionary import Butcher_dict
-import os
 
 # Step 2: Checking if Butcher Table is Diagonal
 def diagonal(key):
