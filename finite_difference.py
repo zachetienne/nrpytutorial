@@ -1,13 +1,17 @@
 # finite_difference.py:
-#  Sets up finite difference stencils as desired.
+#  As documented in the NRPy+ tutorial notebook:
+#    Tutorial-Finite_Difference_Derivatives.ipynb ,
+#  This module generates C kernels for numerically
+#   solving PDEs with finite differences.
 #
-# Depends on: grid.py.
-#             Everything depends on outputC.py.
+# Depends on: outputC.py and grid.py.
 
-import grid as gri
-import re
-import sys
-from outputC import *
+# Author: Zachariah B. Etienne
+#         zachetie **at** gmail **dot* com
+
+from outputC import *            # NRPy+: Core C code output module
+import grid as gri               # NRPy+: Functions having to do with numerical grids
+import sys                       # Standard Python module for multiplatform OS-level functions
 
 from operator import itemgetter
 
