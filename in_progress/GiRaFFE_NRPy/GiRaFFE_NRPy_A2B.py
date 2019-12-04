@@ -122,7 +122,7 @@ inline void compute_A2B_in_ghostzones(const paramstruct *restrict params,REAL *r
     
     # Here, we'll use the outCfunction() function to output a function that will compute the magnetic field
     # on the interior. Then, we'll add postloop code to handle the ghostzones.    
-    desc="Compute the magnetic field from the vector potential everywhere"
+    desc="Compute the magnetic field from the vector potential everywhere, including ghostzones"
     name="driver_A_to_B"
     driver_Ccode = outCfunction(
         outfile  = "returnstring", desc=desc, name=name,
@@ -136,6 +136,7 @@ inline void compute_A2B_in_ghostzones(const paramstruct *restrict params,REAL *r
                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])],
                                   params="outCverbose=False").replace("IDX4","IDX4S"),
         postloop = """
+        // Now, we loop over the ghostzones to calculate the magnetic field there. 
         for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
             // After updating each face, adjust imin[] and imax[] 
             //   to reflect the newly-updated face extents.
