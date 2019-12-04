@@ -25,5 +25,8 @@ for i in *.ipynb; do
 
 done
 
+# Report significant differences only.
+git diff|grep -v "image/png"|grep -v "pdfTeX"|grep -v "write18 enabled"|grep -v seconds|grep -v "Generating C code" |grep -v PASSED|grep -v taskset|cdiff
+
 # Clean up any mess made by last notebook run
 git clean -fdq
