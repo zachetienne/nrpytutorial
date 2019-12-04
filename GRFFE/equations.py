@@ -38,7 +38,7 @@ def compute_smallb4U(gammaDD, betaU, alpha, u4U, B_notildeU, sqrt4pi):
 
     # b^0 = (u_j B^j)/[alpha * sqrt(4 pi)]
     smallb4U[0] = u4_dot_B_notilde / (alpha * sqrt4pi)
-    # b^i = [B^i + (u_j B^j)]/[alpha * u^0 * sqrt(4 pi)]
+    # b^i = [B^i + (u_j B^j) u^i]/[alpha * u^0 * sqrt(4 pi)]
     for i in range(3):
         smallb4U[i + 1] = (B_notildeU[i] + u4_dot_B_notilde * u4U[i + 1]) / (alpha * u4U[0] * sqrt4pi)
 
