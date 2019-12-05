@@ -48,18 +48,16 @@ def GiRaFFE_NRPy_A2B(outdir):
                 BU[i] += LeviCivitaUUU[i][j][k] * AD_dD[k][j]
 
     # Write the basic #includes and #defines the C code needs
-    with open(os.path.join(outdir,"driver_AtoB.h"),"w") as file:
-        file.write("""#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#     with open(os.path.join(outdir,"driver_AtoB.h"),"w") as file:
+#         file.write("""#include <math.h>
+# #include <stdio.h>
+# #include <stdlib.h>
 
-#ifndef REAL
-#define REAL double
-#include "NGHOSTS.h" // A NRPy+-generated file, which is set based on FD_CENTDERIVS_ORDER.
-#include "../CurviBoundaryConditions/gridfunction_defines.h"
-#define IDX4S(g,i,j,k) \\
-( (i) + Nxx_plus_2NGHOSTS0 * ( (j) + Nxx_plus_2NGHOSTS1 * ( (k) + Nxx_plus_2NGHOSTS2 * (g) ) ) )
-#endif""")
+# #ifndef REAL
+# #define REAL double
+# #define IDX4S(g,i,j,k) \\
+# ( (i) + Nxx_plus_2NGHOSTS0 * ( (j) + Nxx_plus_2NGHOSTS1 * ( (k) + Nxx_plus_2NGHOSTS2 * (g) ) ) )
+# #endif""")
         
     # Write the code to compute derivatives with shifted stencils as needed.
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
