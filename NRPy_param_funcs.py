@@ -1,6 +1,15 @@
-import sympy as sp
-import sys
-from collections import namedtuple
+# As documented in the NRPy+ tutorial module
+#   Tutorial-Coutput__Parameter_Interface.ipynb
+#   this core NRPy+ module is used for
+#   initializing, storing, and recalling
+#   parameters.
+
+# Author: Zachariah B. Etienne
+#         zachetie **at** gmail **dot* com
+
+import sympy as sp                   # Import SymPy
+import os, sys                       # Standard Python: OS-independent system functions
+from collections import namedtuple   # Standard Python: Enable namedtuple data type
 
 glb_params_list = []  # = where we store NRPy+ parameters and default values of parameters. A list of named tuples
 glb_paramsvals_list = []  # = where we store NRPy+ parameter values.
@@ -210,7 +219,7 @@ def generate_Cparameters_Ccodes(directory="./"):
 
     # Step 2: Generate C code to declare C paramstruct; 
     #         output to "declare_Cparameters_struct.h"
-    with open(directory+"declare_Cparameters_struct.h", "w") as file:
+    with open(os.path.join(directory,"declare_Cparameters_struct.h"), "w") as file:
         file.write("typedef struct __paramstruct__ {\n")
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type != "#define":
@@ -224,7 +233,7 @@ def generate_Cparameters_Ccodes(directory="./"):
     # Step 3: Generate C code to set all elements in 
     #         C paramstruct to default values; output to 
     #         "set_Cparameters_default.h"
-    with open(directory+"set_Cparameters_default.h", "w") as file:
+    with open(os.path.join(directory,"set_Cparameters_default.h"), "w") as file:
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type != "#define":
                 Coutput = "params." + glb_Cparams_list[i].parname
@@ -258,13 +267,13 @@ def generate_Cparameters_Ccodes(directory="./"):
                 returnstring += Coutput
         return returnstring
         
-    with open(directory+"set_Cparameters.h", "w") as file:
+    with open(os.path.join(directory,"set_Cparameters.h"), "w") as file:
         file.write(gen_set_Cparameters(pointerEnable=True))
-    with open(directory+"set_Cparameters-nopointer.h", "w") as file:
+    with open(os.path.join(directory,"set_Cparameters-nopointer.h"), "w") as file:
         file.write(gen_set_Cparameters(pointerEnable=False))
 
     # Step 4.b: Output SIMD version, set_Cparameters-SIMD.h
-    with open(directory+"set_Cparameters-SIMD.h", "w") as file:
+    with open(os.path.join(directory,"set_Cparameters-SIMD.h"), "w") as file:
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type == "char":
                 Ctype = "char *"
