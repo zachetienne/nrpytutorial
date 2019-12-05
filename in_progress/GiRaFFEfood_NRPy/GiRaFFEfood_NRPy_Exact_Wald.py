@@ -47,7 +47,7 @@ par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
-thismodule = "GiRaFFEfood_HO"
+thismodule = "GiRaFFEfood_NRPy"
 # Set the spatial dimension parameter to 3.
 par.set_parval_from_str("grid::DIM", 3)
 DIM = par.parval_from_str("grid::DIM")
@@ -60,7 +60,7 @@ M    = par.Cparameters("REAL",thismodule,["M"],1.0)      # The mass of the black
 M_PI = par.Cparameters("#define",thismodule,["M_PI"],"") # pi, 3.141592...
 KerrSchild_radial_shift = par.Cparameters("REAL",thismodule,"KerrSchild_radial_shift",0.4) # Default value for ExactWald
 
-def GiRaFFEfood_HO_Exact_Wald():
+def GiRaFFEfood_NRPy_Exact_Wald():
 
     # <a id='step2'></a>
     # 
@@ -211,7 +211,7 @@ def GiRaFFEfood_HO_Exact_Wald():
     # 
 
 
-def GiRaFFEfood_HO_ID_converter():
+def GiRaFFEfood_NRPy_ID_converter():
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
     # Step 5: Build the expression for \tilde{S}_i

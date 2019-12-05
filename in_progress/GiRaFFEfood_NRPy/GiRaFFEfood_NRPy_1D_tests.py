@@ -44,7 +44,7 @@
 # 
 # For the eventual purpose of testing convergence, any quantity $Q$ evolves as $Q(t,x) = Q(0,x-\mu t)$
 # 
-# See [previous NRPy+ tutorial module](Tutorial-GiRaFFEfood_HO.ipynb) for more general detail on how this is used.
+# See [previous NRPy+ tutorial module](Tutorial-GiRaFFEfood_NRPy.ipynb) for more general detail on how this is used.
 # 
 # #### Table of Contents:
 # 1. [Steps 0-1:](#preliminaries) Preliminaries
@@ -75,7 +75,7 @@ par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
-thismodule = "GiRaFFEfood_HO_1D"
+thismodule = "GiRaFFEfood_NRPy_1D"
 # Set the spatial dimension parameter to 3.
 par.set_parval_from_str("grid::DIM", 3)
 DIM = par.parval_from_str("grid::DIM")
@@ -97,7 +97,7 @@ DIM = par.parval_from_str("grid::DIM")
 mu_AW = par.Cparameters("REAL",thismodule,["mu_AW"], -0.5) # The wave speed
 M_PI  = par.Cparameters("#define",thismodule,["M_PI"], "")
 
-def GiRaFFEfood_HO_1D_tests():
+def GiRaFFEfood_NRPy_1D_tests():
     gammamu = 1/sp.sqrt(1-mu_AW**2)
 
     # We'll use reference_metric.py to define x and y

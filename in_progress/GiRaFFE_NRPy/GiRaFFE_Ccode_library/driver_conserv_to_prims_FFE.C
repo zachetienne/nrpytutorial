@@ -33,7 +33,7 @@
 #define M_PI 3.141592653589793238463
 #endif
 #define MIN(a,b) ( ((a) < (b)) ? (a) : (b) )
-void GiRaFFE_HO_compute_conservatives(const REAL gxxL,const REAL gxyL,const REAL gxzL,const REAL gyyL,const REAL gyzL,const REAL gzzL,
+void GiRaFFE_NRPy_compute_conservatives(const REAL gxxL,const REAL gxyL,const REAL gxzL,const REAL gyyL,const REAL gyzL,const REAL gzzL,
                                       const REAL BxL, const REAL ByL, const REAL BzL, const REAL vxL, const REAL vyL, const REAL vzL,
                                       //const REAL betaxL, const REAL betayL, const REAL betazL, const REAL alpL,
                                       const REAL sqrtg,REAL *StildeD0L, REAL *StildeD1L, REAL *StildeD2L);
@@ -48,7 +48,7 @@ void GiRaFFE_HO_compute_conservatives(const REAL gxxL,const REAL gxyL,const REAL
 #define IDX4pt(g,idx)   ( (idx) + (Nxx_plus_2NGHOSTS[0]*Nxx_plus_2NGHOSTS[1]*Nxx_plus_2NGHOSTS[2]) * (g) )
 
 #include "metric_quantities.h"
-void GiRaFFE_HO_conserv_to_prims_FFE(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3],
+void GiRaFFE_NRPy_conserv_to_prims_FFE(const int Nxx[3],const int Nxx_plus_2NGHOSTS[3],const REAL dxx[3],
                                      REAL *xx[3], REAL *in_gfs, REAL *aux_gfs) {
   //printf("Starting conservative-to-primitive solver...\n");
 
@@ -64,7 +64,7 @@ void GiRaFFE_HO_conserv_to_prims_FFE(const int Nxx[3],const int Nxx_plus_2NGHOST
 
   int num_vel_limits=0,num_vel_nulls_current_sheet=0;
 
-  GiRaFFE_HO_update_metric_det_inverse(Nxx_plus_2NGHOSTS, dxx, xx,aux_gfs);
+  GiRaFFE_NRPy_update_metric_det_inverse(Nxx_plus_2NGHOSTS, dxx, xx,aux_gfs);
 
 #pragma omp parallel for reduction(+:error_int_numer,error_int_denom,num_vel_limits,num_vel_nulls_current_sheet) schedule(static)
   for(int k=kmin;k<kmax;k++)
@@ -218,7 +218,7 @@ void GiRaFFE_HO_conserv_to_prims_FFE(const int Nxx[3],const int Nxx_plus_2NGHOST
               // ValenciavU2L reset: TYPICALLY WOULD RESET CONSERVATIVES TO BE CONSISTENT. LET'S NOT DO THAT, TO AVOID MESSING UP B-FIELDS
 
               if(1==1) {
-                GiRaFFE_HO_compute_conservatives(gxxL, gxyL, gxzL, gyyL, gyzL, gzzL,
+                GiRaFFE_NRPy_compute_conservatives(gxxL, gxyL, gxzL, gyyL, gyzL, gzzL,
                                                  BU0L, BU1L, BU2L, ValenciavU0L, ValenciavU1L, ValenciavU2L,
                                                  /*const REAL betaxL, const REAL betayL, const REAL betazL, const REAL alpL,*/
                                                  sqrtg, &StildeD0L, &StildeD1L, &StildeD2L);

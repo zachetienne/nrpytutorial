@@ -1,4 +1,4 @@
-void GiRaFFE_HO_compute_conservatives(const REAL gxxL,const REAL gxyL,const REAL gxzL,const REAL gyyL,const REAL gyzL,const REAL gzzL,
+void GiRaFFE_NRPy_compute_conservatives(const REAL gxxL,const REAL gxyL,const REAL gxzL,const REAL gyyL,const REAL gyzL,const REAL gzzL,
                                       const REAL BxL, const REAL ByL, const REAL BzL, const REAL vxL, const REAL vyL, const REAL vzL,
                                       //const REAL betaxL, const REAL betayL, const REAL betazL, const REAL alpL,
                                       const REAL sqrtg,REAL *StildeD0L, REAL *StildeD1L, REAL *StildeD2L) {

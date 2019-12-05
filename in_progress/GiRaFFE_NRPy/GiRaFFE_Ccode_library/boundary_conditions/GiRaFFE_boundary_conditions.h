@@ -167,7 +167,7 @@ void FACE_UPDATE_EXACT_StildeD(const paramstruct *restrict params,REAL *restrict
 #include "../set_Cparameters.h"
     // This is currently modified to calculate more exact boundary conditions for StildeD. Rename if it works.
     /*for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-#include "../GiRaFFEfood_HO_Stilde.h" 
+#include "../GiRaFFEfood_NRPy_Stilde.h" 
     }*/
       /*idx = IDX3(i0,i1,i2);
       out_gfs[IDX4ptS(STILDED0GF,idx)] = out_gfs_exact[IDX4ptS(STILDED0GF,idx)];

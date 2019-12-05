@@ -37,7 +37,7 @@ par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
-thismodule = "GiRaFFEfood_HO_Aligned_Rotator"
+thismodule = "GiRaFFEfood_NRPy_Aligned_Rotator"
 # Set the spatial dimension parameter to 3.
 par.set_parval_from_str("grid::DIM", 3)
 DIM = par.parval_from_str("grid::DIM")
@@ -64,7 +64,7 @@ Omega_aligned_rotator = par.Cparameters("REAL",thismodule,"Omega_aligned_rotator
 # \end{align}
 # with $\mu = B_p R_{\rm NS} / 2$, $R_{\rm NS}$ is the neutron star radius, and $\varpi = \sqrt{x^2+y^2}$
 
-def GiRaFFEfood_HO_Aligned_Rotator():
+def GiRaFFEfood_NRPy_Aligned_Rotator():
     r     = rfm.xxSph[0]
     varpi = sp.sqrt(rfm.xxCart[0]**2 + rfm.xxCart[1]**2)
 
@@ -138,7 +138,7 @@ def GiRaFFEfood_HO_Aligned_Rotator():
     # 
     # Here, as a code validation check, we verify agreement in the SymPy expressions for the $\texttt{GiRaFFE}$ Aligned Rotator initial data equations  we intend to use between
     # 1. this tutorial and 
-    # 2. the NRPy+ [GiRaFFEfood_HO_Aligned_Rotator.py](../edit/GiRaFFEfood_HO/GiRaFFEfood_HO_Aligned_Rotator.py) module.
+    # 2. the NRPy+ [GiRaFFEfood_NRPy_Aligned_Rotator.py](../edit/GiRaFFEfood_NRPy/GiRaFFEfood_NRPy_Aligned_Rotator.py) module.
     # 
 
 
