@@ -10,7 +10,7 @@ import loop as lp                             # NRPy+: C code loop interface
 import NRPy_param_funcs as par                # NRPy+: parameter interface
 from SIMD import expr_convert_to_SIMD_intrins # NRPy+: SymPy expression => SIMD intrinsics interface
 import sympy as sp                            # Import SymPy
-import re, sys                                # Standard Python: regular expressions & system
+import re, sys                                # Standard Python: regular expressions & OS-independent system functions
 from collections import namedtuple            # Standard Python: Enable namedtuple data type
 lhrh = namedtuple('lhrh', 'lhs rhs')
 outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix SIMD_enable SIMD_const_suffix SIMD_debug enable_TYPE')
