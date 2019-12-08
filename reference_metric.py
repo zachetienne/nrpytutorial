@@ -576,6 +576,14 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
         #         and store these variables to globals defined above.
         def make_replacements(expr):
+            sympy_version = sp.__version__.replace("rc","...").replace("b","...") # Ignore the rc's and b's for release candidates & betas.
+            sympy_major_version = int(sympy_version.split(".")[0])
+            sympy_minor_version = int(sympy_version.split(".")[1])
+            if sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2):
+                print("Detected SymPy version "+sympy_version)
+                print("Sorry, reference metric precomputation unsupported in SymPy < 1.2!")
+                sys.exit(1)
+
             for item in sp.preorder_traversal(expr):
                 if item.func == sp.Derivative:
                     stringfunc = str(item.args[0]).split("_funcform(", 1)[0]  # store everything before _funcform(...
