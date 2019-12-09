@@ -112,30 +112,28 @@ def GiRaFFE_NRPy_A2B(outdir):
     driver_Ccode = outCfunction(
         outfile  = "returnstring", desc=desc, name=name,
         params   = "const paramstruct *restrict params,REAL *restrict in_gfs,REAL *restrict auxevol_gfs",
-        preloop  = """
-    int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
-    int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
-""",
         body     = fin.FD_outputC("returnstring",[lhrh(lhs=gri.gfaccess("out_gfs","BU0"),rhs=BU[0]),\
                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU1"),rhs=BU[1]),\
                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])],
                                   params="outCverbose=False").replace("IDX4","IDX4S"),
         postloop = """
-        // Now, we loop over the ghostzones to calculate the magnetic field there. 
-        for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-            // After updating each face, adjust imin[] and imax[] 
-            //   to reflect the newly-updated face extents.
-            compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2]); imin[0]--;
-            compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2]); imax[0]++;
+    int imin[3] = { NGHOSTS_A2B, NGHOSTS_A2B, NGHOSTS_A2B };
+    int imax[3] = { NGHOSTS+Nxx0, NGHOSTS+Nxx1, NGHOSTS+Nxx2 };
+    // Now, we loop over the ghostzones to calculate the magnetic field there. 
+    for(int which_gz = 0; which_gz < NGHOSTS_A2B; which_gz++) {
+        // After updating each face, adjust imin[] and imax[] 
+        //   to reflect the newly-updated face extents.
+        compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2]); imin[0]--;
+        compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2]); imax[0]++;
 
-            compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2]); imin[1]--;
-            compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2]); imax[1]++;
+        compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2]); imin[1]--;
+        compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2]); imax[1]++;
 
-            compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2]); imin[2]--;
-            compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1); imax[2]++;
-        }
+        compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2]); imin[2]--;
+        compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1); imax[2]++;
+    }
 """,
-        loopopts="InteriorPoints")
+        loopopts="InteriorPoints").replace("=NGHOSTS","=NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
 
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
         file.write(driver_Ccode)
