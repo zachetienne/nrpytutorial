@@ -71,7 +71,7 @@ def GiRaFFE_NRPy_A2B(outdir):
             dx_Az = invdx0*((3.0/2.0)*in_gfs[IDX4S(AD2GF, i0,i1,i2)] - 2*in_gfs[IDX4S(AD2GF, i0-1,i1,i2)] + (1.0/2.0)*in_gfs[IDX4S(AD2GF, i0-2,i1,i2)]);
         }
         // As above, but in the y direction.
-        if (i1 > 0 && i1 < Nxx_plus_2NGHOSTS0-1) {
+        if (i1 > 0 && i1 < Nxx_plus_2NGHOSTS1-1) {
             dy_Ax = invdx1*(-1.0/2.0*in_gfs[IDX4S(AD0GF, i0,i1-1,i2)] + (1.0/2.0)*in_gfs[IDX4S(AD0GF, i0,i1+1,i2)]);
             dy_Az = invdx1*(-1.0/2.0*in_gfs[IDX4S(AD2GF, i0,i1-1,i2)] + (1.0/2.0)*in_gfs[IDX4S(AD2GF, i0,i1+1,i2)]);
         }
@@ -84,7 +84,7 @@ def GiRaFFE_NRPy_A2B(outdir):
             dy_Az = invdx1*((3.0/2.0)*in_gfs[IDX4S(AD2GF, i0,i1,i2)] - 2*in_gfs[IDX4S(AD2GF, i0,i1-1,i2)] + (1.0/2.0)*in_gfs[IDX4S(AD2GF, i0,i1-2,i2)]);
         }
         // As above, but in the z direction.
-        if (i2 > 0 && i2 < Nxx_plus_2NGHOSTS0-1) {
+        if (i2 > 0 && i2 < Nxx_plus_2NGHOSTS2-1) {
             dz_Ax = invdx2*(-1.0/2.0*in_gfs[IDX4S(AD0GF, i0,i1,i2-1)] + (1.0/2.0)*in_gfs[IDX4S(AD0GF, i0,i1,i2+1)]);
             dz_Ay = invdx2*(-1.0/2.0*in_gfs[IDX4S(AD1GF, i0,i1,i2-1)] + (1.0/2.0)*in_gfs[IDX4S(AD1GF, i0,i1,i2+1)]);
         }
