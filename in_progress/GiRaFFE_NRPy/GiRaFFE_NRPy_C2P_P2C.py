@@ -40,7 +40,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
     global outStildeD
     outStildeD = StildeD
     # Then, enforce the orthogonality:
-    if par.parval_from_str("GiRaFFE_NRPy-C2P_P2C::enforce_orthogonality_StildeD_BtildeU"):
+    if par.parval_from_str("enforce_orthogonality_StildeD_BtildeU"):
         for i in range(3):
             for j in range(3):
                 # {\tilde S}_i = {\tilde S}_i - ({\tilde S}_j {\tilde B}^j) {\tilde B}_i/{\tilde B}^2
@@ -70,13 +70,13 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
             B2 += gammaDD[i][j]*BU[i]*BU[j]
 
     # Enforce the speed limit on StildeD:
-    if par.parval_from_str("GiRaFFE_NRPy-C2P_P2C::enforce_speed_limit_StildeD"):
+    if par.parval_from_str("enforce_speed_limit_StildeD"):
         for i in range(3):
             outStildeD[i] *= min_noif(1,speed_limit_factor)
 
     global ValenciavU
     ValenciavU = ixp.zerorank1()
-    if par.parval_from_str("GiRaFFE_NRPy-C2P_P2C::enforce_orthogonality_StildeD_BtildeU") or par.parval_from_str("GiRaFFE_NRPy-C2P_P2C::enforce_speed_limit_StildeD"):
+    if par.parval_from_str("enforce_orthogonality_StildeD_BtildeU") or par.parval_from_str("enforce_speed_limit_StildeD"):
         # Recompute 3-velocity:
         for i in range(3):
             for j in range(3):
@@ -106,7 +106,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
         for j in range(3):
             nD[i] = gammaDD[i][j]*nU[j]
 
-    if par.parval_from_str("GiRaFFE_NRPy-C2P_P2C::enforce_current_sheet_prescription"):
+    if par.parval_from_str("enforce_current_sheet_prescription"):
         # Calculate the drift velocity
         driftvU = ixp.declarerank1("driftvU")
 
