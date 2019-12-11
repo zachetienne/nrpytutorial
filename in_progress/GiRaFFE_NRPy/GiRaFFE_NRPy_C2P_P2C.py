@@ -21,7 +21,7 @@ par.initialize_param(par.glb_param(type="bool", module=thismodule, parname="enfo
 par.initialize_param(par.glb_param(type="bool", module=thismodule, parname="enforce_speed_limit_StildeD", defaultval=True))
 par.initialize_param(par.glb_param(type="bool", module=thismodule, parname="enforce_current_sheet_prescription", defaultval=True))
 
-def GiRaFFE_NRPy_C2P(StildeD,ValenciavU,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
+def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
     sqrtgammadet = sp.sqrt(gammadet)
     BtildeU = ixp.zerorank1()
     for i in range(3):
@@ -74,14 +74,14 @@ def GiRaFFE_NRPy_C2P(StildeD,ValenciavU,BU,gammaDD,gammaUU,gammadet,betaU,alpha)
         for i in range(3):
             outStildeD[i] *= min_noif(1,speed_limit_factor)
 
-    global outValenciavU
-    outValenciavU = ValenciavU
+    global ValenciavU
+    ValenciavU = ixp.zerorank1()
     if par.parval_from_str("GiRaFFE_NRPy-C2P_P2C::enforce_orthogonality_StildeD_BtildeU") or par.parval_from_str("GiRaFFE_NRPy-C2P_P2C::enforce_speed_limit_StildeD"):
         # Recompute 3-velocity:
         for i in range(3):
             for j in range(3):
                 # \bar{v}^i = 4 \pi \gamma^{ij} {\tilde S}_j / (\sqrt{\gamma} B^2)
-                outValenciavU[i] = sp.sympify(4.0)*M_PI*gammaUU[i][j]*StildeD[j]/(sqrtgammadet*B2)
+                ValenciavU[i] = sp.sympify(4.0)*M_PI*gammaUU[i][j]*StildeD[j]/(sqrtgammadet*B2)
 
     # We will use once more the trick from above with min and max without if. However, we we'll need a function
     # that returns either 0 or 1, so as to choose between two otherwise mathetmatically unrelated branches. 
@@ -124,8 +124,8 @@ def GiRaFFE_NRPy_C2P(StildeD,ValenciavU,BU,gammaDD,gammaUU,gammadet,betaU,alpha)
         # Remember, we only do this if abs(z) < (k+0.01)*dz. Note that we add 0.01; this helps
         # avoid floating point errors and division by zero. This is the same as abs(z) - (k+0.01)*dz<0
         boundary = nrpyAbs(rfm.xx[2]) - (grid_points_from_z_plane+sp.sympify(0.01))*gri.dxx[2]
-        outValenciavU[2] = max_normal0(boundary)*(newdriftvU2+betaU[2])/alpha \
-                         + min_normal0(boundary)*outValenciavU[2]
+        ValenciavU[2] = max_normal0(boundary)*(newdriftvU2+betaU[2])/alpha \
+                         + min_normal0(boundary)*ValenciavU[2]
 
 import GRFFE.equations as GRFFE
 import GRHD.equations as GRHD
