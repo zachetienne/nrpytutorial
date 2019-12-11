@@ -127,25 +127,25 @@ def GiRaFFE_NRPy_C2P(StildeD,ValenciavU,BU,gammaDD,gammaUU,gammadet,betaU,alpha)
         outValenciavU[2] = max_normal0(boundary)*(newdriftvU2+betaU[2])/alpha \
                          + min_normal0(boundary)*outValenciavU[2]
 
-import GRFFE.equations as GFeq
-import GRHD.equations as GHeq
+import GRFFE.equations as GRFFE
+import GRHD.equations as GRHD
 
-def GiRaFFE_NRPy_P2C(ValenciavU,BU,gammaDD,gammaUU,gammadet,betaU,alpha)
-    sqrtgammadet = sp.sqrt(gammadet)
+def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     # After recalculating the 3-velocity, we need to update the poynting flux:
     # We'll reset the Valencia velocity, since this will be part of a second call to outCfunction.
     ValenciavU = ixp.declarerank1("ValenciavU",DIM=3)
 
     # First compute stress-energy tensor T4UU and T4UD:
-    GFeq.compute_B_notildeU(sqrtgammadet, BtildeU)
-    GFeq.compute_smallb4U(gammaDD, betaU, alpha, u4U, BU, sp.sqrt(sp.sympify(4.0)*M_PI))
-    GFeq.compute_smallbsquared(gammaDD, betaU, alpha, GFeq.smallb4U)
+    GRHD.compute_sqrtgammaDET(gammaDD)
+    
+    GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
+    GRFFE.compute_smallb4U(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
+    GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4U)
 
-    GHeq.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
-    GFeq.compute_TEM4UU(gammaDD, betaU, alpha, GFeq.smallb4U, GFeq.smallbsquared, u4U)
-    GFeq.compute_TEM4UD(gammaDD, betaU, alpha, GFeq.TEM4UU)
+    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU)
+    GRFFE.compute_TEM4UD(gammaDD, betaU, alpha, GRFFE.TEM4UU)
 
     # Compute conservative variables in terms of primitive variables
-    GHeq.compute_S_tildeD(alpha, sqrtgammadet, GFeq.TEM4UD)
+    GRHD.compute_S_tildeD(alpha, GRHD.sqrtgammaDET, GRFFE.TEM4UD)
     global StildeD
-    StildeD = GHeq.S_tildeD
+    StildeD = GRHD.S_tildeD
