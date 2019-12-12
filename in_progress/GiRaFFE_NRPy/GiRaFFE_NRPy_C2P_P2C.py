@@ -36,15 +36,18 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
     Btilde2 = sp.sympify(0)
     for i in range(3):
         Btilde2 += BtildeU[i]*BtildeD[i]
+        
+    StimesB = sp.sympify(0)
+    for i in range(3):
+        StimesB += StildeD[i]*BtildeU[i]
 
     global outStildeD
     outStildeD = StildeD
     # Then, enforce the orthogonality:
     if par.parval_from_str("enforce_orthogonality_StildeD_BtildeU"):
         for i in range(3):
-            for j in range(3):
-                # {\tilde S}_i = {\tilde S}_i - ({\tilde S}_j {\tilde B}^j) {\tilde B}_i/{\tilde B}^2
-                outStildeD[i] -= (StildeD[j]*BtildeU[j])*BtildeD[i]/Btilde2
+            # {\tilde S}_i = {\tilde S}_i - ({\tilde S}_j {\tilde B}^j) {\tilde B}_i/{\tilde B}^2
+            outStildeD[i] -= StimesB*BtildeD[i]/Btilde2
 
     # Calculate \tilde{S}^2:
     Stilde2 = sp.sympify(0)
@@ -54,8 +57,8 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
 
     # First we need to compute the factor f: 
     # f = \sqrt{(1-\Gamma_{\max}^{-2}){\tilde B}^4/(16 \pi^2 \gamma {\tilde S}^2)}
-    speed_limit_factor = sp.sqrt((1-GAMMA_SPEED_LIMIT**(-2))\
-                                 *Btilde2*Btilde2/(16*M_PI*M_PI*sqrtgammadet*Stilde2*Stilde2))
+    speed_limit_factor = sp.sqrt((1.0-GAMMA_SPEED_LIMIT**(-2.0))\
+                                 *Btilde2*Btilde2*sp.Rational(1,16)/(M_PI*M_PI*gammadet*Stilde2))
 
     def min_noif(a,b):
         # This returns the minimum of a and b
@@ -72,7 +75,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
     # Enforce the speed limit on StildeD:
     if par.parval_from_str("enforce_speed_limit_StildeD"):
         for i in range(3):
-            outStildeD[i] *= min_noif(1,speed_limit_factor)
+            outStildeD[i] *= min_noif(1.0,speed_limit_factor)
 
     global ValenciavU
     ValenciavU = ixp.zerorank1()
@@ -81,19 +84,19 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
         for i in range(3):
             for j in range(3):
                 # \bar{v}^i = 4 \pi \gamma^{ij} {\tilde S}_j / (\sqrt{\gamma} B^2)
-                ValenciavU[i] = sp.sympify(4.0)*M_PI*gammaUU[i][j]*StildeD[j]/(sqrtgammadet*B2)
+                ValenciavU[i] += sp.sympify(4.0)*M_PI*gammaUU[i][j]*outStildeD[j]/(sqrtgammadet*B2)
 
     # We will use once more the trick from above with min and max without if. However, we we'll need a function
     # that returns either 0 or 1, so as to choose between two otherwise mathetmatically unrelated branches. 
     def max_normal0(a):
-        # If a>0, return 1. Otherwise, return 0. This defines a 'less than' branch.
-        # WILL BREAK if a = 0. 
-        return (a+nrpyAbs(a))/(2*a)
-
-    def min_normal0(a):
         # If a>0, return 1. Otherwise, return 0. This defines a 'greater than' branch.
         # WILL BREAK if a = 0. 
-        return (a-nrpyAbs(a))/(2*a)
+        return (a+nrpyAbs(a))/(a+a)
+
+    def min_normal0(a):
+        # If a<0, return 1. Otherwise, return 0. This defines a 'less than' branch.
+        # WILL BREAK if a = 0. 
+        return (a-nrpyAbs(a))/(a+a)
 
     # This number determines how far away (in grid points) we will apply the fix.
     grid_points_from_z_plane = par.Cparameters("REAL",thismodule,"grid_points_from_z_plane",4.0)
@@ -124,19 +127,17 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
         # Remember, we only do this if abs(z) < (k+0.01)*dz. Note that we add 0.01; this helps
         # avoid floating point errors and division by zero. This is the same as abs(z) - (k+0.01)*dz<0
         boundary = nrpyAbs(rfm.xx[2]) - (grid_points_from_z_plane+sp.sympify(0.01))*gri.dxx[2]
-        ValenciavU[2] = max_normal0(boundary)*(newdriftvU2+betaU[2])/alpha \
-                         + min_normal0(boundary)*ValenciavU[2]
+        ValenciavU[2] = min_normal0(boundary)*(newdriftvU2+betaU[2])/alpha \
+                         + max_normal0(boundary)*ValenciavU[2]
 
 import GRFFE.equations as GRFFE
 import GRHD.equations as GRHD
 
-def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
+def GiRaFFE_NRPy_P2C(gammadet,gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     # After recalculating the 3-velocity, we need to update the poynting flux:
     # We'll reset the Valencia velocity, since this will be part of a second call to outCfunction.
-    ValenciavU = ixp.declarerank1("ValenciavU",DIM=3)
 
-    # First compute stress-energy tensor T4UU and T4UD:
-    GRHD.compute_sqrtgammaDET(gammaDD)
+#     # First compute stress-energy tensor T4UU and T4UD:
     
     GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
     GRFFE.compute_smallb4U(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
@@ -146,6 +147,19 @@ def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     GRFFE.compute_TEM4UD(gammaDD, betaU, alpha, GRFFE.TEM4UU)
 
     # Compute conservative variables in terms of primitive variables
-    GRHD.compute_S_tildeD(alpha, GRHD.sqrtgammaDET, GRFFE.TEM4UD)
+    GRHD.compute_S_tildeD(alpha, sp.sqrt(gammadet), GRFFE.TEM4UD)
+
+    B2 = sp.sympify(0)
+    for i in range(3):
+        for j in range(3):
+            B2 += gammaDD[i][j]*BU[i]*BU[j]
+
     global StildeD
     StildeD = GRHD.S_tildeD
+#     StildeD = ixp.zerorank1()
+#     for i in range(3):
+#         StildeD[i] += sp.sqrt(gammadet)
+#     # \gamma_{ij} \frac{\bar{v}^j \sqrt{\gamma}B^2}{4 \pi}
+#     for i in range(3):
+#         for j in range(3):
+#             StildeD[i] += gammaDD[i][j]*ValenciavU[j]*sp.sqrt(gammadet)*B2/(sqrt4pi*sqrt4pi)
