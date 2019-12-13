@@ -137,17 +137,17 @@ def GiRaFFE_NRPy_P2C(gammadet,gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     # After recalculating the 3-velocity, we need to update the poynting flux:
     # We'll reset the Valencia velocity, since this will be part of a second call to outCfunction.
 
-#     # First compute stress-energy tensor T4UU and T4UD:
+    # First compute stress-energy tensor T4UU and T4UD:
     
     GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
     GRFFE.compute_smallb4U(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
-    GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4U)
+#     GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4U)
 
-    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU)
-    GRFFE.compute_TEM4UD(gammaDD, betaU, alpha, GRFFE.TEM4UU)
+#     GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU)
+#     GRFFE.compute_TEM4UD(gammaDD, betaU, alpha, GRFFE.TEM4UU)
 
-    # Compute conservative variables in terms of primitive variables
-    GRHD.compute_S_tildeD(alpha, sp.sqrt(gammadet), GRFFE.TEM4UD)
+#     # Compute conservative variables in terms of primitive variables
+#     GRHD.compute_S_tildeD(alpha, sp.sqrt(gammadet), GRFFE.TEM4UD)
 
     B2 = sp.sympify(0)
     for i in range(3):
@@ -155,11 +155,27 @@ def GiRaFFE_NRPy_P2C(gammadet,gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
             B2 += gammaDD[i][j]*BU[i]*BU[j]
 
     global StildeD
-    StildeD = GRHD.S_tildeD
-#     StildeD = ixp.zerorank1()
-#     for i in range(3):
-#         StildeD[i] += sp.sqrt(gammadet)
-#     # \gamma_{ij} \frac{\bar{v}^j \sqrt{\gamma}B^2}{4 \pi}
-#     for i in range(3):
-#         for j in range(3):
-#             StildeD[i] += gammaDD[i][j]*ValenciavU[j]*sp.sqrt(gammadet)*B2/(sqrt4pi*sqrt4pi)
+#     StildeD = GRHD.S_tildeD
+    StildeD = ixp.zerorank1()
+    # \gamma_{ij} \frac{\bar{v}^j \sqrt{\gamma}B^2}{4 \pi}
+    for i in range(3):
+        for j in range(3):
+            StildeD[i] += gammaDD[i][j]*ValenciavU[j]*sp.sqrt(gammadet)*B2/(sqrt4pi*sqrt4pi)
+            
+    # Missing term?
+    # define u_k B^k = g{\mu k} u^\mu B^k
+    import BSSN.ADMBSSN_tofrom_4metric as AB4m
+    AB4m.g4DD_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
+    udotB = sp.sympify(0)
+    for mu in range(4):
+        for k in range(3):
+            udotB += AB4m.g4DD[mu][k+1]*GRHD.u4U_ito_ValenciavU[mu]*BU[k]
+            
+    BD = ixp.zerorank1()
+    for i in range(3):
+        for j in range(3):
+            BD[i] += gammaDD[i][j]*BU[j]
+            
+    for i in range(3):
+        # - \frac{\sqrt{\gamma}B_i (u_k B^k)}{4 \pi \alpha} 
+        StildeD[i] += -sp.sqrt(gammadet)*BD[i]*udotB/(sqrt4pi*sqrt4pi*alpha)
