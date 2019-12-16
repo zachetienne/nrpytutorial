@@ -42,9 +42,9 @@ def compute_smallb4U(gammaDD, betaU, alpha, u4U, B_notildeU, sqrt4pi):
     for i in range(3):
         smallb4U[i + 1] = (B_notildeU[i] + u4_dot_B_notilde * u4U[i + 1]) / (alpha * u4U[0] * sqrt4pi)
 
-# Step 2.b.ii: Define b^mu when u4 and B are are orthogonal
+# Step 2.b.ii: Define b^mu when u4 and B are orthogonal
 def compute_smallb4U_with_driftvU_for_FFE(gammaDD,betaU,alpha, u4U,B_notildeU, sqrt4pi):
-    global smallb4_driftU
+    global smallb4_with_driftv_for_FFE_U
     import BSSN.ADMBSSN_tofrom_4metric as AB4m
     AB4m.g4DD_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
 
@@ -52,13 +52,13 @@ def compute_smallb4U_with_driftvU_for_FFE(gammaDD,betaU,alpha, u4U,B_notildeU, s
     for mu in range(4):
         for nu in range(4):
             u4D[mu] += AB4m.g4DD[mu][nu]*u4U[nu]
-    smallb4_driftU = ixp.zerorank1(DIM=4)
+    smallb4_with_driftv_for_FFE_U = ixp.zerorank1(DIM=4)
     
     # b^0 = 0
-    smallb4_driftU[0] = 0
+    smallb4_with_driftv_for_FFE_U[0] = 0
     # b^i = B^i / [alpha * u^0 * sqrt(4 pi)]
     for i in range(3):
-        smallb4_driftU[i+1] = B_notildeU[i] / (alpha*u4U[0]*sqrt4pi)
+        smallb4_with_driftv_for_FFE_U[i+1] = B_notildeU[i] / (alpha*u4U[0]*sqrt4pi)
 
 # Step 2.c: Define b^2.
 def compute_smallbsquared(gammaDD, betaU, alpha, smallb4U):
