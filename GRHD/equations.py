@@ -195,7 +195,7 @@ def u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha
     global rescaledValenciavU
     rescaledValenciavU = ixp.zerorank1()
     for i in range(3):
-        # If R == 0, then Rstar == 0, so Rmax/(R+TINYDOUBLE)=0/1e-100 = 0
+        # If R == 0, then Rstar == 0, so sqrt( Rstar/(R+TINYDOUBLE) )=sqrt(0/1e-100) = 0
         #   If your velocities are of order 1e-100 and this is physically
         #   meaningful, there must be something wrong with your unit conversion.
         rescaledValenciavU[i] = ValenciavU[i] * sp.sqrt(Rstar / (R + TINYDOUBLE))
