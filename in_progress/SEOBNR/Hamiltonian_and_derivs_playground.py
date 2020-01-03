@@ -98,8 +98,8 @@ def replace_numpy_funcs(expression):
 # partial derivatives of H with respect to x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z.
 def output_H_and_derivs():
     # Open and read the file of numerical expressions (written in SymPy syntax) computing the SEOBNRv3 Hamiltonian.
-    #f = open("SEOBNR/Hamstring.txt", 'r')
-    f = open("SEOBNR/SymPy_Hreal_on_bottom.txt", 'r')
+    f = open("SEOBNR/Hamstring.txt", 'r')
+    #f = open("SEOBNR/SymPy_Hreal_on_bottom.txt", 'r')
     Hamstring = str(f.read())
     f.close()
 
