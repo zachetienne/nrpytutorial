@@ -39,12 +39,12 @@ def simplify_deriv(lhss_deriv, rhss_deriv):
 
 
 # deriv_onevar() replaces variable derivatives with 1 or 0 depending on which partial derivaitve is computed.  For
-# example, pass 'xprm=1' to replace each instance of 'xprm' with 1 and 'qprm' with 0 for each q in (y,z,px,py,pz,s1x,
-# s1y,s1z,s2x,s2y,s2z).  This produces expressions which compute the partial derivative of the Hamiltonian with respect
+# example, pass 'xprm=1' to replace each instance of 'xprm' with 1 and 'qprm' with 0 for each q in (y,z,p1,p2,p3,S1x,
+# S1y,S1z,S2x,S2y,S2z).  This produces expressions which compute the partial derivative of the Hamiltonian with respect
 # to x.
-def deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0, pzprm=0, s1xprm=0, s1yprm=0,
-                 s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0):
-    if xprm + yprm + zprm + pxprm + pyprm + pzprm + s1xprm + s1yprm + s1zprm + s2xprm + s2yprm + s2zprm != 1:
+def deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0, p3prm=0, S1xprm=0, S1yprm=0,
+                 S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0):
+    if xprm + yprm + zprm + p1prm + p2prm + p3prm + S1xprm + S1yprm + S1zprm + S2xprm + S2yprm + S2zprm != 1:
         print("deriv_onevar() cannot take more than one derivative at a time!")
         sys.exit()
 
@@ -55,7 +55,7 @@ def deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=
     for i in range(len(rhss_deriv)):
         lhss_deriv_new.append(lhss_deriv[i])
         rhss_deriv_new.append(rhss_deriv[i])
-    # Replace each instance of 'qprm', q in (x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z), with either 0 or 1.
+    # Replace each instance of 'qprm', q in (x,y,z,p1,p2,p3,S1x,S1y,S1z,S2x,S2y,S2z), with either 0 or 1.
     for i in range(len(rhss_deriv_new)):
         for var in rhss_deriv_new[i].free_symbols:
             if str(var) == "xprm":
@@ -64,24 +64,24 @@ def deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=
                 rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, yprm)
             elif str(var) == "zprm":
                 rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, zprm)
-            elif str(var) == "pxprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, pxprm)
-            elif str(var) == "pyprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, pyprm)
-            elif str(var) == "pzprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, pzprm)
-            elif str(var) == "s1xprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, s1xprm)
-            elif str(var) == "s1yprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, s1yprm)
-            elif str(var) == "s1zprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, s1zprm)
-            elif str(var) == "s2xprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, s2xprm)
-            elif str(var) == "s2yprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, s2yprm)
-            elif str(var) == "s2zprm":
-                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, s2zprm)
+            elif str(var) == "p1prm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, p1prm)
+            elif str(var) == "p2prm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, p2prm)
+            elif str(var) == "p3prm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, p3prm)
+            elif str(var) == "S1xprm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, S1xprm)
+            elif str(var) == "S1yprm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, S1yprm)
+            elif str(var) == "S1zprm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, S1zprm)
+            elif str(var) == "S2xprm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, S2xprm)
+            elif str(var) == "S2yprm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, S2yprm)
+            elif str(var) == "S2zprm":
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var, S2zprm)
     # Simplify the derivative expressions with simplify_deriv().
     lhss_deriv_simp, rhss_deriv_simp = simplify_deriv(lhss_deriv_new, rhss_deriv_new)
     # Return simplified derivative expression.
@@ -95,11 +95,11 @@ def replace_numpy_funcs(expression):
 
 
 # output_H_and_derivs() is the main wrapper function for computing the SEONBRv3 Hamiltonian H and the twelve first
-# partial derivatives of H with respect to x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z.
+# partial derivatives of H with respect to x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z.
 def output_H_and_derivs():
     # Open and read the file of numerical expressions (written in SymPy syntax) computing the SEOBNRv3 Hamiltonian.
-    f = open("SEOBNR/Hamstring.txt", 'r')
-    #f = open("SEOBNR/SymPy_Hreal_on_bottom.txt", 'r')
+    #f = open("SEOBNR/Hamstring.txt", 'r')
+    f = open("SEOBNR/SymPy_Hreal_on_bottom.txt", 'r')
     Hamstring = str(f.read())
     f.close()
 
@@ -141,9 +141,9 @@ def output_H_and_derivs():
     full_symbol_list = superfast_uniq(full_symbol_list_with_dups)
 
     # Declare input constants.
-    m1, m2, eta, KK, k0, k1, d1v2, dheffSSv2 = sp.symbols("m1 m2 eta KK k0 k1 d1v2 dheffSSv2", real=True)
+    m1, m2, eta, KK, k0, k1, dSO, dSS = sp.symbols("m1 m2 eta KK k0 k1 dSO dSS", real=True)
     tortoise, EMgamma = sp.symbols("tortoise EMgamma", real=True)
-    input_constants = [m1, m2, eta, KK, k0, k1, d1v2, dheffSSv2, tortoise, EMgamma]
+    input_constants = [m1, m2, eta, KK, k0, k1, dSO, dSS, tortoise, EMgamma]
 
     # Derivatives of input constants will always be zero, so remove them from the full_symbol_list.
     for inputconst in input_constants:
@@ -175,30 +175,30 @@ def output_H_and_derivs():
     lhss_deriv = lhss_deriv_simp
     rhss_deriv = rhss_deriv_simp
     # Generate partial derivatives with respect to each of the twelve input variables
-    lhss_deriv_x, rhss_deriv_x = deriv_onevar(lhss_deriv, rhss_deriv, xprm=1, yprm=0, zprm=0, pxprm=0, pyprm=0, pzprm=0,
-                                              s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    #lhss_deriv_y, rhss_deriv_y = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=1, zprm=0, pxprm=0, pyprm=0, pzprm=0,
-                                               #s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    #lhss_deriv_z, rhss_deriv_z = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=1, pxprm=0, pyprm=0, pzprm=0,
-                                               #s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    #lhss_deriv_px, rhss_deriv_px = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=1, pyprm=0,
-                                                #pzprm=0, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    lhss_deriv_py, rhss_deriv_py = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=1,
-                                                pzprm=0, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    lhss_deriv_pz, rhss_deriv_pz = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0,
-                                                pzprm=1, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    #lhss_deriv_s1x, rhss_deriv_s1x = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0,
-                                                  #pzprm=0, s1xprm=1, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    #lhss_deriv_s1y, rhss_deriv_s1y = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0,
-                                                  #pzprm=0, s1xprm=0, s1yprm=1, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=0)
-    #lhss_deriv_s1z, rhss_deriv_s1z = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0,
-                                                  #pzprm=0, s1xprm=0, s1yprm=0, s1zprm=1, s2xprm=0, s2yprm=0, s2zprm=0)
-    #lhss_deriv_s2x, rhss_deriv_s2x = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0,
-                                                  #pzprm=0, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=1, s2yprm=0, s2zprm=0)
-    #lhss_deriv_s2y, rhss_deriv_s2y = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0,
-                                                  #pzprm=0, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=1, s2zprm=0)
-    #lhss_deriv_s2z, rhss_deriv_s2z = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, pxprm=0, pyprm=0,
-                                                  #pzprm=0, s1xprm=0, s1yprm=0, s1zprm=0, s2xprm=0, s2yprm=0, s2zprm=1)
+    lhss_deriv_x, rhss_deriv_x = deriv_onevar(lhss_deriv, rhss_deriv, xprm=1, yprm=0, zprm=0, p1prm=0, p2prm=0, p3prm=0,
+                                              S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_y, rhss_deriv_y = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=1, zprm=0, p1prm=0, p2prm=0, p3prm=0,
+                                               #S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_z, rhss_deriv_z = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=1, p1prm=0, p2prm=0, p3prm=0,
+                                               #S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_p1, rhss_deriv_p1 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=1, p2prm=0,
+                                                #p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    lhss_deriv_p2, rhss_deriv_p2 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=1,
+                                                p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    lhss_deriv_p3, rhss_deriv_p3 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                p3prm=1, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_S1x, rhss_deriv_S1x = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                  #p3prm=0, S1xprm=1, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_S1y, rhss_deriv_S1y = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                  #p3prm=0, S1xprm=0, S1yprm=1, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_S1z, rhss_deriv_S1z = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                  #p3prm=0, S1xprm=0, S1yprm=0, S1zprm=1, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_S2x, rhss_deriv_S2x = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                  #p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=1, S2yprm=0, S2zprm=0)
+    #lhss_deriv_S2y, rhss_deriv_S2y = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                  #p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=1, S2zprm=0)
+    #lhss_deriv_S2z, rhss_deriv_S2z = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                  #p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=1)
     # Prepare to output derivative expressions in C syntax
     outstring = "/* SEOBNR Hamiltonian expression: */\n"
     outstringsp = ""
@@ -219,26 +219,26 @@ def output_H_and_derivs():
         outsplhs.append(lhss_deriv_x[i])
         outsprhs.append(rhss_deriv_x[i])
 
-    outstring += "\n\n\n/* SEOBNR \partial_py H expression: */\n"
-    for i in range(len(lhss_deriv_py)):
-        outstring += outputC(rhss_deriv_py[i], str(lhss_deriv_py[i]), "returnstring",
+    outstring += "\n\n\n/* SEOBNR \partial_p2 H expression: */\n"
+    for i in range(len(lhss_deriv_p2)):
+        outstring += outputC(rhss_deriv_p2[i], str(lhss_deriv_p2[i]), "returnstring",
                              "outCverbose=False,includebraces=False,CSE_enable=False")
-        outstringsp += str(lhss_deriv_py[i]) + " = " + str(rhss_deriv_py[i]) + "\n"
-        outsplhs.append(lhss_deriv_py[i])
-        outsprhs.append(rhss_deriv_py[i])
+        outstringsp += str(lhss_deriv_p2[i]) + " = " + str(rhss_deriv_p2[i]) + "\n"
+        outsplhs.append(lhss_deriv_p2[i])
+        outsprhs.append(rhss_deriv_p2[i])
 
-    outstring += "\n\n\n/* SEOBNR \partial_pz H expression: */\n"
-    for i in range(len(lhss_deriv_pz)):
-        outstring += outputC(rhss_deriv_pz[i], str(lhss_deriv_pz[i]), "returnstring",
+    outstring += "\n\n\n/* SEOBNR \partial_p3 H expression: */\n"
+    for i in range(len(lhss_deriv_p3)):
+        outstring += outputC(rhss_deriv_p3[i], str(lhss_deriv_p3[i]), "returnstring",
                              "outCverbose=False,includebraces=False,CSE_enable=False")
-        outstringsp += str(lhss_deriv_pz[i]) + " = " + str(rhss_deriv_pz[i]) + "\n"
-        outsplhs.append(lhss_deriv_pz[i])
-        outsprhs.append(rhss_deriv_pz[i])
+        outstringsp += str(lhss_deriv_p3[i]) + " = " + str(rhss_deriv_p3[i]) + "\n"
+        outsplhs.append(lhss_deriv_p3[i])
+        outsprhs.append(rhss_deriv_p3[i])
 
     with open("SEOBNR_Playground_Pycodes/new_dHdx.py", "w") as file:
         file.write("""from __future__ import division
 import numpy as np
-def new_compute_dHdx(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, d1v2, dheffSSv2, tortoise, EMgamma):
+def new_compute_dHdx(m1, m2, eta, x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z, KK, k0, k1, dSO, dSS, tortoise, EMgamma):
 """)
         for i in range(len(lr) - 1):
             file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(", "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi") + "\n")
@@ -246,24 +246,24 @@ def new_compute_dHdx(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, 
             file.write("    " + str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
         file.write("    return np.array([Hrealprm_x])")
 
-    with open("SEOBNR_Playground_Pycodes/new_dHdpy.py", "w") as file:
+    with open("SEOBNR_Playground_Pycodes/new_dHdp2.py", "w") as file:
         file.write("""from __future__ import division
 import numpy as np
-def new_compute_dHdpy(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, d1v2, dheffSSv2, tortoise, EMgamma):
+def new_compute_dHdp2(m1, m2, eta, x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z, KK, k0, k1, dSO, dSS, tortoise, EMgamma):
 """)
         for i in range(len(lr) - 1):
             file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(", "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi") + "\n")
-        for i in range(len(lhss_deriv_py)):
-            file.write("    " + str(lhss_deriv_py[i]).replace("prm", "prm_py") + " = " + replace_numpy_funcs(rhss_deriv_py[i]).replace("prm", "prm_py").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
-        file.write("    return np.array([Hrealprm_py])")
+        for i in range(len(lhss_deriv_p2)):
+            file.write("    " + str(lhss_deriv_p2[i]).replace("prm", "prm_p2") + " = " + replace_numpy_funcs(rhss_deriv_p2[i]).replace("prm", "prm_p2").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
+        file.write("    return np.array([Hrealprm_p2])")
 
-    with open("SEOBNR_Playground_Pycodes/new_dHdpz.py", "w") as file:
+    with open("SEOBNR_Playground_Pycodes/new_dHdp3.py", "w") as file:
         file.write("""from __future__ import division
 import numpy as np
-def new_compute_dHdpz(m1, m2, eta, x, y, z, px, py, pz, s1x, s1y, s1z, s2x, s2y, s2z, KK, k0, k1, d1v2, dheffSSv2, tortoise, EMgamma):
+def new_compute_dHdp3(m1, m2, eta, x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z, KK, k0, k1, dSO, dSS, tortoise, EMgamma):
 """)
         for i in range(len(lr) - 1):
             file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(", "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi") + "\n")
-        for i in range(len(lhss_deriv_pz)):
-            file.write("    " + str(lhss_deriv_pz[i]).replace("prm", "prm_pz") + " = " + replace_numpy_funcs(rhss_deriv_pz[i]).replace("prm", "prm_pz").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
-        file.write("    return np.array([Hrealprm_pz])")
+        for i in range(len(lhss_deriv_p3)):
+            file.write("    " + str(lhss_deriv_p3[i]).replace("prm", "prm_p3") + " = " + replace_numpy_funcs(rhss_deriv_p3[i]).replace("prm", "prm_p3").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
+        file.write("    return np.array([Hrealprm_p3])")
