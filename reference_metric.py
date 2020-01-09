@@ -453,6 +453,14 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog[1] = sp.diff(xxCart[1],xx[1])
         scalefactor_orthog[2] = sp.diff(xxCart[2],xx[2])
 
+        f0_of_xx0             = sp.diff(xxCart[0],xx[0])
+        f1_of_xx1             = sp.diff(xxCart[1],xx[1])
+        f4_of_xx2             = sp.diff(xxCart[2],xx[2])
+
+        scalefactor_orthog_funcform[0] = f0_of_xx0_funcform
+        scalefactor_orthog_funcform[1] = f1_of_xx1_funcform
+        scalefactor_orthog_funcform[2] = f4_of_xx2_funcform
+
         # Set the transpose of the matrix of unit vectors
         UnitVectors = [[sp.sympify(1), sp.sympify(0), sp.sympify(0)],
                        [sp.sympify(0), sp.sympify(1), sp.sympify(0)],
