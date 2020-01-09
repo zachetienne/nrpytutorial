@@ -3,10 +3,10 @@ language: python
 
 matrix:
   include:
-    - name: "SymPy-dev Ubuntu Linux Xenial pypy2.7-6.0"
+    - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
       os: linux
       dist: xenial
-      python: pypy2.7-6.0
+      python: pypy3.5-6.0
       install:
         - pip install mpmath testfixtures
         - pip install -U git+https://github.com/sympy/sympy/
@@ -97,11 +97,12 @@ matrix:
       python: 3.8-dev
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Xenial CPython NIGHTLY"
-      os: linux
-      dist: xenial
-      python: nightly
-      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+    # Unstable at times:
+    # - name: "Ubuntu Linux Xenial CPython NIGHTLY"
+    #   os: linux
+    #   dist: xenial
+    #   python: nightly
+    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     - name: "Ubuntu Linux Bionic Python 3.6.7"
       os: linux
