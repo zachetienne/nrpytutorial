@@ -430,8 +430,8 @@ def reference_metric(SymPySimplifyExpressions=True):
 
         # Declare basic parameters of the coordinate system and their default values
         AMPLX,SINHWX,AMPLY,SINHWY,AMPLZ,SINHWZ = par.Cparameters("REAL",thismodule,
-                                                                ["AMPLX","SINHWX","AMPLY","SINHWY","AMPLZ","SINHWZ"],
-                                                                [   10.0,     0.2,   10.0,     0.2,   10.0,     0.2])
+                                                                 ["AMPLX","SINHWX","AMPLY","SINHWY","AMPLZ","SINHWZ"],
+                                                                 [   10.0,     0.2,   10.0,     0.2,   10.0,     0.2])
 
         # Compute (xxCart0,xxCart1,xxCart2) from (xx0,xx1,xx2)
         xxCart[0] = AMPLX*(sp.exp(xx[0]/SINHWX) - sp.exp(-xx[0]/SINHWX))/(sp.exp(1/SINHWX) - sp.exp(-1/SINHWX))
@@ -444,9 +444,9 @@ def reference_metric(SymPySimplifyExpressions=True):
         xxSph[2] = sp.atan2(xxCart[1], xxCart[0])
 
         # Compute (xx0,xx1,xx2) from (Cartx,Carty,Cartz)
-        Cart_to_xx[0] = SINHWX*sp.asinh(AMPLX*Cartx*(sp.exp(1/SINHWX) - sp.exp(-1/SINHWX))/2)
-        Cart_to_xx[1] = SINHWY*sp.asinh(AMPLY*Carty*(sp.exp(1/SINHWY) - sp.exp(-1/SINHWY))/2)
-        Cart_to_xx[2] = SINHWZ*sp.asinh(AMPLZ*Cartz*(sp.exp(1/SINHWZ) - sp.exp(-1/SINHWZ))/2)
+        Cart_to_xx[0] = SINHWX*sp.asinh(Cartx*sp.sinh(1/SINHWX)/AMPLX)
+        Cart_to_xx[1] = SINHWY*sp.asinh(Carty*sp.sinh(1/SINHWY)/AMPLY)
+        Cart_to_xx[2] = SINHWZ*sp.asinh(Cartz*sp.sinh(1/SINHWZ)/AMPLZ)
 
         # Compute scale factors
         scalefactor_orthog[0] = sp.diff(xxCart[0],xx[0])
