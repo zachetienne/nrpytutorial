@@ -5,7 +5,6 @@ from outputC import *
 import sympy as sp
 import sys
 
-
 # simplify_deriv() simplifies derivative expressions by removing terms equal to zero.
 def simplify_deriv(lhss_deriv, rhss_deriv):
     # Create 'simp' arrays to store and manipulate derivative expressions.
@@ -97,10 +96,10 @@ def replace_numpy_funcs(expression):
 # output_H_and_derivs() is the main wrapper function for computing the SEONBRv3 Hamiltonian H and the twelve first
 # partial derivatives of H with respect to x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z.
 # TylerK: for now, only outputs dHdx, dHdpy, and dHdpz for initial condition root-finding!
-def output_H_and_derivs():
+def output_H_sec_derivs():
     # Open and read the file of numerical expressions (written in SymPy syntax) computing the SEOBNRv3 Hamiltonian.
     #f = open("SEOBNR/Hamstring.txt", 'r')
-    f = open("SEOBNR/SymPy_Hreal_on_bottom.txt", 'r')
+    f = open("SEOBNR_Playground_Pycodes/dHdx.txt", 'r')
     Hamstring = str(f.read())
     f.close()
 
@@ -117,8 +116,8 @@ def output_H_and_derivs():
             splitHamterms = Hamterms[i].split("=")
             # Append terms to the 'lr' array, removing spaces, "sp." prefixes, and replacing Lambda->Lamb (Lambda is a
             # protected keyword)
-            lr.append(lhrh(lhs=splitHamterms[0].replace(" ", "").replace("Lambda", "Lamb"),
-                           rhs=splitHamterms[1].replace(" ", "").replace("sp.", "").replace("Lambda", "Lamb")))
+            lr.append(lhrh(lhs=splitHamterms[0].replace(" ", "").replace("Lambda", "Lamb").replace("prm", ""),
+                           rhs=splitHamterms[1].replace(" ", "").replace("sp.", "").replace("Lambda", "Lamb").replace("prm", "")))
     # Declare the symbol 'xx', which we use to denote each left-hand side as a function
     xx = sp.Symbol('xx')
     # Create arrays to store simplified left- and right-hand expressions, as well as left-hand sides designated as
@@ -184,10 +183,10 @@ def output_H_and_derivs():
                                                #S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
     #lhss_deriv_p1, rhss_deriv_p1 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=1, p2prm=0,
                                                 #p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
-    lhss_deriv_p2, rhss_deriv_p2 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=1,
-                                                p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
-    lhss_deriv_p3, rhss_deriv_p3 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
-                                                p3prm=1, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_p2, rhss_deriv_p2 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=1,
+                                                #p3prm=0, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
+    #lhss_deriv_p3, rhss_deriv_p3 = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
+                                                #p3prm=1, S1xprm=0, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
     #lhss_deriv_S1x, rhss_deriv_S1x = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
                                                   #p3prm=0, S1xprm=1, S1yprm=0, S1zprm=0, S2xprm=0, S2yprm=0, S2zprm=0)
     #lhss_deriv_S1y, rhss_deriv_S1y = deriv_onevar(lhss_deriv, rhss_deriv, xprm=0, yprm=0, zprm=0, p1prm=0, p2prm=0,
@@ -220,59 +219,13 @@ def output_H_and_derivs():
         outsplhs.append(lhss_deriv_x[i])
         outsprhs.append(rhss_deriv_x[i])
 
-    outstring += "\n\n\n/* SEOBNR \partial_p2 H expression: */\n"
-    for i in range(len(lhss_deriv_p2)):
-        outstring += outputC(rhss_deriv_p2[i], str(lhss_deriv_p2[i]), "returnstring",
-                             "outCverbose=False,includebraces=False,CSE_enable=False")
-        outstringsp += str(lhss_deriv_p2[i]) + " = " + str(rhss_deriv_p2[i]) + "\n"
-        outsplhs.append(lhss_deriv_p2[i])
-        outsprhs.append(rhss_deriv_p2[i])
-
-    outstring += "\n\n\n/* SEOBNR \partial_p3 H expression: */\n"
-    for i in range(len(lhss_deriv_p3)):
-        outstring += outputC(rhss_deriv_p3[i], str(lhss_deriv_p3[i]), "returnstring",
-                             "outCverbose=False,includebraces=False,CSE_enable=False")
-        outstringsp += str(lhss_deriv_p3[i]) + " = " + str(rhss_deriv_p3[i]) + "\n"
-        outsplhs.append(lhss_deriv_p3[i])
-        outsprhs.append(rhss_deriv_p3[i])
-
-    with open("SEOBNR_Playground_Pycodes/new_dHdx.py", "w") as file:
+    with open("SEOBNR_Playground_Pycodes/d2Hdx2.py", "w") as file:
         file.write("""from __future__ import division
 import numpy as np
-def new_compute_dHdx(m1, m2, eta, x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z, KK, k0, k1, dSO, dSS, tortoise, EMgamma):
+def compute_d2Hdx2(m1, m2, eta, x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z, KK, k0, k1, dSO, dSS, tortoise, EMgamma):
 """)
         for i in range(len(lr) - 1):
             file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(", "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi") + "\n")
         for i in range(len(lhss_deriv_x)):
             file.write("    " + str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
-        file.write("    return np.array([Hrealprm_x])")
-
-    with open("SEOBNR_Playground_Pycodes/new_dHdp2.py", "w") as file:
-        file.write("""from __future__ import division
-import numpy as np
-def new_compute_dHdp2(m1, m2, eta, x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z, KK, k0, k1, dSO, dSS, tortoise, EMgamma):
-""")
-        for i in range(len(lr) - 1):
-            file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(", "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi") + "\n")
-        for i in range(len(lhss_deriv_p2)):
-            file.write("    " + str(lhss_deriv_p2[i]).replace("prm", "prm_p2") + " = " + replace_numpy_funcs(rhss_deriv_p2[i]).replace("prm", "prm_p2").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
-        file.write("    return np.array([Hrealprm_p2])")
-
-    with open("SEOBNR_Playground_Pycodes/new_dHdp3.py", "w") as file:
-        file.write("""from __future__ import division
-import numpy as np
-def new_compute_dHdp3(m1, m2, eta, x, y, z, p1, p2, p3, S1x, S1y, S1z, S2x, S2y, S2z, KK, k0, k1, dSO, dSS, tortoise, EMgamma):
-""")
-        for i in range(len(lr) - 1):
-            file.write("    " + lr[i].lhs + " = " + str(lr[i].rhs).replace("Rational(", "np.true_divide(").replace("sqrt(", "np.sqrt(").replace("log(", "np.log(").replace("sign(", "np.sign(").replace("Abs(", "np.abs(").replace("pi", "np.pi") + "\n")
-        for i in range(len(lhss_deriv_p3)):
-            file.write("    " + str(lhss_deriv_p3[i]).replace("prm", "prm_p3") + " = " + replace_numpy_funcs(rhss_deriv_p3[i]).replace("prm", "prm_p3").replace("sp.sqrt(","np.sqrt(").replace("sp.log(","np.log(").replace("sp.sign(","np.sign(").replace("sp.Abs(", "np.abs(") + "\n")
-        file.write("    return np.array([Hrealprm_p3])")
-
-    # TylerK: now create a text file listing only the terms so we can take a second derivative!
-
-    with open("SEOBNR_Playground_Pycodes/dHdx.txt", "w") as file:
-        for i in range(len(lr) - 1):
-            file.write(lr[i].lhs + " = " + str(lr[i].rhs) + "\n")
-        for i in range(len(lhss_deriv_x)):
-            file.write(str(lhss_deriv_x[i]).replace("prm", "prm_x") + " = " + replace_numpy_funcs(rhss_deriv_x[i]).replace("prm", "prm_x") + "\n")
+        file.write("    return np.array([Hreal_xprm_x])")
