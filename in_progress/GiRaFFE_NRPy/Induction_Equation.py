@@ -73,7 +73,6 @@ def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,Valenc
     GRHD.compute_sqrtgammaDET(gammaDD)
     # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
     LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
-    LeviCivitaDDD = ixp.zerorank3()
     for i in range(3):
         for j in range(3):
             for k in range(3):
@@ -86,7 +85,7 @@ def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,Valenc
     F = sp.sympify(0)
     for j in range(3):
         for k in range(3):
-            F = LeviCivitaDDD[flux_dirn][j][k] * (alpha*ValenciavU[j]-betaU[j]) * BU[k]
+            F += LeviCivitaDDD[flux_dirn][j][k] * (alpha*ValenciavU[j]-betaU[j]) * BU[k]
     # U = B^i
     U = BU[flux_dirn]
     
@@ -100,9 +99,7 @@ global calculate_E_i_flux
 def calculate_E_i_flux(inputs_provided=True,alpha_face=None,gamma_faceDD=None,beta_faceU=None,\
                        Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None):
     global E_fluxD
-    # We will need to add to this rhs formula in several functions. To avoid overwriting previously written
-    # data, we use declarerank1() instead of zerorank1(). 
-    E_fluxD = ixp.declarerank1("E_fluxD",DIM=3)
+    E_fluxD = ixp.zerorank1()
     for flux_dirn in range(3):
         find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face)
         calculate_flux_and_state_for_Induction(flux_dirn, gamma_faceDD,beta_faceU,alpha_face,\
