@@ -100,35 +100,22 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,gammaUU,gammadet,betaU,alpha):
 
     # This number determines how far away (in grid points) we will apply the fix.
     grid_points_from_z_plane = par.Cparameters("REAL",thismodule,"grid_points_from_z_plane",4.0)
-    # Set the Cartesian normal vector. This can be expanded later to arbitrary sheets and coordinate systems.
-    nU = ixp.zerorank1()
-    nU[2] = 1
-    # Lower the index, as usual:
-    nD = ixp.zerorank1()
-    for i in range(3):
-        for j in range(3):
-            nD[i] = gammaDD[i][j]*nU[j]
 
     if par.parval_from_str("enforce_current_sheet_prescription"):
         # Calculate the drift velocity
-        driftvU = ixp.declarerank1("driftvU")
+        driftvU = ixp.zerorank1()
+        for i in range(3):
+            driftvU[i] = alpha*ValenciavU[i] - betaU[i]
 
-        inner_product = sp.sympify(0)
-        for i in range(3):
-            inner_product += driftvU[i]*nD[i] # This is the portion of the drift velocity normal to the z plane
-                                              # In flat space, this is just v^z
-        # We'll use a sympy utility to solve for v^z. This should make it easier to generalize later
-        newdriftvU2 = sp.solve(inner_product,driftvU[2])
-        newdriftvU2 = newdriftvU2[0] # In flat space this reduces to v^z=0
-        for i in range(3):
-            # Now, we substitute drift velocity in terms of our preferred Valencia velocity
-            newdriftvU2 = newdriftvU2.subs(driftvU[i],alpha*ValenciavU[i]-betaU[i])
+        # The direct approach, used by the original GiRaFFE:
+        # v^z = -(\gamma_{xz} v^x + \gamma_{yz} v^y) / \gamma_{zz} 
+        newdriftvU2 = -(gammaDD[0][2]*driftvU[0] + gammaDD[1][2]*driftvU[1])/gammaDD[2][2]
         # Now that we have the z component, it's time to substitute its Valencia form in.
         # Remember, we only do this if abs(z) < (k+0.01)*dz. Note that we add 0.01; this helps
         # avoid floating point errors and division by zero. This is the same as abs(z) - (k+0.01)*dz<0
         boundary = nrpyAbs(rfm.xx[2]) - (grid_points_from_z_plane+sp.sympify(0.01))*gri.dxx[2]
         ValenciavU[2] = min_normal0(boundary)*(newdriftvU2+betaU[2])/alpha \
-                         + max_normal0(boundary)*ValenciavU[2]
+                      + max_normal0(boundary)*ValenciavU[2]
 
 import GRFFE.equations as GRFFE
 import GRHD.equations as GRHD
