@@ -34,7 +34,7 @@ const int metric_gfs_list[10] = {GAMMADD00GF,
                                  BETAU0GF,
                                  BETAU1GF,
                                  BETAU2GF,
-                                 ALPHAGF}
+                                 ALPHAGF};
 
 const int metric_gfs_face_list[10] = {GAMMA_FACEDD00GF,
                                       GAMMA_FACEDD01GF,
@@ -45,7 +45,7 @@ const int metric_gfs_face_list[10] = {GAMMA_FACEDD00GF,
                                       BETA_FACEU0GF,
                                       BETA_FACEU1GF,
                                       BETA_FACEU2GF,
-                                      ALPHA_FACEGF}
+                                      ALPHA_FACEGF};
 
 const int num_metric_gfs = 10;
 // Kronecker delta: all zero-offset
@@ -63,10 +63,10 @@ void interpolate_metric_gfs_to_cell_faces(const paramstruct *params,REAL *auxevo
         for (int i2 = NGHOSTS;i2 < Nxx2+NGHOSTS+1;i2++) {
             for (int i1 = NGHOSTS;i1 < Nxx2+NGHOSTS+1;i1++) {
                 for (int i0 = NGHOSTS;i0 < Nxx2+NGHOSTS+1;i0++) {
-                    REAL Qm2 = auxevol_gfs[IDX4S(in_gf,i0-2*kronecker_delta[0,flux_dirn],i1-2*kronecker_delta[1,flux_dirn],i2-2*kronecker_delta[2,flux_dirn])];
-                    REAL Qm1 = auxevol_gfs[IDX4S(in_gf,i0-kronecker_delta[0,flux_dirn],i1-kronecker_delta[1,flux_dirn],i2-kronecker_delta[2,flux_dirn])];
+                    REAL Qm2 = auxevol_gfs[IDX4S(in_gf,i0-2*kronecker_delta[0][flux_dirn],i1-2*kronecker_delta[1][flux_dirn],i2-2*kronecker_delta[2][flux_dirn])];
+                    REAL Qm1 = auxevol_gfs[IDX4S(in_gf,i0-kronecker_delta[0][flux_dirn],i1-kronecker_delta[1][flux_dirn],i2-kronecker_delta[2][flux_dirn])];
                     REAL Qp0 = auxevol_gfs[IDX4S(in_gf,i0,i1,i2)];
-                    REAL Qp1 = auxevol_gfs[IDX4S(in_gf,i0+kronecker_delta[0,flux_dirn],i1+kronecker_delta[1,flux_dirn],i2+kronecker_delta[2,flux_dirn])];
+                    REAL Qp1 = auxevol_gfs[IDX4S(in_gf,i0+kronecker_delta[0][flux_dirn],i1+kronecker_delta[1][flux_dirn],i2+kronecker_delta[2][flux_dirn])];
                     auxevol_gfs[IDX4S(out_gf,i0,i1,i2)] = COMPUTE_FCVAL(Qm2,Qm1,Qp0,Qp1);
                 }
             }
