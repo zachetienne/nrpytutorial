@@ -101,7 +101,9 @@ def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
+                # If we don't simplify here, then sometimes lambdaU contains obvious zeros
+                #   that, when passed into SymPy's (v1.5+) CSE algorithm, will cause it to fail.
+                LambdabarU[i] += sp.simplify(gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k]))
     lambdaU    = ixp.zerorank1()
     for i in range(DIM):
         lambdaU[i] = LambdabarU[i] / rfm.ReU[i]
