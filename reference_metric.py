@@ -384,6 +384,9 @@ def reference_metric(SymPySimplifyExpressions=True):
                             -sp.sin(xx[1]) * var2 / var1],
                        [-sp.sin(xx[2]), sp.cos(xx[2]), sp.sympify(0)]]
 
+    #####################################
+    # CARTESIAN-LIKE COORDINATE SYSTEMS #
+    #####################################
     elif CoordSystem == "Cartesian":
         xmin, xmax, ymin, ymax, zmin, zmax = par.Cparameters("REAL",thismodule,
                                                              ["xmin","xmax","ymin","ymax","zmin","zmax"],
@@ -410,6 +413,53 @@ def reference_metric(SymPySimplifyExpressions=True):
         scalefactor_orthog_funcform[0] = sp.sympify(1)
         scalefactor_orthog_funcform[1] = sp.sympify(1)
         scalefactor_orthog_funcform[2] = sp.sympify(1)
+
+        # Set the transpose of the matrix of unit vectors
+        UnitVectors = [[sp.sympify(1), sp.sympify(0), sp.sympify(0)],
+                       [sp.sympify(0), sp.sympify(1), sp.sympify(0)],
+                       [sp.sympify(0), sp.sympify(0), sp.sympify(1)]]
+        
+    elif CoordSystem == "SinhCartesian":
+        # SinhCartesian coordinates allows us to push the outer boundary of the
+        # computational domain a lot further away, while keeping reasonably high
+        # resolution towards the center of the computational grid.
+
+        # Set default values for min and max (x,y,z)
+        xxmin = [sp.sympify(-1), sp.sympify(-1), sp.sympify(-1)]
+        xxmax = [sp.sympify(+1), sp.sympify(+1), sp.sympify(+1)]
+
+        # Declare basic parameters of the coordinate system and their default values
+        AMPLX,SINHWX,AMPLY,SINHWY,AMPLZ,SINHWZ = par.Cparameters("REAL",thismodule,
+                                                                 ["AMPLX","SINHWX","AMPLY","SINHWY","AMPLZ","SINHWZ"],
+                                                                 [   10.0,     0.2,   10.0,     0.2,   10.0,     0.2])
+
+        # Compute (xxCart0,xxCart1,xxCart2) from (xx0,xx1,xx2)
+        xxCart[0] = AMPLX*(sp.exp(xx[0]/SINHWX) - sp.exp(-xx[0]/SINHWX))/(sp.exp(1/SINHWX) - sp.exp(-1/SINHWX))
+        xxCart[1] = AMPLY*(sp.exp(xx[1]/SINHWY) - sp.exp(-xx[1]/SINHWY))/(sp.exp(1/SINHWY) - sp.exp(-1/SINHWY))
+        xxCart[2] = AMPLZ*(sp.exp(xx[2]/SINHWZ) - sp.exp(-xx[2]/SINHWZ))/(sp.exp(1/SINHWZ) - sp.exp(-1/SINHWZ))
+
+        # Compute (r,th,ph) from (xxCart2,xxCart1,xxCart2)
+        xxSph[0] = sp.sqrt(xxCart[0] ** 2 + xxCart[1] ** 2 + xxCart[2] ** 2)
+        xxSph[1] = sp.acos(xxCart[2] / xxSph[0])
+        xxSph[2] = sp.atan2(xxCart[1], xxCart[0])
+
+        # Compute (xx0,xx1,xx2) from (Cartx,Carty,Cartz)
+        Cart_to_xx[0] = SINHWX*sp.asinh(Cartx*sp.sinh(1/SINHWX)/AMPLX)
+        Cart_to_xx[1] = SINHWY*sp.asinh(Carty*sp.sinh(1/SINHWY)/AMPLY)
+        Cart_to_xx[2] = SINHWZ*sp.asinh(Cartz*sp.sinh(1/SINHWZ)/AMPLZ)
+
+        # Compute scale factors
+        scalefactor_orthog[0] = sp.diff(xxCart[0],xx[0])
+        scalefactor_orthog[1] = sp.diff(xxCart[1],xx[1])
+        scalefactor_orthog[2] = sp.diff(xxCart[2],xx[2])
+
+        f0_of_xx0             = sp.diff(xxCart[0],xx[0])
+        f1_of_xx1             = sp.diff(xxCart[1],xx[1])
+        f4_of_xx2             = sp.diff(xxCart[2],xx[2])
+
+        scalefactor_orthog_funcform[0] = f0_of_xx0_funcform
+        scalefactor_orthog_funcform[1] = f1_of_xx1_funcform
+        scalefactor_orthog_funcform[2] = f4_of_xx2_funcform
 
         # Set the transpose of the matrix of unit vectors
         UnitVectors = [[sp.sympify(1), sp.sympify(0), sp.sympify(0)],
@@ -984,6 +1034,14 @@ params.AMAX   =  domain_size;\n"""
 params.xmin = -domain_size, params.xmax = domain_size;
 params.ymin = -domain_size, params.ymax = domain_size;
 params.zmin = -domain_size, params.zmax = domain_size;\n"""
+        elif CoordSystem =="SinhCartesian":
+            coordparams += """
+params.AMPLX  = domain_size;
+params.SINHWX = sinh_width;
+params.AMPLY  = domain_size;
+params.SINHWY = sinh_width;
+params.AMPLZ  = domain_size;
+params.SINHWZ = sinh_width;\n"""
         elif CoordSystem == "Cylindrical":
             coordparams += """
 params.ZMIN   = -domain_size;

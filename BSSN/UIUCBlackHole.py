@@ -122,6 +122,18 @@ def UIUCBlackHole(ComputeADMGlobalsOnly = False):
         AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
                                                                     gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
+    # Let's choose alpha = 1/psi**2 (psi = BSSN conformal factor) for these initial data,
+    # where psi = exp(phi); chi = 1/psi**4; W = 1/psi**2
+    if par.parval_from_str("EvolvedConformalFactor_cf") == "phi":
+        alpha = sp.exp(-2*cf)
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "chi":
+        alpha = sp.sqrt(cf)
+    elif par.parval_from_str("EvolvedConformalFactor_cf") == "W":
+        alpha = cf
+    else:
+        print("Error EvolvedConformalFactor_cf type = \""+par.parval_from_str("EvolvedConformalFactor_cf")+"\" unknown.")
+        exit(1)
+
     import BSSN.BSSN_ID_function_string as bIDf
     global returnfunction
     returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)

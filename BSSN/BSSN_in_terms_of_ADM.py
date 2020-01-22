@@ -102,6 +102,11 @@ def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
         for j in range(DIM):
             for k in range(DIM):
                 LambdabarU[i] += gammabarUU[j][k] * (GammabarUDD[i][j][k] - rfm.GammahatUDD[i][j][k])
+    for i in range(DIM):
+        # We evaluate LambdabarU[i] here to ensure proper cancellations. If these cancellations
+        #   are not applied, certain expressions (e.g., lambdaU[0] in StaticTrumpet) will
+        #   cause SymPy's (v1.5+) CSE algorithm to fail
+        LambdabarU[i] = LambdabarU[i].doit()
     lambdaU    = ixp.zerorank1()
     for i in range(DIM):
         lambdaU[i] = LambdabarU[i] / rfm.ReU[i]

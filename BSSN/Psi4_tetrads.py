@@ -113,10 +113,12 @@ def Psi4_tetrads():
                     v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbolDDD[d][b][c] * v1U[b] * v2U[c]
 
     # Step 2.h.i: Simplify expressions for v1U,v2U,v3U. This greatly expedites the C code generation (~10x faster)
+    #             Drat. Simplification with certain versions of SymPy results in a hang. Let's just evaluate
+    #             the expressions so the most trivial optimizations can be performed.
     for a in range(DIM):
-        v1U[a] = sp.simplify(v1U[a])
-        v2U[a] = sp.simplify(v2U[a])
-        v3U[a] = sp.simplify(v3U[a])
+        v1U[a] = v1U[a].doit() #sp.simplify(v1U[a])
+        v2U[a] = v2U[a].doit() #sp.simplify(v2U[a])
+        v3U[a] = v3U[a].doit() #sp.simplify(v3U[a])
 
     # Step 2.i: Define omega_{ij}
     omegaDD = ixp.zerorank2()
