@@ -58,9 +58,9 @@ def compute_AD_gauge_term(gammaDD,betaU,alpha,psi6Phi,AD):
     # Take the gradient of the parenthetical and subtract it from the RHS
     AevolParen_dD = ixp.declarerank1("AevolParen_dD",DIM=3)
     global A_rhsD
-    A_rhsD = ixp.declarerank1("A_rhsD",DIM=3)
+    A_rhsD = ixp.zerorank1(DIM=3)
     for i in range(3):
-        A_rhsD[i] += -AevolParen_dD[i]
+        A_rhsD[i] = -AevolParen_dD[i]
         
 def compute_psi6Phi_rhs(gammaDD,betaU,alpha,AD,psi6Phi,xi_damping):
     GRHD.compute_sqrtgammaDET(gammaDD)
