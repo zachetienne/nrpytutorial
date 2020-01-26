@@ -105,7 +105,7 @@ def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
     for i in range(DIM):
         # We evaluate LambdabarU[i] here to ensure proper cancellations. If these cancellations
         #   are not applied, certain expressions (e.g., lambdaU[0] in StaticTrumpet) will
-        #   cause SymPy's (v1.5+) CSE algorithm to fail
+        #   cause SymPy's (v1.5+) CSE algorithm to hang
         LambdabarU[i] = LambdabarU[i].doit()
     lambdaU    = ixp.zerorank1()
     for i in range(DIM):
