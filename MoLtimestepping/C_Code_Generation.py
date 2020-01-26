@@ -29,7 +29,7 @@ def diagonal(key):
         row_idx += 1 # Update to check the next row
     return diagonal
 
-# Step 3: When allocating memory, we populate a list malloced_gridfunctions,
+# Step 3.a: When allocating memory, we populate a list malloced_gridfunctions,
 #         which is used here to determine which gridfunctions need memory freed,
 #         via the free() command. Free the mallocs!
 def free_allocated_memory(outdir,RK_method,malloced_gridfunctions):
@@ -48,12 +48,12 @@ def free_allocated_memory(outdir,RK_method,malloced_gridfunctions):
 #         print("The RK method "+str(key)+" is NOT diagonal! \n")
 # #################################################################
 
-# Step 4: Main driver function for outputting all the MoL C Code
+# Step 3.b: Main driver function for outputting all the MoL C Code
 def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = "",outdir="MoLtimestepping/",
                           MemAllocOnly=False):
 
 
-####### Step 3.a: Allocating Memory
+####### Step 3.b.i: Allocating Memory
     malloc_str = "// Code snippet allocating gridfunction memory for \"" + RK_method + "\" method:\n"
 
     # Loop over grids
@@ -122,7 +122,7 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
 # y_nplus1 += 1/3*k_even
 ########################################################################################################################
 
-####### Step 3b: Implementing the Runge Kutta Scheme for Method of Lines Timestepping
+####### Step 3.b.ii: Implementing the Runge Kutta Scheme for Method of Lines Timestepping
     Butcher = Butcher_dict[RK_method][0] # Get the desired Butcher table from the dictionary
     num_steps = len(Butcher)-1 # Specify the number of required steps to update solution
     indent = "  "
@@ -321,5 +321,5 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
     with open(os.path.join(outdir,"RK_MoL.h"), "w") as file:
         file.write(RK_str)
 
-####### Step 3c: Freeing Allocated Memory
+####### Step 3.b.iii: Freeing Allocated Memory
     free_allocated_memory(outdir,RK_method,malloced_gridfunctions)
