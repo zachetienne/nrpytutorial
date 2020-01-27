@@ -42,8 +42,13 @@ def WeylScalars_Cartesian():
     # Instead, we declare the PHYSICAL metric and extrinsic curvature as grid functions.
     gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD", "sym01")
     kDD = ixp.register_gridfunctions_for_single_rank2("EVOL","kDD", "sym01")
-    gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
-    
+    tmpgammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
+    detgamma = sp.simplify(detgamma)
+    gammaUU = ixp.zerorank2()
+    for i in range(3):
+        for j in range(3):
+            gammaUU[i][j] = sp.simplify(tmpgammaUU[i][j])
+
     output_scalars = par.parval_from_str("output_scalars")
     global psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i
 #    if output_scalars is "all_psis_and_invariants":
@@ -89,6 +94,8 @@ def WeylScalars_Cartesian():
                 for c in range(DIM):
                     for d in range(DIM):
                         v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbol_rank3[d][b][c] * v1U[b] *v2U[c]
+        for a in range(DIM):
+            v3U[a] = sp.simplify(v3U[a])
 
         # Step 5.b: Gram-Schmidt orthonormalization of the vectors.
         # The w_i^a vectors here are used to temporarily hold values on the way to the final vectors e_i^a
