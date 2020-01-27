@@ -1,12 +1,12 @@
 #!/bin/bash
 
+rm -f /tmp/outNRPybench.txt
 time for i in *.ipynb; do
-
-    echo $i;
 
     # First clean up any mess made by notebook.
     git clean -fdq
-
+    echo Working on $i now ...
+    
     # NRPy+ Jupyter notebooks are completely Python 2/3 cross-compatible.
     #   However `jupyter nbconvert` will refuse to run if the notebook
     #   was generated using a different kernel. Here we fool Jupyter
@@ -18,9 +18,11 @@ time for i in *.ipynb; do
         cat $i | sed "s/   \"name\": \"python3\"/   \"name\": \"python2\"/g" > $i-tmp ; mv $i-tmp $i
     fi
 
-    time jupyter nbconvert --log-level=0 --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $i
-
+    BENCH=$(/usr/bin/time -f %e jupyter nbconvert --log-level=0 --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $i 2>&1)
+    echo $BENCH $i | tee -a /tmp/outNRPybench.txt
+    
 done
 
+sort -k1 -g /tmp/outNRPybench.txt
 # Clean up any mess made by last notebook run
 git clean -fdq
