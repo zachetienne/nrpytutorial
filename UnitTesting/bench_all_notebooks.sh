@@ -18,7 +18,7 @@ time for i in *.ipynb; do
         cat $i | sed "s/   \"name\": \"python3\"/   \"name\": \"python2\"/g" > $i-tmp ; mv $i-tmp $i
     fi
 
-    time jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $i
+    time jupyter nbconvert --log-level=0 --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $i
 
 done
 
