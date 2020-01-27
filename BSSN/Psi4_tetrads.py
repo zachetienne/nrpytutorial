@@ -58,8 +58,13 @@ def Psi4_tetrads():
     v1UCart = ixp.zerorank1()
     v2UCart = ixp.zerorank1()
 
-    detgamma = AB.detgamma
-    gammaUU = AB.gammaUU
+    # Step 2.b.i: Simplify detgamma & gammaUU expressions,
+    #             which expedites Psi4 codegen.
+    detgamma = sp.simplify(AB.detgamma)
+    gammaUU = ixp.zerorank2()
+    for i in range(DIM):
+        for j in range(DIM):
+            gammaUU[i][j] = sp.simplify(AB.gammaUU[i][j])
 
     # Step 2.c: Define v1U and v2U
     v1UCart = [-y, x, sp.sympify(0)]
