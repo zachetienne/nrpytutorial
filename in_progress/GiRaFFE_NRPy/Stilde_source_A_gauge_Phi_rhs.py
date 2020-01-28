@@ -46,7 +46,7 @@ def compute_StildeD_source_term(gammaDD,betaU,alpha,gammaDD_dD,betaU_dD,alpha_dD
                 Stilde_rhsD[i] += sp.Rational(1,2) * alpha * GRHD.sqrtgammaDET * \
                                   GRFFE.TEM4UU[mu][nu] * GRHD.g4DD_zerotimederiv_dD[mu][nu][i+1]
 
-def compute_AD_gauge_term(gammaDD,betaU,alpha,psi6Phi,AD):
+def compute_AD_gauge_term_parenthetical_for_FD(gammaDD,betaU,alpha,psi6Phi,AD):
     GRHD.compute_sqrtgammaDET(gammaDD)
     Phi = psi6Phi/GRHD.sqrtgammaDET
     global AevolParen
@@ -55,21 +55,23 @@ def compute_AD_gauge_term(gammaDD,betaU,alpha,psi6Phi,AD):
     for j in range(3):
         AevolParen += -betaU[j] * AD[j]
 
+def compute_AD_gauge_term_from_parenthetical(AevolParen,A_rhsD=None):
     # Take the gradient of the parenthetical and subtract it from the RHS
     AevolParen_dD = ixp.declarerank1("AevolParen_dD",DIM=3)
-    global A_rhsD
-    A_rhsD = ixp.zerorank1(DIM=3)
+    if A_rhsD==None:
+        global A_rhsD
+        A_rhsD = ixp.zerorank1(DIM=3)
     for i in range(3):
-        A_rhsD[i] = -AevolParen_dD[i]
-        
-def compute_psi6Phi_rhs(gammaDD,betaU,alpha,AD,psi6Phi,xi_damping):
+        A_rhsD[i] += -AevolParen_dD[i]
+
+def compute_psi6Phi_rhs_parenthetical(gammaDD,betaU,alpha,AD,psi6Phi):
     GRHD.compute_sqrtgammaDET(gammaDD)
     gammaUU,unusedgammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
     AU = ixp.zerorank1()
     # Raise the index on A in the usual way:
     for i in range(3):
         for j in range(3):
-            AU[i] = gammaUU[i][j] * AD[j]
+            AU[i] += gammaUU[i][j] * AD[j]
     
     global PhievolParenU
     PhievolParenU = ixp.zerorank1(DIM=3)
@@ -78,6 +80,7 @@ def compute_psi6Phi_rhs(gammaDD,betaU,alpha,AD,psi6Phi,xi_damping):
         # \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]
         PhievolParenU[j] += alpha*GRHD.sqrtgammaDET*AU[j] - betaU[j]*psi6Phi
     
+def compute_psi6Phi_rhs_from_parenthetical(alpha,psi6Phi,xi_damping,psi6Phi_rhs=None)
     # Tell NRPy+ to take the derivative numerically:
     PhievolParenU_dD = ixp.declarerank2("PhievolParenU_dD","nosym",DIM=3)
     # -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi]
@@ -86,6 +89,8 @@ def compute_psi6Phi_rhs(gammaDD,betaU,alpha,AD,psi6Phi,xi_damping):
     for j in range(3):
         PhievolParen_innerProduct += PhievolParenU_dD[j][j]
     # Combine the divergence and the damping term
-    global psi6Phi_rhs
-    psi6Phi_rhs = -PhievolParen_innerProduct - xi_damping * alpha * psi6Phi
+    if psi6Phi_rhs=None
+        global psi6Phi_rhs
+        psi6Phi_rhs = sp.sympify(0.0)
+    psi6Phi_rhs += -PhievolParen_innerProduct - xi_damping * alpha * psi6Phi
 
