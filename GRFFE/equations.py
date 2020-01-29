@@ -101,6 +101,52 @@ def compute_TEM4UD(gammaDD,betaU,alpha, TEM4UU):
             for delta in range(4):
                 TEM4UD[mu][nu] += TEM4UU[mu][delta]*AB4m.g4DD[delta][nu]
 
+def compute_AD_flux_term(sqrtgammaDET,driftvU,BU):
+    # Levi-Civita tensor for cross products
+    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
+    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
+    LeviCivitaUUU = ixp.zerorank3()
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                LeviCivitaDDD[i][j][k] *= sqrtgammaDET
+    global A_fluxD
+    A_fluxD = ixp.zerorank1()
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                # \epsilon_{ijk} v^j B^k
+                A_fluxD[i] += LeviCivitaDDD[i][j][k]*driftvU[j]*BU[k]
+
+def compute_AD_source_term_parenthetical_for_FD(sqrtgammaDET,betaU,alpha,psi6Phi,AD):
+    Phi = psi6Phi/sqrtgammaDET
+    global AevolParen
+    # \alpha \Phi - \beta^j A_j
+    AevolParen = alpha * Phi
+    for j in range(3):
+        AevolParen += -betaU[j] * AD[j]
+
+def compute_psi6Phi_rhs_parenthetical(gammaDD,sqrtgammaDET,betaU,alpha,AD,psi6Phi):
+    gammaUU,unusedgammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    AU = ixp.zerorank1()
+    # Raise the index on A in the usual way:
+    for i in range(3):
+        for j in range(3):
+            AU[i] += gammaUU[i][j] * AD[j]
+    
+    global PhievolParenU
+    PhievolParenU = ixp.zerorank1(DIM=3)
+    
+    for i in range(3):
+        # \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]
+        PhievolParenU[j] += alpha*sqrtgammaDET*AU[j] - betaU[j]*psi6Phi
+    
+def compute_psi6Phi_rhs_damping_term(alpha,psi6Phi,xi_damping):
+    # - \xi \alpha [\sqrt{\gamma} \Phi]
+    # Combine the divergence and the damping term
+    global psi6Phi_damping
+    psi6Phi_damping = - xi_damping * alpha * psi6Phi
+
 def generate_everything_for_UnitTesting():
     # First define hydrodynamical quantities
     u4U = ixp.declarerank1("u4U", DIM=4)
