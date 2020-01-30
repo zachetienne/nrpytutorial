@@ -137,7 +137,7 @@ def compute_psi6Phi_rhs_parenthetical(gammaDD,sqrtgammaDET,betaU,alpha,AD,psi6Ph
     global PhievolParenU
     PhievolParenU = ixp.zerorank1(DIM=3)
     
-    for i in range(3):
+    for j in range(3):
         # \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]
         PhievolParenU[j] += alpha*sqrtgammaDET*AU[j] - betaU[j]*psi6Phi
     
