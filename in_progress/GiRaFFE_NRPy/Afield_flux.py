@@ -95,11 +95,9 @@ def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul):
     # F^HLL = (c_\min f_R + c_\max f_L - c_\min c_\max ( st_j_r - st_j_l )) / (c_\min + c_\max)
     return (cmin*Fr + cmax*Fl - cmin*cmax*(Ur-Ul) )/(cmax + cmin)
 
-global calculate_E_i_flux
-def calculate_E_i_flux(inputs_provided=True,alpha_face=None,gamma_faceDD=None,beta_faceU=None,\
-                       Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None):
-    global E_fluxD
-    E_fluxD = ixp.zerorank1()
+def calculate_B_i_flux(alpha_face,gamma_faceDD,beta_faceU,Valenciav_rU,B_rU,Valenciav_lU,B_lU):
+    global B_fluxD
+    B_fluxD = ixp.zerorank1()
     for flux_dirn in range(3):
         find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face)
         calculate_flux_and_state_for_Induction(flux_dirn, gamma_faceDD,beta_faceU,alpha_face,\
@@ -110,4 +108,35 @@ def calculate_E_i_flux(inputs_provided=True,alpha_face=None,gamma_faceDD=None,be
                                                Valenciav_lU,B_lU)
         Fl = F
         Ul = U
-        E_fluxD[flux_dirn] += HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul)
+        B_fluxD[flux_dirn] += HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul)
+
+def calculate_Efield_contribution_to_A_i_RHS(inputs_provided=True,alpha_face=None,gamma_faceDD=None,\
+                                             beta_faceU=None,Valenciav_rU=None,B_rU=None,Valenciav_lU=None,\
+                                             B_lU=None):
+    if not inputs_provided:
+        # declare all variables
+        alpha_face = sp.symbols(alpha_face)
+        beta_faceU = ixp.declarerank1("beta_faceU")
+        gamma_faceDD = ixp.declarerank2("gamma_faceDD","sym01")
+        Valenciav_rU = ixp.declarerank1("Valenciav_rU")
+        B_rU = ixp.declarerank1("B_rU")
+        Valenciav_lU = ixp.declarerank1("Valenciav_lU")
+        B_lU = ixp.declarerank1("B_lU")
+    # First, we must compute the magnetic flux:
+    calculate_B_i_flux(alpha_face,gamma_faceDD,beta_faceU,Valenciav_rU,B_rU,Valenciav_lU,B_lU)
+    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                LCijk = LeviCivitaDDD[i][j][k]
+                LeviCivitaDDD[i][j][k] = LCijk * GRHD.sqrtgammaDET
+                
+    qtr = sp.Rational(1,4)
+    global E_rD,E_lD
+    E_rD = ixp.zerorank1()
+    E_lD = ixp.zerorank1()
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                E_rD[i] += -qtr*LeviCivitaDDD[i][j][k] * (alpha_face*Valenciav_rU[j]-beta_faceU[j]) * B_fluxD[k]
+                E_lD[i] += -qtr*LeviCivitaDDD[i][j][k] * (alpha_face*Valenciav_lU[j]-beta_faceU[j]) * B_fluxD[k]
