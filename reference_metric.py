@@ -866,20 +866,20 @@ for(int i1=0;i1<Nxx_plus_2NGHOSTS1;i1++) for(int i0=0;i0<Nxx_plus_2NGHOSTS0;i0++
 
         # Step 8: Output needed C code to files
         outdir = par.parval_from_str(thismodule+"::rfm_precompute_Ccode_outdir")
-        with open(outdir + "/rfm_struct__declare.h", "w") as file:
+        with open(os.path.join(outdir,"/rfm_struct__declare.h"), "w") as file:
             file.write(struct_str)
-        with open(outdir + "/rfm_struct__malloc.h", "w") as file:
+        with open(os.path.join(outdir,"/rfm_struct__malloc.h"), "w") as file:
             file.write(malloc_str)
-        with open(outdir + "/rfm_struct__define.h", "w") as file:
+        with open(os.path.join(outdir,"/rfm_struct__define.h"), "w") as file:
             file.write(define_str)
         for i in range(3):
-            with open(outdir + "/rfm_struct__read" + str(i) + ".h", "w") as file:
+            with open(os.path.join(outdir,"/rfm_struct__read" + str(i) + ".h"), "w") as file:
                 file.write(readvr_str[i])
-            with open(outdir + "/rfm_struct__SIMD_outer_read" + str(i) + ".h", "w") as file:
+            with open(os.path.join(outdir,"/rfm_struct__SIMD_outer_read" + str(i) + ".h"), "w") as file:
                 file.write(readvr_SIMD_outer_str[i])
-            with open(outdir + "/rfm_struct__SIMD_inner_read" + str(i) + ".h", "w") as file:
+            with open(os.path.join(outdir,"/rfm_struct__SIMD_inner_read" + str(i) + ".h"), "w") as file:
                 file.write(readvr_SIMD_inner_str[i])
-        with open(outdir + "/rfm_struct__freemem.h", "w") as file:
+        with open(os.path.join(outdir,"/rfm_struct__freemem.h"), "w") as file:
             file.write(freemm_str)
 
 def get_EigenCoord():
