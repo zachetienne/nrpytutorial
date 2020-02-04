@@ -27,7 +27,7 @@ from outputC import outputC,superfast_uniq,outC_function_dict,add_to_Cfunction_d
 import NRPy_param_funcs as par             # NRPy+: Parameter interface
 import grid as gri                         # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import sys                                 # Standard Python modules for multiplatform OS-level functions
+import os,sys                              # Standard Python modules for multiplatform OS-level functions
 
 # Step 0a: Initialize parameters
 thismodule = __name__
