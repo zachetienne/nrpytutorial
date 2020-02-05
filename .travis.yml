@@ -97,6 +97,12 @@ matrix:
       python: 3.8-dev
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
+    - name: "Ubuntu Linux Bionic CPython 3.9-dev"
+      os: linux
+      dist: bionic
+      python: 3.9-dev
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
     # Unstable at times:
     # - name: "Ubuntu Linux Xenial CPython NIGHTLY"
     #   os: linux
