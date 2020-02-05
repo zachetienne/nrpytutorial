@@ -19,7 +19,8 @@ for i in *.ipynb; do
     fi
 
     jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $i
-
+    cat $i |sed "s/\\\r\\\n/\\\n/g" > $i-backslashrs_removed
+    mv $i-backslashrs_removed $i
     echo "^^^" $i "^^^"
     echo
 
