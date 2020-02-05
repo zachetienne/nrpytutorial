@@ -626,35 +626,44 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
         #         and store these variables to globals defined above.
         def make_replacements(expr):
-            sympy_version = sp.__version__.replace("rc","...").replace("b","...") # Ignore the rc's and b's for release candidates & betas.
+            sympy_version = sp.__version__.replace("rc", "...").replace("b",
+                                                                        "...")  # Ignore the rc's and b's for release candidates & betas.
             sympy_major_version = int(sympy_version.split(".")[0])
             sympy_minor_version = int(sympy_version.split(".")[1])
             if sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2):
-                print("Detected SymPy version "+sympy_version)
+                print("Detected SymPy version " + sympy_version)
                 print("Sorry, reference metric precomputation unsupported in SymPy < 1.2!")
                 sys.exit(1)
 
+            rule = {}
             for item in sp.preorder_traversal(expr):
                 if item.func == sp.Derivative:
-                    stringfunc = str(item.args[0]).split("_funcform(", 1)[0]  # store everything before _funcform(...
-                    stringderv = str(item.args[1]).replace(" ", "")  # Ignore whitespace
-                    deriv_wrt = stringderv.split(",")[0].replace("(xx", "")
-                    derivorder = int(stringderv.split(",")[1].replace(")", ""))
-
-                    derivop = "__D"
-                    for i in range(derivorder - 1):
-                        derivop += "D"
-                    derivop += deriv_wrt
-                    for i in range(derivorder - 1):
-                        derivop += deriv_wrt
-                    expr = expr.xreplace(
-                        {item: sp.sympify(stringfunc + derivop)})
+                    strfunc = str(item.args[0]).split('_funcform(', 1)[0]
+                    deriv_wrt, deriv_order = item.args[1][0], item.args[1][1]
+                    if deriv_wrt == xx[0]:
+                        deriv_wrt = '0'
+                    elif deriv_wrt == xx[1]:
+                        deriv_wrt = '1'
+                    elif deriv_wrt == xx[2]:
+                        deriv_wrt = '2'
+                    elif deriv_wrt == xx[3]:
+                        deriv_wrt = '3'
+                    # deriv_op = ''.join(['__D'] + \
+                    #     ['D' for i in range(deriv_order - 1)] + \
+                    #     [deriv_wrt for i in range(deriv_order)])
+                    deriv_op = "__D"
+                    for i in range(deriv_order - 1):
+                        deriv_op += "D"
+                    deriv_op += deriv_wrt
+                    for i in range(deriv_order - 1):
+                        deriv_op += deriv_wrt
+                    rule[item] = sp.sympify(strfunc + deriv_op)
 
             for item in sp.preorder_traversal(expr):
                 if "_funcform" in str(item.func):
-                    stringfunc = str(item.func).split("_funcform", 1)[0]  # store everything before _funcform(...
-                    expr = expr.xreplace({item: sp.sympify(stringfunc)})
-            return expr
+                    strfunc = str(item.func).split("_funcform", 1)[0]
+                    rule[item] = sp.sympify(strfunc)
+            return expr.xreplace(rule)
 
         detgammahat = make_replacements(detgammahat)
         for i in range(DIM):
