@@ -27,7 +27,7 @@ from outputC import outputC,superfast_uniq,outC_function_dict,add_to_Cfunction_d
 import NRPy_param_funcs as par             # NRPy+: Parameter interface
 import grid as gri                         # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import sys                                 # Standard Python modules for multiplatform OS-level functions
+import os,sys                              # Standard Python modules for multiplatform OS-level functions
 
 # Step 0a: Initialize parameters
 thismodule = __name__
@@ -626,35 +626,44 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
         #         and store these variables to globals defined above.
         def make_replacements(expr):
-            sympy_version = sp.__version__.replace("rc","...").replace("b","...") # Ignore the rc's and b's for release candidates & betas.
+            sympy_version = sp.__version__.replace("rc", "...").replace("b",
+                                                                        "...")  # Ignore the rc's and b's for release candidates & betas.
             sympy_major_version = int(sympy_version.split(".")[0])
             sympy_minor_version = int(sympy_version.split(".")[1])
             if sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2):
-                print("Detected SymPy version "+sympy_version)
+                print("Detected SymPy version " + sympy_version)
                 print("Sorry, reference metric precomputation unsupported in SymPy < 1.2!")
                 sys.exit(1)
 
+            rule = {}
             for item in sp.preorder_traversal(expr):
                 if item.func == sp.Derivative:
-                    stringfunc = str(item.args[0]).split("_funcform(", 1)[0]  # store everything before _funcform(...
-                    stringderv = str(item.args[1]).replace(" ", "")  # Ignore whitespace
-                    deriv_wrt = stringderv.split(",")[0].replace("(xx", "")
-                    derivorder = int(stringderv.split(",")[1].replace(")", ""))
-
-                    derivop = "__D"
-                    for i in range(derivorder - 1):
-                        derivop += "D"
-                    derivop += deriv_wrt
-                    for i in range(derivorder - 1):
-                        derivop += deriv_wrt
-                    expr = expr.xreplace(
-                        {item: sp.sympify(stringfunc + derivop)})
+                    strfunc = str(item.args[0]).split('_funcform(', 1)[0]
+                    deriv_wrt, deriv_order = item.args[1][0], item.args[1][1]
+                    if deriv_wrt == xx[0]:
+                        deriv_wrt = '0'
+                    elif deriv_wrt == xx[1]:
+                        deriv_wrt = '1'
+                    elif deriv_wrt == xx[2]:
+                        deriv_wrt = '2'
+                    elif deriv_wrt == xx[3]:
+                        deriv_wrt = '3'
+                    # deriv_op = ''.join(['__D'] + \
+                    #     ['D' for i in range(deriv_order - 1)] + \
+                    #     [deriv_wrt for i in range(deriv_order)])
+                    deriv_op = "__D"
+                    for i in range(deriv_order - 1):
+                        deriv_op += "D"
+                    deriv_op += deriv_wrt
+                    for i in range(deriv_order - 1):
+                        deriv_op += deriv_wrt
+                    rule[item] = sp.sympify(strfunc + deriv_op)
 
             for item in sp.preorder_traversal(expr):
                 if "_funcform" in str(item.func):
-                    stringfunc = str(item.func).split("_funcform", 1)[0]  # store everything before _funcform(...
-                    expr = expr.xreplace({item: sp.sympify(stringfunc)})
-            return expr
+                    strfunc = str(item.func).split("_funcform", 1)[0]
+                    rule[item] = sp.sympify(strfunc)
+            return expr.xreplace(rule)
 
         detgammahat = make_replacements(detgammahat)
         for i in range(DIM):
@@ -866,20 +875,20 @@ for(int i1=0;i1<Nxx_plus_2NGHOSTS1;i1++) for(int i0=0;i0<Nxx_plus_2NGHOSTS0;i0++
 
         # Step 8: Output needed C code to files
         outdir = par.parval_from_str(thismodule+"::rfm_precompute_Ccode_outdir")
-        with open(outdir + "/rfm_struct__declare.h", "w") as file:
+        with open(os.path.join(outdir,"rfm_struct__declare.h"), "w") as file:
             file.write(struct_str)
-        with open(outdir + "/rfm_struct__malloc.h", "w") as file:
+        with open(os.path.join(outdir,"rfm_struct__malloc.h"), "w") as file:
             file.write(malloc_str)
-        with open(outdir + "/rfm_struct__define.h", "w") as file:
+        with open(os.path.join(outdir,"rfm_struct__define.h"), "w") as file:
             file.write(define_str)
         for i in range(3):
-            with open(outdir + "/rfm_struct__read" + str(i) + ".h", "w") as file:
+            with open(os.path.join(outdir,"rfm_struct__read" + str(i) + ".h"), "w") as file:
                 file.write(readvr_str[i])
-            with open(outdir + "/rfm_struct__SIMD_outer_read" + str(i) + ".h", "w") as file:
+            with open(os.path.join(outdir,"rfm_struct__SIMD_outer_read" + str(i) + ".h"), "w") as file:
                 file.write(readvr_SIMD_outer_str[i])
-            with open(outdir + "/rfm_struct__SIMD_inner_read" + str(i) + ".h", "w") as file:
+            with open(os.path.join(outdir,"rfm_struct__SIMD_inner_read" + str(i) + ".h"), "w") as file:
                 file.write(readvr_SIMD_inner_str[i])
-        with open(outdir + "/rfm_struct__freemem.h", "w") as file:
+        with open(os.path.join(outdir,"rfm_struct__freemem.h"), "w") as file:
             file.write(freemm_str)
 
 def get_EigenCoord():
