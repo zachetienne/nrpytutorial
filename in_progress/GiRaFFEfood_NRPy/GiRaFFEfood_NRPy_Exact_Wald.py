@@ -48,12 +48,6 @@ rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
 thismodule = "GiRaFFEfood_NRPy"
-# Set the spatial dimension parameter to 3.
-par.set_parval_from_str("grid::DIM", 3)
-DIM = par.parval_from_str("grid::DIM")
-
-# Create a parameter to control the initial data choice. For now, this will only have Exact Wald as an option.
-par.initialize_param(par.glb_param("char", thismodule, "IDchoice", "Exact_Wald"))
 
 # Step 1b: Set needed Cparameters
 M    = par.Cparameters("REAL",thismodule,["M"],1.0)      # The mass of the black hole
@@ -87,12 +81,8 @@ def GiRaFFEfood_NRPy_Exact_Wald():
     # Initialize all components of A and E in the *spherical basis* to zero
     ASphD = ixp.zerorank1()
     ESphD = ixp.zerorank1()
-    if IDchoice=="Exact_Wald":
-        ASphD[2] = (r * r * sp.sin(theta)**2)/2
-        ESphD[2] = 2 * M * sp.sin(theta)**2 / sp.sqrt(1+2*M/r)
-    else:
-        print("Error: IDchoice == "+par.parval_from_str("IDchoice")+" unsupported!")
-        exit(1)
+    ASphD[2] = (r * r * sp.sin(theta)**2)/2
+    ESphD[2] = 2 * M * sp.sin(theta)**2 / sp.sqrt(1+2*M/r)
 
 
     # <a id='step3'></a>
@@ -123,16 +113,18 @@ def GiRaFFEfood_NRPy_Exact_Wald():
     AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
     ED = ixp.zerorank1()
 
-    for i in range(DIM):
-        for j in range(DIM):
+    for i in range(3):
+        for j in range(3):
             AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ASphD[j]
             ED[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ESphD[j]
 
-    #Step 4: Register the basic spacetime quantities
-    alpha   = gri.register_gridfunctions("AUX","alpha")
-    betaU   = ixp.register_gridfunctions_for_single_rank1("AUX","betaU",DIM=3)
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
-    gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
+    #Step 4: Declare the basic spacetime quantities
+    alpha   = sp.symbols("alpha",real=True)
+    betaU   = ixp.declarerank1("betaU",DIM=3)
+    gammaDD = ixp.declarerank2("gammaDD", "sym01",DIM=3)
+
+    import GRHD.equations as GRHD
+    GRHD.compute_sqrtgammaDET(gammaDD)
 
 
     # <a id='step4'></a>
@@ -152,22 +144,22 @@ def GiRaFFEfood_NRPy_Exact_Wald():
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
     LeviCivitaTensorUUU = ixp.zerorank3()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / GRHD.sqrtgammaDET
 
     # For the initial data, we can analytically take the derivatives of A_i
     ADdD = ixp.zerorank2()
-    for i in range(DIM):
-        for j in range(DIM):
+    for i in range(3):
+        for j in range(3):
             ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
 
     #global BU
     BU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
                 BU[i] += LeviCivitaTensorUUU[i][j][k] * ADdD[k][j]
 
 
@@ -179,81 +171,20 @@ def GiRaFFEfood_NRPy_Exact_Wald():
     # Step 4b: Calculate B^2 and B_i
     # B^2 is an inner product defined in the usual way:
     B2 = sp.sympify(0)
-    for i in range(DIM):
-        for j in range(DIM):
+    for i in range(3):
+        for j in range(3):
             B2 += gammaDD[i][j] * BU[i] * BU[j]
 
     # Lower the index on B^i
     BD = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
+    for i in range(3):
+        for j in range(3):
             BD[i] += gammaDD[i][j] * BU[j]
 
     # Step 4c: Calculate the Valencia 3-velocity 
     global ValenciavU
     ValenciavU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
                 ValenciavU[i] += LeviCivitaTensorUUU[i][j][k]*ED[j]*BD[k]/B2
-
-
-    # <a id='step5'></a>
-    # 
-    # ### Step 5.0: Build the expression for $\tilde{S}_i$
-    # $$\label{step5}$$
-    # 
-    # \[Back to [top](#top)\]
-    # 
-    # We will now find the densitized Poynting flux given by equation 21 in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), $$\boxed{\tilde{S}_i = \gamma_{ij} \frac{(v^j+\beta^j)\sqrt{\gamma}B^2}{4 \pi \alpha}.}$$ This is needed to set initial data for $\tilde{S}_i$ after $B^i$ is set from the initial $A_i$. Note, however, that this expression uses the drift velocity $v^i = \alpha v^i_{(n)} - \beta^i$; substituting this into the definition of $\tilde{S}_i$ yields an expression in terms of the Valencia velocity: $$\tilde{S}_i = \gamma_{ij} \frac{v^i_{(n)} \sqrt{\gamma}B^2}{4 \pi}.$$
-    # 
-    # * Initial data require only that the spatial vector potential $A_i$, the densitized zeroth-component of the vector potential $[\sqrt{\gamma}\Phi]$, and the Valencia 3-velocity $v^i_{(n)}$ be set. However, the velocity is not an evolved quantity; $\tilde{S}_i$ is the evolved quantity. We can set $\tilde{S}_i$ initially based on the given initial data via $\tilde{S}_i=\gamma_{ij} \frac{v^i_{(n)} \sqrt{\gamma}B^2}{4 \pi}$.
-    # 
-
-
-def GiRaFFEfood_NRPy_ID_converter():
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
-    gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
-    # Step 5: Build the expression for \tilde{S}_i
-    global StildeD
-    StildeD = ixp.zerorank1()
-    BU = ixp.register_gridfunctions_for_single_rank1("AUX","BU") # Reset so that NRPy will access stored values of BU
-    ###########################################################
-    #r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
-    #theta = rfm.xxSph[1]
-    #ASphD = ixp.zerorank1()
-    #ASphD[2] = (r * r * sp.sin(theta)**2)/2
-    #AD = ixp.zerorank1()
-    #drrefmetric__dx_0UDmatrix = sp.Matrix([[sp.diff(rfm.xxSph[0],rfm.xx[0]), sp.diff(rfm.xxSph[0],rfm.xx[1]), sp.diff(rfm.xxSph[0],rfm.xx[2])],
-    #                                       [sp.diff(rfm.xxSph[1],rfm.xx[0]), sp.diff(rfm.xxSph[1],rfm.xx[1]), sp.diff(rfm.xxSph[1],rfm.xx[2])],
-    #                                       [sp.diff(rfm.xxSph[2],rfm.xx[0]), sp.diff(rfm.xxSph[2],rfm.xx[1]), sp.diff(rfm.xxSph[2],rfm.xx[2])]])
-    #for i in range(DIM):
-    #    for j in range(DIM):
-    #        AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ASphD[j]
-    #import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    #LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
-    #LeviCivitaTensorUUU = ixp.zerorank3()
-    #for i in range(DIM):
-    #    for j in range(DIM):
-    #        for k in range(DIM):
-    #            LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
-    ## For the initial data, we can analytically take the derivatives of A_i
-    #ADdD = ixp.zerorank2()
-    #for i in range(DIM):
-    #    for j in range(DIM):
-    #        ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
-    #BU = ixp.zerorank1()
-    #for i in range(DIM):
-    #    for j in range(DIM):
-    #        for k in range(DIM):
-    #            BU[i] += LeviCivitaTensorUUU[i][j][k] * ADdD[k][j]
-    ###########################################################
-    ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU") # Reset so that NRPy will access stored values of ValenciavU
-    B2 = sp.sympify(0)
-    for i in range(DIM):
-        for j in range(DIM):
-            B2 += gammaDD[i][j] * BU[i] * BU[j]
-    for i in range(DIM):
-        for j in range(DIM):
-            StildeD[i] += gammaDD[i][j] * (ValenciavU[j])*sp.sqrt(gammadet)*B2/4/M_PI
-

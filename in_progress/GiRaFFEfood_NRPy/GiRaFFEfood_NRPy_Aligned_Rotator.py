@@ -122,7 +122,7 @@ def GiRaFFEfood_NRPy_Aligned_Rotator():
     LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
 
     unit_zU = ixp.zerorank1()
-    unit_zU[2] = 1
+    unit_zU[2] = sp.sympify(1.0)
 
     global ValenciavU
     ValenciavU = ixp.zerorank1()

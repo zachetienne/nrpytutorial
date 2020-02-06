@@ -76,9 +76,6 @@ rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
 thismodule = "GiRaFFEfood_NRPy_1D"
-# Set the spatial dimension parameter to 3.
-par.set_parval_from_str("grid::DIM", 3)
-DIM = par.parval_from_str("grid::DIM")
 
 
 # <a id='step2'></a>
@@ -108,54 +105,22 @@ def GiRaFFEfood_NRPy_1D_tests():
 
 
     # Now, we can define the vector potential. We will create three copies of this variable, because the potential is uniquely defined in three zones. Data for $x \leq -0.1/\gamma_\mu$ shall be referred to as "left", data for $-0.1/\gamma_\mu \leq x \leq 0.1/\gamma_\mu$ as "center", and data for $x \geq 0.1/\gamma_\mu$ as "right".
-    # 
-    # Starting on the left, 
-    # \begin{align}
-    # A_x &= 0 \\
-    # A_y &= \gamma_\mu x - 0.015 \\
-    # A_z &= y - \gamma_\mu (1-\mu)x .
-    # \end{align}
 
+    global AD
+    AD = ixp.zerorank1()
 
-    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
-    global AleftD,AcenterD,ArightD
-    AleftD = ixp.zerorank1()
+    import Min_Max_and_Piecewise_Expressions as noif
+    bound = sp.sympify(0.1)/gammamu
 
-    AleftD[0] = sp.sympify(0)
-    AleftD[1] = gammamu*x-0.015
-    AleftD[2] = y-gammamu*(1-mu_AW)*x
+    Ayleft = gammamu*x - sp.sympify(0.015)
+    Aycenter = sp.sympify(1.15)*gammamu*x - sp.sympify(0.03)*g_AW
+    Ayright = gammamu*x - sp.sympify(0.015)
 
-
-    # In the the center,
-    # \begin{align}
-    # A_x &= 0 \\
-    # A_y &= 1.15 \gamma_\mu x - 0.03g(x) \\
-    # A_z &= y - \gamma_\mu (1-\mu)x .
-    # \end{align}
-
-
-    AcenterD = ixp.zerorank1()
-
-    AcenterD[0] = sp.sympify(0)
-    AcenterD[1] = 1.15*gammamu*x-0.03*g_AW
-    AcenterD[2] = y-gammamu*(1-mu_AW)*x
-
-
-    # And on the right,
-    # \begin{align}
-    # A_x &= 0 \\
-    # A_y &= 1.3 \gamma_\mu x - 0.015 \\
-    # A_z &= y - \gamma_\mu (1-\mu)x .
-    # \end{align}
-
-
-    ArightD = ixp.zerorank1()
-
-    ArightD[0] = sp.sympify(0)
-    ArightD[1] = 1.3*gammamu*x-0.015
-    ArightD[2] = y-gammamu*(1-mu_AW)*x
-
-
+    AD[0] = sp.sympify(0.0)
+    AD[1] = noif.coord_leq_bound(x,-bound)*Ayleft\
+           +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Aycenter\
+           +noif.coord_greater_bound(x,bound)*sp.sympify(1.3)*Ayright
+    AD[2] = y-gammamu*(sp.sympify(1.0)-mu_AW)*x
     # <a id='step2'></a>
     # ### Set the vectors $B^i$ and $E^i$ for the velocity
     # 
@@ -177,21 +142,16 @@ def GiRaFFEfood_NRPy_1D_tests():
     # 
 
 
-    BleftpU = ixp.zerorank1()
-    BleftpU[0] = sp.sympify(1.0)
-    BleftpU[1] = sp.sympify(1.0)
-    BleftpU[2] = sp.sympify(1.0)
+    Bzleft = sp.sympify(1.0)
+    Bzcenter = sp.sympify(1.0) + sp.sympify(0.15)*f_AW
+    Bzright = sp.sympify(1.3)
 
-    BcenterpU = ixp.zerorank1()
-    BcenterpU[0] = sp.sympify(1.0)
-    BcenterpU[1] = sp.sympify(1.0)
-    BcenterpU[2] = 1.0 + 0.15*f_AW
-
-    BrightpU = ixp.zerorank1()
-    BrightpU[0] = sp.sympify(1.0)
-    BrightpU[1] = sp.sympify(1.0)
-    BrightpU[2] = sp.sympify(1.3)
-
+    BpU = ixp.zerorank1()
+    BpU[0] = sp.sympify(1.0)
+    BpU[1] = sp.sympify(1.0)
+    BpU[2] = noif.coord_leq_bound(x,-bound)*Bzleft\
+            +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Bzcenter\
+            +noif.coord_greater_bound(x,bound)*Bzright
 
     # Now, we will set the electric field in the wave frame:
     # \begin{align}
@@ -201,20 +161,10 @@ def GiRaFFEfood_NRPy_1D_tests():
     # \end{align}
 
 
-    EleftpU = ixp.zerorank1()
-    EleftpU[0] = -BleftpU[2]
-    EleftpU[1] = sp.sympify(0.0)
-    EleftpU[2] = sp.sympify(1.0)
-
-    EcenterpU = ixp.zerorank1()
-    EcenterpU[0] = -BcenterpU[2]
-    EcenterpU[1] = sp.sympify(0.0)
-    EcenterpU[2] = sp.sympify(1.0)
-
-    ErightpU = ixp.zerorank1()
-    ErightpU[0] = -BrightpU[2]
-    ErightpU[1] = sp.sympify(0.0)
-    ErightpU[2] = sp.sympify(1.0)
+    EpU = ixp.zerorank1()
+    EpU[0] = -BpU[2]
+    EpU[1] = sp.sympify(0.0)
+    EpU[2] = sp.sympify(1.0)
 
 
     # Next, we must transform the the fields into the grid frame. We'll do the magnetic fields first.
@@ -226,20 +176,10 @@ def GiRaFFEfood_NRPy_1D_tests():
     # 
 
 
-    BleftU = ixp.zerorank1()
-    BleftU[0] = BleftpU[0]
-    BleftU[1] = gammamu*(BleftpU[1]-mu_AW*EleftpU[2])
-    BleftU[2] = gammamu*(BleftpU[2]+mu_AW*EleftpU[1])
-
-    BcenterU = ixp.zerorank1()
-    BcenterU[0] = BcenterpU[0]
-    BcenterU[1] = gammamu*(BcenterpU[1]-mu_AW*EcenterpU[2])
-    BcenterU[2] = gammamu*(BcenterpU[2]+mu_AW*EcenterpU[1])
-
-    BrightU = ixp.zerorank1()
-    BrightU[0] = BrightpU[0]
-    BrightU[1] = gammamu*(BrightpU[1]-mu_AW*ErightpU[2])
-    BrightU[2] = gammamu*(BrightpU[2]+mu_AW*ErightpU[1])
+    BU = ixp.zerorank1()
+    BU[0] = BpU[0]
+    BU[1] = gammamu*(BpU[1]-mu_AW*EpU[2])
+    BU[2] = gammamu*(BpU[2]+mu_AW*EpU[1])
 
 
     # And now the electric fields:
@@ -251,20 +191,10 @@ def GiRaFFEfood_NRPy_1D_tests():
     # 
 
 
-    EleftU = ixp.zerorank1()
-    EleftU[0] = EleftpU[0]
-    EleftU[1] = gammamu*(EleftpU[1]+mu_AW*BleftpU[2])
-    EleftU[2] = gammamu*(EleftpU[2]-mu_AW*BleftpU[1])
-
-    EcenterU = ixp.zerorank1()
-    EcenterU[0] = EcenterpU[0]
-    EcenterU[1] = gammamu*(EcenterpU[1]+mu_AW*BcenterpU[2])
-    EcenterU[2] = gammamu*(EcenterpU[2]-mu_AW*BcenterpU[1])
-
-    ErightU = ixp.zerorank1()
-    ErightU[0] = ErightpU[0]
-    ErightU[1] = gammamu*(ErightpU[1]+mu_AW*BrightpU[2])
-    ErightU[2] = gammamu*(ErightpU[2]-mu_AW*BrightpU[1])
+    EU = ixp.zerorank1()
+    EU[0] = EpU[0]
+    EU[1] = gammamu*(EpU[1]+mu_AW*BpU[2])
+    EU[2] = gammamu*(EpU[2]-mu_AW*BpU[1])
 
 
     # <a id='step3'></a>
@@ -277,28 +207,14 @@ def GiRaFFEfood_NRPy_1D_tests():
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
 
-    Bleft2 = BleftU[0]*BleftU[0] + BleftU[1]*BleftU[1] + BleftU[2]*BleftU[2]
-    Bcenter2 = BcenterU[0]*BcenterU[0] + BcenterU[1]*BcenterU[1] + BcenterU[2]*BcenterU[2]
-    Bright2 = BrightU[0]*BrightU[0] + BrightU[1]*BrightU[1] + BrightU[2]*BrightU[2]
+    B2 = sp.sympify(0.0)
+    for i in range(3):
+        # In flat spacetime, gamma_{ij} is just a Kronecker delta
+        B2 += BU[i]**2 # This is trivial to extend to curved spacetime
 
-    ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUX","ValenciavU")
-
-    global ValenciavleftU,ValenciavcenterU,ValenciavrightU
-    ValenciavleftU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                ValenciavleftU[i] += LeviCivitaSymbolDDD[i][j][k] * EleftU[j] * BleftU[k] / Bleft2
-
-    ValenciavcenterU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                ValenciavcenterU[i] += LeviCivitaSymbolDDD[i][j][k] * EcenterU[j] * BcenterU[k] / Bcenter2
-
-    ValenciavrightU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                ValenciavrightU[i] += LeviCivitaSymbolDDD[i][j][k] * ErightU[j] * BrightU[k] / Bright2
-
+    global ValenciavU
+    ValenciavU = ixp.zerorank1()
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * EU[j] * BU[k] / B2
