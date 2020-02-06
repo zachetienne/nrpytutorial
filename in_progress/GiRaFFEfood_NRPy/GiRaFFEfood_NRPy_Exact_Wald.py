@@ -76,8 +76,6 @@ def GiRaFFEfood_NRPy_Exact_Wald():
     r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
     theta = rfm.xxSph[1]
 
-    IDchoice = par.parval_from_str("IDchoice")
-
     # Initialize all components of A and E in the *spherical basis* to zero
     ASphD = ixp.zerorank1()
     ESphD = ixp.zerorank1()
