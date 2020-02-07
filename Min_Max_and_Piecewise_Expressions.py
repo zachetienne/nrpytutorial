@@ -2,7 +2,7 @@ from outputC import *            # NRPy+: Core C code output module
 
 thismodule = __name__
 
-TINYDOUBLE = par.Cparameters("#define", thismodule, "TINYDOUBLE", 1e-100)
+TINYDOUBLE = par.Cparameters("REAL", thismodule, "TINYDOUBLE", 1e-100)
 
 def min_noif(a,b):
     # Returns the minimum of a and b
