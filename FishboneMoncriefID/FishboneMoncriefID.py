@@ -23,6 +23,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     KDD = ixp.register_gridfunctions_for_single_rank2("EVOL","KDD", "sym01")
 
     # Variables needed for initial data given in spherical basis
+    global r_in,r_at_max_density,a,M,r,th,ph
     r, th, ph = gri.register_gridfunctions("AUX",["r","th","ph"])
 
     r_in,r_at_max_density,a,M = par.Cparameters("REAL",thismodule,
@@ -229,6 +230,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     for i in range(3):
         beta2 += betaU[i]*betaD[i]
 
+    global gPhys4DD
     gPhys4DD = ixp.zerorank2(DIM=4)
     gPhys4DD[0][0] = -alpha**2 + beta2
     for i in range(3):
