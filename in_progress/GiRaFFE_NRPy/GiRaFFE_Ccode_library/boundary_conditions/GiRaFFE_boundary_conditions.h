@@ -52,7 +52,7 @@ const int MINFACE = +1;
 */
 
 void apply_bcs(const paramstruct *restrict params,REAL *gfs,REAL *aux_gfs) {
-#include "../set_Cparameters.h"
+#include "set_Cparameters.h"
     // First, we apply extrapolation boundary conditions to AD
 #pragma omp parallel for
     for(int which_gf=0;which_gf<NUM_EVOL_GFS;which_gf++) {
@@ -111,12 +111,12 @@ void apply_bcs(const paramstruct *restrict params,REAL *gfs,REAL *aux_gfs) {
     }
     }*/
 }
-// A supplement to the boundary conditions for debugging. This will overwrite data with exact conditions
+/*// A supplement to the boundary conditions for debugging. This will overwrite data with exact conditions
 void FACE_UPDATE_EXACT(const paramstruct *restrict params,REAL *restrict xx[3],
                        const int n, const REAL dt,REAL *out_gfs,REAL *aux_gfs,
                        const int i0min,const int i0max, const int i1min,const int i1max, const int i2min,const int i2max,
                        const int FACEX0,const int FACEX1,const int FACEX2) {
-#include "../set_Cparameters.h"
+#include "set_Cparameters.h"
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
     REAL xx0 = xx[0][i0]-n*dt;
     REAL xx1 = xx[1][i1];
@@ -136,7 +136,7 @@ void FACE_UPDATE_EXACT(const paramstruct *restrict params,REAL *restrict xx[3],
 void apply_bcs_EXACT(const paramstruct *restrict params,REAL *restrict xx[3],
                      const int n, const REAL dt,
                      REAL *out_gfs,REAL *aux_gfs) {
-#include "../set_Cparameters.h"
+#include "set_Cparameters.h"
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
@@ -164,19 +164,19 @@ void FACE_UPDATE_EXACT_StildeD(const paramstruct *restrict params,REAL *restrict
                                REAL *out_gfs,REAL *out_gfs_exact,
                                const int i0min,const int i0max, const int i1min,const int i1max, const int i2min,const int i2max,
                                const int FACEX0,const int FACEX1,const int FACEX2) {
-#include "../set_Cparameters.h"
+#include "set_Cparameters.h"
     // This is currently modified to calculate more exact boundary conditions for StildeD. Rename if it works.
-    /*for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
+    for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
 #include "../GiRaFFEfood_NRPy_Stilde.h" 
-    }*/
-      /*idx = IDX3(i0,i1,i2);
+    }
+      idx = IDX3(i0,i1,i2);
       out_gfs[IDX4ptS(STILDED0GF,idx)] = out_gfs_exact[IDX4ptS(STILDED0GF,idx)];
       out_gfs[IDX4ptS(STILDED1GF,idx)] = out_gfs_exact[IDX4ptS(STILDED1GF,idx)];
-      out_gfs[IDX4ptS(STILDED2GF,idx)] = out_gfs_exact[IDX4ptS(STILDED2GF,idx)];*/
+      out_gfs[IDX4ptS(STILDED2GF,idx)] = out_gfs_exact[IDX4ptS(STILDED2GF,idx)];
 }
 void apply_bcs_EXACT_StildeD(const paramstruct *restrict params,REAL *restrict xx[3],
                              REAL *out_gfs,REAL *out_gfs_exact) {
-#include "../set_Cparameters.h"
+#include "set_Cparameters.h"
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
@@ -198,4 +198,4 @@ void apply_bcs_EXACT_StildeD(const paramstruct *restrict params,REAL *restrict x
       //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
       imax[2]++;
     }
-}
+}*/
