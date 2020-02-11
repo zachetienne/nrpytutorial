@@ -6,7 +6,6 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-global GiRaFFE_NRPy_PPM
 def GiRaFFE_NRPy_PPM(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
