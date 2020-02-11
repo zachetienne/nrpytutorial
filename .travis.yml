@@ -94,6 +94,7 @@ matrix:
     - name: "Ubuntu Linux Xenial CPython 3.8-dev"
       os: linux
       dist: xenial
+      before_script: python3 -m pip install --upgrade pip mpmath sympy
       python: 3.8-dev
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
