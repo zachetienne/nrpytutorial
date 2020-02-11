@@ -37,10 +37,7 @@ par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
-thismodule = "GiRaFFEfood_NRPy_Aligned_Rotator"
-# Set the spatial dimension parameter to 3.
-par.set_parval_from_str("grid::DIM", 3)
-DIM = par.parval_from_str("grid::DIM")
+thismodule = __name__
 
 B_p_aligned_rotator,R_NS_aligned_rotator = par.Cparameters("REAL",thismodule,
                                                            # B_p_aligned_rotator = the intensity of the magnetic field and
@@ -100,9 +97,9 @@ def GiRaFFEfood_NRPy_Aligned_Rotator():
     #dx__drrefmetric_0UDmatrix = drrefmetric__dx_0UDmatrix.inv() # We don't actually need this in this case.
 
     global AD
-    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
-    for i in range(DIM):
-        for j in range(DIM):
+    AD = ixp.zerorank1(DIM=3)
+    for i in range(3):
+        for j in range(3):
             AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ASphD[j]
 
 
@@ -121,15 +118,17 @@ def GiRaFFEfood_NRPy_Aligned_Rotator():
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
 
+    import Min_Max_and_Piecewise_Expressions as noif
+
     unit_zU = ixp.zerorank1()
     unit_zU[2] = sp.sympify(1.0)
 
     global ValenciavU
     ValenciavU = ixp.zerorank1()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * Omega_aligned_rotator * unit_zU[j] * rfm.xx[k]
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                ValenciavU[i] += noif.coord_leq_bound(r,R_NS_aligned_rotator)*LeviCivitaSymbolDDD[i][j][k] * Omega_aligned_rotator * unit_zU[j] * rfm.xx[k]
 
 
     # ### NRPy+ Module Code Validation
