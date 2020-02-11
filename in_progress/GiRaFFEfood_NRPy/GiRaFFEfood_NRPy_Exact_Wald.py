@@ -49,7 +49,7 @@ rfm.reference_metric()
 # Step 1a: Set commonly used parameters.
 thismodule = __name__
 
-def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,betaU,alpha,M,KerrSchild_radial_shift):
+def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,M,KerrSchild_radial_shift):
 
     # <a id='step2'></a>
     # 
@@ -143,7 +143,6 @@ def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,betaU,alpha,M,KerrSchild_radial_shift):
         for j in range(3):
             ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
 
-    #global BU
     BU = ixp.zerorank1()
     for i in range(3):
         for j in range(3):
@@ -176,6 +175,3 @@ def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,betaU,alpha,M,KerrSchild_radial_shift):
         for j in range(3):
             for k in range(3):
                 ValenciavU[i] += LeviCivitaTensorUUU[i][j][k]*ED[j]*BD[k]/B2
-                # alpha*
-#     for i in range(3):
-#         ValenciavU[i] -= betaU[i]
