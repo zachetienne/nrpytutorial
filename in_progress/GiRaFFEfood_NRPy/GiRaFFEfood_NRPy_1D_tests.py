@@ -75,7 +75,7 @@ par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
-thismodule = "GiRaFFEfood_NRPy_1D"
+thismodule = __name__
 
 
 # <a id='step2'></a>
@@ -114,12 +114,12 @@ def GiRaFFEfood_NRPy_1D_tests():
 
     Ayleft = gammamu*x - sp.sympify(0.015)
     Aycenter = sp.sympify(1.15)*gammamu*x - sp.sympify(0.03)*g_AW
-    Ayright = gammamu*x - sp.sympify(0.015)
+    Ayright = sp.sympify(1.3)*gammamu*x - sp.sympify(0.015)
 
     AD[0] = sp.sympify(0.0)
     AD[1] = noif.coord_leq_bound(x,-bound)*Ayleft\
            +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Aycenter\
-           +noif.coord_greater_bound(x,bound)*sp.sympify(1.3)*Ayright
+           +noif.coord_greater_bound(x,bound)*Ayright
     AD[2] = y-gammamu*(sp.sympify(1.0)-mu_AW)*x
     # <a id='step2'></a>
     # ### Set the vectors $B^i$ and $E^i$ for the velocity

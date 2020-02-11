@@ -47,14 +47,9 @@ par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
 # Step 1a: Set commonly used parameters.
-thismodule = "GiRaFFEfood_NRPy"
+thismodule = __name__
 
-# Step 1b: Set needed Cparameters
-M    = par.Cparameters("REAL",thismodule,["M"],1.0)      # The mass of the black hole
-M_PI = par.Cparameters("#define",thismodule,["M_PI"],"") # pi, 3.141592...
-KerrSchild_radial_shift = par.Cparameters("REAL",thismodule,"KerrSchild_radial_shift",0.4) # Default value for ExactWald
-
-def GiRaFFEfood_NRPy_Exact_Wald():
+def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,betaU,alpha,M,KerrSchild_radial_shift):
 
     # <a id='step2'></a>
     # 
@@ -108,18 +103,13 @@ def GiRaFFEfood_NRPy_Exact_Wald():
     #dx__drrefmetric_0UDmatrix = drrefmetric__dx_0UDmatrix.inv() # We don't actually need this in this case.
 
     global AD
-    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
-    ED = ixp.zerorank1()
+    AD = ixp.zerorank1(DIM=3)
+    ED = ixp.zerorank1(DIM=3)
 
     for i in range(3):
         for j in range(3):
             AD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ASphD[j]
             ED[i] = drrefmetric__dx_0UDmatrix[(j,i)]*ESphD[j]
-
-    #Step 4: Declare the basic spacetime quantities
-    alpha   = sp.symbols("alpha",real=True)
-    betaU   = ixp.declarerank1("betaU",DIM=3)
-    gammaDD = ixp.declarerank2("gammaDD", "sym01",DIM=3)
 
     import GRHD.equations as GRHD
     GRHD.compute_sqrtgammaDET(gammaDD)
@@ -186,3 +176,6 @@ def GiRaFFEfood_NRPy_Exact_Wald():
         for j in range(3):
             for k in range(3):
                 ValenciavU[i] += LeviCivitaTensorUUU[i][j][k]*ED[j]*BD[k]/B2
+                # alpha*
+#     for i in range(3):
+#         ValenciavU[i] -= betaU[i]
