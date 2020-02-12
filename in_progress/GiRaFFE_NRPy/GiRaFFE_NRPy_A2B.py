@@ -23,7 +23,10 @@ def GiRaFFE_NRPy_A2B(outdir):
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
     # Register the gridfunction gammadet. This determinant will be calculated separately
-    gammadet = gri.register_gridfunctions("AUXEVOL","gammadet")
+    # Declare the three metric and compute the sqrt of its determinant.
+    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaDD","sym01")
+    import GRHD.equations as gh
+    gh.compute_sqrtgammaDET(gammaDD)
 
     # Import the Levi-Civita symbol and build the corresponding tensor.
     # We already have a handy function to define the Levi-Civita symbol in WeylScalars
@@ -35,13 +38,12 @@ def GiRaFFE_NRPy_A2B(outdir):
             for k in range(DIM):
                 LCijk = LeviCivitaDDD[i][j][k]
                 #LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gho.gammadet)
-                LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
-    # Step 1.a: A useful function
+                LeviCivitaUUU[i][j][k] = LCijk / gh.sqrtgammaDET
+
     AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
     BU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","BU")
     AD_dD = ixp.declarerank2("AD_dD","nosym")
     BU = ixp.zerorank1() # BU is already registered as a gridfunction, but we need to zero its values and declare it in this scope.
-
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
@@ -97,10 +99,25 @@ def GiRaFFE_NRPy_A2B(outdir):
             dz_Ay = invdx2*((3.0/2.0)*in_gfs[IDX4S(AD1GF, i0,i1,i2)] - 2*in_gfs[IDX4S(AD1GF, i0,i1,i2-1)] + (1.0/2.0)*in_gfs[IDX4S(AD1GF, i0,i1,i2-2)]);
         }
         // Compute the magnetic field in the normal way, using the previously calculated derivatives.
-        const REAL sqrtgammadet = sqrt(auxevol_gfs[IDX4S(GAMMADETGF, i0,i1,i2)]);
-        auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = (dy_Az-dz_Ay)/sqrtgammadet;
-        auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = (dz_Ax-dx_Az)/sqrtgammadet;
-        auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = (dx_Ay-dy_Ax)/sqrtgammadet;
+        const double gammaDD00 = auxevol_gfs[IDX4S(GAMMADD00GF, i0,i1,i2)];
+        const double gammaDD01 = auxevol_gfs[IDX4S(GAMMADD01GF, i0,i1,i2)];
+        const double gammaDD02 = auxevol_gfs[IDX4S(GAMMADD02GF, i0,i1,i2)];
+        const double gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF, i0,i1,i2)];
+        const double gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF, i0,i1,i2)];
+        const double gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF, i0,i1,i2)];
+        /* 
+        * NRPy+ Finite Difference Code Generation, Step 2 of 1: Evaluate SymPy expressions and write to main memory:
+        */
+        const double tmp0 = gammaDD11*gammaDD22;
+        const double tmp1 = pow(gammaDD12, 2);
+        const double tmp2 = gammaDD02*gammaDD12;
+        const double tmp3 = pow(gammaDD01, 2);
+        const double tmp4 = pow(gammaDD02, 2);
+        const double tmp5 = gammaDD00*tmp0 - gammaDD00*tmp1 + 2*gammaDD01*tmp2 - gammaDD11*tmp4 - gammaDD22*tmp3;
+        const double tmp6 = 1.0/sqrt(tmp5);
+        auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = (dy_Az-dz_Ay)*tmp6;
+        auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = (dz_Ax-dx_Az)*tmp6;
+        auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = (dx_Ay-dy_Ax)*tmp6;
     }
 }
 """)
