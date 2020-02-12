@@ -28,7 +28,9 @@ def find_cp_cm(lapse,shifti,gupii):
     # Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
     # negative value to the sqrt function.
     detm = b*b - 4*a*c
-    detm = sp.sqrt(sp.Rational(1,2)*(detm + nrpyAbs(detm)))
+    
+    import Min_Max_and_Piecewise_Expressions as noif
+    detm = sp.sqrt(noif.max_noif(sp.sympify(0.0),detm))
     global cplus,cminus
     cplus  = sp.Rational(1,2)*(-b/a + detm/a)
     cminus = sp.Rational(1,2)*(-b/a - detm/a)
@@ -50,13 +52,14 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
     # The following algorithms have been verified with random floats:
     
     global cmax,cmin
-    # Now, we need to set cmax to the larger of cpr,cpl, and 0
-    cmax = sp.Rational(1,2)*(cpr+cpl+nrpyAbs(cpr-cpl))
-    cmax = sp.Rational(1,2)*(cmax+nrpyAbs(cmax))
+    
+    import Min_Max_and_Piecewise_Expressions as noif
+    cmax = noif.max_noif(cpr,cpl)
+    cmax = noif.max_noif(cmax,sp.sympify(0.0))
     
     # And then, set cmin to the smaller of cmr,cml, and 0
-    cmin =  sp.Rational(1,2)*(cmr+cml-nrpyAbs(cmr-cml))
-    cmin = -sp.Rational(1,2)*(cmin-nrpyAbs(cmin))
+    cmin =  noif.min_noif(cmr,cml)
+    cmin = -noif.min_noif(cmin,sp.sympify(0.0))
 
 # We'll rewrite this assuming that we've passed the entire reconstructed
 # gridfunctions. You could also do this with only one point, but then you'd 
