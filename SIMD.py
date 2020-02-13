@@ -59,7 +59,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
                 var(str(arg))
 
     expr_orig = expr
-    tree = ExprTree(sympify(expr))
+    tree = ExprTree(expr)
 
     AbsSIMD  = Function("AbsSIMD")
     AddSIMD  = Function("AddSIMD")
@@ -96,7 +96,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
             subtree.expr = CosSIMD(args[0])
         elif func == sign:
             subtree.expr = SignSIMD(args[0])
-    expr = tree.reconstruct()
+    expr = tree.reconstruct(evaluate=True)
 
     # Fun little recursive function for constructing integer powers:
     def IntegerPowSIMD(a, n):
@@ -174,7 +174,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
             subtree.expr = subexpr
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
-
+    
     # Step 4: Simplification patterns:
     # Step 4a: Replace the pattern Mul(Div(1, b), a) or Mul(a, Div(1, b)) with Div(a, b):
     for subtree in tree.preorder(tree.root):
@@ -190,7 +190,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
-    # Step 4: Subtraction intrinsics. SymPy replaces all a - b with a + (-b) = Add(a, Mul(-1, b))
+    # Step 4b: Subtraction intrinsics. SymPy replaces all a - b with a + (-b) = Add(a, Mul(-1, b))
     #         Here, we replace
     #         a) AddSIMD(MulSIMD(-1, b), a),
     #         b) AddSIMD(MulSIMD(b, -1), a),
