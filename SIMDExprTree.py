@@ -155,7 +155,7 @@ class ExprTree:
         return str([node.expr for node in self.preorder(self.root)])
 
     def __str__(self):
-        return f'ExprTree({self.root.expr})'
+        return 'ExprTree(%s)' % str(self.root.expr)
 
 if __name__ == "__main__":
     import doctest
