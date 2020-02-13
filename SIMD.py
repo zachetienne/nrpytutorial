@@ -262,6 +262,12 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
+    # Step 7: SIMD intrinsics cannot take integers or rational numbers as arguments.
+    #         Therefore we must declare all integers & rational numbers as
+    #         const vector doubles (e.g., const _m256d ...). To make the code
+    #         more human readable, we adopt the convention
+    #         RationalTMP(1, 3)  = 1/3  = "Rational_1_3
+    #         RationalTMP(-1, 3) = -1/3 = "Rational_m1_3
     # Step 7a: Set all variable names and corresponding values.
     for item in preorder_traversal(expr):
         if item.func == RationalTMP:
