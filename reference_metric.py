@@ -632,21 +632,31 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
             outdated_version = sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2)
             # The derivative representation changed with SymPy 1.2, forcing version-dependent behavior.
 
-            rule = {}
+            # Example: Derivative(f0_of_xx0_funcform(xx0)(xx0), (xx0, 2)) >> f0_of_xx0__DD00
+            rule = {} # replacement dictionary
             for item in sp.preorder_traversal(expr):
                 if item.func == sp.Derivative:
+                    # extract function name before '_funcform'
                     strfunc = str(item.args[0]).split('_funcform(', 1)[0]
                     if outdated_version:
+                        # extract differentiation variable and derivative order (SymPy <= 1.1)
                         var, order = str(item.args[1])[2:], len(item.args) - 1
                     else:
+                        # extract differentiation variable and derivative order (SymPy >= 1.2)
                         var, order = str(item.args[1][0])[2:], item.args[1][1]
+                    # build derivative operator with format: __DD...D(var)(var)...(var) where
+                    # D and (var) are repeated for every derivative order
                     oper = '__D' + 'D'*(order - 1) + var*order
+                    # add replacement rule to dictionary
                     rule[item] = sp.sympify(strfunc + oper)
             expr = expr.xreplace(rule); rule = {}
 
+            # Example: f0_of_xx0_funcform(xx0)(xx0) >> f0_of_xx0
             for item in sp.preorder_traversal(expr):
                 if "_funcform" in str(item.func):
+                    # extract function name before '_funcform'
                     strfunc = str(item.func).split("_funcform", 1)[0]
+                    # add replacement rule to dictionary
                     rule[item] = sp.sympify(strfunc)
             return expr.xreplace(rule)
 
