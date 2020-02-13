@@ -17,14 +17,12 @@ import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., ten
 import reference_metric as rfm   # NRPy+: Reference metric support
 
 global GiRaFFE_NRPy_A2B
-def GiRaFFE_NRPy_A2B(outdir):
+def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     cmd.mkdir(outdir)
     # Set spatial dimension (must be 3 for BSSN)
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
-    # Register the gridfunction gammadet. This determinant will be calculated separately
-    # Declare the three metric and compute the sqrt of its determinant.
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaDD","sym01")
+    # Compute the sqrt of the three metric determinant.
     import GRHD.equations as gh
     gh.compute_sqrtgammaDET(gammaDD)
 
@@ -40,10 +38,8 @@ def GiRaFFE_NRPy_A2B(outdir):
                 #LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gho.gammadet)
                 LeviCivitaUUU[i][j][k] = LCijk / gh.sqrtgammaDET
 
-    AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
-    BU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","BU")
     AD_dD = ixp.declarerank2("AD_dD","nosym")
-    BU = ixp.zerorank1() # BU is already registered as a gridfunction, but we need to zero its values and declare it in this scope.
+    BU = ixp.zerorank1() 
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
