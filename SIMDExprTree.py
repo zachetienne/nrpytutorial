@@ -1,18 +1,39 @@
+""" SymPy (N-Ary) Expression Tree
+
+The following script will extend the expression tree from SymPy, 
+allowing direct node manipulation for subexpression replacement.
+The expression tree structure within SymPy expressions stores
+subexpressions inside immutable tuples, preventing the client from
+modifying the expression tree. Therefore, the client must depend on
+build-in functions, such as xreplace, for subexpression replacement,
+which might be suboptimal for their specific purpose. The ExprTree class
+is implemented as an n-ary tree data structure for SymPy expressions,
+equipped with a build method for constructing the expression tree, 
+a reconstruct method for reconstructing the root expression, a replace
+method for subexpression replacement, and preorder/postorder traversal
+iterators (or generators). The __repr__ representation of the expression
+tree will return a string of the expressions using the preorder traversal,
+while the __str__ representation will return a string of the class name 
+and root expression. The Node subclass has a field for an expression and
+a field for subexpression children (implemented as a mutable list).
+"""
+# Author: Ken Sible
+# Email:  ksible@outlook.com
+
 __author__ = 'Ken Sible'
 
 class ExprTree:
-    """ SymPy Expression Tree (Nodal Structure) 
+    """ SymPy (N-Ary) Expression Tree
     
+        >>> from sympy.abc import a, b, x
+        >>> from sympy import cos
         >>> tree = ExprTree(cos(a + b)**2)
         >>> print(tree)
         ExprTree(cos(a + b)**2)
-        >>> repr(tree) # Preorder (Default)
-        [cos(a + b)**2, cos(a + b), a + b, a, b, 2]
+        >>> repr(tree)
+        '[cos(a + b)**2, cos(a + b), a + b, a, b, 2]'
         >>> tree.replace({a + b: x})
         cos(x)**2
-        >>> [str(subtree.expr.func).split('.')[-1][:-2] \
-                 for subtree in tree.preorder()]
-        ['Pow', 'cos', 'Symbol', 'Integer']
     """
 
     def __init__(self, expr):
@@ -25,14 +46,13 @@ class ExprTree:
             :arg:   root node of (sub)tree
             :arg:   clear children (default: False)
 
-            >>> root = tree.Node(cos(a + b)**2)
-            >>> tree.build(root)
+            >>> from sympy.abc import a, b
+            >>> from sympy import cos, sin
+            >>> tree = ExprTree(cos(a + b)**2)
+            >>> tree.root.expr = sin(a*b)**2
+            >>> tree.build(tree.root, clear=True)
             >>> repr(tree)
-            [cos(a + b)**2, cos(a + b), a + b, a, b, 2]
-            >>> tree.root.expr = sin(ab)**2
-            >>> tree.build(root, clear=True)
-            >>> repr(tree)
-            [sin(ab)**2, sin(ab), ab, a, b, 2]
+            '[sin(a*b)**2, sin(a*b), a*b, a, b, 2]'
         """
         if clear: node.children.clear()
         for arg in node.expr.args:
@@ -46,11 +66,13 @@ class ExprTree:
             :arg:    root node of (sub)tree
             :return: iterator
 
-            >>> tree = ExprTree(cos(ab)**2)
+            >>> from sympy.abc import a, b
+            >>> from sympy import cos, Mul
+            >>> tree = ExprTree(cos(a*b)**2)
             >>> for i, subtree in enumerate(tree.preorder()):
-                    if subtree.expr.func == Mul:
-                        print((i, subtree.expr))
-            (2, ab)
+            ...     if subtree.expr.func == Mul:
+            ...         print((i, subtree.expr))
+            (2, a*b)
         """
         if node == None:
             node = self.root
@@ -65,11 +87,13 @@ class ExprTree:
             :arg:    root node of (sub)tree
             :return: iterator
 
-            >>> tree = ExprTree(cos(ab)**2)
+            >>> from sympy.abc import a, b
+            >>> from sympy import cos, Mul
+            >>> tree = ExprTree(cos(a*b)**2)
             >>> for i, subtree in enumerate(tree.postorder()):
-                    if subtree.expr.func == Mul:
-                        print((i, subtree.expr))
-            (2, ab)
+            ...     if subtree.expr.func == Mul:
+            ...         print((i, subtree.expr))
+            (2, a*b)
         """
         if node == None:
             node = self.root
@@ -85,12 +109,11 @@ class ExprTree:
         :arg:    replacement dictionary {original: substitution}
         :return: root expression
 
-        >>> tree = ExprTree(cos(a + b)**2)
-        >>> tree.replace({a + b: x})
-        cos(x)**2
-        >>> tree = ExprTree(a*b + c)
-        >>> tree.replace({a*b: x, c: y})
-        x + y
+        >>> from sympy.abc import a, b, x
+        >>> from sympy import cos
+        >>> tree = ExprTree(a*b + cos(a + b)**2)
+        >>> tree.replace({a*b: x, a + b: x})
+        x + cos(x)**2
         """
         from sympy.parsing.sympy_parser import parse_expr
         for expr in rule:
@@ -99,18 +122,19 @@ class ExprTree:
         self.build(self.root, clear=True)
         return self.root.expr
     
-    def reconstruct(self, evaluate=True):
+    def reconstruct(self, evaluate=False):
         """
         Reconstruct root expression from expression tree.
 
-        :arg:    evaluate root expression
+        :arg:    evaluate root expression (default: False)
         :return: root expression
 
+        >>> from sympy.abc import a, b
+        >>> from sympy import cos, sin
         >>> tree = ExprTree(cos(a + b)**2)
-        >>> tree.root.children[0] = sin(ab)
+        >>> tree.root.children[0].expr = sin(a + b)
         >>> tree.reconstruct()
-        >>> print(tree)
-        ExprTree(sin(a + b)**2)
+        sin(a + b)**2
         """
         for subtree in self.postorder(self.root):
             if subtree.children:
@@ -132,3 +156,7 @@ class ExprTree:
 
     def __str__(self):
         return f'ExprTree({self.root.expr})'
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
