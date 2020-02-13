@@ -129,9 +129,9 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
                 subtree.expr = PowSIMD(*args)
     expr = tree.reconstruct()
 
-    # Step 2: Replace all rational numbers (expressed as Rational(a,b))
+    # Step 2: Replace all rational numbers (expressed as Rational(a, b))
     #         and integers with the new functions RationalTMP and
-    #         IntegerTMP, where Rational(a,b) -> RationalTMP(a,b)
+    #         IntegerTMP, where Rational(a, b) -> RationalTMP(a, b)
     #         and Integer(a) -> IntegerTMP(a)
     RationalTMP = Function("RationalTMP")
     IntegerTMP = Function("IntegerTMP")
@@ -148,7 +148,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
     # We must evaluate the expression, otherwise nested multiplications
     # will arise that conflict with the following replacements in Step 3.
 
-    # Step 3: The pattern Mul(-1,Rational(a,b)) is often seen. Replace with Rational(-a,b).
+    # Step 3: The pattern Mul(-1, Rational(a, b)) is often seen. Replace with Rational(-a, b).
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.children
@@ -167,10 +167,10 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
     # Step 4: SIMD multiplication and addition compiler intrinsics read in
     #         only two arguments at once, where SymPy's Mul() and Add()
     #         operators can read an arbitrary number of arguments.
-    #         Here, we split e.g., Mul(a,b,c,d) into
-    #         MulSIMD(a,MulSIMD(b,MulSIMD(c,d))),
+    #         Here, we split e.g., Mul(a, b, c, d) into
+    #         MulSIMD(a, MulSIMD(b, MulSIMD(c, d))),
     #         To accomplish this easily, we construct a string
-    #         'MulSIMD(A,MulSIMD(B,...', where MulSIMD(a,b) is some user-
+    #         'MulSIMD(A, MulSIMD(B, ...', where MulSIMD(a, b) is some user-
     #         defined function that takes in only two arguments, and then
     #         evaluate the string using the eval() function.
     # Implementation detail: If we did not perform Step 2 above, the eval
@@ -192,40 +192,46 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
     expr = tree.reconstruct()
 
     # Step 5: Simplification patterns:
-    # Step 5a: Replace the pattern Mul(Div(1,b),a) or Mul(a,Div(1,b)) with Div(a,b):
+    # Step 5a: Replace the pattern Mul(Div(1, b), a) or Mul(a, Div(1, b)) with Div(a, b):
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
+        # Mul(Div(1, b), a) >> Div(a, b)
         if   func == MulSIMD and args[0].func == DivSIMD and args[1].func == IntegerTMP:
             subtree.expr = DivSIMD(args[1], args[0].args[1])
             tree.build(subtree, clear=True)
+        # Mul(a, Div(1, b)) >> Div(a, b)
         elif func == MulSIMD and args[1].func == DivSIMD and args[0].func == IntegerTMP:
             subtree.expr = DivSIMD(args[0], args[1].args[1])
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
-    # Step 5: Subtraction intrinsics. SymPy replaces all a-b with a + (-b) = Add(a,Mul(-1,b))
+    # Step 5: Subtraction intrinsics. SymPy replaces all a - b with a + (-b) = Add(a, Mul(-1, b))
     #         Here, we replace
-    #         a) AddSIMD(a,MulSIMD(-1,b)),
-    #         b) AddSIMD(a,MulSIMD(b,-1)),
-    #         c) AddSIMD(MulSIMD(-1,b),a), and
-    #         d) AddSIMD(MulSIMD(b,-1),a)
-    #         with SubSIMD(a,b)
+    #         a) AddSIMD(MulSIMD(-1, b), a),
+    #         b) AddSIMD(MulSIMD(b, -1), a),
+    #         c) AddSIMD(a, MulSIMD(-1, b)), and
+    #         d) AddSIMD(a, MulSIMD(b, -1))
+    #         with SubSIMD(a, b)
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
+        # AddSIMD(MulSIMD(-1, b), a) >> SubSIMD(a, b)
         if   func == AddSIMD and args[0].func == MulSIMD and \
                 args[0].args[0] == IntegerTMP(-1):
             subtree.expr = SubSIMD(args[1], args[0].args[1])
             tree.build(subtree, clear=True)
+        # AddSIMD(MulSIMD(b, -1), a) >> SubSIMD(a, b)
         elif func == AddSIMD and args[0].func == MulSIMD and \
                 args[0].args[1] == IntegerTMP(-1):
             subtree.expr = SubSIMD(args[1], args[0].args[0])
             tree.build(subtree, clear=True)
+        # AddSIMD(a, MulSIMD(-1, b)) >> SubSIMD(a, b)
         elif func == AddSIMD and args[1].func == MulSIMD and \
                 args[1].args[0] == IntegerTMP(-1):
             subtree.expr = SubSIMD(args[0], args[1].args[1])
             tree.build(subtree, clear=True)
+        # AddSIMD(a, MulSIMD(b, -1)) >> SubSIMD(a, b)
         elif func == AddSIMD and args[1].func == MulSIMD and \
                 args[1].args[1] == IntegerTMP(-1):
             subtree.expr = SubSIMD(args[0], args[1].args[0])
@@ -234,22 +240,25 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
 
     # Step 6: Now that all multiplication and addition functions only take two
     #         arguments, we can now easily define fused-multiply-add functions,
-    #         where AddSIMD(a,MulSIMD(b,c)) = b*c + a = FusedMulAddSIMD(b,c,a),
-    #         or    AddSIMD(MulSIMD(b,c),a) = b*c + a = FusedMulAddSIMD(b,c,a).
+    #         where AddSIMD(a, MulSIMD(b, c)) = b*c + a = FusedMulAddSIMD(b, c, a),
+    #         or    AddSIMD(MulSIMD(b, c), a) = b*c + a = FusedMulAddSIMD(b, c, a).
     # Fused multiply add (FMA3) is standard on Intel CPUs with the AVX2
     #         instruction set, starting with Haswell processors in 2013:
     #         https://en.wikipedia.org/wiki/Haswell_(microarchitecture)
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
+        # AddSIMD(MulSIMD(b, c), a)) >> FusedMulAddSIMD(b, c, a)
         if   func == AddSIMD and args[0].func == MulSIMD:
-            subtree.expr = FusedMulAddSIMD(*args[0].args, args[1])
+            subtree.expr = FusedMulAddSIMD(args[0].args[0], args[0].args[1], args[1])
             tree.build(subtree, clear=True)
+        # AddSIMD(a, MulSIMD(b, c))) >> FusedMulAddSIMD(b, c, a)
         elif func == AddSIMD and args[1].func == MulSIMD:
-            subtree.expr = FusedMulAddSIMD(*args[1].args, args[0])
+            subtree.expr = FusedMulAddSIMD(args[1].args[0], args[1].args[1], args[0])
             tree.build(subtree, clear=True)
+        # SubSIMD(MulSIMD(b, c), a)) >> FusedMulSubSIMD(b, c, a)
         elif func == SubSIMD and args[0].func == MulSIMD:
-            subtree.expr = FusedMulSubSIMD(*args[0].args, args[1])
+            subtree.expr = FusedMulSubSIMD(args[0].args[0], args[0].args[1], args[1])
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
