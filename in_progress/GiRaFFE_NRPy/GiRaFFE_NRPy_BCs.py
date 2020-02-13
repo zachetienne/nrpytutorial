@@ -63,7 +63,7 @@ const int MINFACE = +1;
       }                                                                         \\
 */
 
-void apply_bcs(const paramstruct *restrict params,REAL *gfs,REAL *aux_gfs) {
+void apply_bcs_potential(const paramstruct *restrict params,REAL *gfs) {
 #include "set_Cparameters.h"
     // First, we apply extrapolation boundary conditions to AD
 #pragma omp parallel for
@@ -87,23 +87,6 @@ void apply_bcs(const paramstruct *restrict params,REAL *gfs,REAL *aux_gfs) {
     }
     }
     }
-    // Apply outflow/extrapolation boundary conditions to ValenciavU by passing VALENCIAVU0 as which_gf_0
-    for(int which_gf=VALENCIAVU0GF;which_gf<=VALENCIAVU2GF;which_gf++) {
-    int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
-    int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
-    for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
-      FACE_UPDATE_OUTFLOW(which_gf, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
-
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
-
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
-        imin[2]--;
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
-        imax[2]++;
-    }
-    }
     // Then, we apply copy boundary conditions to StildeD and psi6Phi
 /*#pragma omp parallel for
     for(int which_gf=3;which_gf<NUM_EVOL_GFS;which_gf++) {
@@ -122,6 +105,26 @@ void apply_bcs(const paramstruct *restrict params,REAL *gfs,REAL *aux_gfs) {
       FACE_UPDATE_COPY(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); imax[2]++;
     }
     }*/
+}
+void apply_bcs_velocity(const paramstruct *restrict params,REAL *aux_gfs) {
+#include "set_Cparameters.h"
+    // Apply outflow/extrapolation boundary conditions to ValenciavU by passing VALENCIAVU0 as which_gf_0
+    for(int which_gf=VALENCIAVU0GF;which_gf<=VALENCIAVU2GF;which_gf++) {
+    int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
+    int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
+    for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
+      FACE_UPDATE_OUTFLOW(which_gf, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
+      FACE_UPDATE_OUTFLOW(which_gf, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
+
+      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
+      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
+
+      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
+        imin[2]--;
+      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
+        imax[2]++;
+    }
+    }
 }
 /*// A supplement to the boundary conditions for debugging. This will overwrite data with exact conditions
 void FACE_UPDATE_EXACT(const paramstruct *restrict params,REAL *restrict xx[3],
