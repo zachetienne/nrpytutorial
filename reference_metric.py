@@ -626,42 +626,37 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
         #         and store these variables to globals defined above.
         def make_replacements(expr):
-            sympy_version = sp.__version__.replace("rc", "...").replace("b",
-                                                                        "...")  # Ignore the rc's and b's for release candidates & betas.
+            sympy_version = sp.__version__.replace("rc","...").replace("b","...")
             sympy_major_version = int(sympy_version.split(".")[0])
             sympy_minor_version = int(sympy_version.split(".")[1])
-            if sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2):
-                print("Detected SymPy version " + sympy_version)
-                print("Sorry, reference metric precomputation unsupported in SymPy < 1.2!")
-                sys.exit(1)
+            outdated_version = sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2)
+            # The derivative representation changed with SymPy 1.2, forcing version-dependent behavior.
 
-            rule = {}
+            # Example: Derivative(f0_of_xx0_funcform(xx0)(xx0), (xx0, 2)) >> f0_of_xx0__DD00
+            rule = {} # replacement dictionary
             for item in sp.preorder_traversal(expr):
                 if item.func == sp.Derivative:
+                    # extract function name before '_funcform'
                     strfunc = str(item.args[0]).split('_funcform(', 1)[0]
-                    deriv_wrt, deriv_order = item.args[1][0], item.args[1][1]
-                    if deriv_wrt == xx[0]:
-                        deriv_wrt = '0'
-                    elif deriv_wrt == xx[1]:
-                        deriv_wrt = '1'
-                    elif deriv_wrt == xx[2]:
-                        deriv_wrt = '2'
-                    elif deriv_wrt == xx[3]:
-                        deriv_wrt = '3'
-                    # deriv_op = ''.join(['__D'] + \
-                    #     ['D' for i in range(deriv_order - 1)] + \
-                    #     [deriv_wrt for i in range(deriv_order)])
-                    deriv_op = "__D"
-                    for i in range(deriv_order - 1):
-                        deriv_op += "D"
-                    deriv_op += deriv_wrt
-                    for i in range(deriv_order - 1):
-                        deriv_op += deriv_wrt
-                    rule[item] = sp.sympify(strfunc + deriv_op)
+                    if outdated_version:
+                        # extract differentiation variable and derivative order (SymPy <= 1.1)
+                        var, order = str(item.args[1])[2:], len(item.args) - 1
+                    else:
+                        # extract differentiation variable and derivative order (SymPy >= 1.2)
+                        var, order = str(item.args[1][0])[2:], item.args[1][1]
+                    # build derivative operator with format: __DD...D(var)(var)...(var) where
+                    # D and (var) are repeated for every derivative order
+                    oper = '__D' + 'D'*(order - 1) + var*order
+                    # add replacement rule to dictionary
+                    rule[item] = sp.sympify(strfunc + oper)
+            expr = expr.xreplace(rule); rule = {}
 
+            # Example: f0_of_xx0_funcform(xx0)(xx0) >> f0_of_xx0
             for item in sp.preorder_traversal(expr):
                 if "_funcform" in str(item.func):
+                    # extract function name before '_funcform'
                     strfunc = str(item.func).split("_funcform", 1)[0]
+                    # add replacement rule to dictionary
                     rule[item] = sp.sympify(strfunc)
             return expr.xreplace(rule)
 
