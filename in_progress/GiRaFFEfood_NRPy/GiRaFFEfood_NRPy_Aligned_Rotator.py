@@ -121,7 +121,7 @@ def GiRaFFEfood_NRPy_Aligned_Rotator():
     import Min_Max_and_Piecewise_Expressions as noif
 
     unit_zU = ixp.zerorank1()
-    unit_zU[2] = sp.sympify(1.0)
+    unit_zU[2] = sp.sympify(1)
 
     global ValenciavU
     ValenciavU = ixp.zerorank1()
