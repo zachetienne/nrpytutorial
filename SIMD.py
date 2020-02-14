@@ -231,6 +231,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
     #         https://en.wikipedia.org/wiki/Haswell_(microarchitecture)
 
     # Step 5.a: Find double FMA patterns first [e.g., FMA(a,b,FMA(c,d,e))]:
+    #           NOTE: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations:
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
@@ -256,7 +257,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
             tree.build(subtree, clear=True)
         expr = tree.reconstruct()
 
-    # Step 5.b: Find single FMA patterns first:
+    # Step 5.b: Next find single FMA patterns:
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
@@ -275,6 +276,7 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
     expr = tree.reconstruct()
 
     # Step 5.c: Leftover double FMA patterns that are difficult to find in Step 5.a:
+    #           NOTE: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations:
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
