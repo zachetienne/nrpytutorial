@@ -232,30 +232,30 @@ def expr_convert_to_SIMD_intrins(expr, SIMD_const_varnms, SIMD_const_values, SIM
 
     # Step 5.a: Find double FMA patterns first [e.g., FMA(a,b,FMA(c,d,e))]:
     #           NOTE: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations:
-    for subtree in tree.preorder(tree.root):
-        func = subtree.expr.func
-        args = subtree.expr.args
-        # a + b*c + d*e -> FMA(b,c,FMA(d,e,a))
-        # AddSIMD(a, AddSIMD(MulSIMD(b,c), MulSIMD(d,e))) >> FusedMulAddSIMD(b, c, FusedMulAddSIMD(d,e,a))
-        # Validate:
-        # x = a + b*c + d*e
-        # outputC(x,"x", params="SIMD_enable=True,SIMD_debug=True")
-        if  (func == AddSIMD and args[1].func == AddSIMD and args[1].args[0].func == MulSIMD and args[1].args[1].func == MulSIMD):
-            subtree.expr = FusedMulAddSIMD(                args[1].args[0].args[0], args[1].args[0].args[1],
-                                           FusedMulAddSIMD(args[1].args[1].args[0], args[1].args[1].args[1],
-                                                           args[0]))
-            tree.build(subtree, clear=True)
-        # b*c + d*e + a -> FMA(b,c,FMA(d,e,a))
-        # Validate:
-        # x = b*c + d*e + a
-        # outputC(x,"x", params="SIMD_enable=True,SIMD_debug=True")
-        # AddSIMD(AddSIMD(MulSIMD(b,c), MulSIMD(d,e)),a) >> FusedMulAddSIMD(b, c, FusedMulAddSIMD(d,e,a))
-        elif func == AddSIMD and args[0].func == AddSIMD and args[0].args[0].func == MulSIMD and args[0].args[1].func == MulSIMD:
-            subtree.expr = FusedMulAddSIMD(                args[0].args[0].args[0], args[0].args[0].args[1],
-                                           FusedMulAddSIMD(args[0].args[1].args[0], args[0].args[1].args[1],
-                                                           args[1]))
-            tree.build(subtree, clear=True)
-        expr = tree.reconstruct()
+    # for subtree in tree.preorder(tree.root):
+    #     func = subtree.expr.func
+    #     args = subtree.expr.args
+    #     # a + b*c + d*e -> FMA(b,c,FMA(d,e,a))
+    #     # AddSIMD(a, AddSIMD(MulSIMD(b,c), MulSIMD(d,e))) >> FusedMulAddSIMD(b, c, FusedMulAddSIMD(d,e,a))
+    #     # Validate:
+    #     # x = a + b*c + d*e
+    #     # outputC(x,"x", params="SIMD_enable=True,SIMD_debug=True")
+    #     if  (func == AddSIMD and args[1].func == AddSIMD and args[1].args[0].func == MulSIMD and args[1].args[1].func == MulSIMD):
+    #         subtree.expr = FusedMulAddSIMD(                args[1].args[0].args[0], args[1].args[0].args[1],
+    #                                        FusedMulAddSIMD(args[1].args[1].args[0], args[1].args[1].args[1],
+    #                                                        args[0]))
+    #         tree.build(subtree, clear=True)
+    #     # b*c + d*e + a -> FMA(b,c,FMA(d,e,a))
+    #     # Validate:
+    #     # x = b*c + d*e + a
+    #     # outputC(x,"x", params="SIMD_enable=True,SIMD_debug=True")
+    #     # AddSIMD(AddSIMD(MulSIMD(b,c), MulSIMD(d,e)),a) >> FusedMulAddSIMD(b, c, FusedMulAddSIMD(d,e,a))
+    #     elif func == AddSIMD and args[0].func == AddSIMD and args[0].args[0].func == MulSIMD and args[0].args[1].func == MulSIMD:
+    #         subtree.expr = FusedMulAddSIMD(                args[0].args[0].args[0], args[0].args[0].args[1],
+    #                                        FusedMulAddSIMD(args[0].args[1].args[0], args[0].args[1].args[1],
+    #                                                        args[1]))
+    #         tree.build(subtree, clear=True)
+    #     expr = tree.reconstruct()
 
     # Step 5.b: Next find single FMA patterns:
     for subtree in tree.preorder(tree.root):
