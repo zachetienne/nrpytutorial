@@ -10,10 +10,10 @@ import loop as lp                             # NRPy+: C code loop interface
 import NRPy_param_funcs as par                # NRPy+: parameter interface
 from SIMD import expr_convert_to_SIMD_intrins # NRPy+: SymPy expression => SIMD intrinsics interface
 import sympy as sp                            # Import SymPy
-import re, sys                                # Standard Python: regular expressions & OS-independent system functions
+import re, sys, os                            # Standard Python: regular expressions, system, and multiplatform OS funcs
 from collections import namedtuple            # Standard Python: Enable namedtuple data type
 lhrh = namedtuple('lhrh', 'lhs rhs')
-outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix SIMD_enable SIMD_const_suffix SIMD_debug enable_TYPE')
+outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix CSE_sorting SIMD_enable SIMD_const_suffix SIMD_find_more_FMAsFMSs SIMD_debug enable_TYPE gridsuffix')
 
 # Sometimes SymPy has problems evaluating complicated expressions involving absolute
 #    values, resulting in hangs. So instead of using sp.Abs(), if we instead use
@@ -99,11 +99,14 @@ def parse_outCparams_string(params):
     outCfileaccess = "w"
     outCverbose = "True"
     CSE_enable = "True"
+    CSE_sorting = "canonical"
     CSE_varprefix = "tmp"
     SIMD_enable = "False"
     SIMD_const_suffix = ""
+    SIMD_find_more_FMAsFMSs = "False" # Finding too many FMAs/FMSs can degrade performance; currently tuned to optimize BSSN
     SIMD_debug = "False"
     enable_TYPE = "True"
+    gridsuffix = ""
 
     if params != "":
         params2 = re.sub("^,","",params)
@@ -146,19 +149,28 @@ def parse_outCparams_string(params):
                 CSE_enable = value[i]
             elif parnm[i] == "CSE_varprefix":
                 CSE_varprefix = value[i]
+            elif parnm[i] == "CSE_sorting":
+                CSE_sorting = value[i]
             elif parnm[i] == "SIMD_enable":
                 SIMD_enable = value[i]
             elif parnm[i] == "SIMD_const_suffix":
                 SIMD_const_suffix = value[i]
+            elif parnm[i] == "SIMD_find_more_FMAsFMSs":
+                SIMD_find_more_FMAsFMSs = value[i]
             elif parnm[i] == "SIMD_debug":
                 SIMD_debug = value[i]
             elif parnm[i] == "enable_TYPE":
                 enable_TYPE = value[i]
+            elif parnm[i] == "gridsuffix":
+                gridsuffix = value[i]
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 sys.exit(1)
 
-    return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_const_suffix,SIMD_debug,enable_TYPE)
+    return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,
+                      CSE_enable,CSE_varprefix,CSE_sorting,
+                      SIMD_enable,SIMD_const_suffix,SIMD_find_more_FMAsFMSs,SIMD_debug,
+                      enable_TYPE,gridsuffix)
 
 import sympy as sp
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
@@ -274,7 +286,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         SIMD_const_varnms = []
         SIMD_const_values = []
 
-        CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order='canonical')
+        CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order=outCparams.CSE_ordering)
         for commonsubexpression in CSE_results[0]:
             FULLTYPESTRING = "const " + TYPE + " "
             if outCparams.enable_TYPE == "False":
@@ -282,14 +294,18 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
             if outCparams.SIMD_enable == "True":
                 outstring += outCparams.preindent + indent + FULLTYPESTRING + str(commonsubexpression[0]) + " = " + \
-                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_const_suffix,outCparams.SIMD_debug)) + ";\n"
+                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],SIMD_const_varnms,SIMD_const_values,
+                                                              outCparams.SIMD_const_suffix,outCparams.SIMD_find_more_FMAsFMSs,
+                                                              outCparams.SIMD_debug)) + ";\n"
             else:
                 outstring += outCparams.preindent+indent+FULLTYPESTRING+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0],
                                                                                                 user_functions=custom_functions_for_SymPy_ccode))+"\n"
         for i,result in enumerate(CSE_results[1]):
             if outCparams.SIMD_enable == "True":
                 outstring += outtypestring + output_varname_str[i] + " = " + \
-                             str(expr_convert_to_SIMD_intrins(result,SIMD_const_varnms,SIMD_const_values,outCparams.SIMD_const_suffix,outCparams.SIMD_debug)) + ";\n"
+                             str(expr_convert_to_SIMD_intrins(result,SIMD_const_varnms,SIMD_const_values,
+                                                              outCparams.SIMD_const_suffix,outCparams.SIMD_find_more_FMAsFMSs,
+                                                              outCparams.SIMD_debug)) + ";\n"
             else:
                 outstring += outtypestring+ccode_postproc(sp.ccode(result,output_varname_str[i],
                                                                    user_functions=custom_functions_for_SymPy_ccode))+"\n"
@@ -349,7 +365,8 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 outC_function_prototype_dict = {}
 outC_function_dict           = {}
 
-def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts=""):
+def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts="",
+              rel_path_for_Cparams=os.path.join("./")):
     if name == None or params == None or body == None:
         print("Cfunction() error: strings must be provided for function name, parameters, and body")
         sys.exit(1)
@@ -358,9 +375,9 @@ def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loo
     include_Cparams_str = ""
     if not "DisableCparameters" in opts:
         if "EnableSIMD" in loopopts:
-            include_Cparams_str = "#include \"set_Cparameters-SIMD.h\"\n"
+            include_Cparams_str = "#include \"" + os.path.join(rel_path_for_Cparams, "set_Cparameters-SIMD.h") + "\"\n"
         else:
-            include_Cparams_str = "#include \"set_Cparameters.h\"\n"
+            include_Cparams_str = "#include \"" + os.path.join(rel_path_for_Cparams, "set_Cparameters.h") + "\"\n"
 
     complete_func  = ""
     if desc != "":
@@ -369,11 +386,14 @@ def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loo
 
     return func_prototype+";",complete_func
 
-def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts=""):
-    outC_function_prototype_dict[name],outC_function_dict[name] = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts)
+def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts="",
+                          rel_path_for_Cparams=os.path.join("./")):
+    outC_function_prototype_dict[name],outC_function_dict[name] = Cfunction(desc,type,name,params,preloop,body,loopopts,
+                                                                            postloop,opts,rel_path_for_Cparams)
 
-def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts=""):
-    ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts)
+def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",
+                 opts="",rel_path_for_Cparams=os.path.join("./")):
+    ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
     if outfile == "returnstring":
         return Cfunc
     with open(outfile,"w") as file:
