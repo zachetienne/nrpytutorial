@@ -49,10 +49,6 @@ const int metric_gfs_face_list[10] = {GAMMA_FACEDD00GF,
                                       ALPHA_FACEGF};
 
 const int num_metric_gfs = 10;
-// Kronecker delta: all zero-offset
-const int kronecker_delta[3][3] = { { 1,0,0 },
-                                    { 0,1,0 },
-                                    { 0,0,1 } };
 """)
         
     desc = "Interpolate metric gridfunctions to cell faces"
@@ -70,10 +66,10 @@ const int kronecker_delta[3][3] = { { 1,0,0 },
         for (int i2 = NGHOSTS;i2 < Nxx2+NGHOSTS+1;i2++) {
             for (int i1 = NGHOSTS;i1 < Nxx2+NGHOSTS+1;i1++) {
                 for (int i0 = NGHOSTS;i0 < Nxx2+NGHOSTS+1;i0++) {
-                    Qm2 = auxevol_gfs[IDX4S(in_gf,i0-2*kronecker_delta[0][flux_dirn],i1-2*kronecker_delta[1][flux_dirn],i2-2*kronecker_delta[2][flux_dirn])];
-                    Qm1 = auxevol_gfs[IDX4S(in_gf,i0-kronecker_delta[0][flux_dirn],i1-kronecker_delta[1][flux_dirn],i2-kronecker_delta[2][flux_dirn])];
+                    Qm2 = auxevol_gfs[IDX4S(in_gf,i0-2*kronecker_delta[flux_dirn][0],i1-2*kronecker_delta[flux_dirn][1],i2-2*kronecker_delta[flux_dirn][2])];
+                    Qm1 = auxevol_gfs[IDX4S(in_gf,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
                     Qp0 = auxevol_gfs[IDX4S(in_gf,i0,i1,i2)];
-                    Qp1 = auxevol_gfs[IDX4S(in_gf,i0+kronecker_delta[0][flux_dirn],i1+kronecker_delta[1][flux_dirn],i2+kronecker_delta[2][flux_dirn])];
+                    Qp1 = auxevol_gfs[IDX4S(in_gf,i0+kronecker_delta[flux_dirn][0],i1+kronecker_delta[flux_dirn][1],i2+kronecker_delta[flux_dirn][2])];
                     auxevol_gfs[IDX4S(out_gf,i0,i1,i2)] = COMPUTE_FCVAL(Qm2,Qm1,Qp0,Qp1);
                 }
             }

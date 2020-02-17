@@ -16,7 +16,7 @@ import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line int
 
 thismodule = "GiRaFFE_NRPy_Main_Driver"
 
-def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
+def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     cmd.mkdir(out_dir)
     
     import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
@@ -51,9 +51,10 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
     name = "calculate_parentheticals_for_RHSs"
     outCfunction(
         outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
-        params   ="const paramstruct *params,const REAL *in_gfs,REAL *auxevol_gfs",
+        params   ="const paramstruct *restrict params,const REAL *restrict in_gfs,REAL *restrict auxevol_gfs",
         body     = fin.FD_outputC("returnstring",parens_to_print,params="outCverbose=False").replace("IDX4","IDX4S"),
-        loopopts ="AllPoints")
+        loopopts ="AllPoints",
+        rel_path_for_Cparams=os.path.join("../"))
 
     xi_damping = par.Cparameters("REAL",thismodule,"xi_damping",0.1)
     GRFFE.compute_psi6Phi_rhs_damping_term(alpha,psi6Phi,xi_damping)
@@ -81,7 +82,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
         outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
         params   ="const paramstruct *params,const REAL *in_gfs,const REAL *auxevol_gfs,REAL *rhs_gfs",
         body     = fin.FD_outputC("returnstring",RHSs_to_print,params="outCverbose=False").replace("IDX4","IDX4S"),
-        loopopts ="InteriorPoints")
+        loopopts ="InteriorPoints",
+        rel_path_for_Cparams=os.path.join("../"))
 
     # Declare all the Cparameters we will need
     metricderivDDD = ixp.declarerank3("metricderivDDD","sym01",DIM=3)
@@ -89,66 +91,66 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
     lapsederivD = ixp.declarerank1("lapsederivD",DIM=3)
 
     general_access = """const REAL gammaDD00 = auxevol_gfs[IDX4S(GAMMADD00GF,i0,i1,i2)];
-    const REAL gammaDD01 = auxevol_gfs[IDX4S(GAMMADD01GF,i0,i1,i2)];
-    const REAL gammaDD02 = auxevol_gfs[IDX4S(GAMMADD02GF,i0,i1,i2)];
-    const REAL gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF,i0,i1,i2)];
-    const REAL gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF,i0,i1,i2)];
-    const REAL gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF,i0,i1,i2)];
-    const REAL betaU0 = auxevol_gfs[IDX4S(BETAU0GF,i0,i1,i2)];
-    const REAL betaU1 = auxevol_gfs[IDX4S(BETAU1GF,i0,i1,i2)];
-    const REAL betaU2 = auxevol_gfs[IDX4S(BETAU2GF,i0,i1,i2)];
-    const REAL alpha = auxevol_gfs[IDX4S(ALPHAGF,i0,i1,i2)];
-    const REAL ValenciavU0 = auxevol_gfs[IDX4S(VALENCIAVU0GF,i0,i1,i2)];
-    const REAL ValenciavU1 = auxevol_gfs[IDX4S(VALENCIAVU1GF,i0,i1,i2)];
-    const REAL ValenciavU2 = auxevol_gfs[IDX4S(VALENCIAVU2GF,i0,i1,i2)];
-    const REAL BU0 = auxevol_gfs[IDX4S(BU0GF,i0,i1,i2)];
-    const REAL BU1 = auxevol_gfs[IDX4S(BU1GF,i0,i1,i2)];
-    const REAL BU2 = auxevol_gfs[IDX4S(BU2GF,i0,i1,i2)];
+const REAL gammaDD01 = auxevol_gfs[IDX4S(GAMMADD01GF,i0,i1,i2)];
+const REAL gammaDD02 = auxevol_gfs[IDX4S(GAMMADD02GF,i0,i1,i2)];
+const REAL gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF,i0,i1,i2)];
+const REAL gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF,i0,i1,i2)];
+const REAL gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF,i0,i1,i2)];
+const REAL betaU0 = auxevol_gfs[IDX4S(BETAU0GF,i0,i1,i2)];
+const REAL betaU1 = auxevol_gfs[IDX4S(BETAU1GF,i0,i1,i2)];
+const REAL betaU2 = auxevol_gfs[IDX4S(BETAU2GF,i0,i1,i2)];
+const REAL alpha = auxevol_gfs[IDX4S(ALPHAGF,i0,i1,i2)];
+const REAL ValenciavU0 = auxevol_gfs[IDX4S(VALENCIAVU0GF,i0,i1,i2)];
+const REAL ValenciavU1 = auxevol_gfs[IDX4S(VALENCIAVU1GF,i0,i1,i2)];
+const REAL ValenciavU2 = auxevol_gfs[IDX4S(VALENCIAVU2GF,i0,i1,i2)];
+const REAL BU0 = auxevol_gfs[IDX4S(BU0GF,i0,i1,i2)];
+const REAL BU1 = auxevol_gfs[IDX4S(BU1GF,i0,i1,i2)];
+const REAL BU2 = auxevol_gfs[IDX4S(BU2GF,i0,i1,i2)];
     """
     metric_deriv_access = ixp.zerorank1(DIM=3)
     metric_deriv_access[0] = """const REAL metricderivDDD000 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx0;
-    const REAL metricderivDDD010 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx0;
-    const REAL metricderivDDD020 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx0;
-    const REAL metricderivDDD110 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx0;
-    const REAL metricderivDDD120 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx0;
-    const REAL metricderivDDD220 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx0;
-    const REAL shiftderivUD00 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx0;
-    const REAL shiftderivUD10 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx0;
-    const REAL shiftderivUD20 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx0;
-    const REAL lapsederivD0 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx0;
-    REAL Stilde_rhsD0;
+const REAL metricderivDDD010 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx0;
+const REAL metricderivDDD020 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx0;
+const REAL metricderivDDD110 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx0;
+const REAL metricderivDDD120 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx0;
+const REAL metricderivDDD220 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx0;
+const REAL shiftderivUD00 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx0;
+const REAL shiftderivUD10 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx0;
+const REAL shiftderivUD20 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx0;
+const REAL lapsederivD0 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx0;
+REAL Stilde_rhsD0;
     """
     metric_deriv_access[1] = """const REAL metricderivDDD001 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx1;
-    const REAL metricderivDDD011 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx1;
-    const REAL metricderivDDD021 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx1;
-    const REAL metricderivDDD111 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx1;
-    const REAL metricderivDDD121 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx1;
-    const REAL metricderivDDD221 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx1;
-    const REAL shiftderivUD01 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx1;
-    const REAL shiftderivUD11 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx1;
-    const REAL shiftderivUD21 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx1;
-    const REAL lapsederivD1 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx1;
-    REAL Stilde_rhsD1;
+const REAL metricderivDDD011 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx1;
+const REAL metricderivDDD021 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx1;
+const REAL metricderivDDD111 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx1;
+const REAL metricderivDDD121 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx1;
+const REAL metricderivDDD221 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx1;
+const REAL shiftderivUD01 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx1;
+const REAL shiftderivUD11 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx1;
+const REAL shiftderivUD21 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx1;
+const REAL lapsederivD1 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx1;
+REAL Stilde_rhsD1;
     """
     metric_deriv_access[2] = """const REAL metricderivDDD002 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx2;
-    const REAL metricderivDDD012 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx2;
-    const REAL metricderivDDD022 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx2;
-    const REAL metricderivDDD112 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx2;
-    const REAL metricderivDDD122 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx2;
-    const REAL metricderivDDD222 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx2;
-    const REAL shiftderivUD02 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx2;
-    const REAL shiftderivUD12 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx2;
-    const REAL shiftderivUD22 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx2;
-    const REAL lapsederivD2 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx2;
-    REAL Stilde_rhsD2;
+const REAL metricderivDDD012 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx2;
+const REAL metricderivDDD022 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx2;
+const REAL metricderivDDD112 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx2;
+const REAL metricderivDDD122 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx2;
+const REAL metricderivDDD222 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx2;
+const REAL shiftderivUD02 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx2;
+const REAL shiftderivUD12 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx2;
+const REAL shiftderivUD22 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx2;
+const REAL lapsederivD2 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx2;
+REAL Stilde_rhsD2;
     """
     write_final_quantity = ixp.zerorank1(DIM=3)
     write_final_quantity[0] = """rhs_gfs[IDX4S(STILDED0GF,i0,i1,i2)] += Stilde_rhsD0;
-    """
+"""
     write_final_quantity[1] = """rhs_gfs[IDX4S(STILDED1GF,i0,i1,i2)] += Stilde_rhsD1;
-    """
+"""
     write_final_quantity[2] = """rhs_gfs[IDX4S(STILDED2GF,i0,i1,i2)] += Stilde_rhsD2;
-    """
+"""
 
     # Declare this symbol:
     sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
@@ -171,7 +173,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
                       +metric_deriv_access[i]\
                       +outputC(GRHD.S_tilde_source_termD[i],"Stilde_rhsD"+str(i),"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
                       +write_final_quantity[i],
-            loopopts ="InteriorPoints")
+            loopopts ="InteriorPoints",
+            rel_path_for_Cparams=os.path.join("../"))
 
     subdir = "FCVAL"
     cmd.mkdir(os.path.join(out_dir, subdir))
@@ -202,32 +205,32 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
                           Valenciav_rU,B_rU,Valenciav_lU,B_lU)
 
     Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
-    const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
-    const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];
-    const double gamma_faceDD02 = auxevol_gfs[IDX4S(GAMMA_FACEDD02GF, i0,i1,i2)];
-    const double gamma_faceDD11 = auxevol_gfs[IDX4S(GAMMA_FACEDD11GF, i0,i1,i2)];
-    const double gamma_faceDD12 = auxevol_gfs[IDX4S(GAMMA_FACEDD12GF, i0,i1,i2)];
-    const double gamma_faceDD22 = auxevol_gfs[IDX4S(GAMMA_FACEDD22GF, i0,i1,i2)];
-    const double beta_faceU0 = auxevol_gfs[IDX4S(BETA_FACEU0GF, i0,i1,i2)];
-    const double beta_faceU1 = auxevol_gfs[IDX4S(BETA_FACEU1GF, i0,i1,i2)];
-    const double beta_faceU2 = auxevol_gfs[IDX4S(BETA_FACEU2GF, i0,i1,i2)];
-    const double Valenciav_rU0 = auxevol_gfs[IDX4S(VALENCIAV_RU0GF, i0,i1,i2)];
-    const double Valenciav_rU1 = auxevol_gfs[IDX4S(VALENCIAV_RU1GF, i0,i1,i2)];
-    const double Valenciav_rU2 = auxevol_gfs[IDX4S(VALENCIAV_RU2GF, i0,i1,i2)];
-    const double B_rU0 = auxevol_gfs[IDX4S(B_RU0GF, i0,i1,i2)];
-    const double B_rU1 = auxevol_gfs[IDX4S(B_RU1GF, i0,i1,i2)];
-    const double B_rU2 = auxevol_gfs[IDX4S(B_RU2GF, i0,i1,i2)];
-    const double Valenciav_lU0 = auxevol_gfs[IDX4S(VALENCIAV_LU0GF, i0,i1,i2)];
-    const double Valenciav_lU1 = auxevol_gfs[IDX4S(VALENCIAV_LU1GF, i0,i1,i2)];
-    const double Valenciav_lU2 = auxevol_gfs[IDX4S(VALENCIAV_LU2GF, i0,i1,i2)];
-    const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
-    const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
-    const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
-    REAL A_rhsD0 = 0; REAL A_rhsD1 = 0; REAL A_rhsD2 = 0;
+const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
+const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];
+const double gamma_faceDD02 = auxevol_gfs[IDX4S(GAMMA_FACEDD02GF, i0,i1,i2)];
+const double gamma_faceDD11 = auxevol_gfs[IDX4S(GAMMA_FACEDD11GF, i0,i1,i2)];
+const double gamma_faceDD12 = auxevol_gfs[IDX4S(GAMMA_FACEDD12GF, i0,i1,i2)];
+const double gamma_faceDD22 = auxevol_gfs[IDX4S(GAMMA_FACEDD22GF, i0,i1,i2)];
+const double beta_faceU0 = auxevol_gfs[IDX4S(BETA_FACEU0GF, i0,i1,i2)];
+const double beta_faceU1 = auxevol_gfs[IDX4S(BETA_FACEU1GF, i0,i1,i2)];
+const double beta_faceU2 = auxevol_gfs[IDX4S(BETA_FACEU2GF, i0,i1,i2)];
+const double Valenciav_rU0 = auxevol_gfs[IDX4S(VALENCIAV_RU0GF, i0,i1,i2)];
+const double Valenciav_rU1 = auxevol_gfs[IDX4S(VALENCIAV_RU1GF, i0,i1,i2)];
+const double Valenciav_rU2 = auxevol_gfs[IDX4S(VALENCIAV_RU2GF, i0,i1,i2)];
+const double B_rU0 = auxevol_gfs[IDX4S(B_RU0GF, i0,i1,i2)];
+const double B_rU1 = auxevol_gfs[IDX4S(B_RU1GF, i0,i1,i2)];
+const double B_rU2 = auxevol_gfs[IDX4S(B_RU2GF, i0,i1,i2)];
+const double Valenciav_lU0 = auxevol_gfs[IDX4S(VALENCIAV_LU0GF, i0,i1,i2)];
+const double Valenciav_lU1 = auxevol_gfs[IDX4S(VALENCIAV_LU1GF, i0,i1,i2)];
+const double Valenciav_lU2 = auxevol_gfs[IDX4S(VALENCIAV_LU2GF, i0,i1,i2)];
+const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
+const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
+const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
+REAL A_rhsD0 = 0; REAL A_rhsD1 = 0; REAL A_rhsD2 = 0;
     """
     Memory_Write = """rhs_gfs[IDX4S(AD0GF,i0,i1,i2)] += A_rhsD0;
-    rhs_gfs[IDX4S(AD1GF,i0,i1,i2)] += A_rhsD1;
-    rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
+rhs_gfs[IDX4S(AD1GF,i0,i1,i2)] += A_rhsD1;
+rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
     """
 
     indices = ["i0","i1","i2"]
@@ -252,7 +255,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
             body     =  Memory_Read \
                        +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
                        +Memory_Write,
-            loopopts ="InteriorPoints")
+            loopopts ="InteriorPoints",
+            rel_path_for_Cparams=os.path.join("../"))
 
         desc = "Calculate the electric flux on the left face in direction " + str(flux_dirn) + "."
         name = "calculate_E_field_D" + str(flux_dirn) + "_left"
@@ -262,36 +266,38 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
             body     =  Memory_Read.replace(indices[flux_dirn],indicesp1[flux_dirn]) \
                        +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
                        +Memory_Write,
-            loopopts ="InteriorPoints")
+            loopopts ="InteriorPoints",
+            rel_path_for_Cparams=os.path.join("../"))
 
     import GiRaFFE_NRPy.Stilde_flux as Sf
 
     Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
-    const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
-    const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];
-    const double gamma_faceDD02 = auxevol_gfs[IDX4S(GAMMA_FACEDD02GF, i0,i1,i2)];
-    const double gamma_faceDD11 = auxevol_gfs[IDX4S(GAMMA_FACEDD11GF, i0,i1,i2)];
-    const double gamma_faceDD12 = auxevol_gfs[IDX4S(GAMMA_FACEDD12GF, i0,i1,i2)];
-    const double gamma_faceDD22 = auxevol_gfs[IDX4S(GAMMA_FACEDD22GF, i0,i1,i2)];
-    const double beta_faceU0 = auxevol_gfs[IDX4S(BETA_FACEU0GF, i0,i1,i2)];
-    const double beta_faceU1 = auxevol_gfs[IDX4S(BETA_FACEU1GF, i0,i1,i2)];
-    const double beta_faceU2 = auxevol_gfs[IDX4S(BETA_FACEU2GF, i0,i1,i2)];
-    const double Valenciav_rU0 = auxevol_gfs[IDX4S(VALENCIAV_RU0GF, i0,i1,i2)];
-    const double Valenciav_rU1 = auxevol_gfs[IDX4S(VALENCIAV_RU1GF, i0,i1,i2)];
-    const double Valenciav_rU2 = auxevol_gfs[IDX4S(VALENCIAV_RU2GF, i0,i1,i2)];
-    const double B_rU0 = auxevol_gfs[IDX4S(B_RU0GF, i0,i1,i2)];
-    const double B_rU1 = auxevol_gfs[IDX4S(B_RU1GF, i0,i1,i2)];
-    const double B_rU2 = auxevol_gfs[IDX4S(B_RU2GF, i0,i1,i2)];
-    const double Valenciav_lU0 = auxevol_gfs[IDX4S(VALENCIAV_LU0GF, i0,i1,i2)];
-    const double Valenciav_lU1 = auxevol_gfs[IDX4S(VALENCIAV_LU1GF, i0,i1,i2)];
-    const double Valenciav_lU2 = auxevol_gfs[IDX4S(VALENCIAV_LU2GF, i0,i1,i2)];
-    const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
-    const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
-    const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
+const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
+const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];
+const double gamma_faceDD02 = auxevol_gfs[IDX4S(GAMMA_FACEDD02GF, i0,i1,i2)];
+const double gamma_faceDD11 = auxevol_gfs[IDX4S(GAMMA_FACEDD11GF, i0,i1,i2)];
+const double gamma_faceDD12 = auxevol_gfs[IDX4S(GAMMA_FACEDD12GF, i0,i1,i2)];
+const double gamma_faceDD22 = auxevol_gfs[IDX4S(GAMMA_FACEDD22GF, i0,i1,i2)];
+const double beta_faceU0 = auxevol_gfs[IDX4S(BETA_FACEU0GF, i0,i1,i2)];
+const double beta_faceU1 = auxevol_gfs[IDX4S(BETA_FACEU1GF, i0,i1,i2)];
+const double beta_faceU2 = auxevol_gfs[IDX4S(BETA_FACEU2GF, i0,i1,i2)];
+const double Valenciav_rU0 = auxevol_gfs[IDX4S(VALENCIAV_RU0GF, i0,i1,i2)];
+const double Valenciav_rU1 = auxevol_gfs[IDX4S(VALENCIAV_RU1GF, i0,i1,i2)];
+const double Valenciav_rU2 = auxevol_gfs[IDX4S(VALENCIAV_RU2GF, i0,i1,i2)];
+const double B_rU0 = auxevol_gfs[IDX4S(B_RU0GF, i0,i1,i2)];
+const double B_rU1 = auxevol_gfs[IDX4S(B_RU1GF, i0,i1,i2)];
+const double B_rU2 = auxevol_gfs[IDX4S(B_RU2GF, i0,i1,i2)];
+const double Valenciav_lU0 = auxevol_gfs[IDX4S(VALENCIAV_LU0GF, i0,i1,i2)];
+const double Valenciav_lU1 = auxevol_gfs[IDX4S(VALENCIAV_LU1GF, i0,i1,i2)];
+const double Valenciav_lU2 = auxevol_gfs[IDX4S(VALENCIAV_LU2GF, i0,i1,i2)];
+const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
+const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
+const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
+REAL Stilde_fluxD0 = 0; REAL Stilde_fluxD1 = 0; REAL Stilde_fluxD2 = 0;
     """
     Memory_Write = """rhs_gfs[IDX4S(STILDED0GF, i0, i1, i2)] += invdx0*Stilde_fluxD0;
-    rhs_gfs[IDX4S(STILDED1GF, i0, i1, i2)] += invdx0*Stilde_fluxD1;
-    rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
+rhs_gfs[IDX4S(STILDED1GF, i0, i1, i2)] += invdx0*Stilde_fluxD1;
+rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
     """
 
     indices = ["i0","i1","i2"]
@@ -320,9 +326,10 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
             outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
             params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
             body     =  Memory_Read \
-                       +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
+                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
                        +Memory_Write.replace(invdx[0],invdx[flux_dirn]),
-            loopopts ="InteriorPoints")
+            loopopts ="InteriorPoints",
+            rel_path_for_Cparams=os.path.join("../"))
 
         desc = "Compute the flux of all 3 components of tilde{S}_i on the left face in the " + str(flux_dirn) + "."
         name = "calculate_Stilde_flux_D" + str(flux_dirn) + "_left"
@@ -330,11 +337,12 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
             outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
             params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
             body     =  Memory_Read.replace(indices[flux_dirn],indicesp1[flux_dirn]) \
-                       +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
+                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
                        +Memory_Write.replace(invdx[0],invdx[flux_dirn]).replace(assignment,assignmentp1),
-            loopopts ="InteriorPoints")
+            loopopts ="InteriorPoints",
+            rel_path_for_Cparams=os.path.join("../"))
 
-    subdir = "BCs"
+    subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
     import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
     BC.GiRaFFE_NRPy_BCs(os.path.join(out_dir,subdir))
@@ -364,7 +372,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
         outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
         params   ="const paramstruct *params,REAL *xx[3],REAL *auxevol_gfs,REAL *in_gfs",
         body     = fin.FD_outputC("returnstring",values_to_print,params="outCverbose=False").replace("IDX4","IDX4S"),
-        loopopts ="AllPoints,Read_xxs")
+        loopopts ="AllPoints,Read_xxs",
+        rel_path_for_Cparams=os.path.join("../"))
 
     C2P_P2C.GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi)
 
@@ -380,15 +389,23 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
         outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
         params   ="const paramstruct *params,REAL *auxevol_gfs,REAL *in_gfs",
         body     = fin.FD_outputC("returnstring",values_to_print,params="outCverbose=False").replace("IDX4","IDX4S"),
-        loopopts ="AllPoints")
+        loopopts ="AllPoints",
+        rel_path_for_Cparams=os.path.join("../"))
 
     # Write out the main driver itself:
-    with open(os.path.join(out_dir,"GiRaFFE_NRPy_Main_Driver.h")) as file:
-        file.write("""#include "RHSs/calculate_parentheticals_for_RHSs.h"
-#include "RHSs/calculate_AD_gauge_psi6Phi_RHSs"
+    with open(os.path.join(out_dir,"GiRaFFE_NRPy_Main_Driver.h"),"w") as file:
+        file.write("""// Structure to track ghostzones for PPM:
+typedef struct __gf_and_gz_struct__ {
+  REAL *gf;
+  int gz_lo[4],gz_hi[4];
+} gf_and_gz_struct;
+const int VX=0,VY=1,VZ=2,BX=3,BY=4,BZ=5;
+const int NUM_RECONSTRUCT_GFS = 6;
+
+#include "RHSs/calculate_parentheticals_for_RHSs.h"
+#include "RHSs/calculate_AD_gauge_psi6Phi_RHSs.h"
+#include "PPM/reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
 #include "FCVAL/interpolate_metric_gfs_to_cell_faces.h"
-#include "PPM/reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
-#include "PPM/reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
 #include "RHSs/calculate_StildeD0_source_term.h"
 #include "RHSs/calculate_StildeD1_source_term.h"
 #include "RHSs/calculate_StildeD2_source_term.h"
@@ -404,15 +421,18 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir)
 #include "RHSs/calculate_Stilde_flux_D1_left.h"
 #include "RHSs/calculate_Stilde_flux_D2_right.h"
 #include "RHSs/calculate_Stilde_flux_D2_left.h"
-#include "BCs/GiRaFFE_boundary_conditions.h"
+#include "boundary_conditions/GiRaFFE_boundary_conditions.h"
 #include "A2B/driver_AtoB.h"
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
 
-void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,const REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
-    calculate_parentheticals_for_RHSs(&params,in_gfs,auxevol_gfs);
-    calculate_AD_gauge_psi6Phi_RHSs(&params,in_gfs,auxevol_gfs,rhs_gfs);
+void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
+#include "set_Cparameters.h"
+    calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
+    calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
     
+    gf_and_gz_struct in_prims[NUM_RECONSTRUCT_GFS], out_prims_r[NUM_RECONSTRUCT_GFS], out_prims_l[NUM_RECONSTRUCT_GFS];
+    int which_prims_to_reconstruct[NUM_RECONSTRUCT_GFS],num_prims_to_reconstruct;
     const int Nxxp2NG012 = Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;
     REAL temporary[Nxxp2NG012];
 
@@ -461,38 +481,38 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,const REAL *restrict a
     // Then, add the fluxes to the RHS as appropriate.
     for(int flux_dirn=0;flux_dirn<3;flux_dirn++) {
         // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
-        interpolate_metric_gfs_to_cell_faces(&params,auxevol_gfs,flux_dirn);
-        reconstruct_set_of_prims_PPM_GRFFE_NRPy(&params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+        interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn);
+        reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
                                                 which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
         if(flux_dirn==0) {
-            calculate_StildeD0_source_term(&params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D0_right(&params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D0_left(&params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D0_right(&params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D0_left(&params,auxevol_gfs,rhs_gfs);
+            calculate_StildeD0_source_term(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_D0_right(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_D0_left(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D0_left(params,auxevol_gfs,rhs_gfs);
         }
         else if(flux_dirn==1) {
-            calculate_StildeD1_source_term(&params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D1_right(&params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D1_left(&params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D1_right(&params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D1_left(&params,auxevol_gfs,rhs_gfs);
+            calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_D1_right(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_D1_left(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D1_right(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D1_left(params,auxevol_gfs,rhs_gfs);
         }
         else {
-            calculate_StildeD2_source_term(&params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D2_right(&params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D2_left(&params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D2_right(&params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D2_left(&params,auxevol_gfs,rhs_gfs);
+            calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_D2_right(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_D2_left(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D2_right(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
         }
     }
 }
 
-void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],const REAL *restrict auxevol_gfs,REAL *restrict rhs_gfs) {
-    apply_bcs_potential(&params,rhs_gfs);
-    driver_A_to_B(&params,rhs_gfs,auxevol_gfs);
-    GiRaFFE_NRPy_cons_to_prims(&params,xx,auxevol_gfs,rhs_gfs);
-    GiRaFFE_NRPy_prims_to_cons(&params,auxevol_gfs,rhs_gfs);
-    apply_bcs_velocity(&params,auxevol_gfs);
+void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict rhs_gfs) {
+    apply_bcs_potential(params,rhs_gfs);
+    driver_A_to_B(params,rhs_gfs,auxevol_gfs);
+    GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,rhs_gfs);
+    GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,rhs_gfs);
+    apply_bcs_velocity(params,auxevol_gfs);
 }
 """)
