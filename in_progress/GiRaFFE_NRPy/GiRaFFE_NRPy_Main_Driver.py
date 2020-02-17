@@ -106,7 +106,7 @@ const REAL ValenciavU2 = auxevol_gfs[IDX4S(VALENCIAVU2GF,i0,i1,i2)];
 const REAL BU0 = auxevol_gfs[IDX4S(BU0GF,i0,i1,i2)];
 const REAL BU1 = auxevol_gfs[IDX4S(BU1GF,i0,i1,i2)];
 const REAL BU2 = auxevol_gfs[IDX4S(BU2GF,i0,i1,i2)];
-    """
+"""
     metric_deriv_access = ixp.zerorank1(DIM=3)
     metric_deriv_access[0] = """const REAL metricderivDDD000 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx0;
 const REAL metricderivDDD010 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx0;
@@ -119,7 +119,7 @@ const REAL shiftderivUD10 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0+1,i1,i2)]-auxevo
 const REAL shiftderivUD20 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx0;
 const REAL lapsederivD0 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx0;
 REAL Stilde_rhsD0;
-    """
+"""
     metric_deriv_access[1] = """const REAL metricderivDDD001 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx1;
 const REAL metricderivDDD011 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx1;
 const REAL metricderivDDD021 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx1;
@@ -131,7 +131,7 @@ const REAL shiftderivUD11 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1+1,i2)]-auxevo
 const REAL shiftderivUD21 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx1;
 const REAL lapsederivD1 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx1;
 REAL Stilde_rhsD1;
-    """
+"""
     metric_deriv_access[2] = """const REAL metricderivDDD002 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx2;
 const REAL metricderivDDD012 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx2;
 const REAL metricderivDDD022 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx2;
@@ -143,7 +143,7 @@ const REAL shiftderivUD12 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2+1)]-auxevo
 const REAL shiftderivUD22 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx2;
 const REAL lapsederivD2 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx2;
 REAL Stilde_rhsD2;
-    """
+"""
     write_final_quantity = ixp.zerorank1(DIM=3)
     write_final_quantity[0] = """rhs_gfs[IDX4S(STILDED0GF,i0,i1,i2)] += Stilde_rhsD0;
 """
@@ -227,11 +227,11 @@ const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
 const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
 const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
 REAL A_rhsD0 = 0; REAL A_rhsD1 = 0; REAL A_rhsD2 = 0;
-    """
+"""
     Memory_Write = """rhs_gfs[IDX4S(AD0GF,i0,i1,i2)] += A_rhsD0;
 rhs_gfs[IDX4S(AD1GF,i0,i1,i2)] += A_rhsD1;
 rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
-    """
+"""
 
     indices = ["i0","i1","i2"]
     indicesp1 = ["i0+1","i1+1","i2+1"]
@@ -294,11 +294,11 @@ const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
 const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
 const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
 REAL Stilde_fluxD0 = 0; REAL Stilde_fluxD1 = 0; REAL Stilde_fluxD2 = 0;
-    """
+"""
     Memory_Write = """rhs_gfs[IDX4S(STILDED0GF, i0, i1, i2)] += invdx0*Stilde_fluxD0;
 rhs_gfs[IDX4S(STILDED1GF, i0, i1, i2)] += invdx0*Stilde_fluxD1;
 rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
-    """
+"""
 
     indices = ["i0","i1","i2"]
     indicesp1 = ["i0+1","i1+1","i2+1"]
@@ -399,9 +399,11 @@ typedef struct __gf_and_gz_struct__ {
   REAL *gf;
   int gz_lo[4],gz_hi[4];
 } gf_and_gz_struct;
+// Some additional constants needed for PPM:
 const int VX=0,VY=1,VZ=2,BX=3,BY=4,BZ=5;
 const int NUM_RECONSTRUCT_GFS = 6;
 
+// Include ALL functions needed for evolution
 #include "RHSs/calculate_parentheticals_for_RHSs.h"
 #include "RHSs/calculate_AD_gauge_psi6Phi_RHSs.h"
 #include "PPM/reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
@@ -428,14 +430,19 @@ const int NUM_RECONSTRUCT_GFS = 6;
 
 void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
+    // First things first: we calculate the easier source terms that don't require flux directions
+    // This will also reset the RHSs for each gf at each new timestep.
     calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
     calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
     
+    // Now, we set up a bunch of structs of pointers to properly guide the PPM algorithm.
+    // They also count the number of ghostzones available.
     gf_and_gz_struct in_prims[NUM_RECONSTRUCT_GFS], out_prims_r[NUM_RECONSTRUCT_GFS], out_prims_l[NUM_RECONSTRUCT_GFS];
     int which_prims_to_reconstruct[NUM_RECONSTRUCT_GFS],num_prims_to_reconstruct;
     const int Nxxp2NG012 = Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;
     REAL temporary[Nxxp2NG012];
 
+    // This sets pointers to the portion of auxevol_gfs containing the relevant gridfunction.
     int ww=0;
     in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU0GF; 
       out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF; 
@@ -480,14 +487,25 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     // In each direction, perform the PPM reconstruction procedure.
     // Then, add the fluxes to the RHS as appropriate.
     for(int flux_dirn=0;flux_dirn<3;flux_dirn++) {
-        // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
+        // In each direction, interpolate the metric gfs (gamma,beta,alpha) to cell faces.
         interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn);
+        // Then, reconstruct the primitive variables on the cell faces.
+        // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
         reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
                                                 which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
+        // For example, if flux_dirn==0, then at gamma_faceDD00(i,j,k) represents gamma_{xx}
+        // at (i-1/2,j,k), Valenciav_lU0(i,j,k) is the x-component of the velocity at (i-1/2-epsilon,j,k),
+        // and Valenciav_rU0(i,j,k) is the x-component of the velocity at (i-1/2+epsilon,j,k).
+        
         if(flux_dirn==0) {
+            // Next, we calculate the source term for StildeD. Again, this also resets the rhs_gfs array at
+            // each new timestep.
             calculate_StildeD0_source_term(params,auxevol_gfs,rhs_gfs);
+            // Now, compute the electric field on each face of a cell and add it to the RHSs as appropriate
             calculate_E_field_D0_right(params,auxevol_gfs,rhs_gfs);
             calculate_E_field_D0_left(params,auxevol_gfs,rhs_gfs);
+            // Finally, we calculate the flux of StildeD and add the appropriate finite-differences 
+            // to the RHSs.
             calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
             calculate_Stilde_flux_D0_left(params,auxevol_gfs,rhs_gfs);
         }
@@ -509,10 +527,15 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 }
 
 void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict rhs_gfs) {
+    // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
     apply_bcs_potential(params,rhs_gfs);
     driver_A_to_B(params,rhs_gfs,auxevol_gfs);
+    // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
+    // Apply the current sheet prescription to the velocities
     GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,rhs_gfs);
+    // Then, recompute StildeD to be consistent with the new velocities
     GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,rhs_gfs);
+    // Finally, apply outflow boundary conditions to the velocities.
     apply_bcs_velocity(params,auxevol_gfs);
 }
 """)
