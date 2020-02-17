@@ -51,7 +51,7 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
                                       const int i0min,const int i0max, 
                                       const int i1min,const int i1max, 
                                       const int i2min,const int i2max) {
-#include "set_Cparameters.h"
+#include "../set_Cparameters.h"
     for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
         REAL dx_Ay,dx_Az,dy_Ax,dy_Az,dz_Ax,dz_Ay;
         // Check to see if we're on the +x or -x face. If so, use a downwinded- or upwinded-stencil, respectively.
@@ -146,7 +146,8 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
         compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1); imax[2]++;
     }
 """,
-        loopopts="InteriorPoints").replace("=NGHOSTS","=NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
+        loopopts="InteriorPoints",
+        rel_path_for_Cparams=os.path.join("../")).replace("=NGHOSTS","=NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
 
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
         file.write(driver_Ccode)

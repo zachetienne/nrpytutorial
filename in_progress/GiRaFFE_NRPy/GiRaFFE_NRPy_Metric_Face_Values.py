@@ -80,7 +80,8 @@ const int kronecker_delta[3][3] = { { 1,0,0 },
         }
     }
 
-""")
+""",
+    rel_path_for_Cparams=os.path.join("../"))
 
     with open(os.path.join(Ccodesdir,"interpolate_metric_gfs_to_cell_faces.h"),"a") as file:
         file.write(interp_Cfunc)

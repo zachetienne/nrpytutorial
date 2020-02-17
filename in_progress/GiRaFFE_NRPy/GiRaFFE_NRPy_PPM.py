@@ -47,7 +47,7 @@ static void reconstruct_set_of_prims_PPM_GRFFE_NRPy(const paramstruct *params,RE
                                                const int num_prims_to_reconstruct,const int *which_prims_to_reconstruct,
                                                const gf_and_gz_struct *in_prims,gf_and_gz_struct *out_prims_r,
                                                gf_and_gz_struct *out_prims_l,REAL *temporary) {
-#include "set_Cparameters.h"
+#include "../set_Cparameters.h"
   const int Nxx_plus_2NGHOSTS[3] = {Nxx_plus_2NGHOSTS0,Nxx_plus_2NGHOSTS1,Nxx_plus_2NGHOSTS2};
 
   REAL U[NUM_RECONSTRUCT_GFS][MAXNUMINDICES],dU[NUM_RECONSTRUCT_GFS][MAXNUMINDICES],slope_lim_dU[NUM_RECONSTRUCT_GFS][MAXNUMINDICES],
