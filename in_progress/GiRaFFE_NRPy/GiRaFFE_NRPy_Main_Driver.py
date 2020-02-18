@@ -488,7 +488,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     // Then, add the fluxes to the RHS as appropriate.
     for(int flux_dirn=0;flux_dirn<3;flux_dirn++) {
         // In each direction, interpolate the metric gfs (gamma,beta,alpha) to cell faces.
-        interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn);
+        interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
         // Then, reconstruct the primitive variables on the cell faces.
         // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
         reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
@@ -526,15 +526,15 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     }
 }
 
-void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict rhs_gfs) {
+void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs) {
     // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
-    apply_bcs_potential(params,rhs_gfs);
-    driver_A_to_B(params,rhs_gfs,auxevol_gfs);
+    apply_bcs_potential(params,evol_gfs);
+    driver_A_to_B(params,evol_gfs,auxevol_gfs);
     // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
     // Apply the current sheet prescription to the velocities
-    GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,rhs_gfs);
+    GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,evol_gfs);
     // Then, recompute StildeD to be consistent with the new velocities
-    GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,rhs_gfs);
+    GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,evol_gfs);
     // Finally, apply outflow boundary conditions to the velocities.
     apply_bcs_velocity(params,auxevol_gfs);
 }
