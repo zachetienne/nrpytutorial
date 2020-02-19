@@ -104,7 +104,6 @@ def parse_outCparams_string(params):
     SIMD_const_suffix = ""
     SIMD_debug = "False"
     enable_TYPE = "True"
-    CSE_ordering = "canonical"
 
     if params != "":
         params2 = re.sub("^,","",params)
@@ -155,8 +154,6 @@ def parse_outCparams_string(params):
                 SIMD_debug = value[i]
             elif parnm[i] == "enable_TYPE":
                 enable_TYPE = value[i]
-            elif parnm[i] == "CSE_ordering":
-                CSE_ordering = value[i]
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 sys.exit(1)
@@ -314,42 +311,6 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         SIMD_const_values = []
 
         CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order="canonical"))
-        
-        #------------------------------------------------------------------------------------------------
-#         replaced, reduced = CSE_results
-#         from sympy import Add, Mul, Pow, Symbol, preorder_traversal
-#         for i, (sym, expr) in enumerate(replaced):
-#             from sympy import srepr
-#             if str(sym) == 'tmp7':
-#                 print(expr)
-#                 print(srepr(expr), '\n')
-#             if ((expr.func == Add or expr.func == Mul) and 0 < len(expr.args) < 3 and \
-#                     all(arg.func == Symbol for arg in expr.args)) or \
-#                 (expr.func == Pow and expr.args[0].func == Symbol and expr.args[1] == 2):
-#                 sym_count = 0
-#                 for k in range(len(replaced) - i):
-#                     if sym in replaced[i + k][1].free_symbols:
-#                         for arg in preorder_traversal(replaced[i + k][1]):
-#                             if arg.func == Symbol and str(arg) == str(sym):
-#                                 sym_count += 1
-#                 for k in range(len(reduced)):
-#                     if sym in reduced[k].free_symbols:
-#                         for arg in preorder_traversal(reduced[k]):
-#                             if arg.func == Symbol and str(arg) == str(sym):
-#                                 sym_count += 1
-# #                 if str(sym) == 'tmp7':
-# #                     print("SYM_COUNT:", sym_count)
-# #                     print(expr)  
-#                 if 0 < sym_count < 4:
-#                     for k in range(len(replaced) - i):
-#                         if sym in replaced[i + k][1].free_symbols:
-#                             replaced[i + k] = (replaced[i + k][0], replaced[i + k][1].subs(sym, expr))
-#                     for k in range(len(reduced)):
-#                         if sym in reduced[k].free_symbols:
-#                             reduced[k] = reduced[k].subs(sym, expr)
-#                     replaced.pop(i)
-#         CSE_results = (replaced, reduced)
-        #------------------------------------------------------------------------------------------------
         
         for commonsubexpression in CSE_results[0]:
             FULLTYPESTRING = "const " + TYPE + " "
