@@ -78,13 +78,17 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     desc = "Calculate AD gauge term and psi6Phi RHSs"
     name = "calculate_AD_gauge_psi6Phi_RHSs"
-    outCfunction(
-        outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
+    source_Ccode = outCfunction(
+        outfile  = "returnstring", desc=desc, name=name,
         params   ="const paramstruct *params,const REAL *in_gfs,const REAL *auxevol_gfs,REAL *rhs_gfs",
         body     = fin.FD_outputC("returnstring",RHSs_to_print,params="outCverbose=False").replace("IDX4","IDX4S"),
         loopopts ="InteriorPoints",
-        rel_path_for_Cparams=os.path.join("../"))
-
+        rel_path_for_Cparams=os.path.join("../")).replace("=NGHOSTS","=NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
+    # Note the above .replace() functions. These serve to expand the loop range into the ghostzones, since 
+    # the second-order FD needs fewer than some other algorithms we use do. 
+    with open(os.path.join(out_dir,subdir,name+".h"),"w") as file:
+        file.write(source_Ccode)
+    
     # Declare all the Cparameters we will need
     metricderivDDD = ixp.declarerank3("metricderivDDD","sym01",DIM=3)
     shiftderivUD = ixp.declarerank2("shiftderivUD","nosym",DIM=3)
@@ -430,6 +434,10 @@ const int NUM_RECONSTRUCT_GFS = 6;
 
 void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
+    // First things first: initialize the RHSs to zero!
+    for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
+        rhs_gfs[ii] = 0.0;
+    }
     // First things first: we calculate the easier source terms that don't require flux directions
     // This will also reset the RHSs for each gf at each new timestep.
     calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
