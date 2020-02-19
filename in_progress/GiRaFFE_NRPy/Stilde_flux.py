@@ -30,7 +30,7 @@ def find_cp_cm(lapse,shifti,gupii):
     detm = b*b - 4*a*c
     
     import Min_Max_and_Piecewise_Expressions as noif
-    detm = sp.sqrt(noif.max_noif(sp.sympify(0.0),detm))
+    detm = sp.sqrt(noif.max_noif(sp.sympify(0),detm))
     global cplus,cminus
     cplus  = sp.Rational(1,2)*(-b/a + detm/a)
     cminus = sp.Rational(1,2)*(-b/a - detm/a)
@@ -54,12 +54,10 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
     global cmax,cmin
     
     import Min_Max_and_Piecewise_Expressions as noif
-    cmax = noif.max_noif(cpr,cpl)
-    cmax = noif.max_noif(cmax,sp.sympify(0.0))
+    cmax = noif.max_noif(noif.max_noif(cpr,cpl),sp.sympify(0))
     
     # And then, set cmin to the smaller of cmr,cml, and 0
-    cmin =  noif.min_noif(cmr,cml)
-    cmin = -noif.min_noif(cmin,sp.sympify(0.0))
+    cmin = -noif.min_noif(noif.min_noif(cmr,cml),sp.sympify(0))
 
 # We'll rewrite this assuming that we've passed the entire reconstructed
 # gridfunctions. You could also do this with only one point, but then you'd 

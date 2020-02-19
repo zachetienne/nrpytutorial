@@ -83,7 +83,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
         for i in range(3):
             for j in range(3):
                 # \bar{v}^i = 4 \pi \gamma^{ij} {\tilde S}_j / (\sqrt{\gamma} B^2)
-                ValenciavU[i] += sp.sympify(4.0)*M_PI*gammaUU[i][j]*outStildeD[j]/(GRHD.sqrtgammaDET*B2)
+                ValenciavU[i] += sp.sympify(4)*M_PI*gammaUU[i][j]*outStildeD[j]/(GRHD.sqrtgammaDET*B2)
 
     # This number determines how far away (in grid points) we will apply the fix.
     grid_points_from_z_plane = par.Cparameters("REAL",thismodule,"grid_points_from_z_plane",4.0)
@@ -101,7 +101,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
         # Remember, we only do this if abs(z) < (k+0.01)*dz. Note that we add 0.01; this helps
         # avoid floating point errors and division by zero. This is the same as abs(z) - (k+0.01)*dz<0
         coord = nrpyAbs(rfm.xx[2])
-        bound =(grid_points_from_z_plane+sp.sympify(0.01))*gri.dxx[2]
+        bound =(grid_points_from_z_plane+sp.Rational(1,100))*gri.dxx[2]
         ValenciavU[2] = noif.coord_leq_bound(coord,bound)*(newdriftvU2+betaU[2])/alpha \
                       + noif.coord_greater_bound(coord,bound)*ValenciavU[2]
 

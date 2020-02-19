@@ -112,16 +112,15 @@ def GiRaFFEfood_NRPy_1D_tests():
     import Min_Max_and_Piecewise_Expressions as noif
     bound = sp.sympify(0.1)/gammamu
 
-    Ayleft = gammamu*x - sp.sympify(0.015)
-    Aycenter = sp.sympify(1.15)*gammamu*x - sp.sympify(0.03)*g_AW
-    Ayright = sp.sympify(1.3)*gammamu*x - sp.sympify(0.015)
+    Ayleft = gammamu*x - sp.Rational(15,1000)
+    Aycenter = sp.Rational(115,100)*gammamu*x - sp.Rational(3,100)*g_AW
+    Ayright = sp.Rational(13,10)*gammamu*x - sp.Rational(15,1000)
 
-    AD[0] = sp.sympify(0.0)
+    AD[0] = sp.sympify(0)
     AD[1] = noif.coord_leq_bound(x,-bound)*Ayleft\
            +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Aycenter\
            +noif.coord_greater_bound(x,bound)*Ayright
-    AD[2] = y-gammamu*(sp.sympify(1.0)-mu_AW)*x
-    # <a id='step2'></a>
+    AD[2] = y-gammamu*(sp.sympify(1)-mu_AW)*x    # <a id='step2'></a>
     # ### Set the vectors $B^i$ and $E^i$ for the velocity
     # 
     # Now, we will set the magnetic and electric fields that we will need to define the initial velocities. First, we need to define $$f(x)=1+\sin (5\pi x);$$ note that in the definition of $B^i$, we need $f(x')$ where $x'=\gamma_\mu x$.
@@ -142,13 +141,13 @@ def GiRaFFEfood_NRPy_1D_tests():
     # 
 
 
-    Bzleft = sp.sympify(1.0)
-    Bzcenter = sp.sympify(1.0) + sp.sympify(0.15)*f_AW
-    Bzright = sp.sympify(1.3)
+    Bzleft = sp.sympify(1)
+    Bzcenter = sp.sympify(1) + sp.Rational(15,100)*f_AW
+    Bzright = sp.Rational(13,10)
 
     BpU = ixp.zerorank1()
-    BpU[0] = sp.sympify(1.0)
-    BpU[1] = sp.sympify(1.0)
+    BpU[0] = sp.sympify(1)
+    BpU[1] = sp.sympify(1)
     BpU[2] = noif.coord_leq_bound(x,-bound)*Bzleft\
             +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Bzcenter\
             +noif.coord_greater_bound(x,bound)*Bzright
@@ -163,8 +162,8 @@ def GiRaFFEfood_NRPy_1D_tests():
 
     EpU = ixp.zerorank1()
     EpU[0] = -BpU[2]
-    EpU[1] = sp.sympify(0.0)
-    EpU[2] = sp.sympify(1.0)
+    EpU[1] = sp.sympify(0)
+    EpU[2] = sp.sympify(1)
 
 
     # Next, we must transform the the fields into the grid frame. We'll do the magnetic fields first.
@@ -207,7 +206,7 @@ def GiRaFFEfood_NRPy_1D_tests():
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
 
-    B2 = sp.sympify(0.0)
+    B2 = sp.sympify(0)
     for i in range(3):
         # In flat spacetime, gamma_{ij} is just a Kronecker delta
         B2 += BU[i]**2 # This is trivial to extend to curved spacetime
