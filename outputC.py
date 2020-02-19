@@ -104,6 +104,7 @@ def parse_outCparams_string(params):
     SIMD_const_suffix = ""
     SIMD_debug = "False"
     enable_TYPE = "True"
+    CSE_ordering = "canonical"
 
     if params != "":
         params2 = re.sub("^,","",params)
@@ -154,6 +155,8 @@ def parse_outCparams_string(params):
                 SIMD_debug = value[i]
             elif parnm[i] == "enable_TYPE":
                 enable_TYPE = value[i]
+            elif parnm[i] == "CSE_ordering":
+                CSE_ordering = value[i]
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 sys.exit(1)
@@ -161,6 +164,42 @@ def parse_outCparams_string(params):
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,CSE_enable,CSE_varprefix,SIMD_enable,SIMD_const_suffix,SIMD_debug,enable_TYPE)
 
 import sympy as sp
+# Input:  cse_output = output from SymPy CSE with tuple format: (list of ordered pairs that 
+#            contain substituted symbols and their replaced expressions, reduced SymPy expression)
+# Output: output from SymPy CSE where postprocessing, such as back-substitution of addition/product
+#            of symbols, has been applied to the replaced/reduced expression(s)
+def cse_postprocess(cse_output):
+    replaced, reduced = cse_output
+    for i, (sym, expr) in enumerate(replaced):
+        # Search through replaced expressions for addition/product of 2 or less symbols
+        if ((expr.func == sp.Add or expr.func == sp.Mul) and 0 < len(expr.args) < 3 and \
+                all(arg.func == sp.Symbol for arg in expr.args)) or \
+            (expr.func == sp.Pow and expr.args[0].func == sp.Symbol and expr.args[1] == 2):
+            sym_count = 0 # Count the number of occurrences of the substituted symbol
+            for k in range(len(replaced) - i):
+                # Check if the substituted symbol appears in the replaced expressions
+                if sym in replaced[i + k][1].free_symbols:
+                    for arg in sp.preorder_traversal(replaced[i + k][1]):
+                        if arg.func == sp.Symbol and str(arg) == str(sym):
+                            sym_count += 1
+            for k in range(len(reduced)):
+                # Check if the substituted symbol appears in the reduced expression
+                if sym in reduced[k].free_symbols:
+                    for arg in sp.preorder_traversal(reduced[k]):
+                        if arg.func == sp.Symbol and str(arg) == str(sym):
+                            sym_count += 1
+            # If the number of occurrences of the substituted symbol is 3 or less, back-substitute
+            if 0 < sym_count < 4:
+                for k in range(len(replaced) - i):
+                    if sym in replaced[i + k][1].free_symbols:
+                        replaced[i + k] = (replaced[i + k][0], replaced[i + k][1].subs(sym, expr))
+                for k in range(len(reduced)):
+                    if sym in reduced[k].free_symbols:
+                        reduced[k] = reduced[k].subs(sym, expr)
+                # Remove the replaced expression from the list
+                replaced.pop(i)
+    return replaced, reduced
+
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
 #        output_varname_str = a single output variable name *or* a list of output
 #                             variable names, one per sympyexpr.
@@ -274,7 +313,44 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         SIMD_const_varnms = []
         SIMD_const_values = []
 
-        CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order='canonical')
+        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order="canonical"))
+        
+        #------------------------------------------------------------------------------------------------
+#         replaced, reduced = CSE_results
+#         from sympy import Add, Mul, Pow, Symbol, preorder_traversal
+#         for i, (sym, expr) in enumerate(replaced):
+#             from sympy import srepr
+#             if str(sym) == 'tmp7':
+#                 print(expr)
+#                 print(srepr(expr), '\n')
+#             if ((expr.func == Add or expr.func == Mul) and 0 < len(expr.args) < 3 and \
+#                     all(arg.func == Symbol for arg in expr.args)) or \
+#                 (expr.func == Pow and expr.args[0].func == Symbol and expr.args[1] == 2):
+#                 sym_count = 0
+#                 for k in range(len(replaced) - i):
+#                     if sym in replaced[i + k][1].free_symbols:
+#                         for arg in preorder_traversal(replaced[i + k][1]):
+#                             if arg.func == Symbol and str(arg) == str(sym):
+#                                 sym_count += 1
+#                 for k in range(len(reduced)):
+#                     if sym in reduced[k].free_symbols:
+#                         for arg in preorder_traversal(reduced[k]):
+#                             if arg.func == Symbol and str(arg) == str(sym):
+#                                 sym_count += 1
+# #                 if str(sym) == 'tmp7':
+# #                     print("SYM_COUNT:", sym_count)
+# #                     print(expr)  
+#                 if 0 < sym_count < 4:
+#                     for k in range(len(replaced) - i):
+#                         if sym in replaced[i + k][1].free_symbols:
+#                             replaced[i + k] = (replaced[i + k][0], replaced[i + k][1].subs(sym, expr))
+#                     for k in range(len(reduced)):
+#                         if sym in reduced[k].free_symbols:
+#                             reduced[k] = reduced[k].subs(sym, expr)
+#                     replaced.pop(i)
+#         CSE_results = (replaced, reduced)
+        #------------------------------------------------------------------------------------------------
+        
         for commonsubexpression in CSE_results[0]:
             FULLTYPESTRING = "const " + TYPE + " "
             if outCparams.enable_TYPE == "False":
