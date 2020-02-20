@@ -110,7 +110,7 @@ def GiRaFFEfood_NRPy_1D_tests():
     AD = ixp.zerorank1()
 
     import Min_Max_and_Piecewise_Expressions as noif
-    bound = sp.sympify(0.1)/gammamu
+    bound = sp.Rational(1,10)/gammamu
 
     Ayleft = gammamu*x - sp.Rational(15,1000)
     Aycenter = sp.Rational(115,100)*gammamu*x - sp.Rational(3,100)*g_AW
@@ -128,7 +128,7 @@ def GiRaFFEfood_NRPy_1D_tests():
 
 
     xprime = gammamu*x
-    f_AW = 1.0 + sp.sin(5.0*M_PI*xprime)
+    f_AW = 1 + sp.sin(5*M_PI*xprime)
 
 
     # We will now set the magnetic field in the wave frame:
