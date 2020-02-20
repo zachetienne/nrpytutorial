@@ -13,15 +13,21 @@ import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
+import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
+import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
+import GiRaFFE_NRPy.GiRaFFE_NRPy_Metric_Face_Values as FCVAL
+import GiRaFFE_NRPy.GiRaFFE_NRPy_PPM as PPM
+import GiRaFFE_NRPy.Afield_flux as Af
+import GiRaFFE_NRPy.Stilde_flux as Sf
+import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
+import GiRaFFE_NRPy.GiRaFFE_NRPy_A2B as A2B
+import GiRaFFE_NRPy.GiRaFFE_NRPy_C2P_P2C as C2P_P2C
 
 thismodule = "GiRaFFE_NRPy_Main_Driver"
 
 def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     cmd.mkdir(out_dir)
     
-    import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
-    import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
-
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaDD","sym01",DIM=3)
     betaU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","betaU",DIM=3)
     alpha = gri.register_gridfunctions("AUXEVOL","alpha")
@@ -182,15 +188,12 @@ REAL Stilde_rhsD2;
 
     subdir = "FCVAL"
     cmd.mkdir(os.path.join(out_dir, subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_Metric_Face_Values as FCVAL
     FCVAL.GiRaFFE_NRPy_FCVAL(os.path.join(out_dir,subdir))
     
     subdir = "PPM"
     cmd.mkdir(os.path.join(out_dir, subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_PPM as PPM
     PPM.GiRaFFE_NRPy_PPM(os.path.join(out_dir,subdir))
     
-    import GiRaFFE_NRPy.Afield_flux as Af
 
     # We will pass values of the gridfunction on the cell faces into the function. This requires us
     # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
@@ -273,7 +276,6 @@ rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
             loopopts ="InteriorPoints",
             rel_path_for_Cparams=os.path.join("../"))
 
-    import GiRaFFE_NRPy.Stilde_flux as Sf
 
     Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
 const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
@@ -348,15 +350,12 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
 
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
     BC.GiRaFFE_NRPy_BCs(os.path.join(out_dir,subdir))
     
     subdir = "A2B"
     cmd.mkdir(os.path.join(out_dir,subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_A2B as A2B
     A2B.GiRaFFE_NRPy_A2B(os.path.join(out_dir,subdir),gammaDD,AD,BU)
     
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_C2P_P2C as C2P_P2C
     C2P_P2C.GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha)
 
     values_to_print = [\
