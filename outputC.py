@@ -197,8 +197,8 @@ def cse_postprocess(cse_output):
                     for arg in sp.preorder_traversal(reduced[k]):
                         if arg.func == sp.Symbol and str(arg) == str(sym):
                             sym_count += 1
-            # If the number of occurrences of the substituted symbol is 3 or less, back-substitute
-            if 0 < sym_count < 4:
+            # If the number of occurrences of the substituted symbol is 2 or less, back-substitute
+            if 0 < sym_count < 3:
                 for k in range(len(replaced) - i):
                     if sym in replaced[i + k][1].free_symbols:
                         replaced[i + k] = (replaced[i + k][0], replaced[i + k][1].subs(sym, expr))
