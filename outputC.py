@@ -182,7 +182,7 @@ def cse_postprocess(cse_output):
     for i, (sym, expr) in enumerate(replaced):
         # Search through replaced expressions for addition/product of 2 or less symbols
         if ((expr.func == sp.Add or expr.func == sp.Mul) and 0 < len(expr.args) < 3 and \
-                all(arg.func == sp.Symbol for arg in expr.args)) or \
+                all((arg.func == sp.Symbol or arg.is_integer) for arg in expr.args)) or \
             (expr.func == sp.Pow and expr.args[0].func == sp.Symbol and expr.args[1] == 2):
             sym_count = 0 # Count the number of occurrences of the substituted symbol
             for k in range(len(replaced) - i):
