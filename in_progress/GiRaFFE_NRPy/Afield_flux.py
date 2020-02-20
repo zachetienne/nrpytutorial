@@ -30,16 +30,18 @@ def find_cp_cm(lapse,shifti,gupii):
     # Outputs: cplus,cminus 
     
     # a = 1/(alpha^2)
-    a = 1/(lapse*lapse)
+    a = sp.sympify(1)/(lapse*lapse)
     # b = 2 beta^i / alpha^2
-    b = 2 * shifti /(lapse*lapse)
+    b = sp.sympify(2) * shifti /(lapse*lapse)
     # c = -g^{ii} + (beta^i)^2 / alpha^2
     c = - gupii + shifti*shifti/(lapse*lapse)
     
     # Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
     # negative value to the sqrt function.
-    detm = b*b - 4*a*c
-    detm = sp.sqrt(sp.Rational(1,2)*(detm + nrpyAbs(detm)))
+    detm = b*b - sp.sympify(4)*a*c
+
+    import Min_Max_and_Piecewise_Expressions as noif
+    detm = sp.sqrt(noif.max_noif(sp.sympify(0),detm))
     global cplus,cminus
     cplus  = sp.Rational(1,2)*(-b/a + detm/a)
     cminus = sp.Rational(1,2)*(-b/a - detm/a)
@@ -62,12 +64,12 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
     
     global cmax,cmin
     # Now, we need to set cmax to the larger of cpr,cpl, and 0
-    cmax = sp.Rational(1,2)*(cpr+cpl+nrpyAbs(cpr-cpl))
-    cmax = sp.Rational(1,2)*(cmax+nrpyAbs(cmax))
+    
+    import Min_Max_and_Piecewise_Expressions as noif
+    cmax = noif.max_noif(noif.max_noif(cpr,cpl),sp.sympify(0))
     
     # And then, set cmin to the smaller of cmr,cml, and 0
-    cmin =  sp.Rational(1,2)*(cmr+cml-nrpyAbs(cmr-cml))
-    cmin = -sp.Rational(1,2)*(cmin-nrpyAbs(cmin))
+    cmin = -noif.min_noif(noif.min_noif(cmr,cml),sp.sympify(0))
 
 def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,ValenciavU,BU):
     GRHD.compute_sqrtgammaDET(gammaDD)

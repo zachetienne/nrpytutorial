@@ -19,15 +19,15 @@ def find_cp_cm(lapse,shifti,gupii):
     # Outputs: cplus,cminus 
     
     # a = 1/(alpha^2)
-    a = 1/(lapse*lapse)
+    a = sp.sympify(1)/(lapse*lapse)
     # b = 2 beta^i / alpha^2
-    b = 2 * shifti /(lapse*lapse)
+    b = sp.sympify(2) * shifti /(lapse*lapse)
     # c = -g^{ii} + (beta^i)^2 / alpha^2
     c = - gupii + shifti*shifti/(lapse*lapse)
     
     # Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
     # negative value to the sqrt function.
-    detm = b*b - 4*a*c
+    detm = b*b - sp.sympify(4)*a*c
     
     import Min_Max_and_Piecewise_Expressions as noif
     detm = sp.sqrt(noif.max_noif(sp.sympify(0),detm))

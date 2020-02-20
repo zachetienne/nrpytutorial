@@ -95,14 +95,13 @@ mu_AW = par.Cparameters("REAL",thismodule,["mu_AW"], -0.5) # The wave speed
 M_PI  = par.Cparameters("#define",thismodule,["M_PI"], "")
 
 def GiRaFFEfood_NRPy_1D_tests():
-    gammamu = 1/sp.sqrt(1-mu_AW**2)
+    gammamu = sp.sympify(1)/sp.sqrt(sp.sympify(1)-mu_AW**2)
 
     # We'll use reference_metric.py to define x and y
     x = rfm.xxCart[0]
     y = rfm.xxCart[1]
 
-    g_AW = sp.cos(5*M_PI*gammamu*x)/M_PI
-
+    g_AW = sp.cos(sp.sympify(5)*M_PI*gammamu*x)/M_PI
 
     # Now, we can define the vector potential. We will create three copies of this variable, because the potential is uniquely defined in three zones. Data for $x \leq -0.1/\gamma_\mu$ shall be referred to as "left", data for $-0.1/\gamma_\mu \leq x \leq 0.1/\gamma_\mu$ as "center", and data for $x \geq 0.1/\gamma_\mu$ as "right".
 
