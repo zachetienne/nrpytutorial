@@ -25,7 +25,7 @@ import GRFFE.equations as GRFFE
 import WeylScal4NRPy.WeylScalars_Cartesian as weyl
 
 # We'll write this as a function so that we can calculate the expressions on-demand for any choice of i
-def find_cp_cm(lapse,shifti,gupii):
+def find_cp_cm(lapse,shifti,gammaUUii):
     # Inputs:  u0,vi,lapse,shift,gammadet,gupii
     # Outputs: cplus,cminus 
     
@@ -34,7 +34,7 @@ def find_cp_cm(lapse,shifti,gupii):
     # b = 2 beta^i / alpha^2
     b = sp.sympify(2) * shifti /(lapse*lapse)
     # c = -g^{ii} + (beta^i)^2 / alpha^2
-    c = - gupii + shifti*shifti/(lapse*lapse)
+    c = - gammaUUii + shifti*shifti/(lapse*lapse)
     
     # Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
     # negative value to the sqrt function.
