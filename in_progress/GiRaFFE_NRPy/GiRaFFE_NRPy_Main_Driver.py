@@ -433,11 +433,12 @@ const int NUM_RECONSTRUCT_GFS = 6;
 
 void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
-    // First things first: initialize the RHSs to zero!
+    // First thing's first: initialize the RHSs to zero!
+#pragma omp parallel for
     for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
         rhs_gfs[ii] = 0.0;
     }
-    // First things first: we calculate the easier source terms that don't require flux directions
+    // First thing's first: we calculate the easier source terms that don't require flux directions
     // This will also reset the RHSs for each gf at each new timestep.
     calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
     calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
