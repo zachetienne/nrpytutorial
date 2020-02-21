@@ -246,8 +246,8 @@ rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
     subdir = "RHSs"
     for flux_dirn in range(3):
         E_field_to_print = [\
-                            -sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+1)%3],\
-                            -sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+2)%3],\
+                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+1)%3],\
+                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+2)%3],\
                            ]
         E_field_names = [\
                          "A_rhsD"+str((flux_dirn+1)%3),\
