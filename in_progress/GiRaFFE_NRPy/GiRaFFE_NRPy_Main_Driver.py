@@ -438,7 +438,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
         rhs_gfs[ii] = 0.0;
     }
-    // First thing's first: we calculate the easier source terms that don't require flux directions
+    // Next calculate the easier source terms that don't require flux directions
     // This will also reset the RHSs for each gf at each new timestep.
     calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
     calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
