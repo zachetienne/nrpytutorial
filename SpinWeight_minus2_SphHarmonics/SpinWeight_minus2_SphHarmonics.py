@@ -17,8 +17,9 @@
 # Step 1: Initialize needed Python/NRPy+ modules 
 from outputC import *             # NRPy+: Core C code output module
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import os                         # Python built-in: Multiplatform operating system functions
 
-def SpinWeight_minus2_SphHarmonics(maximum_l=8,filename="SpinWeight_minus2_SphHarmonics/SpinWeight_minus2_SphHarmonics.h"):
+def SpinWeight_minus2_SphHarmonics(maximum_l=8,filename=os.path.join("SpinWeight_minus2_SphHarmonics","SpinWeight_minus2_SphHarmonics.h")):
     # Step 2: Defining the Goldberg function
 
     # Step 2.a: Declare SymPy symbols:
