@@ -179,7 +179,9 @@ def parse_outCparams_string(params):
 #            of symbols, has been applied to the replaced/reduced expression(s)
 def cse_postprocess(cse_output):
     replaced, reduced = cse_output
-    for i, (sym, expr) in enumerate(replaced):
+    i = 0
+    while i < len(replaced):
+        sym, expr = replaced[i]
         # Search through replaced expressions for addition/product of 2 or less symbols
         if ((expr.func == sp.Add or expr.func == sp.Mul) and 0 < len(expr.args) < 3 and \
                 all((arg.func == sp.Symbol or arg.is_integer or arg.is_rational) for arg in expr.args)) or \
@@ -206,7 +208,8 @@ def cse_postprocess(cse_output):
                     if sym in reduced[k].free_symbols:
                         reduced[k] = reduced[k].subs(sym, expr)
                 # Remove the replaced expression from the list
-                replaced.pop(i)
+                replaced.pop(i); i -= 1
+        i += 1
     return replaced, reduced
 
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
