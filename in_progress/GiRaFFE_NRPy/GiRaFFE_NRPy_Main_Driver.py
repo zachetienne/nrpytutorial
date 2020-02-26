@@ -431,6 +431,26 @@ const int NUM_RECONSTRUCT_GFS = 6;
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
 
+void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
+#include "set_Cparameters.h"
+    char filename[100];
+    sprintf(filename,"BU0_override-%08d.bin",n);
+    FILE *out2D = fopen(filename, "rb");
+    fread(auxevol_gfs+BU0GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
+          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
+    fclose(out2D);
+    sprintf(filename,"BU1_override-%08d.bin",n);
+    out2D = fopen(filename, "rb");
+    fread(auxevol_gfs+BU1GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
+          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
+    fclose(out2D);
+    sprintf(filename,"BU2_override-%08d.bin",n);
+    out2D = fopen(filename, "rb");
+    fread(auxevol_gfs+BU2GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
+          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
+    fclose(out2D);
+}
+
 void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
     // First thing's first: initialize the RHSs to zero!
@@ -534,15 +554,16 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     }
 }
 
-void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs) {
+void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs,const int n) {
     // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
     apply_bcs_potential(params,evol_gfs);
     driver_A_to_B(params,evol_gfs,auxevol_gfs);
+    //override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
     // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
     // Apply the current sheet prescription to the velocities
     GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,evol_gfs);
     // Then, recompute StildeD to be consistent with the new velocities
-    GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,evol_gfs);
+    //GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,evol_gfs);
     // Finally, apply outflow boundary conditions to the velocities.
     apply_bcs_velocity(params,auxevol_gfs);
 }
