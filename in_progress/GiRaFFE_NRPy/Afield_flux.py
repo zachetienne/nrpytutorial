@@ -68,7 +68,6 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
     cmin = -noif.min_noif(noif.min_noif(cmr,cml),sp.sympify(0))
 
 def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,ValenciavU,BU):
-    GRHD.compute_sqrtgammaDET(gammaDD)
     # Define Levi-Civita symbol
     def define_LeviCivitaSymbol_rank3(DIM=-1):
         if DIM == -1:
@@ -82,13 +81,13 @@ def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,Valenc
                     # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
                     LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
         return LeviCivitaSymbol
-
+    GRHD.compute_sqrtgammaDET(gammaDD)
+    # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
+    LeviCivitaDDD = define_LeviCivitaSymbol_rank3()
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                LCijk = LeviCivitaDDD[i][j][k]
-                LeviCivitaDDD[i][j][k] = LCijk * GRHD.sqrtgammaDET
-    #             LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
+                LeviCivitaDDD[i][j][k] *= GRHD.sqrtgammaDET
 
     global U,F
     # Flux F = \epsilon_{ijk} v^j B^k
