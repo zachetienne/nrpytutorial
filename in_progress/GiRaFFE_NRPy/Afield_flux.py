@@ -20,10 +20,6 @@ thismodule = "GiRaFFE_NRPy-Induction_Equation"
 import GRHD.equations as GRHD
 import GRFFE.equations as GRFFE
 
-# Import the Levi-Civita symbol and build the corresponding tensor.
-# We already have a handy function to define the Levi-Civita symbol in WeylScalars
-import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-
 # We'll write this as a function so that we can calculate the expressions on-demand for any choice of i
 def find_cp_cm(lapse,shifti,gammaUUii):
     # Inputs:  u0,vi,lapse,shift,gammadet,gupii
@@ -73,8 +69,20 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
 
 def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,ValenciavU,BU):
     GRHD.compute_sqrtgammaDET(gammaDD)
-    # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
-    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
+    # Define Levi-Civita symbol
+    def define_LeviCivitaSymbol_rank3(DIM=-1):
+        if DIM == -1:
+            DIM = par.parval_from_str("DIM")
+
+        LeviCivitaSymbol = ixp.zerorank3()
+
+        for i in range(DIM):
+            for j in range(DIM):
+                for k in range(DIM):
+                    # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
+                    LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
+        return LeviCivitaSymbol
+
     for i in range(3):
         for j in range(3):
             for k in range(3):

@@ -325,7 +325,8 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         SIMD_const_varnms = []
         SIMD_const_values = []
 
-        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order=outCparams.CSE_sorting))
+#        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order=outCparams.CSE_sorting))
+        CSE_results = (sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), order=outCparams.CSE_sorting))
         for commonsubexpression in CSE_results[0]:
             FULLTYPESTRING = "const " + TYPE + " "
             if outCparams.enable_TYPE == "False":
