@@ -260,7 +260,7 @@ static inline void monotonize_NRPy(const REAL U,REAL Ur,REAL Ul) {
   const int max_shift=(MAXNUMINDICES/2);                                \\
   int index_arr_3DB[MAXNUMINDICES][MAXNUMINDICES][MAXNUMINDICES];       \\
   for(int idx_k=IJKLOHI[4];idx_k<=IJKLOHI[5];idx_k++) for(int idx_j=IJKLOHI[2];idx_j<=IJKLOHI[3];idx_j++) for(int idx_i=IJKLOHI[0];idx_i<=IJKLOHI[1];idx_i++) { \\
-        index_arr_3DB[idx_k+max_shift][idx_j+max_shift][idx_i+max_shift]=CCTK_GFINDEX3D(cctkGH,i+idx_i,j+idx_j,k+idx_k); \\
+        index_arr_3DB[idx_k+max_shift][idx_j+max_shift][idx_i+max_shift]=IDX3S(i+idx_i,j+idx_j,k+idx_k); \\
       }
 
 #endif /* loop_defines_reconstruction_NRPy_H_ */
