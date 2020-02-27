@@ -557,8 +557,8 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs,const int n) {
     // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
     apply_bcs_potential(params,evol_gfs);
-    driver_A_to_B(params,evol_gfs,auxevol_gfs);
-    //override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
+    //driver_A_to_B(params,evol_gfs,auxevol_gfs);
+    override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
     // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
     // Apply the current sheet prescription to the velocities
     GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,evol_gfs);
