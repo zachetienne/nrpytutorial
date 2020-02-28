@@ -39,8 +39,8 @@ const int kronecker_delta[4][3] = { { 0,0,0 },
 // You'll find the #define's for LOOP_DEFINE and SET_INDEX_ARRAYS_NRPY inside:
 #include "loop_defines_reconstruction_NRPy.h"
 
-static inline REAL slope_limit_NRPy(const REAL dU,const REAL dUp1);
-static inline void monotonize_NRPy(const REAL U,REAL Ur,REAL Ul);
+static inline REAL slope_limit_NRPy(const REAL *dU,const REAL *dUp1);
+static inline void monotonize_NRPy(const REAL *U,REAL *Ur,REAL *Ul);
 
 
 static void reconstruct_set_of_prims_PPM_GRFFE_NRPy(const paramstruct *params,REAL *auxevol_gfs,const int flux_dirn,
@@ -92,9 +92,9 @@ static void reconstruct_set_of_prims_PPM_GRFFE_NRPy(const paramstruct *params,RE
       dU[whichvar][PLUS2]  = U[whichvar][PLUS2] - U[whichvar][PLUS1];  
 
       // Then, compute slope-limited dU, using MC slope limiter:
-      slope_lim_dU[whichvar][MINUS1]=slope_limit_NRPy(dU[whichvar][MINUS1],dU[whichvar][PLUS0]);
-      slope_lim_dU[whichvar][PLUS0] =slope_limit_NRPy(dU[whichvar][PLUS0], dU[whichvar][PLUS1]);
-      slope_lim_dU[whichvar][PLUS1] =slope_limit_NRPy(dU[whichvar][PLUS1], dU[whichvar][PLUS2]);
+      slope_lim_dU[whichvar][MINUS1]=slope_limit_NRPy(&dU[whichvar][MINUS1],&dU[whichvar][PLUS0]);
+      slope_lim_dU[whichvar][PLUS0] =slope_limit_NRPy(&dU[whichvar][PLUS0], &dU[whichvar][PLUS1]);
+      slope_lim_dU[whichvar][PLUS1] =slope_limit_NRPy(&dU[whichvar][PLUS1], &dU[whichvar][PLUS2]);
 
       // Finally, compute face values Ur and Ul based on the PPM prescription 
       //   (Eq. A1 in http://arxiv.org/pdf/astro-ph/0503420.pdf, but using standard 1/6=(1.0/6.0) coefficient)
@@ -133,7 +133,7 @@ static void reconstruct_set_of_prims_PPM_GRFFE_NRPy(const paramstruct *params,RE
       Ul[whichvar][PLUS0]   = Ul[whichvar][PLUS0];
 
       // Then monotonize
-      monotonize_NRPy(U[whichvar][PLUS0],Ur[whichvar][PLUS0],Ul[whichvar][PLUS0]);
+      monotonize_NRPy(&U[whichvar][PLUS0],&Ur[whichvar][PLUS0],&Ul[whichvar][PLUS0]);
 
       out_prims_r[whichvar].gf[index_arr[flux_dirn][PLUS0]] = Ur[whichvar][PLUS0];
       out_prims_l[whichvar].gf[index_arr[flux_dirn][PLUS0]] = Ul[whichvar][PLUS0];
@@ -188,10 +188,10 @@ static void reconstruct_set_of_prims_PPM_GRFFE_NRPy(const paramstruct *params,RE
 //Eq. 60 in JOURNAL OF COMPUTATIONAL PHYSICS 123, 1-14 (1996) 
 //   [note the factor of 2 missing in the |a_{j+1} - a_{j}| term]. 
 //   Recall that dU = U_{i} - U_{i-1}.
-static inline REAL slope_limit_NRPy(const REAL dU,const REAL dUp1) {
-  if(dU*dUp1 > 0.0) {
+static inline REAL slope_limit_NRPy(const REAL *dU,const REAL *dUp1) {
+  if((*dU)*(*dUp1) > 0.0) {
     //delta_m_U=0.5 * [ (u_(i+1)-u_i) + (u_i-u_(i-1)) ] = (u_(i+1) - u_(i-1))/2  <-- first derivative, second-order; this should happen most of the time (smooth flows)
-    const REAL delta_m_U = 0.5*(dU + dUp1);
+    const REAL delta_m_U = 0.5*((*dU) + (*dUp1));
     // EXPLANATION OF BELOW LINE OF CODE.
     // In short, sign_delta_a_j = sign(delta_m_U) = (0.0 < delta_m_U) - (delta_m_U < 0.0).
     //    If delta_m_U>0, then (0.0 < delta_m_U)==1, and (delta_m_U < 0.0)==0, so sign_delta_a_j=+1
@@ -199,26 +199,26 @@ static inline REAL slope_limit_NRPy(const REAL dU,const REAL dUp1) {
     //    If delta_m_U==0,then (0.0 < delta_m_U)==0, and (delta_m_U < 0.0)==0, so sign_delta_a_j=0
     const int sign_delta_m_U = (0.0 < delta_m_U) - (delta_m_U < 0.0);
     //Decide whether to use 2nd order derivative or first-order derivative, limiting slope.
-    return sign_delta_m_U*MIN(fabs(delta_m_U),MIN(SLOPE_LIMITER_COEFF*fabs(dUp1),SLOPE_LIMITER_COEFF*fabs(dU)));
+    return sign_delta_m_U*MIN(fabs(delta_m_U),MIN(SLOPE_LIMITER_COEFF*fabs(*dUp1),SLOPE_LIMITER_COEFF*fabs(*dU)));
   }
   return 0.0;
 }
 
-static inline void monotonize_NRPy(const REAL U,REAL Ur,REAL Ul) {
-  const REAL dU = Ur - Ul;
-  const REAL mU = 0.5*(Ur+Ul);
+static inline void monotonize_NRPy(const REAL *U,REAL *Ur,REAL *Ul) {
+  const REAL dU = *Ur - *Ul;
+  const REAL mU = 0.5*(*Ur+*Ul);
   
-  if ( (Ur-U)*(U-Ul) <= 0.0) { 
-    Ur = U;
-    Ul = U;
+  if ( ((*Ur)-(*U))*((*U)-(*Ul)) <= 0.0) { 
+    *Ur = *U;
+    *Ul = *U;
     return;
   }
-  if ( dU*(U-mU) > (1.0/6.0)*SQR(dU)) { 
-    Ul = 3.0*U - 2.0*Ur;
+  if ( dU*((*U)-mU) > (1.0/6.0)*SQR(dU)) { 
+    *Ul = 3.0*(*U) - 2.0*(*Ur);
     return;
   }
-  if ( dU*(U-mU) < -(1.0/6.0)*SQR(dU)) {
-    Ur = 3.0*U - 2.0*Ul;
+  if ( dU*((*U)-mU) < -(1.0/6.0)*SQR(dU)) {
+    *Ur = 3.0*(*U) - 2.0*(*Ul);
     return;
   }
 }
