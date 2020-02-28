@@ -78,10 +78,10 @@ def calculate_GRFFE_Tmunu_and_contractions(flux_dirn, mom_comp, gammaDD,betaU,al
     GRHD.compute_sqrtgammaDET(gammaDD)
 
     GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
-    GRFFE.compute_smallb4U_with_driftvU_for_FFE(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
-    GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4_with_driftv_for_FFE_U)
+    GRFFE.compute_smallb4U(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
+    GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4U)
 
-    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4_with_driftv_for_FFE_U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU)
+    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU)
     GRFFE.compute_TEM4UD(gammaDD, betaU, alpha, GRFFE.TEM4UU)
 
     # Compute conservative variables in terms of primitive variables
