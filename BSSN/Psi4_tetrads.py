@@ -105,7 +105,7 @@ def Psi4_tetrads():
             for j in range(DIM):
                 for k in range(DIM):
                     # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
-                    LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) / 2
+                    LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
         return LeviCivitaSymbol
 
     # Step 2.h: Define v3U
