@@ -16,7 +16,7 @@ def append_to_make_code_defn_list(filename):
         make_code_defn_list.append(filename)
     return filename
 
-def driver_C_codes_validate(Csrcdict, thornname,
+def driver_C_codes_validate(Csrcdict, ThornName,
                             rhs_list,evol_gfs_list,aux_gfs_list,auxevol_gfs_list,
                             LapseCondition = "OnePlusLog", enable_stress_energy_source_terms=False):
     # First the ETK banner code, proudly showing the NRPy+ banner
@@ -35,7 +35,7 @@ void BaikalETK_Banner()
 
     # Finally add C code string to dictionaries (Python dictionaries are immutable)
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("Banner.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("Banner.c")] = outstr.replace("BaikalETK",ThornName)
 
     # Then the RegisterSlicing() function, needed for other ETK thorns
     outstr = """
@@ -50,7 +50,7 @@ int BaikalETK_RegisterSlicing (void)
 }"""
 
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("RegisterSlicing.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("RegisterSlicing.c")] = outstr.replace("BaikalETK",ThornName)
 
     # Next BaikalETK_Symmetry_registration(): Register symmetries
 
@@ -118,7 +118,7 @@ void BaikalETK_Symmetry_registration(CCTK_ARGUMENTS)
 
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("Symmetry_registration_oldCartGrid3D.c")] = \
-        outstr.replace("BaikalETK",thornname)
+        outstr.replace("BaikalETK",ThornName)
 
     # Next set RHSs to zero
     outstr = """
@@ -142,7 +142,7 @@ void BaikalETK_zero_rhss(CCTK_ARGUMENTS)
                       ["#pragma omp parallel for","","",],"",set_rhss_to_zero)
     outstr += "}\n"
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("zero_rhss.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("zero_rhss.c")] = outstr.replace("BaikalETK",ThornName)
 
     # Next registration with the Method of Lines thorn
     outstr = """
@@ -176,7 +176,7 @@ void BaikalETK_MoL_registration(CCTK_ARGUMENTS)
 }
 """
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("MoL_registration.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("MoL_registration.c")] = outstr.replace("BaikalETK",ThornName)
 
     # Next register with the boundary conditions thorns.
     # PART 1: Set BC type to "none" for all variables
@@ -226,7 +226,7 @@ void BaikalETK_BoundaryConditions_aux_gfs(CCTK_ARGUMENTS) {
     outstr += "}\n"
 
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("BoundaryConditions.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("BoundaryConditions.c")] = outstr.replace("BaikalETK",ThornName)
 
     # PART 2: Set C code for calling NewRad BCs
     #   As explained in lean_public/LeanBSSNMoL/src/calc_bssn_rhs.F90,
@@ -269,13 +269,13 @@ void BaikalETK_NewRad(CCTK_ARGUMENTS) {
     outstr += "}\n"
 
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("BoundaryCondition_NewRad.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("BoundaryCondition_NewRad.c")] = outstr.replace("BaikalETK",ThornName)
 
     # First we convert from ADM to BSSN, as is required to convert initial data 
     #    (given using) ADM quantities, to the BSSN evolved variables
     import BSSN.ADM_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as atob
     IDhDD,IDaDD,IDtrK,IDvetU,IDbetU,IDalpha,IDcf,IDlambdaU = \
-        atob.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian","DoNotOutputADMInputFunction",os.path.join(thornname,"src"))
+        atob.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian","DoNotOutputADMInputFunction",os.path.join(ThornName,"src"))
     
     # Store the original list of registered gridfunctions; we'll want to unregister
     #   all the *SphorCart* gridfunctions after we're finished with them below.
@@ -289,7 +289,8 @@ void BaikalETK_NewRad(CCTK_ARGUMENTS) {
     gammaSphorCartDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "gammaSphorCartDD", "sym01")
     KSphorCartDD     = ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "KSphorCartDD", "sym01")
 
-    # Step : Output ADM to BSSN conversion.
+    # ADM to BSSN conversion, used for converting ADM initial data into a form readable by this thorn.
+    # ADM to BSSN, Part 1: Set up function call and pointers to ADM gridfunctions
     outstr = """
 #include <math.h>
 
@@ -316,12 +317,10 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
     for line in outstrtmp:
         outstr += line
 
-    outstr += """
-    const CCTK_REAL invdx0 = 1.0/CCTK_DELTA_SPACE(0);
-    const CCTK_REAL invdx1 = 1.0/CCTK_DELTA_SPACE(1);
-    const CCTK_REAL invdx2 = 1.0/CCTK_DELTA_SPACE(2);
-"""
-
+    # ADM to BSSN, Part 2: Set up ADM to BSSN conversions for BSSN gridfunctions that do not require
+    #                      finite-difference derivatives (i.e., all gridfunctions except lambda^i (=Gamma^i 
+    #                      in non-covariant BSSN)):
+    #                      h_{ij}, a_{ij}, trK, vet^i=beta^i,bet^i=B^i, cf (conformal factor), and alpha
     all_but_lambdaU_expressions = [
         lhrh(lhs=gri.gfaccess("in_gfs","hDD00"),rhs=IDhDD[0][0]),
         lhrh(lhs=gri.gfaccess("in_gfs","hDD01"),rhs=IDhDD[0][1]),
@@ -348,17 +347,48 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
     outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
     all_but_lambdaU_outC = fin.FD_outputC("returnstring",all_but_lambdaU_expressions, outCparams)
     outstr += lp.loop(["i2","i1","i0"],["0","0","0"],["cctk_lsh[2]","cctk_lsh[1]","cctk_lsh[0]"],
-                       ["1","1","1"],["#pragma omp parallel for","",""],"",all_but_lambdaU_outC)
+                       ["1","1","1"],["#pragma omp parallel for","",""],"    ",all_but_lambdaU_outC)
 
-    outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
-    lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs","lambdaU0"),rhs=IDlambdaU[0]),
-                           lhrh(lhs=gri.gfaccess("in_gfs","lambdaU1"),rhs=IDlambdaU[1]),
-                           lhrh(lhs=gri.gfaccess("in_gfs","lambdaU2"),rhs=IDlambdaU[2])]
-    lambdaU_expressions_FDout = fin.FD_outputC("returnstring",lambdaU_expressions, outCparams)
+    
+    # ADM to BSSN, Part 3: Set up ADM to BSSN conversions for BSSN gridfunctions defined from
+    #                      finite-difference derivatives: lambda^i, which is Gamma^i in non-covariant BSSN):
+    outstr += """
+    const CCTK_REAL invdx0 = 1.0/CCTK_DELTA_SPACE(0);
+    const CCTK_REAL invdx1 = 1.0/CCTK_DELTA_SPACE(1);
+    const CCTK_REAL invdx2 = 1.0/CCTK_DELTA_SPACE(2);
+"""
 
-    outstr += lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
-       ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
-       ["1","1","1"],["#pragma omp parallel for","",""],"",lambdaU_expressions_FDout)
+    path = os.path.join(ThornName,"src")
+    BSSN_RHS_FD_orders_output = []
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if "BSSN_RHSs_FD_order" in file:
+                array = file.replace(".","_").split("_")
+                BSSN_RHS_FD_orders_output.append(int(array[4]))
+
+    for current_FD_order in BSSN_RHS_FD_orders_output:
+        # Store original finite-differencing order:
+        orig_FD_order = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
+        # Set new finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", current_FD_order)
+
+        outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
+        lambdaU_expressions = [lhrh(lhs=gri.gfaccess("in_gfs","lambdaU0"),rhs=IDlambdaU[0]),
+                               lhrh(lhs=gri.gfaccess("in_gfs","lambdaU1"),rhs=IDlambdaU[1]),
+                               lhrh(lhs=gri.gfaccess("in_gfs","lambdaU2"),rhs=IDlambdaU[2])]
+        lambdaU_expressions_FDout = fin.FD_outputC("returnstring",lambdaU_expressions, outCparams)
+
+        lambdafile = "ADM_to_BSSN__compute_lambdaU_FD_order_"+str(current_FD_order)+".h"
+        with open(os.path.join(ThornName,"src",lambdafile),"w") as file:
+            file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
+                       ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
+                       ["1","1","1"],["#pragma omp parallel for","",""],"",lambdaU_expressions_FDout))
+
+        outstr += "    if(FD_order == "+str(current_FD_order)+") {\n"
+        outstr += "        #include \""+lambdafile+"\"\n"
+        outstr += "    }\n"
+        # Restore original FD order
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", orig_FD_order)
 
     outstr += """
     ExtrapolateGammas(cctkGH,lambdaU0GF);
@@ -371,7 +401,7 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
     gri.glb_gridfcs_list = orig_glb_gridfcs_list
 
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("ADM_to_BSSN.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("ADM_to_BSSN.c")] = outstr.replace("BaikalETK",ThornName)
 
     import BSSN.ADM_in_terms_of_BSSN as btoa
     import BSSN.BSSN_quantities as Bq
@@ -418,7 +448,7 @@ void BaikalETK_BSSN_to_ADM(CCTK_ARGUMENTS) {
     outstr += "}\n"
     
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("BSSN_to_ADM.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("BSSN_to_ADM.c")] = outstr.replace("BaikalETK",ThornName)
 
     # Next, the driver for computing the Ricci tensor:
     outstr = """
@@ -442,7 +472,7 @@ void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
     const CCTK_REAL NOSIMDinvdx2 = 1.0/CCTK_DELTA_SPACE(2);
     const REAL_SIMD_ARRAY invdx2 = ConstSIMD(NOSIMDinvdx2);
 """
-    path = os.path.join(thornname,"src")
+    path = os.path.join(ThornName,"src")
 
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -454,7 +484,7 @@ void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
     outstr += "}\n"
     
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("driver_pt1_BSSN_Ricci.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("driver_pt1_BSSN_Ricci.c")] = outstr.replace("BaikalETK",ThornName)
 
     def SIMD_declare_C_params():
         SIMD_declare_C_params_str = ""
@@ -494,8 +524,8 @@ void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
     const REAL_SIMD_ARRAY invdx2 = ConstSIMD(NOSIMDinvdx2);
 """+SIMD_declare_C_params()
     
-    path = os.path.join(thornname,"src")
-        
+    path = os.path.join(ThornName,"src")
+
     for root, dirs, files in os.walk(path):
         for file in files:
             if "BSSN_RHSs_FD_order" in file:
@@ -506,7 +536,7 @@ void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
     outstr += "}\n"
 
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("driver_pt2_BSSN_RHSs.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("driver_pt2_BSSN_RHSs.c")] = outstr.replace("BaikalETK",ThornName)
 
     # Next, the driver for enforcing detgammabar = detgammahat constraint:
     outstr = """
@@ -521,7 +551,7 @@ void BaikalETK_enforce_detgammabar_constraint(CCTK_ARGUMENTS) {
     DECLARE_CCTK_PARAMETERS;
 """
     
-    path = os.path.join(thornname,"src")
+    path = os.path.join(ThornName,"src")
         
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -534,7 +564,7 @@ void BaikalETK_enforce_detgammabar_constraint(CCTK_ARGUMENTS) {
 
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("driver_enforcedetgammabar_constraint.c")] = \
-        outstr.replace("BaikalETK",thornname)
+        outstr.replace("BaikalETK",ThornName)
 
     # Next, the driver for computing the BSSN Hamiltonian & momentum constraints
     outstr = """
@@ -552,7 +582,7 @@ void BaikalETK_BSSN_constraints(CCTK_ARGUMENTS) {
     const CCTK_REAL invdx1 = 1.0/CCTK_DELTA_SPACE(1);
     const CCTK_REAL invdx2 = 1.0/CCTK_DELTA_SPACE(2);
 """
-    path = os.path.join(thornname,"src")
+    path = os.path.join(ThornName,"src")
         
     for root, dirs, files in os.walk(path):
         for file in files:
@@ -564,7 +594,7 @@ void BaikalETK_BSSN_constraints(CCTK_ARGUMENTS) {
     outstr += "}\n"
 
     # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("driver_BSSN_constraints.c")] = outstr.replace("BaikalETK",thornname)
+    Csrcdict[append_to_make_code_defn_list("driver_BSSN_constraints.c")] = outstr.replace("BaikalETK",ThornName)
 
     if enable_stress_energy_source_terms == True:
         # Declare T4DD as a set of gridfunctions. These won't 
@@ -628,4 +658,4 @@ void BaikalETK_driver_BSSN_T4UU(CCTK_ARGUMENTS) {
 }\n"""
 
         # Add C code string to dictionary (Python dictionaries are immutable)
-        Csrcdict[append_to_make_code_defn_list("driver_BSSN_T4UU.c")] = outstr.replace("BaikalETK",thornname)
+        Csrcdict[append_to_make_code_defn_list("driver_BSSN_T4UU.c")] = outstr.replace("BaikalETK",ThornName)
