@@ -40,27 +40,22 @@ const int MINFACE = +1;
 // evaluate true if the velocity is directed inwards on the face in consideration.
 #define  FACE_UPDATE_OUTFLOW(which_gf, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \\
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) { \\
-      aux_gfs[IDX4S(which_gf,i0,i1,i2)] =                                    \\
-          +2.0*aux_gfs[IDX4S(which_gf,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]  \\
-          -1.0*aux_gfs[IDX4S(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]; \\
-  }
-/*      aux_gfs[IDX4S(which_gf_0+1,i0,i1,i2)] =                                    \\
-          +3.0*aux_gfs[IDX4S(which_gf_0+1,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]  \\
-          -3.0*aux_gfs[IDX4S(which_gf_0+1,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]  \\
-          +1.0*aux_gfs[IDX4S(which_gf_0+1,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)]; \\
+      aux_gfs[IDX4S(which_gf_0,i0,i1,i2)] =                                      \\
+          aux_gfs[IDX4S(which_gf_0,i0+FACEX0,i1+FACEX1,i2+FACEX2)];              \\
+      aux_gfs[IDX4S(which_gf_0+1,i0,i1,i2)] =                                    \\
+          aux_gfs[IDX4S(which_gf_0+1,i0+FACEX0,i1+FACEX1,i2+FACEX2)];            \\
       aux_gfs[IDX4S(which_gf_0+2,i0,i1,i2)] =                                    \\
-          +3.0*aux_gfs[IDX4S(which_gf_0+2,i0+1*FACEX0,i1+1*FACEX1,i2+1*FACEX2)]  \\
-          -3.0*aux_gfs[IDX4S(which_gf_0+2,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]  \\
-          +1.0*aux_gfs[IDX4S(which_gf_0+2,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)]; \\
-      if(FACEX0*aux_gfs[IDX4S(which_gf_0+0,i0,i1,i2)] > 0.0) {                   \\
+          aux_gfs[IDX4S(which_gf_0+2,i0+FACEX0,i1+FACEX1,i2+FACEX2)];            \\
+  }
+/*      if(FACEX0*aux_gfs[IDX4S(which_gf_0+0,i0,i1,i2)] > 0.0) {                   \\
           aux_gfs[IDX4S(which_gf_0+0,i0,i1,i2)] = 0.0;                           \\
-      }                                                                         \\
+      }                                                                          \\
       if(FACEX1*aux_gfs[IDX4S(which_gf_0+1,i0,i1,i2)] > 0.0) {                   \\
           aux_gfs[IDX4S(which_gf_0+1,i0,i1,i2)] = 0.0;                           \\
-      }                                                                         \\
+      }                                                                          \\
       if(FACEX2*aux_gfs[IDX4S(which_gf_0+2,i0,i1,i2)] > 0.0) {                   \\
           aux_gfs[IDX4S(which_gf_0+2,i0,i1,i2)] = 0.0;                           \\
-      }                                                                         \\
+      }                                                                          \\
 */
 
 void apply_bcs_potential(const paramstruct *restrict params,REAL *gfs) {
@@ -108,23 +103,24 @@ void apply_bcs_potential(const paramstruct *restrict params,REAL *gfs) {
 }
 void apply_bcs_velocity(const paramstruct *restrict params,REAL *aux_gfs) {
 #include "../set_Cparameters.h"
-    // Apply outflow/extrapolation boundary conditions to ValenciavU by passing VALENCIAVU0 as which_gf_0
-    for(int which_gf=VALENCIAVU0GF;which_gf<=VALENCIAVU2GF;which_gf++) {
+    // Apply outflow/copy boundary conditions to ValenciavU by passing VALENCIAVU0 as which_gf_0
+//     for(int which_gf=VALENCIAVU0GF;which_gf<=VALENCIAVU2GF;which_gf++) {
+    const int which_gf_0 = VALENCIAVU0GF;
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
-      FACE_UPDATE_OUTFLOW(which_gf, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
+      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
+      FACE_UPDATE_OUTFLOW(which_gf_0, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
 
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
+      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
+      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
 
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
+      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
         imin[2]--;
-      FACE_UPDATE_OUTFLOW(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
+      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
         imax[2]++;
     }
-    }
+//     }
 }
 /*// A supplement to the boundary conditions for debugging. This will overwrite data with exact conditions
 void FACE_UPDATE_EXACT(const paramstruct *restrict params,REAL *restrict xx[3],

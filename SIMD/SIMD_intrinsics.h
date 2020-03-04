@@ -98,7 +98,7 @@
 #define CosSIMD(a) (cos(a))
 #define WriteSIMD(a,b) *(a)=(b)
 #define ReadSIMD(a) *(a)
-// Algorithm for upwinding.
+// Algorithm for upwinding, SIMD-disabled version.
 // *NOTE*: This upwinding is backwards from
 //  usual upwinding algorithms, because the
 //  upwinding control vector in BSSN (the shift)

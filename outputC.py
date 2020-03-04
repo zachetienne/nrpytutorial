@@ -3,8 +3,9 @@
 #   this core NRPy+ module is used for
 #   generating C code and functions.
 
-# Author: Zachariah B. Etienne
-#         zachetie **at** gmail **dot* com
+# Authors: Zachariah B. Etienne; zachetie **at** gmail **dot* com
+#          Ken Sible; ksible **at** outlook **dot* com
+
 
 import loop as lp                             # NRPy+: C code loop interface
 import NRPy_param_funcs as par                # NRPy+: parameter interface
@@ -172,7 +173,6 @@ def parse_outCparams_string(params):
                       SIMD_enable,SIMD_const_suffix,SIMD_find_more_FMAsFMSs,SIMD_debug,
                       enable_TYPE,gridsuffix)
 
-import sympy as sp
 # Input:  cse_output = output from SymPy CSE with tuple format: (list of ordered pairs that 
 #            contain substituted symbols and their replaced expressions, reduced SymPy expression)
 # Output: output from SymPy CSE where postprocessing, such as back-substitution of addition/product
@@ -438,3 +438,4 @@ def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop=""
     with open(outfile,"w") as file:
         file.write(Cfunc)
         print("Output C function "+name+"() to file "+outfile)
+

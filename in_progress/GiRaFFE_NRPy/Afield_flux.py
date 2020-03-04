@@ -20,26 +20,24 @@ thismodule = "GiRaFFE_NRPy-Induction_Equation"
 import GRHD.equations as GRHD
 import GRFFE.equations as GRFFE
 
-# Import the Levi-Civita symbol and build the corresponding tensor.
-# We already have a handy function to define the Levi-Civita symbol in WeylScalars
-import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-
 # We'll write this as a function so that we can calculate the expressions on-demand for any choice of i
-def find_cp_cm(lapse,shifti,gupii):
+def find_cp_cm(lapse,shifti,gammaUUii):
     # Inputs:  u0,vi,lapse,shift,gammadet,gupii
     # Outputs: cplus,cminus 
     
     # a = 1/(alpha^2)
-    a = 1/(lapse*lapse)
+    a = sp.sympify(1)/(lapse*lapse)
     # b = 2 beta^i / alpha^2
-    b = 2 * shifti /(lapse*lapse)
+    b = sp.sympify(2) * shifti /(lapse*lapse)
     # c = -g^{ii} + (beta^i)^2 / alpha^2
-    c = - gupii + shifti*shifti/(lapse*lapse)
+    c = - gammaUUii + shifti*shifti/(lapse*lapse)
     
     # Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
     # negative value to the sqrt function.
-    detm = b*b - 4*a*c
-    detm = sp.sqrt(sp.Rational(1,2)*(detm + nrpyAbs(detm)))
+    detm = b*b - sp.sympify(4)*a*c
+
+    import Min_Max_and_Piecewise_Expressions as noif
+    detm = sp.sqrt(noif.max_noif(sp.sympify(0),detm))
     global cplus,cminus
     cplus  = sp.Rational(1,2)*(-b/a + detm/a)
     cminus = sp.Rational(1,2)*(-b/a - detm/a)
@@ -62,23 +60,34 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
     
     global cmax,cmin
     # Now, we need to set cmax to the larger of cpr,cpl, and 0
-    cmax = sp.Rational(1,2)*(cpr+cpl+nrpyAbs(cpr-cpl))
-    cmax = sp.Rational(1,2)*(cmax+nrpyAbs(cmax))
+    
+    import Min_Max_and_Piecewise_Expressions as noif
+    cmax = noif.max_noif(noif.max_noif(cpr,cpl),sp.sympify(0))
     
     # And then, set cmin to the smaller of cmr,cml, and 0
-    cmin =  sp.Rational(1,2)*(cmr+cml-nrpyAbs(cmr-cml))
-    cmin = -sp.Rational(1,2)*(cmin-nrpyAbs(cmin))
+    cmin = -noif.min_noif(noif.min_noif(cmr,cml),sp.sympify(0))
 
 def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,ValenciavU,BU):
+    # Define Levi-Civita symbol
+    def define_LeviCivitaSymbol_rank3(DIM=-1):
+        if DIM == -1:
+            DIM = par.parval_from_str("DIM")
+
+        LeviCivitaSymbol = ixp.zerorank3()
+
+        for i in range(DIM):
+            for j in range(DIM):
+                for k in range(DIM):
+                    # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
+                    LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
+        return LeviCivitaSymbol
     GRHD.compute_sqrtgammaDET(gammaDD)
     # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
-    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
+    LeviCivitaDDD = define_LeviCivitaSymbol_rank3()
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                LCijk = LeviCivitaDDD[i][j][k]
-                LeviCivitaDDD[i][j][k] = LCijk * GRHD.sqrtgammaDET
-    #             LeviCivitaUUU[i][j][k] = LCijk / sp.sqrt(gammadet)
+                LeviCivitaDDD[i][j][k] *= GRHD.sqrtgammaDET
 
     global U,F
     # Flux F = \epsilon_{ijk} v^j B^k

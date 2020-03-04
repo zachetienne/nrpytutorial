@@ -13,15 +13,21 @@ import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
+import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
+import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
+import GiRaFFE_NRPy.GiRaFFE_NRPy_Metric_Face_Values as FCVAL
+import GiRaFFE_NRPy.GiRaFFE_NRPy_PPM as PPM
+import GiRaFFE_NRPy.Afield_flux as Af
+import GiRaFFE_NRPy.Stilde_flux as Sf
+import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
+import GiRaFFE_NRPy.GiRaFFE_NRPy_A2B as A2B
+import GiRaFFE_NRPy.GiRaFFE_NRPy_C2P_P2C as C2P_P2C
 
 thismodule = "GiRaFFE_NRPy_Main_Driver"
 
 def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     cmd.mkdir(out_dir)
     
-    import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
-    import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
-
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaDD","sym01",DIM=3)
     betaU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","betaU",DIM=3)
     alpha = gri.register_gridfunctions("AUXEVOL","alpha")
@@ -182,15 +188,12 @@ REAL Stilde_rhsD2;
 
     subdir = "FCVAL"
     cmd.mkdir(os.path.join(out_dir, subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_Metric_Face_Values as FCVAL
     FCVAL.GiRaFFE_NRPy_FCVAL(os.path.join(out_dir,subdir))
     
     subdir = "PPM"
     cmd.mkdir(os.path.join(out_dir, subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_PPM as PPM
     PPM.GiRaFFE_NRPy_PPM(os.path.join(out_dir,subdir))
     
-    import GiRaFFE_NRPy.Afield_flux as Af
 
     # We will pass values of the gridfunction on the cell faces into the function. This requires us
     # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
@@ -243,8 +246,8 @@ rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
     subdir = "RHSs"
     for flux_dirn in range(3):
         E_field_to_print = [\
-                            -sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+1)%3],\
-                            -sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+2)%3],\
+                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+1)%3],\
+                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+2)%3],\
                            ]
         E_field_names = [\
                          "A_rhsD"+str((flux_dirn+1)%3),\
@@ -273,7 +276,6 @@ rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
             loopopts ="InteriorPoints",
             rel_path_for_Cparams=os.path.join("../"))
 
-    import GiRaFFE_NRPy.Stilde_flux as Sf
 
     Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
 const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
@@ -348,15 +350,12 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
 
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
     BC.GiRaFFE_NRPy_BCs(os.path.join(out_dir,subdir))
     
     subdir = "A2B"
     cmd.mkdir(os.path.join(out_dir,subdir))
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_A2B as A2B
     A2B.GiRaFFE_NRPy_A2B(os.path.join(out_dir,subdir),gammaDD,AD,BU)
     
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_C2P_P2C as C2P_P2C
     C2P_P2C.GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha)
 
     values_to_print = [\
@@ -432,13 +431,34 @@ const int NUM_RECONSTRUCT_GFS = 6;
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
 
+void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
+#include "set_Cparameters.h"
+    char filename[100];
+    sprintf(filename,"BU0_override-%08d.bin",n);
+    FILE *out2D = fopen(filename, "rb");
+    fread(auxevol_gfs+BU0GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
+          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
+    fclose(out2D);
+    sprintf(filename,"BU1_override-%08d.bin",n);
+    out2D = fopen(filename, "rb");
+    fread(auxevol_gfs+BU1GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
+          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
+    fclose(out2D);
+    sprintf(filename,"BU2_override-%08d.bin",n);
+    out2D = fopen(filename, "rb");
+    fread(auxevol_gfs+BU2GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
+          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
+    fclose(out2D);
+}
+
 void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
-    // First things first: initialize the RHSs to zero!
+    // First thing's first: initialize the RHSs to zero!
+#pragma omp parallel for
     for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
         rhs_gfs[ii] = 0.0;
     }
-    // First things first: we calculate the easier source terms that don't require flux directions
+    // Next calculate the easier source terms that don't require flux directions
     // This will also reset the RHSs for each gf at each new timestep.
     calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
     calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
@@ -534,15 +554,16 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     }
 }
 
-void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs) {
+void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs,const int n) {
     // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
     apply_bcs_potential(params,evol_gfs);
-    driver_A_to_B(params,evol_gfs,auxevol_gfs);
+    //driver_A_to_B(params,evol_gfs,auxevol_gfs);
+    override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
     // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
     // Apply the current sheet prescription to the velocities
     GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,evol_gfs);
     // Then, recompute StildeD to be consistent with the new velocities
-    GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,evol_gfs);
+    //GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,evol_gfs);
     // Finally, apply outflow boundary conditions to the velocities.
     apply_bcs_velocity(params,auxevol_gfs);
 }

@@ -894,8 +894,11 @@ def get_EigenCoord():
     print("Error: Could not find EigenCoord for reference_metric::CoordSystem == "+CoordSystem_orig)
     sys.exit(1)
 
-def set_Nxx_dxx_invdx_params__and__xx_h(outdir="."):
-    import os
+def set_Nxx_dxx_invdx_params__and__xx_h(outdir=".",grid_centering="cell"):
+    if grid_centering != "cell" and grid_centering != "vertex":
+        print("rfm.set_Nxx_dxx_invdx_params__and__xx_h(): grid_centering = \""+grid_centering+"\" not supported!")
+        sys.exit(1)
+    
     with open(os.path.join(outdir,"set_Nxx_dxx_invdx_params__and__xx.h"),"w") as file:
         file.write("""
 void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3], 
@@ -935,19 +938,25 @@ void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3],
     params->dxx2 = (xxmax[2] - xxmin[2]) / ((REAL)Nxx[2]);
     params->invdx0 = 1.0/params->dxx0;
     params->invdx1 = 1.0/params->dxx1;
-    params->invdx2 = 1.0/params->dxx2;
-
+    params->invdx2 = 1.0/params->dxx2;\n""")
+        # The following capability was suggested by Terrence Pierre Jacques (Thanks!)
+        cell_offset = "(1.0/2.0)" # default cell-centered offset
+        cell_comment = "Cell-centered grid."
+        if grid_centering == "vertex":
+            cell_offset = "0.0"
+            cell_comment = "Vertex-centered grid."
+        file.write("""
     // Now that params.dxx{0,1,2} and params.invdxx{0,1,2} have been set,
     // Step 0d.iii: Set up uniform coordinate grids
     xx[0] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS0);
     for(int j=0;j<Nxx_plus_2NGHOSTS0;j++) 
-        xx[0][j] = xxmin[0] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*params->dxx0; // Cell-centered grid.
+        xx[0][j] = xxmin[0] + ((REAL)(j-NGHOSTS) + """+cell_offset+""")*params->dxx0; // """+cell_comment+"""
     xx[1] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS1);
     for(int j=0;j<Nxx_plus_2NGHOSTS1;j++) 
-        xx[1][j] = xxmin[1] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*params->dxx1; // Cell-centered grid.
+        xx[1][j] = xxmin[1] + ((REAL)(j-NGHOSTS) + """+cell_offset+""")*params->dxx1; // """+cell_comment+"""
     xx[2] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS2);
     for(int j=0;j<Nxx_plus_2NGHOSTS2;j++) 
-        xx[2][j] = xxmin[2] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*params->dxx2; // Cell-centered grid.
+        xx[2][j] = xxmin[2] + ((REAL)(j-NGHOSTS) + """+cell_offset+""")*params->dxx2; // """+cell_comment+"""
     //fprintf(stderr,"hey inside setxx: %e %e %e | %e %e\\n",xxmin[0],xxmin[1],xxmin[2],xx[0][0],params->dxx0);
 }
 """)

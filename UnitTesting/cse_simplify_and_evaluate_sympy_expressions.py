@@ -6,6 +6,7 @@ from sympy import cse, N, Abs, Function
 import UnitTesting.standard_constants as standard_constants
 import logging
 import hashlib
+from outputC import cse_postprocess
 
 # Called by run_test
 # Uses self.variable_dict
@@ -74,7 +75,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     # Evaluating each expression using the values in var_dict
     for var, expression in expanded_variable_dict.items():
         # Using SymPy's cse algorithm to optimize our value substitution
-        replaced, reduced = cse(expression, order='none')
+        replaced, reduced = cse_postprocess(cse(expression, order='none'))
 
         # Warning: might slow Travis CI too much: logging.debug(' var = '+str(var)+' |||| replaced = '+str(replaced))
 

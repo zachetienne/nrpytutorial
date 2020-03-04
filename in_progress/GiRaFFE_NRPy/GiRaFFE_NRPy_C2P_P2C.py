@@ -40,14 +40,14 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
     for i in range(3):
         Btilde2 += BtildeU[i]*BtildeD[i]
         
-    StimesB = sp.sympify(0)
-    for i in range(3):
-        StimesB += StildeD[i]*BtildeU[i]
-
     global outStildeD
     outStildeD = StildeD
     # Then, enforce the orthogonality:
     if par.parval_from_str("enforce_orthogonality_StildeD_BtildeU"):
+        StimesB = sp.sympify(0)
+        for i in range(3):
+            StimesB += StildeD[i]*BtildeU[i]
+
         for i in range(3):
             # {\tilde S}_i = {\tilde S}_i - ({\tilde S}_j {\tilde B}^j) {\tilde B}_i/{\tilde B}^2
             outStildeD[i] -= StimesB*BtildeD[i]/Btilde2
@@ -60,7 +60,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
 
     # First we need to compute the factor f: 
     # f = \sqrt{(1-\Gamma_{\max}^{-2}){\tilde B}^4/(16 \pi^2 \gamma {\tilde S}^2)}
-    speed_limit_factor = sp.sqrt((1.0-GAMMA_SPEED_LIMIT**(-2.0))*Btilde2*Btilde2*sp.Rational(1,16)/\
+    speed_limit_factor = sp.sqrt((sp.sympify(1)-GAMMA_SPEED_LIMIT**(-2.0))*Btilde2*Btilde2*sp.Rational(1,16)/\
                                  (M_PI*M_PI*GRHD.sqrtgammaDET*GRHD.sqrtgammaDET*Stilde2))
 
     import Min_Max_and_Piecewise_Expressions as noif
@@ -74,16 +74,15 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
     # Enforce the speed limit on StildeD:
     if par.parval_from_str("enforce_speed_limit_StildeD"):
         for i in range(3):
-            outStildeD[i] *= noif.min_noif(1.0,speed_limit_factor)
+            outStildeD[i] *= noif.min_noif(sp.sympify(1),speed_limit_factor)
 
     global ValenciavU
     ValenciavU = ixp.zerorank1()
-    if par.parval_from_str("enforce_orthogonality_StildeD_BtildeU") or par.parval_from_str("enforce_speed_limit_StildeD"):
-        # Recompute 3-velocity:
-        for i in range(3):
-            for j in range(3):
-                # \bar{v}^i = 4 \pi \gamma^{ij} {\tilde S}_j / (\sqrt{\gamma} B^2)
-                ValenciavU[i] += sp.sympify(4)*M_PI*gammaUU[i][j]*outStildeD[j]/(GRHD.sqrtgammaDET*B2)
+    # Recompute 3-velocity:
+    for i in range(3):
+        for j in range(3):
+            # \bar{v}^i = 4 \pi \gamma^{ij} {\tilde S}_j / (\sqrt{\gamma} B^2)
+            ValenciavU[i] += sp.sympify(4)*M_PI*gammaUU[i][j]*outStildeD[j]/(GRHD.sqrtgammaDET*B2)
 
     # This number determines how far away (in grid points) we will apply the fix.
     grid_points_from_z_plane = par.Cparameters("REAL",thismodule,"grid_points_from_z_plane",4.0)
