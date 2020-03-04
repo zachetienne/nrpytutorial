@@ -99,9 +99,11 @@ if __name__ == "__main__":
         #           otherwise fallback to serial evaluation:
         pool = multiprocessing.Pool() #processes=len(paramslist))
         NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
-        pool.terminate()
+        NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
+        pool.close()
         pool.join()
     except:
+        NRPyEnvVars = [] # Reset NRPyEnvVars in case multiprocessing wrote to it and failed.
         # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
         #       This will happen on Android and Windows systems
         import BaikalETK.BaikalETK_C_kernels_codegen as BCk
