@@ -92,7 +92,7 @@ if __name__ == "__main__":
         # Step 3.d.iii: Define master function for parallelization.
         #           Note that lambdifying this doesn't work in Python 3
         def master_func(i):
-            import BaikalETK_validate.BaikalETK_C_kernels_codegen as BCk
+            import BaikalETK.BaikalETK_C_kernels_codegen as BCk
             return BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=paramslist[i])
         
         # Step 3.d.iv: Evaluate list of functions in parallel if possible;
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     except:
         # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
         #       This will happen on Android and Windows systems
-        import BaikalETK_validate.BaikalETK_C_kernels_codegen as BCk
+        import BaikalETK.BaikalETK_C_kernels_codegen as BCk
         for param in paramslist:
             NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=param))
 
@@ -218,7 +218,7 @@ par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::LapseEvolutionOption", LapseCondi
 #           defined, we now have all the information we need loaded
 #           into our NRPy+ environment to generate the Einstein
 #           Toolkit ccl files
-import BaikalETK_validate.BaikalETK_ETK_ccl_files_codegen as cclgen
+import BaikalETK.BaikalETK_ETK_ccl_files_codegen as cclgen
 
 for enable_stress_energy_source_terms in [True,False]:
     ThornName="Baikal"
@@ -241,7 +241,7 @@ for enable_stress_energy_source_terms in [True,False]:
 # Step 4.a: First we call the functions in the `BaikalETK.BaikalETK_C_drivers_codegen`
 #           Python module) to store all needed driver C files to a Python dictionary,
 #           then we simply output the dictionary to the appropriate files.
-import BaikalETK_validate.BaikalETK_C_drivers_codegen as driver
+import BaikalETK.BaikalETK_C_drivers_codegen as driver
 
 # The following Python dictionaries consist of a key, which is the filename
 #    in the thorn's src/ directory (e.g., "driver_BSSN_constraints.c"),
