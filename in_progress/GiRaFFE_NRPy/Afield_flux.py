@@ -43,16 +43,16 @@ def find_cp_cm(lapse,shifti,gammaUUii):
     cminus = sp.Rational(1,2)*(-b/a - detm/a)
 
 # We'll write this as a function, and call it within HLLE_solver, below.
-def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
-    # Inputs:  flux direction flux_dirn, Inverse metric gamma_faceUU, shift beta_faceU,
+def find_cmax_cmin(field_comp,gamma_faceDD,beta_faceU,alpha_face):
+    # Inputs:  flux direction field_comp, Inverse metric gamma_faceUU, shift beta_faceU,
     #          lapse alpha_face, metric determinant gammadet_face
     # Outputs: maximum and minimum characteristic speeds cmax and cmin
     # First, we need to find the characteristic speeds on each face
     gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
-    find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
+    find_cp_cm(alpha_face,beta_faceU[field_comp],gamma_faceUU[field_comp][field_comp])
     cpr = cplus
     cmr = cminus
-    find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
+    find_cp_cm(alpha_face,beta_faceU[field_comp],gamma_faceUU[field_comp][field_comp])
     cpl = cplus
     cml = cminus
     
@@ -67,7 +67,7 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
     # And then, set cmin to the smaller of cmr,cml, and 0
     cmin = -noif.min_noif(noif.min_noif(cmr,cml),sp.sympify(0))
 
-def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,ValenciavU,BU):
+def calculate_flux_and_state_for_Induction(field_comp,flux_dirn, gammaDD,betaU,alpha,ValenciavU,BU):
     # Define Levi-Civita symbol
     def define_LeviCivitaSymbol_rank3(DIM=-1):
         if DIM == -1:
@@ -94,7 +94,7 @@ def calculate_flux_and_state_for_Induction(flux_dirn, gammaDD,betaU,alpha,Valenc
     F = sp.sympify(0)
     for j in range(3):
         for k in range(3):
-            F += LeviCivitaDDD[flux_dirn][j][k] * (alpha*ValenciavU[j]-betaU[j]) * BU[k]
+            F += LeviCivitaDDD[field_comp][j][k] * (alpha*ValenciavU[j]-betaU[j]) * BU[k]
     # U = B^i
     U = BU[flux_dirn]
     
@@ -102,9 +102,10 @@ def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul):
     # This solves the Riemann problem for the flux of E_i in one direction
     
     # F^HLL = (c_\min f_R + c_\max f_L - c_\min c_\max ( st_j_r - st_j_l )) / (c_\min + c_\max)
+#     return (- cmin*cmax*(Ur-Ul) )/(cmax + cmin)
     return (cmin*Fr + cmax*Fl - cmin*cmax*(Ur-Ul) )/(cmax + cmin)
 
-def calculate_E_i_flux(inputs_provided=True,alpha_face=None,gamma_faceDD=None,beta_faceU=None,\
+def calculate_E_i_flux(flux_dirn,inputs_provided=True,alpha_face=None,gamma_faceDD=None,beta_faceU=None,\
                        Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None):
     if not inputs_provided:
         # declare all variables
@@ -117,14 +118,14 @@ def calculate_E_i_flux(inputs_provided=True,alpha_face=None,gamma_faceDD=None,be
         B_lU = ixp.declarerank1("B_lU")
     global E_fluxD
     E_fluxD = ixp.zerorank1()
-    for flux_dirn in range(3):
-        find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face)
-        calculate_flux_and_state_for_Induction(flux_dirn, gamma_faceDD,beta_faceU,alpha_face,\
+    for field_comp in range(3):
+        find_cmax_cmin(field_comp,gamma_faceDD,beta_faceU,alpha_face)
+        calculate_flux_and_state_for_Induction(field_comp,flux_dirn, gamma_faceDD,beta_faceU,alpha_face,\
                                                Valenciav_rU,B_rU)
         Fr = F
         Ur = U
-        calculate_flux_and_state_for_Induction(flux_dirn, gamma_faceDD,beta_faceU,alpha_face,\
+        calculate_flux_and_state_for_Induction(field_comp,flux_dirn, gamma_faceDD,beta_faceU,alpha_face,\
                                                Valenciav_lU,B_lU)
         Fl = F
         Ul = U
-        E_fluxD[flux_dirn] += HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul)
+        E_fluxD[field_comp] += HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul)
