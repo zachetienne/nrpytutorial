@@ -99,8 +99,7 @@ if __name__ == "__main__":
         #           otherwise fallback to serial evaluation:
         pool = multiprocessing.Pool() #processes=len(paramslist))
         NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
-        NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
-        pool.close()
+        pool.terminate()
         pool.join()
     except:
         NRPyEnvVars = [] # Reset NRPyEnvVars in case multiprocessing wrote to it and failed.
