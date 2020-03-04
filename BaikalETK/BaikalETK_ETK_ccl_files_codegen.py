@@ -83,7 +83,6 @@ CCTK_INT FD_order "Finite-differencing order"
                 if "BSSN_Ricci_FD_order" in Cfilename:
                     array = Cfilename.replace(".","_").split("_")
                     FDorders.append(int(array[4]))
-                    print(Cfilename)
         for order in FDorders:
             file.write(" "+str(order)+":"+str(order)+"   :: \"finite-differencing order = "+str(order)+"\"\n")
         FDorders.sort()

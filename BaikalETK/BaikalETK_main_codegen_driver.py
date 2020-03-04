@@ -16,9 +16,22 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
+# INSTRUCTIONS FOR RUNNING THIS:
+#  Run it from the parent directory via
+# python3 BaikalETK/BaikalETK_main_codegen_driver.py
+
+###############################
 # Step 0: Import needed core NRPy+ and standard Python modules
-import cmdline_helper as cmd  # NRPy+: Multi-platform Python command-line interface
 import os, sys                # Standard Python modules for multiplatform OS-level functions
+import pickle                   # Standard Python module for converting arbitrary data structures to a uniform format.
+
+nrpy_dir_path = os.path.join(".")
+if nrpy_dir_path not in sys.path:
+    sys.path.append(nrpy_dir_path)
+
+import grid as gri              # NRPy+: Functions having to do with numerical grids
+import NRPy_param_funcs as par  # NRPy+: Parameter interface
+###############################
 
 ###############################
 # Step 1: Set compile-time and runtime parameters for both Baikal & BaikalVacuum:
@@ -31,7 +44,6 @@ ShiftCondition = "GammaDriving2ndOrder_NoCovariant"
 #         Current runtime choices:
 #         Baikal:       FD_orders = [2,4]  ; Gamma-driving eta parameter; Kreiss-Oliger dissipation strength
 #         BaikalVacuum: FD_orders = [4,6,8]; Gamma-driving eta parameter; Kreiss-Oliger dissipation strength
-
 paramslist = []
 FD_orders = [2,4,6,8]
 WhichParamSet = 0
@@ -68,30 +80,33 @@ NRPyEnvVars = []
 
 import time   # Standard Python module for benchmarking
 start = time.time()
-try:
-    if os.name == 'nt':
-        # Windows & Jupyter multiprocessing do not mix, so we run in serial on Windows.
-        #  Here's why: https://stackoverflow.com/questions/45719956/python-multiprocessing-in-jupyter-on-windows-attributeerror-cant-get-attribut
-        raise Exception("Parallel codegen currently not available in Windows")
-    # Step 3.d.ii: Import the multiprocessing module.
-    import multiprocessing
-
-    # Step 3.d.iii: Define master function for parallelization.
-    #           Note that lambdifying this doesn't work in Python 3
-    def master_func(i):
+if __name__ == "__main__":
+    try:
+        if os.name == 'nt':
+            # Windows & Jupyter multiprocessing do not mix, so we run in serial on Windows.
+            #  Here's why: https://stackoverflow.com/questions/45719956/python-multiprocessing-in-jupyter-on-windows-attributeerror-cant-get-attribut
+            raise Exception("Parallel codegen currently not available in Windows")
+        # Step 3.d.ii: Import the multiprocessing module.
+        import multiprocessing
+        
+        # Step 3.d.iii: Define master function for parallelization.
+        #           Note that lambdifying this doesn't work in Python 3
+        def master_func(i):
+            import BaikalETK_validate.BaikalETK_C_kernels_codegen as BCk
+            return BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=paramslist[i])
+        
+        # Step 3.d.iv: Evaluate list of functions in parallel if possible;
+        #           otherwise fallback to serial evaluation:
+        pool = multiprocessing.Pool() #processes=len(paramslist))
+        NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
+        pool.terminate()
+        pool.join()
+    except:
+        # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
+        #       This will happen on Android and Windows systems
         import BaikalETK_validate.BaikalETK_C_kernels_codegen as BCk
-        return BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=paramslist[i])
-
-    # Step 3.d.iv: Evaluate list of functions in parallel if possible;
-    #           otherwise fallback to serial evaluation:
-    pool = multiprocessing.Pool() #processes=len(paramslist))
-    NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
-except:
-    # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
-    #       This will happen on Android and Windows systems
-    import BaikalETK_validate.BaikalETK_C_kernels_codegen as BCk
-    for param in paramslist:
-        NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=param))
+        for param in paramslist:
+            NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=param))
 
 print("Finished C kernel codegen for Baikal and BaikalVacuum in "+str(time.time()-start)+" seconds.")
 ###############################
@@ -116,9 +131,6 @@ print("Finished C kernel codegen for Baikal and BaikalVacuum in "+str(time.time(
 # gri.glb_gridfcs_list[],par.glb_params_list[],par.glb_Cparams_list[].
 
 # Store all NRPy+ environment variables to file so NRPy+ environment from within this subprocess can be easily restored
-import pickle                   # Standard Python module for converting arbitrary data structures to a uniform format.
-import grid as gri              # NRPy+: Functions having to do with numerical grids
-import NRPy_param_funcs as par  # NRPy+: Parameter interface
 
 # https://www.pythonforthelab.com/blog/storing-binary-data-and-serializing/
 grfcs_list = []
@@ -208,7 +220,6 @@ par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::LapseEvolutionOption", LapseCondi
 #           Toolkit ccl files
 import BaikalETK_validate.BaikalETK_ETK_ccl_files_codegen as cclgen
 
-
 for enable_stress_energy_source_terms in [True,False]:
     ThornName="Baikal"
     if enable_stress_energy_source_terms==False:
@@ -216,6 +227,7 @@ for enable_stress_energy_source_terms in [True,False]:
     cclgen.output_param_ccl(ThornName,enable_stress_energy_source_terms)
     cclgen.output_interface_ccl(ThornName,enable_stress_energy_source_terms)
     cclgen.output_schedule_ccl(ThornName,enable_stress_energy_source_terms)
+###############################
 
 ###############################
 # Step 4: Generate C driver functions for ETK registration & NRPy+-generated kernels
@@ -229,7 +241,6 @@ for enable_stress_energy_source_terms in [True,False]:
 # Step 4.a: First we call the functions in the `BaikalETK.BaikalETK_C_drivers_codegen`
 #           Python module) to store all needed driver C files to a Python dictionary,
 #           then we simply output the dictionary to the appropriate files.
-
 import BaikalETK_validate.BaikalETK_C_drivers_codegen as driver
 
 # The following Python dictionaries consist of a key, which is the filename
@@ -263,6 +274,7 @@ for key,val in Reg_Csrcdict.items():
 for key,val in Vac_Csrcdict.items():
     with open(os.path.join("BaikalVacuum","src",key),"w") as file:
         file.write(val)
+###############################
 
 ###############################
 # Step 5: Generate the make.code.defn file, needed for the Einstein Toolkit build system
@@ -290,3 +302,4 @@ SRCS =""")
 
 output_make_code_defn(Reg_Csrcdict,"Baikal")
 output_make_code_defn(Vac_Csrcdict,"BaikalVacuum")
+###############################

@@ -13,7 +13,7 @@ import time                      # Standard Python module; useful for benchmarki
 import BSSN.BSSN_RHSs as rhs
 import BSSN.BSSN_gauge_RHSs as gaugerhs
 
-def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("..",".."),
+def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
        params="WhichPart=BSSN_RHSs,ThornName=Baikal,FD_order=4,enable_stress_energy_source_terms=True"):
     # Set default parameters
     WhichPart = "BSSN_RHSs"
@@ -385,7 +385,7 @@ def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("..",".."),
         print("Error: WhichPart = "+WhichPart+" is not recognized.")
         sys.exit(1)
 
-    # Store all NRPy+ environment variables to file so NRPy+ environment from within this subprocess can be easily restored
+    # Store all NRPy+ environment variables to an output string so NRPy+ environment from within this subprocess can be easily restored
     import pickle
     # https://www.pythonforthelab.com/blog/storing-binary-data-and-serializing/
     outstr = []

@@ -16,9 +16,9 @@ def append_to_make_code_defn_list(filename):
         make_code_defn_list.append(filename)
     return filename
 
-def driver_C_codes_validate(Csrcdict, ThornName,
-                            rhs_list,evol_gfs_list,aux_gfs_list,auxevol_gfs_list,
-                            LapseCondition = "OnePlusLog", enable_stress_energy_source_terms=False):
+def driver_C_codes(Csrcdict, ThornName,
+                   rhs_list,evol_gfs_list,aux_gfs_list,auxevol_gfs_list,
+                   LapseCondition = "OnePlusLog", enable_stress_energy_source_terms=False):
     # First the ETK banner code, proudly showing the NRPy+ banner
     import NRPy_logo as logo
     outstr = """
