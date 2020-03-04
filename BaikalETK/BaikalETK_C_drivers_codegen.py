@@ -8,7 +8,7 @@ import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import os, sys           # Standard Python modules for multiplatform OS-level functions
 # We need the function keep_param__return_type() from this module:
-import in_progress.BaikalETK_validate.BaikalETK_ETK_ccl_files_codegen as ccl
+import BaikalETK_validate.BaikalETK_ETK_ccl_files_codegen as ccl
 
 make_code_defn_list = []
 def append_to_make_code_defn_list(filename):

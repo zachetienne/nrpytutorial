@@ -303,3 +303,5 @@ SRCS =""")
 output_make_code_defn(Reg_Csrcdict,"Baikal")
 output_make_code_defn(Vac_Csrcdict,"BaikalVacuum")
 ###############################
+
+print("Finished generating Baikal and BaikalVacuum Einstein Toolkit thorns!")
