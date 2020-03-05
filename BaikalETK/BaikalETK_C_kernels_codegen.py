@@ -132,7 +132,7 @@ def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
         par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
 
 
-        print("Generating symbolic expressions for BSSN RHSs...")
+        print("Generating symbolic expressions for BSSN RHSs and Ricci tensor...")
         start = time.time()
         # Enable rfm_precompute infrastructure, which results in 
         #   BSSN RHSs that are free of transcendental functions,
