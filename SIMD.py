@@ -82,7 +82,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     # Step 1: Replace transcendental, power, and division functions with SIMD equivalents
     #         Note that due to how SymPy expresses rational numbers, the following does not
     #         affect fractional expressions of integers
-    for subtree in tree.preorder(tree.root):
+    for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
         if   func == Abs:
@@ -118,7 +118,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
                 map_sym_to_rat[one], map_rat_to_sym[1] = S.One, one
             return DivSIMD(one, a)
 
-    for subtree in tree.preorder(tree.root):
+    for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
         if func == Pow:
@@ -157,7 +157,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     #         This is undesirable, so we instead define new, temporary
     #         functions IntegerTMP and RationalTMP that are undisturbed by
     #         the eval()
-    for subtree in tree.preorder(tree.root):
+    for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
         if (func == Mul or func == Add):
@@ -171,7 +171,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     
     # Step 3: Simplification patterns:
     # Step 3.a: Replace the pattern Mul(Div(1, b), a) or Mul(a, Div(1, b)) with Div(a, b):
-    for subtree in tree.preorder(tree.root):
+    for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
         # MulSIMD(DivSIMD(1, b), a) >> DivSIMD(a, b)
@@ -193,7 +193,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     #         c) AddSIMD(a, MulSIMD(-1, b)), and
     #         d) AddSIMD(a, MulSIMD(b, -1))
     #         with SubSIMD(a, b)
-    for subtree in tree.preorder(tree.root):
+    for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
         # AddSIMD(MulSIMD(-1, b), a) >> SubSIMD(a, b)
@@ -229,7 +229,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     # Step 4.a: Find double FMA patterns first [e.g., FMA(a,b,FMA(c,d,e))]:
     #           NOTE: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations:
     if SIMD_find_more_FMAsFMSs == "True":
-        for subtree in tree.preorder(tree.root):
+        for subtree in tree.preorder():
             func = subtree.expr.func
             args = subtree.expr.args
             # a + b*c + d*e -> FMA(b,c,FMA(d,e,a))
@@ -255,7 +255,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
         expr = tree.reconstruct()
 
     # Step 4.b: Next find single FMA patterns:
-    for subtree in tree.preorder(tree.root):
+    for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
         # AddSIMD(MulSIMD(b, c), a) >> FusedMulAddSIMD(b, c, a)
@@ -275,7 +275,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     # Step 4.c: Leftover double FMA patterns that are difficult to find in Step 5.a:
     #           NOTE: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations:
     if SIMD_find_more_FMAsFMSs == "True":
-        for subtree in tree.preorder(tree.root):
+        for subtree in tree.preorder():
             func = subtree.expr.func
             args = subtree.expr.args
             # (b*c - d*e) + a -> AddSIMD(a, FusedMulSubSIMD(b, c, MulSIMD(d, e))) >> FusedMulSubSIMD(b, c, FusedMulSubSIMD(d,e,a))

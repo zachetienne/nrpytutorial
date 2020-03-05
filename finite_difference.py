@@ -499,7 +499,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
         default_CSE_varprefix = outCparams.CSE_varprefix
         # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
-        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FDPart1,includebraces=False"+",CSE_preprocess=True",
+        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FDPart1_,includebraces=False"+",CSE_preprocess=True",
                                         prestring=read_from_memory_Ccode))
 
     # Step 5b.iv: Implement control-vector upwinding algorithm.
@@ -534,7 +534,7 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
         # prefix up/downwinded variables with "UpwindAlgInput".
         # Here we do not wish to have this prefix.
         Coutput += indent_Ccode(outputC(upwind_expr_list,var_list,
-                                                "returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FDPart2,includebraces=False"))
+                                                "returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FDPart2_,includebraces=False"))
 
     # Step 5b.v: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
@@ -556,7 +556,7 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
     if outCparams.SIMD_enable == "True":
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
-    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",CSE_varprefix="+default_CSE_varprefix+"FDPart3,includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
+    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",CSE_varprefix="+default_CSE_varprefix+"FDPart3_,includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
     
     # Step 6: Add consistent indentation to the output end brace. 
     #         See Step 0.b for corresponding start brace.
