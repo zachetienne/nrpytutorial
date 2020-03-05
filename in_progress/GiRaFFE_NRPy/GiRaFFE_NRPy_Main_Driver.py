@@ -208,9 +208,6 @@ REAL Stilde_rhsD2;
     Valenciav_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
     B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
 
-    Af.calculate_E_i_flux(True,alpha_face,gamma_faceDD,beta_faceU,\
-                          Valenciav_rU,B_rU,Valenciav_lU,B_lU)
-
     Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
 const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
 const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];
@@ -245,13 +242,16 @@ rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
 
     subdir = "RHSs"
     for flux_dirn in range(3):
+        Af.calculate_E_i_flux(flux_dirn,True,alpha_face,gamma_faceDD,beta_faceU,\
+                              Valenciav_rU,B_rU,Valenciav_lU,B_lU)
+
         E_field_to_print = [\
-                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+1)%3],\
-                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+2)%3],\
+                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+1)%3],
+                            sp.Rational(1,4)*Af.E_fluxD[(flux_dirn+2)%3],
                            ]
         E_field_names = [\
-                         "A_rhsD"+str((flux_dirn+1)%3),\
-                         "A_rhsD"+str((flux_dirn+2)%3),\
+                         "A_rhsD"+str((flux_dirn+1)%3),
+                         "A_rhsD"+str((flux_dirn+2)%3),
                         ]
 
         desc = "Calculate the electric flux on the left face in direction " + str(flux_dirn) + "."
@@ -557,8 +557,8 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs,const int n) {
     // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
     apply_bcs_potential(params,evol_gfs);
-    //driver_A_to_B(params,evol_gfs,auxevol_gfs);
-    override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
+    driver_A_to_B(params,evol_gfs,auxevol_gfs);
+    //override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
     // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
     // Apply the current sheet prescription to the velocities
     GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,evol_gfs);
