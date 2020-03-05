@@ -46,7 +46,7 @@ def CosSIMD_check(a):
 
 # Input: SymPy expression.
 # Return value: SymPy expression containing all needed SIMD compiler intrinsics
-def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs="False"):
+def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix, SIMD_find_more_FMAsFMSs="False"):
     for item in preorder_traversal(expr):
         for arg in item.args:
             if isinstance(arg, Symbol):
@@ -57,13 +57,12 @@ def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs=
             args = [args]
         for i, arg in enumerate(args):
             if arg.func == Symbol:
-                try: args[i] = var_map[arg]
+                try: args[i] = map_sym_to_rat[arg]
                 except KeyError: pass
         return args[0] if len(args) == 1 else args
 
-    sym_map = {var_map[v]:v for v in var_map}
+    map_rat_to_sym = {map_sym_to_rat[v]:v for v in map_sym_to_rat}
 
-    expr_orig = expr
     tree = ExprTree(expr)
 
     AbsSIMD  = Function("AbsSIMD")
@@ -111,15 +110,15 @@ def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs=
             return MulSIMD(IntegerPowSIMD(a, n - 1), a)
         elif n <= -2:
             one = Symbol(prefix + '_Integer_1')
-            try: sym_map[1]
+            try: map_rat_to_sym[1]
             except KeyError:
-                var_map[one], sym_map[1] = S.One, one
+                map_sym_to_rat[one], map_rat_to_sym[1] = S.One, one
             return DivSIMD(one, IntegerPowSIMD(a, -n))
         elif n == -1:
             one = Symbol(prefix + '_Integer_1')
-            try: sym_map[1]
+            try: map_rat_to_sym[1]
             except KeyError:
-                var_map[one], sym_map[1] = S.One, one
+                map_sym_to_rat[one], map_rat_to_sym[1] = S.One, one
             return DivSIMD(one, a)
 
     for subtree in tree.preorder(tree.root):
@@ -174,7 +173,7 @@ def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs=
     expr = tree.reconstruct()
     
     # Step 3: Simplification patterns:
-    # Step 3a: Replace the pattern Mul(Div(1, b), a) or Mul(a, Div(1, b)) with Div(a, b):
+    # Step 3.a: Replace the pattern Mul(Div(1, b), a) or Mul(a, Div(1, b)) with Div(a, b):
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
@@ -190,7 +189,7 @@ def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs=
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
-    # Step 3b: Subtraction intrinsics. SymPy replaces all a - b with a + (-b) = Add(a, Mul(-1, b))
+    # Step 3.b: Subtraction intrinsics. SymPy replaces all a - b with a + (-b) = Add(a, Mul(-1, b))
     #         Here, we replace
     #         a) AddSIMD(MulSIMD(-1, b), a),
     #         b) AddSIMD(MulSIMD(b, -1), a),
@@ -230,7 +229,7 @@ def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs=
     #         instruction set, starting with Haswell processors in 2013:
     #         https://en.wikipedia.org/wiki/Haswell_(microarchitecture)
 
-    # Step 4a: Find double FMA patterns first [e.g., FMA(a,b,FMA(c,d,e))]:
+    # Step 4.a: Find double FMA patterns first [e.g., FMA(a,b,FMA(c,d,e))]:
     #           NOTE: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations:
     if SIMD_find_more_FMAsFMSs == "True":
         for subtree in tree.preorder(tree.root):
@@ -258,7 +257,7 @@ def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs=
                 tree.build(subtree, clear=True)
         expr = tree.reconstruct()
 
-    # Step 4b: Next find single FMA patterns:
+    # Step 4.b: Next find single FMA patterns:
     for subtree in tree.preorder(tree.root):
         func = subtree.expr.func
         args = subtree.expr.args
@@ -276,7 +275,7 @@ def expr_convert_to_SIMD_intrins(expr, var_map, prefix, SIMD_find_more_FMAsFMSs=
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
-    # Step 4c: Leftover double FMA patterns that are difficult to find in Step 5.a:
+    # Step 4.c: Leftover double FMA patterns that are difficult to find in Step 5.a:
     #           NOTE: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations:
     if SIMD_find_more_FMAsFMSs == "True":
         for subtree in tree.preorder(tree.root):

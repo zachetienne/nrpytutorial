@@ -15,7 +15,7 @@ import sympy as sp                            # Import SymPy
 import re, sys, os                            # Standard Python: regular expressions, system, and multiplatform OS funcs
 from collections import namedtuple            # Standard Python: Enable namedtuple data type
 lhrh = namedtuple('lhrh', 'lhs rhs')
-outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix CSE_sorting CSE_preprocess SIMD_enable SIMD_const_suffix SIMD_find_more_FMAsFMSs SIMD_debug enable_TYPE gridsuffix')
+outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix CSE_sorting CSE_preprocess SIMD_enable SIMD_find_more_FMAsFMSs SIMD_debug enable_TYPE gridsuffix')
 
 # Sometimes SymPy has problems evaluating complicated expressions involving absolute
 #    values, resulting in hangs. So instead of using sp.Abs(), if we instead use
@@ -105,7 +105,6 @@ def parse_outCparams_string(params):
     CSE_varprefix = "tmp"
     CSE_preprocess = "False"
     SIMD_enable = "False"
-    SIMD_const_suffix = ""
     SIMD_find_more_FMAsFMSs = "False" # Finding too many FMAs/FMSs can degrade performance; currently tuned to optimize BSSN
     SIMD_debug = "False"
     enable_TYPE = "True"
@@ -158,8 +157,6 @@ def parse_outCparams_string(params):
                 CSE_preprocess = value[i]
             elif parnm[i] == "SIMD_enable":
                 SIMD_enable = value[i]
-            elif parnm[i] == "SIMD_const_suffix":
-                SIMD_const_suffix = value[i]
             elif parnm[i] == "SIMD_find_more_FMAsFMSs":
                 SIMD_find_more_FMAsFMSs = value[i]
             elif parnm[i] == "SIMD_debug":
@@ -174,7 +171,7 @@ def parse_outCparams_string(params):
 
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,
                       CSE_enable,CSE_varprefix,CSE_sorting,CSE_preprocess,
-                      SIMD_enable,SIMD_const_suffix,SIMD_find_more_FMAsFMSs,SIMD_debug,
+                      SIMD_enable,SIMD_find_more_FMAsFMSs,SIMD_debug,
                       enable_TYPE,gridsuffix)
 
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
@@ -276,7 +273,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     #         nearly consistent with SymPy's ccode() function,
     #         though with support for float & long double types
     #         as well.
-    SIMD_decls = PRE_decls = ""
+    SIMD_RATIONAL_decls = RATIONAL_decls = ""
 
     if outCparams.CSE_enable == "False":
         # If CSE is disabled:
@@ -292,16 +289,18 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         
         varprefix = "" if outCparams.CSE_varprefix == "tmp" else outCparams.CSE_varprefix
         if outCparams.CSE_preprocess == "True" or outCparams.SIMD_enable == "True":
-            sympyexpr, var_map = cse_preprocess(sympyexpr, prefix=varprefix, \
+            # If CSE_preprocess == True, then perform partial factorization
+            # If SIMD_enable == True, then declare _NegativeOne_ in preprocessing
+            sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr, prefix=varprefix, \
                 ignore=eval(outCparams.SIMD_enable), factor=eval(outCparams.CSE_preprocess))
-            for v in var_map:
-                try: p, q = str(float(var_map[v].p)), str(float(var_map[v].q))
-                except KeyError: print(v, var_map[v], type(var_map[v]))
+            for v in map_sym_to_rat:
+                p, q = str(float(map_sym_to_rat[v].p)), str(float(map_sym_to_rat[v].q))
                 if outCparams.SIMD_enable == "False":
-                    if '_Rational_' in str(v):
-                        PRE_decls += outCparams.preindent + indent + "const double " + str(v) + ' = ' + p + '/' + q + ';\n'
-                    else:
-                        PRE_decls += outCparams.preindent + indent + "const double " + str(v) + ' = ' + p + ';\n'
+                    RATIONAL_decls += outCparams.preindent + indent + "const double " + str(v) + ' = '
+                    # Since Integer is a subclass of Rational in SymPy, we need only check whether
+                    # the denominator q = 1 to determine if a rational is an integer.
+                    if q != 1: RATIONAL_decls += p + '/' + q + ';\n'
+                    else:      RATIONAL_decls += p + ';\n'
         
         CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), \
             order=outCparams.CSE_sorting))
@@ -313,7 +312,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
             if outCparams.SIMD_enable == "True":
                 outstring += outCparams.preindent + indent + FULLTYPESTRING + str(commonsubexpression[0]) + " = " + \
-                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],var_map,varprefix,outCparams.SIMD_find_more_FMAsFMSs)) + ";\n"
+                             str(expr_convert_to_SIMD_intrins(commonsubexpression[1],map_sym_to_rat,varprefix,outCparams.SIMD_find_more_FMAsFMSs)) + ";\n"
             else:
                 outstring += outCparams.preindent+indent+FULLTYPESTRING+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0],
                                                                                                 user_functions=custom_functions_for_SymPy_ccode))+"\n"
@@ -321,14 +320,18 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         for i,result in enumerate(CSE_results[1]):
             if outCparams.SIMD_enable == "True":
                 outstring += outtypestring + output_varname_str[i] + " = " + \
-                             str(expr_convert_to_SIMD_intrins(result,var_map,varprefix,outCparams.SIMD_find_more_FMAsFMSs)) + ";\n"
+                             str(expr_convert_to_SIMD_intrins(result,map_sym_to_rat,varprefix,outCparams.SIMD_find_more_FMAsFMSs)) + ";\n"
             else:
                 outstring += outtypestring+ccode_postproc(sp.ccode(result,output_varname_str[i],
                                                                    user_functions=custom_functions_for_SymPy_ccode))+"\n"
+        # Complication: SIMD functions require numerical constants to be stored in SIMD arrays
+        # Resolution: This function extends lists "SIMD_const_varnms" and "SIMD_const_values",
+        #             which store the name of each constant SIMD array (e.g., _Integer_1) and
+        #             the value of each variable (e.g., 1.0).
         if outCparams.SIMD_enable == "True":
-            for v in var_map:
-                try: p, q = str(float(var_map[v].p)), str(float(var_map[v].q))
-                except KeyError: print(v, var_map[v], type(var_map[v]))
+            for v in map_sym_to_rat:
+                try: p, q = str(float(map_sym_to_rat[v].p)), str(float(map_sym_to_rat[v].q))
+                except KeyError: print(v, map_sym_to_rat[v], type(map_sym_to_rat[v]))
                 SIMD_const_varnms.extend([str(v)])
                 if '_Rational_' in str(v):
                     SIMD_const_values.extend([p + '/' + q])
@@ -354,18 +357,18 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
             for i in range(len(SIMD_const_varnms)):
                 if outCparams.enable_TYPE == "False":
-                    SIMD_decls += outCparams.preindent + indent + SIMD_const_varnms[i] + " = " + SIMD_const_values[i]+";"
+                    SIMD_RATIONAL_decls += outCparams.preindent + indent + SIMD_const_varnms[i] + " = " + SIMD_const_values[i]+";"
                 else:
-                    SIMD_decls += outCparams.preindent + indent + "const double " + "SIMD_" + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_decls += outCparams.preindent+indent+ "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD(" + "SIMD_" + SIMD_const_varnms[i] + ");\n"
-                SIMD_decls += "\n"
+                    SIMD_RATIONAL_decls += outCparams.preindent + indent + "const double " + "SIMD_" + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
+                    SIMD_RATIONAL_decls += outCparams.preindent+indent+ "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD(" + "SIMD_" + SIMD_const_varnms[i] + ");\n"
+                SIMD_RATIONAL_decls += "\n"
 
     # Step 7: Construct final output string
     final_Ccode_output_str = commentblock
     # Step 7a: Output C code in indented curly brackets if
     #          outCparams.includebraces = True
     if outCparams.includebraces == "True": final_Ccode_output_str += outCparams.preindent+"{\n"
-    final_Ccode_output_str += prestring + PRE_decls + SIMD_decls + outstring + poststring
+    final_Ccode_output_str += prestring + RATIONAL_decls + SIMD_RATIONAL_decls + outstring + poststring
     if outCparams.includebraces == "True": final_Ccode_output_str += outCparams.preindent+"}\n"
 
     # Step 8: If filename == "stdout", then output
