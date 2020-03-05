@@ -17,7 +17,7 @@ import sympy as sp
 #         factor    = perform partial factorization
 # Output: modified SymPy expression(s) where all integers and rationals were replaced
 #           with temporary placeholder variables that allow for partial factorization
-def cse_preprocess(expr_list, prefix='', ignore=False, factor=True):
+def cse_preprocess(expr_list, prefix='', ignore=False, factor=True, debug=False):
     if not isinstance(expr_list, list):
         expr_list = [expr_list]
     def expand(a, n):
@@ -87,6 +87,22 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True):
             # Perform partial factoring on the expression(s)
             for var in map_sym_to_rat:
                 expr = sp.collect(expr, var)
+        if debug:
+            def lookup_rational(arg):
+                if arg.func == sp.Symbol:
+                    try: arg = map_sym_to_rat[arg]
+                    except KeyError: pass
+                return arg
+            debug_tree = ExprTree(expr)
+
+            for subtree in debug_tree.preorder():
+                subexpr = subtree.expr
+                if subexpr.func == sp.Symbol:
+                    subtree.expr = lookup_rational(subexpr)
+            debug_expr = tree.reconstruct()
+            expr_diff  = expr - debug_expr
+            if sp.simplify(expr_diff) != 0:
+                raise Warning('Expression Difference: ' + str(expr_diff))
         expr_list[i] = expr
     if len(expr_list) == 1:
         expr_list = expr_list[0]

@@ -46,24 +46,21 @@ def CosSIMD_check(a):
 
 # Input: SymPy expression.
 # Return value: SymPy expression containing all needed SIMD compiler intrinsics
-def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix, SIMD_find_more_FMAsFMSs="False"):
+def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more_FMAsFMSs="False", debug="False"):
     for item in preorder_traversal(expr):
         for arg in item.args:
             if isinstance(arg, Symbol):
                 var(str(arg))
                 
-    def lookup_rational(args):
-        if not isinstance(args, list):
-            args = [args]
-        for i, arg in enumerate(args):
-            if arg.func == Symbol:
-                try: args[i] = map_sym_to_rat[arg]
-                except KeyError: pass
-        return args[0] if len(args) == 1 else args
+    def lookup_rational(arg):
+        if arg.func == Symbol:
+            try: arg = map_sym_to_rat[arg]
+            except KeyError: pass
+        return arg
 
     map_rat_to_sym = {map_sym_to_rat[v]:v for v in map_sym_to_rat}
 
-    tree = ExprTree(expr)
+    expr_orig, tree = expr, ExprTree(expr)
 
     AbsSIMD  = Function("AbsSIMD")
     AddSIMD  = Function("AddSIMD")
@@ -309,4 +306,25 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix, SIMD_find_more_FM
                                                                args[1]))
                 tree.build(subtree, clear=True)
         expr = tree.reconstruct()
+
+    if debug == "True":
+        expr_check = eval(str(expr).replace("SIMD", "SIMD_check"))
+        expr_check = expr_check.subs(-1, Symbol('_NegativeOne_'))
+
+        expr_diff = expr_check - expr_orig
+        # The eval(str(srepr())) below normalizes the expression, 
+        # fixing a cancellation issue in SymPy ~0.7.4.
+        expr_diff = eval(str(srepr(expr_diff)))
+        tree_diff = ExprTree(expr_diff)
+        for subtree in tree_diff.preorder():
+            subexpr = subtree.expr
+            if subexpr.func == Float:
+                if abs(subexpr - Integer(subexpr)) < 1.0e-14:
+                    subtree.expr = Integer(item)
+        expr_diff = tree_diff.reconstruct()
+
+        if expr_diff != 0:
+            simp_expr_diff = simplify(expr_diff)
+            if simp_expr_diff != 0:
+                raise Warning('Expression Difference: ' + str(simp_expr_diff))
     return(expr)
