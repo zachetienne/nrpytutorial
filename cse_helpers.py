@@ -24,7 +24,8 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True):
         if  n == 2:  return sp.Mul(a, a, evaluate=False)
         elif n > 2:  return sp.Mul(expand(a, n - 1), a, evaluate=False)
         return sp.Pow(expand(a, -n), -1, evaluate=False)
-    var_map, sym_map = {}, {} # Variable -> Rational, Rational -> Variable
+    # Symbol -> Rational, Rational -> Symbol
+    map_sym_to_rat, map_rat_to_sym = {}, {}
     for i, expr in enumerate(expr_list):
         tree = ExprTree(expr)
         # Expand power function, preventing replacement of exponent argument
@@ -43,27 +44,27 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True):
                 sign = 1 if subexpr >= 0 else -1
                 subexpr *= sign
                 # Check whether rational was already declared, otherwise declare
-                try: repl = sym_map[subexpr]
+                try: repl = map_rat_to_sym[subexpr]
                 except KeyError:
                     p, q = subexpr.p, subexpr.q
                     var_name = prefix + '_Rational_' + str(p) + '_' + str(q) \
                         if q != 1 else prefix + '_Integer_' + str(p)
                     repl = sp.Symbol(var_name)
-                    var_map[repl], sym_map[subexpr] = subexpr, repl
+                    map_sym_to_rat[repl], map_rat_to_sym[subexpr] = subexpr, repl
                 subtree.expr = repl * sign
                 # If ignore == True, then declare symbol for factored negative
                 if ignore and sign < 0:
-                    try: subtree.expr *= sym_map[-1] * sign
+                    try: subtree.expr *= map_rat_to_sym[-1] * sign
                     except KeyError:
                         repl = sp.Symbol(prefix + '_NegativeOne_')
-                        var_map[repl], sym_map[-1] = sp.S.NegativeOne, repl
+                        map_sym_to_rat[repl], map_rat_to_sym[-1] = sp.S.NegativeOne, repl
                         subtree.expr *= repl * sign
             # Handle the separate case of -1, preventing -1 -> _NegativeOne_ * _Integer_1
             elif subexpr == sp.S.NegativeOne:
-                try: subtree.expr = sym_map[-1]
+                try: subtree.expr = map_rat_to_sym[-1]
                 except KeyError:
                     repl = sp.Symbol(prefix + '_NegativeOne_')
-                    var_map[repl], sym_map[-1] = sp.S.NegativeOne, repl
+                    map_sym_to_rat[repl], map_rat_to_sym[-1] = sp.S.NegativeOne, repl
                     subtree.expr = repl
         # If exponent was replaced with symbol (usually -1), then back-substitute
         for subtree in tree.preorder(tree.root):
@@ -71,25 +72,25 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True):
             if subexpr.func == sp.Pow:
                 exponent = subtree.children[1].expr
                 if exponent.func == sp.Symbol:
-                    subtree.children[1].expr = var_map[exponent]
+                    subtree.children[1].expr = map_sym_to_rat[exponent]
         expr = tree.reconstruct()
         # If factor == True, then perform partial factoring
         if factor:
             # Handle the separate case of function arguments
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
-                    for var in var_map.keys():
+                    for var in map_sym_to_rat.keys():
                         child = subtree.children[0]
                         child.expr = sp.collect(child.expr, var)
                         child.children.clear()
             expr = tree.reconstruct()
             # Perform partial factoring on the expression(s)
-            for var in var_map:
+            for var in map_sym_to_rat:
                 expr = sp.collect(expr, var)
         expr_list[i] = expr
     if len(expr_list) == 1:
         expr_list = expr_list[0]
-    return expr_list, var_map
+    return expr_list, map_sym_to_rat
 
 # Input:  cse_output = output from SymPy CSE with tuple format: (list of ordered pairs that 
 #            contain substituted symbols and their replaced expressions, reduced SymPy expression)
