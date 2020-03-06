@@ -414,12 +414,13 @@ const int NUM_RECONSTRUCT_GFS = 6;
 #include "RHSs/calculate_StildeD0_source_term.h"
 #include "RHSs/calculate_StildeD1_source_term.h"
 #include "RHSs/calculate_StildeD2_source_term.h"
-#include "RHSs/calculate_E_field_D0_right.h"
-#include "RHSs/calculate_E_field_D0_left.h"
-#include "RHSs/calculate_E_field_D1_right.h"
-#include "RHSs/calculate_E_field_D1_left.h"
-#include "RHSs/calculate_E_field_D2_right.h"
-#include "RHSs/calculate_E_field_D2_left.h"
+// #include "RHSs/calculate_E_field_D0_right.h"
+// #include "RHSs/calculate_E_field_D0_left.h"
+// #include "RHSs/calculate_E_field_D1_right.h"
+// #include "RHSs/calculate_E_field_D1_left.h"
+// #include "RHSs/calculate_E_field_D2_right.h"
+// #include "RHSs/calculate_E_field_D2_left.h"
+#include "../calculate_E_field_flat_all_in_one.h"
 #include "RHSs/calculate_Stilde_flux_D0_right.h"
 #include "RHSs/calculate_Stilde_flux_D0_left.h"
 #include "RHSs/calculate_Stilde_flux_D1_right.h"
@@ -530,8 +531,9 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             // each new timestep.
             calculate_StildeD0_source_term(params,auxevol_gfs,rhs_gfs);
             // Now, compute the electric field on each face of a cell and add it to the RHSs as appropriate
-            calculate_E_field_D0_right(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D0_left(params,auxevol_gfs,rhs_gfs);
+            //calculate_E_field_D0_right(params,auxevol_gfs,rhs_gfs);
+            //calculate_E_field_D0_left(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_flat_all_in_one(params,auxevol_gfs,rhs_gfs,flux_dirn);
             // Finally, we calculate the flux of StildeD and add the appropriate finite-differences 
             // to the RHSs.
             calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
@@ -539,15 +541,17 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
         }
         else if(flux_dirn==1) {
             calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D1_right(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D1_left(params,auxevol_gfs,rhs_gfs);
+            //calculate_E_field_D1_right(params,auxevol_gfs,rhs_gfs);
+            //calculate_E_field_D1_left(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_flat_all_in_one(params,auxevol_gfs,rhs_gfs,flux_dirn);
             calculate_Stilde_flux_D1_right(params,auxevol_gfs,rhs_gfs);
             calculate_Stilde_flux_D1_left(params,auxevol_gfs,rhs_gfs);
         }
         else {
             calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D2_right(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_D2_left(params,auxevol_gfs,rhs_gfs);
+            //calculate_E_field_D2_right(params,auxevol_gfs,rhs_gfs);
+            //calculate_E_field_D2_left(params,auxevol_gfs,rhs_gfs);
+            calculate_E_field_flat_all_in_one(params,auxevol_gfs,rhs_gfs,flux_dirn);
             calculate_Stilde_flux_D2_right(params,auxevol_gfs,rhs_gfs);
             calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
         }
