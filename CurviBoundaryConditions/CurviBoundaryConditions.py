@@ -176,15 +176,19 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
             file.write(str(auxevol_parity_type[len(auxevol_variables_list) - 1]) + " };\n")
 
     if verbose == True:
-        for i in range(len(evolved_variables_list)):
-            print("Evolved gridfunction \"" + evolved_variables_list[i] + "\" has parity type " + str(
-                evol_parity_type[i]) + ".")
-        for i in range(len(auxiliary_variables_list)):
-            print("Auxiliary gridfunction \"" + auxiliary_variables_list[i] + "\" has parity type " + str(
-                aux_parity_type[i]) + ".")
-        for i in range(len(auxevol_variables_list)):
-            print("AuxEvol gridfunction \"" + auxevol_variables_list[i] + "\" has parity type " + str(
-                auxevol_parity_type[i]) + ".")
+        def print_parity_list(gf_type, variable_names,parity_types):
+            outstr = ""
+            if len(variable_names) != 0:
+                outstr += gf_type+" parity: ( "
+                for i in range(len(variable_names)):
+                    outstr += variable_names[i] + ":" + str(parity_types[i])
+                    if i != len(variable_names)-1:
+                        outstr += ", "
+                outstr += " )"
+            print(outstr)
+        print_parity_list("Evolved"  ,evolved_variables_list  ,evol_parity_type)
+        print_parity_list("Auxiliary",auxiliary_variables_list,aux_parity_type)
+        print_parity_list("AuxEvol"  ,auxevol_variables_list  ,auxevol_parity_type)
 
     # Step 3: Find the Eigen-Coordinate and set up the Eigen-Coordinate's reference metric:
     CoordSystem_orig = par.parval_from_str("reference_metric::CoordSystem")
