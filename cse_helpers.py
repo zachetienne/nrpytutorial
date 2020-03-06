@@ -26,6 +26,7 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True, debug=False)
         return sp.Pow(expand(a, -n), -1, evaluate=False)
     # Symbol -> Rational, Rational -> Symbol
     map_sym_to_rat, map_rat_to_sym = {}, {}
+    NegativeOne = sp.Symbol(prefix + '_NegativeOne_')
     for i, expr in enumerate(expr_list):
         tree = ExprTree(expr)
         # Expand power function, preventing replacement of exponent argument
@@ -56,14 +57,14 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True, debug=False)
                 if ignore and sign < 0:
                     try: subtree.expr *= map_rat_to_sym[-1] * sign
                     except KeyError:
-                        repl = sp.Symbol(prefix + '_NegativeOne_')
+                        repl = NegativeOne
                         map_sym_to_rat[repl], map_rat_to_sym[-1] = sp.S.NegativeOne, repl
                         subtree.expr *= repl * sign
             # Handle the separate case of -1, preventing -1 -> _NegativeOne_ * _Integer_1
             elif subexpr == sp.S.NegativeOne:
                 try: subtree.expr = map_rat_to_sym[-1]
                 except KeyError:
-                    repl = sp.Symbol(prefix + '_NegativeOne_')
+                    repl = NegativeOne
                     map_sym_to_rat[repl], map_rat_to_sym[-1] = sp.S.NegativeOne, repl
                     subtree.expr = repl
         # If exponent was replaced with symbol (usually -1), then back-substitute
@@ -79,14 +80,15 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True, debug=False)
             # Handle the separate case of function arguments
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
-                    for var in map_sym_to_rat.keys():
-                        child = subtree.children[0]
-                        child.expr = sp.collect(child.expr, var)
-                        child.children.clear()
+                    for var in map_sym_to_rat:
+                        if var != NegativeOne:
+                            child = subtree.children[0]
+                            child.expr = sp.collect(child.expr, var)
+                            child.children.clear()
             expr = tree.reconstruct()
             # Perform partial factoring on the expression(s)
             for var in map_sym_to_rat:
-                if var != sp.Symbol(prefix + '_NegativeOne_'):
+                if var != NegativeOne:
                     expr = sp.collect(expr, var)
         if debug:
             def lookup_rational(arg):
