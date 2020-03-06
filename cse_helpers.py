@@ -86,7 +86,8 @@ def cse_preprocess(expr_list, prefix='', ignore=False, factor=True, debug=False)
             expr = tree.reconstruct()
             # Perform partial factoring on the expression(s)
             for var in map_sym_to_rat:
-                expr = sp.collect(expr, var)
+                if var != sp.Symbol(prefix + '_NegativeOne_'):
+                    expr = sp.collect(expr, var)
         if debug:
             def lookup_rational(arg):
                 if arg.func == sp.Symbol:
