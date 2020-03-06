@@ -499,7 +499,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
         default_CSE_varprefix = outCparams.CSE_varprefix
         # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
-        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FDPart1_,includebraces=False"+",CSE_preprocess=True",
+        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FD,includebraces=False,SIMD_const_suffix=_FDcoeff",
                                         prestring=read_from_memory_Ccode))
 
     # Step 5b.iv: Implement control-vector upwinding algorithm.
@@ -521,20 +521,18 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
         upwindU = [sp.sympify(0) for i in range(par.parval_from_str("DIM"))]
         for dirn in upwind_directions:
             upwindU[dirn] = sp.sympify("UpWind"+str(dirn))
-        upwind_expr_list, var_list = [], []
         for i in range(len(list_of_deriv_vars)):
             if len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i]):
                 var_dupD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]))
                 var_ddnD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]).replace("_dupD","_ddnD"))
                 upwind_dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
                 upwind_expr = upwindU[upwind_dirn]*(var_dupD - var_ddnD) + var_ddnD
-                upwind_expr_list.append(upwind_expr)
-                var_list.append(out__type_var(str(list_of_deriv_vars[i]),AddPrefix_for_UpDownWindVars=False))
-        # For convenience, we require out__type_var() above to
-        # prefix up/downwinded variables with "UpwindAlgInput".
-        # Here we do not wish to have this prefix.
-        Coutput += indent_Ccode(outputC(upwind_expr_list,var_list,
-                                                "returnstring",params=params + ",CSE_varprefix="+default_CSE_varprefix+"FDPart2_,includebraces=False"))
+                # For convenience, we require out__type_var() above to
+                # prefix up/downwinded variables with "UpwindAlgInput".
+                # Here we do not wish to have this prefix.
+                Coutput += indent_Ccode(outputC(upwind_expr,
+                                                out__type_var(str(list_of_deriv_vars[i]),AddPrefix_for_UpDownWindVars=False),
+                                                "returnstring",params=params + ",includebraces=False"))
 
     # Step 5b.v: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
@@ -556,7 +554,7 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
     if outCparams.SIMD_enable == "True":
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
-    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",CSE_varprefix="+default_CSE_varprefix+"FDPart3_,includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
+    Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
     
     # Step 6: Add consistent indentation to the output end brace. 
     #         See Step 0.b for corresponding start brace.
