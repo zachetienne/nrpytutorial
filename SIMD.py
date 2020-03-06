@@ -47,6 +47,9 @@ def CosSIMD_check(a):
 # Input: SymPy expression.
 # Return value: SymPy expression containing all needed SIMD compiler intrinsics
 def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more_FMAsFMSs="False", debug="False"):
+    # OVERRIDE; THIS NEW DEFAULT IS FASTER
+    SIMD_find_more_FMAsFMSs="True"
+
     for item in preorder_traversal(expr):
         for arg in item.args:
             if isinstance(arg, Symbol):
