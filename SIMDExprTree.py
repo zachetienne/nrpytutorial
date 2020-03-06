@@ -136,7 +136,7 @@ class ExprTree:
         >>> tree.reconstruct()
         sin(a + b)**2
         """
-        for subtree in self.postorder(self.root):
+        for subtree in self.postorder():
             if subtree.children:
                 expr_list = [node.expr for node in subtree.children]
                 subtree.expr = subtree.expr.func(\
@@ -152,7 +152,7 @@ class ExprTree:
             self.children.append(node)
     
     def __repr__(self):
-        return str([node.expr for node in self.preorder(self.root)])
+        return str([node.expr for node in self.preorder()])
 
     def __str__(self):
         return 'ExprTree(%s)' % str(self.root.expr)
