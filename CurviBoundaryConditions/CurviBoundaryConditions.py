@@ -176,6 +176,8 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
             file.write(str(auxevol_parity_type[len(auxevol_variables_list) - 1]) + " };\n")
 
     if verbose == True:
+        import textwrap
+        wrapper = textwrap.TextWrapper(initial_indent="",subsequent_indent="    ",width=75)
         def print_parity_list(gf_type, variable_names,parity_types):
             outstr = ""
             if len(variable_names) != 0:
@@ -185,7 +187,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
                     if i != len(variable_names)-1:
                         outstr += ", "
                 outstr += " )"
-            print(outstr)
+            print(wrapper.fill(outstr))
         print_parity_list("Evolved"  ,evolved_variables_list  ,evol_parity_type)
         print_parity_list("Auxiliary",auxiliary_variables_list,aux_parity_type)
         print_parity_list("AuxEvol"  ,auxevol_variables_list  ,auxevol_parity_type)
