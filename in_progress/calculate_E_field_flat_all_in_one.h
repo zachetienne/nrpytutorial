@@ -1,18 +1,13 @@
 int k_delta[3][3] = {{1,0,0},
-                      {0,1,0},
-                      {0,0,1}};
+                     {0,1,0},
+                     {0,0,1}};
 
 /*
 Calculate the electric flux on both faces in the input direction.
  */
 void calculate_E_field_flat_all_in_one(const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs,const int flux_dirn) {
-#include "../set_Cparameters.h"
+#include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 
-    int lc[3][3][3];
-    for(int i=0;i<3;i++) for(int j=0;j<3;j++) for(int k=0;k<3;k++) {
-        // From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
-        lc[i][j][k] = (i - j) * (j - k) * (k - i) / 2;
-    }
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
         for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++) {
@@ -52,14 +47,14 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,const REAL *aux
                 const double B_lU2_p1 = auxevol_gfs[IDX4ptS(B_LU2GF, indexp1)];
                 
                 // Calculate the flux vector on each face for each component of the E-field:
-                const REAL F1B2_r = (Valenciav_rU1*B_rU2 - Valenciav_rU2*B_rU1)*lc[flux_dirn][1][2];
-                const REAL F1B2_l = (Valenciav_lU1*B_lU2 - Valenciav_lU2*B_lU1)*lc[flux_dirn][1][2];
+                const REAL F1B2_r = (Valenciav_rU1*B_rU2 - Valenciav_rU2*B_rU1);
+                const REAL F1B2_l = (Valenciav_lU1*B_lU2 - Valenciav_lU2*B_lU1);
                 
-                const REAL F2B0_r = (Valenciav_rU2*B_rU0 - Valenciav_rU0*B_rU2)*lc[flux_dirn][2][0];
-                const REAL F2B0_l = (Valenciav_lU2*B_lU0 - Valenciav_lU0*B_lU2)*lc[flux_dirn][2][0];
+                const REAL F2B0_r = (Valenciav_rU2*B_rU0 - Valenciav_rU0*B_rU2);
+                const REAL F2B0_l = (Valenciav_lU2*B_lU0 - Valenciav_lU0*B_lU2);
                 
-                const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0)*lc[flux_dirn][0][1];
-                const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0)*lc[flux_dirn][0][1];
+                const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
+                const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
                 
                 // Compute the state vector for this flux direction
                 const REAL U_r = B_rU0*k_delta[flux_dirn][0] + B_rU1*k_delta[flux_dirn][1] + B_rU2*k_delta[flux_dirn][2];
@@ -67,14 +62,14 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,const REAL *aux
                 
                 // Repeat at i+1
                 // Calculate the flux vector on each face for each component of the E-field:
-                const REAL F1B2_r_p1 = (Valenciav_rU1_p1*B_rU2_p1 - Valenciav_rU2_p1*B_rU1_p1)*lc[flux_dirn][1][2];
-                const REAL F1B2_l_p1 = (Valenciav_lU1_p1*B_lU2_p1 - Valenciav_lU2_p1*B_lU1_p1)*lc[flux_dirn][1][2];
+                const REAL F1B2_r_p1 = (Valenciav_rU1_p1*B_rU2_p1 - Valenciav_rU2_p1*B_rU1_p1);
+                const REAL F1B2_l_p1 = (Valenciav_lU1_p1*B_lU2_p1 - Valenciav_lU2_p1*B_lU1_p1);
                 
-                const REAL F2B0_r_p1 = (Valenciav_rU2_p1*B_rU0_p1 - Valenciav_rU0_p1*B_rU2_p1)*lc[flux_dirn][2][0];
-                const REAL F2B0_l_p1 = (Valenciav_lU2_p1*B_lU0_p1 - Valenciav_lU0_p1*B_lU2_p1)*lc[flux_dirn][2][0];
+                const REAL F2B0_r_p1 = (Valenciav_rU2_p1*B_rU0_p1 - Valenciav_rU0_p1*B_rU2_p1);
+                const REAL F2B0_l_p1 = (Valenciav_lU2_p1*B_lU0_p1 - Valenciav_lU0_p1*B_lU2_p1);
                 
-                const REAL F0B1_r_p1 = (Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1)*lc[flux_dirn][0][1];
-                const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1)*lc[flux_dirn][0][1];
+                const REAL F0B1_r_p1 = (Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
+                const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
                 
                 // Compute the state vector for this flux direction
                 const REAL U_r_p1 = B_rU0_p1*k_delta[flux_dirn][0] + B_rU1_p1*k_delta[flux_dirn][1] + B_rU2_p1*k_delta[flux_dirn][2];
@@ -93,6 +88,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,const REAL *aux
                 
                 rhs_gfs[IDX4ptS(AD0GF,index)] += 0.25*(FHLL_1B2 + FHLL_1B2p1)*(flux_dirn!=0); // Set to zero for the component in flux_dirn. Is it more efficient to do this sooner? An array-based implementation might be better, too.
                 rhs_gfs[IDX4ptS(AD1GF,index)] += 0.25*(FHLL_2B0 + FHLL_2B0p1)*(flux_dirn!=1); 
+                if(i0==62 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
+                    printf("flux_dirn = %d,AD1GF = %.15e\n",flux_dirn,0.25*(FHLL_2B0 + FHLL_2B0p1)*(flux_dirn!=1));
+                }
                 rhs_gfs[IDX4ptS(AD2GF,index)] += 0.25*(FHLL_0B1 + FHLL_0B1p1)*(flux_dirn!=2);
                 
             } // END LOOP: for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++)
