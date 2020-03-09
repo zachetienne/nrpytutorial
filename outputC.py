@@ -356,8 +356,8 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                 if outCparams.enable_TYPE == "False":
                     SIMD_RATIONAL_decls += outCparams.preindent + indent + SIMD_const_varnms[i] + " = " + SIMD_const_values[i]+";"
                 else:
-                    SIMD_RATIONAL_decls += outCparams.preindent + indent + "const double " + "_" + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_RATIONAL_decls += outCparams.preindent+indent+ "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD(" + "_" + SIMD_const_varnms[i] + ");\n"
+                    SIMD_RATIONAL_decls += outCparams.preindent + indent + "const double " + "tmp" + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
+                    SIMD_RATIONAL_decls += outCparams.preindent+indent+ "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD(" + "tmp" + SIMD_const_varnms[i] + ");\n"
                 SIMD_RATIONAL_decls += "\n"
 
     # Step 7: Construct final output string
