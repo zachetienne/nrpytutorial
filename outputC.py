@@ -287,22 +287,22 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         SIMD_const_varnms = []
         SIMD_const_values = []
         
-        varprefix = "" if outCparams.CSE_varprefix == "tmp" else outCparams.CSE_varprefix
+        varprefix = '' if outCparams.CSE_varprefix == 'tmp' else outCparams.CSE_varprefix
         if outCparams.CSE_preprocess == "True" or outCparams.SIMD_enable == "True":
             # If CSE_preprocess == True, then perform partial factorization
             # If SIMD_enable == True, then declare _NegativeOne_ in preprocessing
             sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr, prefix=varprefix, \
-                ignore=eval(outCparams.SIMD_enable), factor=eval(outCparams.CSE_preprocess))
+                declare=eval(outCparams.SIMD_enable), factor=eval(outCparams.CSE_preprocess))
             for v in map_sym_to_rat:
-                p, q = str(float(map_sym_to_rat[v].p)), str(float(map_sym_to_rat[v].q))
+                p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 if outCparams.SIMD_enable == "False":
-                    RATIONAL_decls += outCparams.preindent + indent + "const double " + str(v) + ' = '
+                    RATIONAL_decls += outCparams.preindent + indent + 'const double ' + str(v) + ' = '
                     # Since Integer is a subclass of Rational in SymPy, we need only check whether
                     # the denominator q = 1 to determine if a rational is an integer.
-                    if q != 1: RATIONAL_decls += p + '/' + q + ';\n'
-                    else:      RATIONAL_decls += p + ';\n'
+                    if q != 1: RATIONAL_decls += str(p) + '/' + str(q) + ';\n'
+                    else:      RATIONAL_decls += str(p) + ';\n'
         
-        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), \
+        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
             order=outCparams.CSE_sorting))
         
         for commonsubexpression in CSE_results[0]:
@@ -330,13 +330,10 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         #             the value of each variable (e.g., 1.0).
         if outCparams.SIMD_enable == "True":
             for v in map_sym_to_rat:
-                try: p, q = str(float(map_sym_to_rat[v].p)), str(float(map_sym_to_rat[v].q))
-                except KeyError: print(v, map_sym_to_rat[v], type(map_sym_to_rat[v]))
+                p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 SIMD_const_varnms.extend([str(v)])
-                if '_Rational_' in str(v):
-                    SIMD_const_values.extend([p + '/' + q])
-                else:
-                    SIMD_const_values.extend([p])
+                if q != 1: SIMD_const_values.extend([str(p) + '/' + str(q)])
+                else:      SIMD_const_values.extend([str(p)])
         
         # Step 6b.i: If SIMD_enable == True , and
         #            there is at least one SIMD const variable, 
@@ -359,8 +356,8 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                 if outCparams.enable_TYPE == "False":
                     SIMD_RATIONAL_decls += outCparams.preindent + indent + SIMD_const_varnms[i] + " = " + SIMD_const_values[i]+";"
                 else:
-                    SIMD_RATIONAL_decls += outCparams.preindent + indent + "const double " + "_" + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_RATIONAL_decls += outCparams.preindent+indent+ "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD(" + "_" + SIMD_const_varnms[i] + ");\n"
+                    SIMD_RATIONAL_decls += outCparams.preindent + indent + "const double " + "tmp" + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
+                    SIMD_RATIONAL_decls += outCparams.preindent+indent+ "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD(" + "tmp" + SIMD_const_varnms[i] + ");\n"
                 SIMD_RATIONAL_decls += "\n"
 
     # Step 7: Construct final output string
