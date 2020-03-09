@@ -102,7 +102,7 @@ def parse_outCparams_string(params):
     outCverbose = "True"
     CSE_enable = "True"
     CSE_sorting = "canonical"
-    CSE_varprefix = "tmp"
+    CSE_varprefix = ""
     CSE_preprocess = "False"
     SIMD_enable = "False"
     SIMD_find_more_FMAsFMSs = "False" # Finding too many FMAs/FMSs can degrade performance; currently tuned to optimize BSSN
@@ -292,17 +292,17 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             # If CSE_preprocess == True, then perform partial factorization
             # If SIMD_enable == True, then declare _NegativeOne_ in preprocessing
             sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr, prefix=varprefix, \
-                ignore=eval(outCparams.SIMD_enable), factor=eval(outCparams.CSE_preprocess))
+                declare=eval(outCparams.SIMD_enable), factor=eval(outCparams.CSE_preprocess))
             for v in map_sym_to_rat:
-                p, q = str(float(map_sym_to_rat[v].p)), str(float(map_sym_to_rat[v].q))
+                p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 if outCparams.SIMD_enable == "False":
                     RATIONAL_decls += outCparams.preindent + indent + "const double " + str(v) + ' = '
                     # Since Integer is a subclass of Rational in SymPy, we need only check whether
                     # the denominator q = 1 to determine if a rational is an integer.
-                    if q != 1: RATIONAL_decls += p + '/' + q + ';\n'
-                    else:      RATIONAL_decls += p + ';\n'
+                    if q != 1: RATIONAL_decls += str(p) + '/' + str(q) + ';\n'
+                    else:      RATIONAL_decls += str(p) + ';\n'
         
-        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix), \
+        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
             order=outCparams.CSE_sorting))
         
         for commonsubexpression in CSE_results[0]:
@@ -330,13 +330,10 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         #             the value of each variable (e.g., 1.0).
         if outCparams.SIMD_enable == "True":
             for v in map_sym_to_rat:
-                try: p, q = str(float(map_sym_to_rat[v].p)), str(float(map_sym_to_rat[v].q))
-                except KeyError: print(v, map_sym_to_rat[v], type(map_sym_to_rat[v]))
+                p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 SIMD_const_varnms.extend([str(v)])
-                if '_Rational_' in str(v):
-                    SIMD_const_values.extend([p + '/' + q])
-                else:
-                    SIMD_const_values.extend([p])
+                if q != 1: SIMD_const_values.extend([str(p) + '/' + str(q)])
+                else:      SIMD_const_values.extend([str(p)])
         
         # Step 6b.i: If SIMD_enable == True , and
         #            there is at least one SIMD const variable, 
