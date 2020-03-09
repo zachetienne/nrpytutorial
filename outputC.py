@@ -102,7 +102,7 @@ def parse_outCparams_string(params):
     outCverbose = "True"
     CSE_enable = "True"
     CSE_sorting = "canonical"
-    CSE_varprefix = ""
+    CSE_varprefix = "tmp"
     CSE_preprocess = "False"
     SIMD_enable = "False"
     SIMD_find_more_FMAsFMSs = "False" # Finding too many FMAs/FMSs can degrade performance; currently tuned to optimize BSSN
@@ -287,7 +287,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         SIMD_const_varnms = []
         SIMD_const_values = []
         
-        varprefix = "" if outCparams.CSE_varprefix == "tmp" else outCparams.CSE_varprefix
+        varprefix = '' if outCparams.CSE_varprefix == 'tmp' else outCparams.CSE_varprefix
         if outCparams.CSE_preprocess == "True" or outCparams.SIMD_enable == "True":
             # If CSE_preprocess == True, then perform partial factorization
             # If SIMD_enable == True, then declare _NegativeOne_ in preprocessing
@@ -296,7 +296,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             for v in map_sym_to_rat:
                 p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 if outCparams.SIMD_enable == "False":
-                    RATIONAL_decls += outCparams.preindent + indent + "const double " + str(v) + ' = '
+                    RATIONAL_decls += outCparams.preindent + indent + 'const double ' + str(v) + ' = '
                     # Since Integer is a subclass of Rational in SymPy, we need only check whether
                     # the denominator q = 1 to determine if a rational is an integer.
                     if q != 1: RATIONAL_decls += str(p) + '/' + str(q) + ';\n'
