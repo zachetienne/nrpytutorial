@@ -174,6 +174,7 @@ def GiRaFFEfood_NRPy_1D_tests():
     # 
 
 
+    global BU
     BU = ixp.zerorank1()
     BU[0] = BpU[0]
     BU[1] = gammamu*(BpU[1]-mu_AW*EpU[2])
