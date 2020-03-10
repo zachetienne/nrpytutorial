@@ -74,15 +74,13 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, debug=False
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
                     for var in map_sym_to_rat:
-                        if var != _NegativeOne_:
-                            child = subtree.children[0]
-                            child.expr = sp.collect(child.expr, var)
-                            child.children.clear()
+                        child = subtree.children[0]
+                        child.expr = sp.collect(child.expr, var)
+                        child.children.clear()
             expr = tree.reconstruct()
             # Perform partial factoring on the expression(s)
             for var in map_sym_to_rat:
-                if var != _NegativeOne_:
-                    expr = sp.collect(expr, var)
+                expr = sp.collect(expr, var)
         # If debug == True, then back-substitute everything and check difference
         if debug:
             def lookup_rational(arg):
