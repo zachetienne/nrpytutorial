@@ -147,15 +147,16 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
         args = list(subtree.expr.args)
         if func == Add:
             try:
-                # Find the first occurance of a multiplication inside the addition
-                i = next(i for i, arg in enumerate(args) if arg.func == Mul)
-                # Find the first occurance of a negative inside the multiplication
+                # Find the first occurrence of a negative product inside the addition
+                i = next(i for i, arg in enumerate(args) if arg.func == Mul and \
+                        any(lookup_rational(arg) == -1 for arg in args[i].args))
+                # Find the first occurrence of a negative symbol inside the product
                 j = next(j for j, arg in enumerate(args[i].args) if lookup_rational(arg) == -1)
-                # Find the first non-negative argument of the multiplication
+                # Find the first non-negative argument of the product
                 k = next(k for k in range(len(args)) if k != i)
-                # Remove the negative symbol inside the multiplication
+                # Remove the negative symbol from the product
                 subargs = list(args[i].args); subargs.pop(j)
-                # Build the replacement subtraction expression
+                # Build the subtraction expression for replacement
                 subexpr = SubSIMD(args[k], Mul(*subargs))
                 args = [arg for arg in args if arg != args[i] and arg != args[k]]
                 if len(args) > 0:
@@ -257,13 +258,6 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
             subtree.expr = FusedMulSubSIMD(args[0].args[0], args[0].args[1], args[1])
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
-#     for subtree in tree.preorder():
-#         func = subtree.expr.func
-#         args = subtree.expr.args
-#         if func == FusedMulSubSIMD and lookup_rational(args[0]) == -1:
-#             subtree.expr = SubSIMD(args[2], args[1])
-#             tree.build(subtree, clear=True)
-#     expr = tree.reconstruct()
 
     # Step 5.c: Remaining double FMA patterns that previously in Step 5.a were difficult to find.
     #   Note: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations
