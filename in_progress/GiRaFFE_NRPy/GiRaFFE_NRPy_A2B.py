@@ -104,19 +104,127 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
         /* 
         * NRPy+ Finite Difference Code Generation, Step 2 of 1: Evaluate SymPy expressions and write to main memory:
         */
-        const double tmp0 = gammaDD11*gammaDD22;
-        const double tmp1 = pow(gammaDD12, 2);
-        const double tmp2 = gammaDD02*gammaDD12;
-        const double tmp3 = pow(gammaDD01, 2);
-        const double tmp4 = pow(gammaDD02, 2);
-        const double tmp5 = gammaDD00*tmp0 - gammaDD00*tmp1 + 2*gammaDD01*tmp2 - gammaDD11*tmp4 - gammaDD22*tmp3;
-        const double tmp6 = 1.0/sqrt(tmp5);
-        auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = (dy_Az-dz_Ay)*tmp6;
-        auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = (dz_Ax-dx_Az)*tmp6;
-        auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = (dx_Ay-dy_Ax)*tmp6;
+        const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22 
+                                       - gammaDD00*gammaDD12*gammaDD12
+                                       + 2*gammaDD01*gammaDD02*gammaDD12
+                                       - gammaDD11*gammaDD02*gammaDD02
+                                       - gammaDD22*gammaDD01*gammaDD01);
+        auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = (dy_Az-dz_Ay)*invsqrtg;
+        auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = (dz_Ax-dx_Az)*invsqrtg;
+        auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = (dx_Ay-dy_Ax)*invsqrtg;
     }
 }
 """)
+        
+    # Now, we'll also write some more auxiliary functions to handle the order-lowering method for A2B
+    with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
+        file.write("""REAL relative_error(REAL a, REAL b) {
+    if((a+b)!=0.0) {
+        return 2.0*fabs(a-b)/(a+b);
+    }
+    else {
+        return 0.0;
+    }
+}
+
+#define M2 0
+#define M1 1
+#define P0 2
+#define P1 3
+#define P2 4
+#define FOURTH 0
+#define SECOND 1
+#define FORWARD 2
+#define BACKWARD 3
+void compute_Bx_pointwise(REAL *Bx, const REAL invdy, const REAL *Ay, const REAL invdz, const REAL *Az) {
+    REAL dz_Ay,dy_Az;
+    dz_Ay = invdz*((Ay[P1]-Ay[M1])*2.0/3.0 + (Ay[M2]-Ay[P2])/12.0);
+    dy_Az = invdy*((Az[P1]-Az[M1])*2.0/3.0 + (Az[M2]-Az[P2])/12.0);
+    Bx[FOURTH] = dy_Az - dz_Ay;
+    
+    dz_Ay = invdz*(Ay[P1]-Ay[M1])/2.0;
+    dy_Az = invdy*(Az[P1]-Az[M1])/2.0;
+    Bx[SECOND] = dy_Az - dz_Ay;
+    
+    dz_Ay = invdz*(Ay[P1]-Ay[P0]);
+    dy_Az = invdy*(Az[P1]-Az[P0]);
+    Bx[FORWARD] = dy_Az - dz_Ay;
+    
+    dz_Ay = invdz*(Ay[P0]-Ay[M1]);
+    dy_Az = invdy*(Az[P0]-Az[M1]);
+    Bx[BACKWARD] = dy_Az - dz_Ay;
+}
+
+#define TOLERANCE_A2B 1.0e-3
+REAL find_accepted_Bx_order(REAL *Bx) {
+    REAL accepted_val = Bx[FOURTH];
+    REAL Rel_error_o1F_vs_o2 = relative_error(Bx[FORWARD], Bx[SECOND]);
+    REAL Rel_error_o1B_vs_o2 = relative_error(Bx[BACKWARD],Bx[SECOND]);
+    REAL Rel_error_o1_vs_o2 = 0.5*(Rel_error_o1F_vs_o2 + Rel_error_o1B_vs_o2 );
+    if(Rel_error_o1_vs_o2 < relative_error(Bx[SECOND],Bx[FOURTH])) {
+        accepted_val = Bx[SECOND];
+        if(Rel_error_o1_vs_o2 > TOLERANCE_A2B) {
+            if(Rel_error_o1_vs_o2 > Rel_error_o1B_vs_o2) {
+                accepted_val = Bx[BACKWARD];
+            }
+            else {
+                accepted_val = Bx[FORWARD];
+            }
+        }
+    }
+    return accepted_val;
+}
+""")
+
+    order_lowering_body = """REAL AD0_1[5],AD0_2[5],AD1_2[5],AD1_0[5],AD2_0[5],AD2_1[5];
+const double gammaDD00 = auxevol_gfs[IDX4S(GAMMADD00GF, i0,i1,i2)];
+const double gammaDD01 = auxevol_gfs[IDX4S(GAMMADD01GF, i0,i1,i2)];
+const double gammaDD02 = auxevol_gfs[IDX4S(GAMMADD02GF, i0,i1,i2)];
+const double gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF, i0,i1,i2)];
+const double gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF, i0,i1,i2)];
+const double gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF, i0,i1,i2)];
+AD0_2[M2] = in_gfs[IDX4S(AD0GF, i0,i1,i2-2)];
+AD0_2[M1] = in_gfs[IDX4S(AD0GF, i0,i1,i2-1)];
+AD0_1[M2] = in_gfs[IDX4S(AD0GF, i0,i1-2,i2)];
+AD0_1[M1] = in_gfs[IDX4S(AD0GF, i0,i1-1,i2)];
+AD0_1[P0] = AD0_2[P0] = in_gfs[IDX4S(AD0GF, i0,i1,i2)];
+AD0_1[P1] = in_gfs[IDX4S(AD0GF, i0,i1+1,i2)];
+AD0_1[P2] = in_gfs[IDX4S(AD0GF, i0,i1+2,i2)];
+AD0_2[P1] = in_gfs[IDX4S(AD0GF, i0,i1,i2+1)];
+AD0_2[P2] = in_gfs[IDX4S(AD0GF, i0,i1,i2+2)];
+AD1_2[M2] = in_gfs[IDX4S(AD1GF, i0,i1,i2-2)];
+AD1_2[M1] = in_gfs[IDX4S(AD1GF, i0,i1,i2-1)];
+AD1_0[M2] = in_gfs[IDX4S(AD1GF, i0-2,i1,i2)];
+AD1_0[M1] = in_gfs[IDX4S(AD1GF, i0-1,i1,i2)];
+AD1_2[P0] = AD1_0[P0] = in_gfs[IDX4S(AD1GF, i0,i1,i2)];
+AD1_0[P1] = in_gfs[IDX4S(AD1GF, i0+1,i1,i2)];
+AD1_0[P2] = in_gfs[IDX4S(AD1GF, i0+2,i1,i2)];
+AD1_2[P1] = in_gfs[IDX4S(AD1GF, i0,i1,i2+1)];
+AD1_2[P2] = in_gfs[IDX4S(AD1GF, i0,i1,i2+2)];
+AD2_1[M2] = in_gfs[IDX4S(AD2GF, i0,i1-2,i2)];
+AD2_1[M1] = in_gfs[IDX4S(AD2GF, i0,i1-1,i2)];
+AD2_0[M2] = in_gfs[IDX4S(AD2GF, i0-2,i1,i2)];
+AD2_0[M1] = in_gfs[IDX4S(AD2GF, i0-1,i1,i2)];
+AD2_0[P0] = AD2_1[P0] = in_gfs[IDX4S(AD2GF, i0,i1,i2)];
+AD2_0[P1] = in_gfs[IDX4S(AD2GF, i0+1,i1,i2)];
+AD2_0[P2] = in_gfs[IDX4S(AD2GF, i0+2,i1,i2)];
+AD2_1[P1] = in_gfs[IDX4S(AD2GF, i0,i1+1,i2)];
+AD2_1[P2] = in_gfs[IDX4S(AD2GF, i0,i1+2,i2)];
+const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22 
+                               - gammaDD00*gammaDD12*gammaDD12
+                               + 2*gammaDD01*gammaDD02*gammaDD12
+                               - gammaDD11*gammaDD02*gammaDD02
+                               - gammaDD22*gammaDD01*gammaDD01);
+
+REAL BU0[4],BU1[4],BU2[4];
+compute_Bx_pointwise(BU0,invdx2,AD1_2,invdx1,AD2_1);
+compute_Bx_pointwise(BU1,invdx0,AD2_0,invdx2,AD0_2);
+compute_Bx_pointwise(BU2,invdx1,AD0_1,invdx0,AD1_0);
+
+auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = find_accepted_Bx_order(BU0)*invsqrtg;
+auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = find_accepted_Bx_order(BU1)*invsqrtg;
+auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
+"""
     
     # Here, we'll use the outCfunction() function to output a function that will compute the magnetic field
     # on the interior. Then, we'll add postloop code to handle the ghostzones.    
@@ -125,10 +233,7 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     driver_Ccode = outCfunction(
         outfile  = "returnstring", desc=desc, name=name,
         params   = "const paramstruct *restrict params,REAL *restrict in_gfs,REAL *restrict auxevol_gfs",
-        body     = fin.FD_outputC("returnstring",[lhrh(lhs=gri.gfaccess("out_gfs","BU0"),rhs=BU[0]),\
-                                                  lhrh(lhs=gri.gfaccess("out_gfs","BU1"),rhs=BU[1]),\
-                                                  lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])],
-                                  params="outCverbose=False").replace("IDX4","IDX4S"),
+        body     = order_lowering_body,
         postloop = """
     int imin[3] = { NGHOSTS_A2B, NGHOSTS_A2B, NGHOSTS_A2B };
     int imax[3] = { NGHOSTS+Nxx0, NGHOSTS+Nxx1, NGHOSTS+Nxx2 };
