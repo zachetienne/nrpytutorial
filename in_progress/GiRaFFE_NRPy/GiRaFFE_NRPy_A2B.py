@@ -120,7 +120,7 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
         file.write("""REAL relative_error(REAL a, REAL b) {
     if((a+b)!=0.0) {
-        return 2.0*fabs(a-b)/(a+b);
+        return 2.0*fabs(a-b)/fabs(a+b);
     }
     else {
         return 0.0;
@@ -138,8 +138,8 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
 #define BACKWARD 3
 void compute_Bx_pointwise(REAL *Bx, const REAL invdy, const REAL *Ay, const REAL invdz, const REAL *Az) {
     REAL dz_Ay,dy_Az;
-    dz_Ay = invdz*((Ay[P1]-Ay[M1])*2.0/3.0 + (Ay[M2]-Ay[P2])/12.0);
-    dy_Az = invdy*((Az[P1]-Az[M1])*2.0/3.0 + (Az[M2]-Az[P2])/12.0);
+    dz_Ay = invdz*((Ay[P1]-Ay[M1])*2.0/3.0 - (Ay[P2]-Ay[M2])/12.0);
+    dy_Az = invdy*((Az[P1]-Az[M1])*2.0/3.0 - (Az[P2]-Az[M2])/12.0);
     Bx[FOURTH] = dy_Az - dz_Ay;
     
     dz_Ay = invdz*(Ay[P1]-Ay[M1])/2.0;
