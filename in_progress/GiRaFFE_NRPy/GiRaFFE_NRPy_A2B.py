@@ -155,13 +155,13 @@ void compute_Bx_pointwise(REAL *Bx, const REAL invdy, const REAL *Ay, const REAL
     Bx[BACKWARD] = dy_Az - dz_Ay;
 }
 
-#define TOLERANCE_A2B 1.0e-3
+#define TOLERANCE_A2B 1.0e-4
 REAL find_accepted_Bx_order(REAL *Bx) {
     REAL accepted_val = Bx[FOURTH];
     REAL Rel_error_o1F_vs_o2 = relative_error(Bx[FORWARD], Bx[SECOND]);
     REAL Rel_error_o1B_vs_o2 = relative_error(Bx[BACKWARD],Bx[SECOND]);
     REAL Rel_error_o1_vs_o2 = 0.5*(Rel_error_o1F_vs_o2 + Rel_error_o1B_vs_o2 );
-    if(Rel_error_o1_vs_o2 < relative_error(Bx[SECOND],Bx[FOURTH])) {
+    if(relative_error(Bx[SECOND],Bx[FOURTH]) > 100*TOLERANCE_A2B) {
         accepted_val = Bx[SECOND];
         if(Rel_error_o1_vs_o2 > TOLERANCE_A2B) {
             if(Rel_error_o1_vs_o2 > Rel_error_o1B_vs_o2) {
