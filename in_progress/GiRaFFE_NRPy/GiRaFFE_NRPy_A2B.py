@@ -16,7 +16,8 @@ import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
 
-global GiRaFFE_NRPy_A2B
+thismodule = __name__
+
 def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     cmd.mkdir(outdir)
     # Set spatial dimension (must be 3 for BSSN)
@@ -148,12 +149,12 @@ void compute_Bx_pointwise(REAL *Bx, const REAL invdy, const REAL *Ay, const REAL
     dy_Az = invdy*(Az[P1]-Az[M1])/2.0;
     Bx[CN2] = dy_Az - dz_Ay;
     
-    dz_Ay = invdz*(-1.5*Ay[P0]+2.0*Ay[P1]-0.5*Ay[M1]);
-    dy_Az = invdy*(-1.5*Az[P0]+2.0*Az[P1]-0.5*Az[M1]);
+    dz_Ay = invdz*(-1.5*Ay[P0]+2.0*Ay[P1]-0.5*Ay[P2]);
+    dy_Az = invdy*(-1.5*Az[P0]+2.0*Az[P1]-0.5*Az[P2]);
     Bx[UP2] = dy_Az - dz_Ay;
     
-    dz_Ay = invdz*(1.5*Ay[P0]-2.0*Ay[P1]+0.5*Ay[M1]);
-    dy_Az = invdy*(1.5*Az[P0]-2.0*Az[P1]+0.5*Az[M1]);
+    dz_Ay = invdz*(1.5*Ay[P0]-2.0*Ay[M1]+0.5*Ay[M2]);
+    dy_Az = invdy*(1.5*Az[P0]-2.0*Az[M1]+0.5*Az[M2]);
     Bx[DN2] = dy_Az - dz_Ay;
     
     dz_Ay = invdz*(Ay[P1]-Ay[P0]);
@@ -238,6 +239,9 @@ auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = find_accepted_Bx_order(BU1)*invsqrtg;
 auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
 """
     
+#         body     = fin.FD_outputC("returnstring",[lhrh(lhs=gri.gfaccess("out_gfs","BU0"),rhs=BU[0]),\
+#                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU1"),rhs=BU[1]),\
+#                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])]).replace("IDX4","IDX4S"),
     # Here, we'll use the outCfunction() function to output a function that will compute the magnetic field
     # on the interior. Then, we'll add postloop code to handle the ghostzones.    
     desc="Compute the magnetic field from the vector potential everywhere, including ghostzones"
