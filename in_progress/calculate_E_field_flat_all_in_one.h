@@ -88,9 +88,6 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,const REAL *aux
                 
                 rhs_gfs[IDX4ptS(AD0GF,index)] += 0.25*(FHLL_1B2 + FHLL_1B2p1)*(flux_dirn!=0); // Set to zero for the component in flux_dirn. Is it more efficient to do this sooner? An array-based implementation might be better, too.
                 rhs_gfs[IDX4ptS(AD1GF,index)] += 0.25*(FHLL_2B0 + FHLL_2B0p1)*(flux_dirn!=1); 
-                if(i0==62 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
-                    printf("flux_dirn = %d,AD1GF = %.15e\n",flux_dirn,0.25*(FHLL_2B0 + FHLL_2B0p1)*(flux_dirn!=1));
-                }
                 rhs_gfs[IDX4ptS(AD2GF,index)] += 0.25*(FHLL_0B1 + FHLL_0B1p1)*(flux_dirn!=2);
                 
             } // END LOOP: for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++)

@@ -16,7 +16,8 @@ import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
 
-global GiRaFFE_NRPy_A2B
+thismodule = __name__
+
 def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     cmd.mkdir(outdir)
     # Set spatial dimension (must be 3 for BSSN)
@@ -120,7 +121,7 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
         file.write("""REAL relative_error(REAL a, REAL b) {
     if((a+b)!=0.0) {
-        return 2.0*fabs(a-b)/(a+b);
+        return 2.0*fabs(a-b)/fabs(a+b);
     }
     else {
         return 0.0;
@@ -132,43 +133,55 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
 #define P0 2
 #define P1 3
 #define P2 4
-#define FOURTH 0
-#define SECOND 1
-#define FORWARD 2
-#define BACKWARD 3
+#define CN4 0
+#define CN2 1
+#define UP2 2
+#define DN2 3
+#define UP1 4
+#define DN1 5
 void compute_Bx_pointwise(REAL *Bx, const REAL invdy, const REAL *Ay, const REAL invdz, const REAL *Az) {
     REAL dz_Ay,dy_Az;
-    dz_Ay = invdz*((Ay[P1]-Ay[M1])*2.0/3.0 + (Ay[M2]-Ay[P2])/12.0);
-    dy_Az = invdy*((Az[P1]-Az[M1])*2.0/3.0 + (Az[M2]-Az[P2])/12.0);
-    Bx[FOURTH] = dy_Az - dz_Ay;
+    dz_Ay = invdz*((Ay[P1]-Ay[M1])*2.0/3.0 - (Ay[P2]-Ay[M2])/12.0);
+    dy_Az = invdy*((Az[P1]-Az[M1])*2.0/3.0 - (Az[P2]-Az[M2])/12.0);
+    Bx[CN4] = dy_Az - dz_Ay;
     
     dz_Ay = invdz*(Ay[P1]-Ay[M1])/2.0;
     dy_Az = invdy*(Az[P1]-Az[M1])/2.0;
-    Bx[SECOND] = dy_Az - dz_Ay;
+    Bx[CN2] = dy_Az - dz_Ay;
+    
+    dz_Ay = invdz*(-1.5*Ay[P0]+2.0*Ay[P1]-0.5*Ay[P2]);
+    dy_Az = invdy*(-1.5*Az[P0]+2.0*Az[P1]-0.5*Az[P2]);
+    Bx[UP2] = dy_Az - dz_Ay;
+    
+    dz_Ay = invdz*(1.5*Ay[P0]-2.0*Ay[M1]+0.5*Ay[M2]);
+    dy_Az = invdy*(1.5*Az[P0]-2.0*Az[M1]+0.5*Az[M2]);
+    Bx[DN2] = dy_Az - dz_Ay;
     
     dz_Ay = invdz*(Ay[P1]-Ay[P0]);
     dy_Az = invdy*(Az[P1]-Az[P0]);
-    Bx[FORWARD] = dy_Az - dz_Ay;
+    Bx[UP1] = dy_Az - dz_Ay;
     
     dz_Ay = invdz*(Ay[P0]-Ay[M1]);
     dy_Az = invdy*(Az[P0]-Az[M1]);
-    Bx[BACKWARD] = dy_Az - dz_Ay;
+    Bx[DN1] = dy_Az - dz_Ay;
 }
 
-#define TOLERANCE_A2B 1.0e-3
+#define TOLERANCE_A2B 1.0e-4
 REAL find_accepted_Bx_order(REAL *Bx) {
-    REAL accepted_val = Bx[FOURTH];
-    REAL Rel_error_o1F_vs_o2 = relative_error(Bx[FORWARD], Bx[SECOND]);
-    REAL Rel_error_o1B_vs_o2 = relative_error(Bx[BACKWARD],Bx[SECOND]);
-    REAL Rel_error_o1_vs_o2 = 0.5*(Rel_error_o1F_vs_o2 + Rel_error_o1B_vs_o2 );
-    if(Rel_error_o1_vs_o2 < relative_error(Bx[SECOND],Bx[FOURTH])) {
-        accepted_val = Bx[SECOND];
-        if(Rel_error_o1_vs_o2 > TOLERANCE_A2B) {
-            if(Rel_error_o1_vs_o2 > Rel_error_o1B_vs_o2) {
-                accepted_val = Bx[BACKWARD];
+    REAL accepted_val = Bx[CN4];
+    REAL Rel_error_o2_vs_o4 = relative_error(Bx[CN2],Bx[CN4]);
+    REAL Rel_error_oCN2_vs_oDN2 = relative_error(Bx[CN2],Bx[DN2]);
+    REAL Rel_error_oCN2_vs_oUP2 = relative_error(Bx[CN2],Bx[UP2]);
+    
+    if(Rel_error_o2_vs_o4 > TOLERANCE_A2B) {
+        accepted_val = Bx[CN2];
+        if(Rel_error_o2_vs_o4 > Rel_error_oCN2_vs_oDN2 || Rel_error_o2_vs_o4 > Rel_error_oCN2_vs_oUP2) {
+            // Should we use AND or OR in if statement?
+            if(relative_error(Bx[UP2],Bx[UP1]) < relative_error(Bx[DN2],Bx[DN1])) {
+                accepted_val = Bx[UP2];
             }
             else {
-                accepted_val = Bx[FORWARD];
+                accepted_val = Bx[DN2];
             }
         }
     }
@@ -226,6 +239,9 @@ auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = find_accepted_Bx_order(BU1)*invsqrtg;
 auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
 """
     
+#         body     = fin.FD_outputC("returnstring",[lhrh(lhs=gri.gfaccess("out_gfs","BU0"),rhs=BU[0]),\
+#                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU1"),rhs=BU[1]),\
+#                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])]).replace("IDX4","IDX4S"),
     # Here, we'll use the outCfunction() function to output a function that will compute the magnetic field
     # on the interior. Then, we'll add postloop code to handle the ghostzones.    
     desc="Compute the magnetic field from the vector potential everywhere, including ghostzones"
