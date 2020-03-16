@@ -25,6 +25,15 @@ import GiRaFFE_NRPy.GiRaFFE_NRPy_C2P_P2C as C2P_P2C
 
 thismodule = "GiRaFFE_NRPy_Main_Driver"
 
+CoordSystem = "Cartesian"
+
+par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
+rfm.reference_metric() # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
+
+# Default Kreiss-Oliger dissipation strength
+default_KO_strength = 0.1
+diss_strength = par.Cparameters("REAL", thismodule, "diss_strength", default_KO_strength)
+
 def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     cmd.mkdir(out_dir)
     
@@ -74,6 +83,14 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     for i in range(3):
         A_rhsD[i] += -AevolParen_dD[i]
         psi6Phi_rhs += -PhievolParenU_dD[i][i]
+
+    # Add Kreiss-Oliger dissipation to the GRFFE RHSs:
+    psi6Phi_dKOD = ixp.declarerank1("psi6Phi_dKOD")
+    AD_dKOD    = ixp.declarerank2("AD_dKOD","nosym")
+    for i in range(3):
+        psi6Phi_rhs += diss_strength*psi6Phi_dKOD[i]*rfm.ReU[i] # ReU[i] = 1/scalefactor_orthog_funcform[i]
+        for j in range(3):
+            A_rhsD[j] += diss_strength*AD_dKOD[j][i]*rfm.ReU[i] # ReU[i] = 1/scalefactor_orthog_funcform[i]
 
     RHSs_to_print = [\
                      lhrh(lhs=gri.gfaccess("rhs_gfs","AD0"),rhs=A_rhsD[0]),\
