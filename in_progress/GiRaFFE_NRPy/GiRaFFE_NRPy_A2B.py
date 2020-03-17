@@ -239,9 +239,6 @@ auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = find_accepted_Bx_order(BU1)*invsqrtg;
 auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
 """
     
-#         body     = fin.FD_outputC("returnstring",[lhrh(lhs=gri.gfaccess("out_gfs","BU0"),rhs=BU[0]),\
-#                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU1"),rhs=BU[1]),\
-#                                                   lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])]).replace("IDX4","IDX4S"),
     # Here, we'll use the outCfunction() function to output a function that will compute the magnetic field
     # on the interior. Then, we'll add postloop code to handle the ghostzones.    
     desc="Compute the magnetic field from the vector potential everywhere, including ghostzones"
@@ -249,7 +246,10 @@ auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
     driver_Ccode = outCfunction(
         outfile  = "returnstring", desc=desc, name=name,
         params   = "const paramstruct *restrict params,REAL *restrict in_gfs,REAL *restrict auxevol_gfs",
-        body     = order_lowering_body,
+        body     = fin.FD_outputC("returnstring",[lhrh(lhs=gri.gfaccess("out_gfs","BU0"),rhs=BU[0]),\
+                                                  lhrh(lhs=gri.gfaccess("out_gfs","BU1"),rhs=BU[1]),\
+                                                  lhrh(lhs=gri.gfaccess("out_gfs","BU2"),rhs=BU[2])]).replace("IDX4","IDX4S"),
+#         body     = order_lowering_body,
         postloop = """
     int imin[3] = { NGHOSTS_A2B, NGHOSTS_A2B, NGHOSTS_A2B };
     int imax[3] = { NGHOSTS+Nxx0, NGHOSTS+Nxx1, NGHOSTS+Nxx2 };
