@@ -14,10 +14,11 @@ import sympy as sp
 # Input:  expr_list = single SymPy expression or list of SymPy expressions
 #         prefix    = string prefix for variable names (i.e. replacement symbols)
 #         declare   = declare negative one symbol (i.e. _NegativeOne_)
+#         negative  = perform partial factorization on negative one
 #         factor    = perform partial factorization (excluding negative one)
 # Output: modified SymPy expression(s) where all integers and rationals were replaced
 #           with temporary placeholder variables that allow for partial factorization
-def cse_preprocess(expr_list, prefix='', declare=False, factor=True, debug=False):
+def cse_preprocess(expr_list, prefix='', declare=False, negative=False, factor=True, debug=False):
     if not isinstance(expr_list, list):
         expr_list = [expr_list]
     def expand(a, n):
@@ -68,8 +69,8 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, debug=False
                 if exponent.func == sp.Symbol:
                     subtree.children[1].expr = map_sym_to_rat[exponent]
         expr = tree.reconstruct()
-        # If factor == True, then perform partial factoring
-        if factor:
+        # If factor == True, then perform partial factoring (excluding negative one)
+        if factor == True:
             # Handle the separate case of function arguments
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
@@ -83,8 +84,11 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, debug=False
             for var in map_sym_to_rat:
                 if var != _NegativeOne_:
                     expr = sp.collect(expr, var)
+        # If negative == True, then perform partial factoring on negative one
+        if negative == True:
+            expr = sp.collect(expr, _NegativeOne_)
         # If debug == True, then back-substitute everything and check difference
-        if debug:
+        if debug == True:
             def lookup_rational(arg):
                 if arg.func == sp.Symbol:
                     try: arg = map_sym_to_rat[arg]
