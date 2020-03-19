@@ -12,39 +12,29 @@ from SIMDExprTree import ExprTree
 import sympy as sp
 
 # Input:  expr_list = single SymPy expression or list of SymPy expressions
-#         prefix    = string prefix for variable names (i.e. replacement symbols)
-#         declare   = declare negative one symbol (i.e. _NegativeOne_)
-#         negative  = perform partial factorization on negative one
-#         factor    = perform partial factorization (excluding negative one)
+#         prefix    = string prefix for variable names (i.e. rational symbols)
+#         declare   = declare symbol for negative one (i.e. _NegativeOne_)
+#         factor    = perform partial factorization (excluding negative)
+#         negative  = include negative in partial factorization
 # Output: modified SymPy expression(s) where all integers and rationals were replaced
 #           with temporary placeholder variables that allow for partial factorization
-def cse_preprocess(expr_list, prefix='', declare=False, negative=False, factor=True, debug=False):
+def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=False, debug=False):
     if not isinstance(expr_list, list):
         expr_list = [expr_list]
-    def expand(a, n):
-        if  n == 2:  return sp.Mul(a, a, evaluate=False)
-        elif n > 2:  return sp.Mul(expand(a, n - 1), a, evaluate=False)
-        return sp.Pow(expand(a, -n), -1, evaluate=False)
     _NegativeOne_ = sp.Symbol(prefix + '_NegativeOne_')
     map_sym_to_rat, map_rat_to_sym = {}, {}
     for i, expr in enumerate(expr_list):
         tree = ExprTree(expr)
-        # Expand power function, preventing replacement of exponent argument
-        for subtree in tree.preorder(tree.root):
-            subexpr = subtree.expr
-            if subexpr.func == sp.Pow:
-                exponent = subtree.children[1].expr
-                if exponent.func == sp.Integer and abs(exponent) > 1:
-                    subtree.expr = expand(*subexpr.args)
-                    tree.build(subtree, clear=True)
-        # Search through expression tree for integers/rationals
+        # Search through expression tree for rational(s)
         for subtree in tree.preorder():
             subexpr = subtree.expr
             if isinstance(subexpr, sp.Rational) and subexpr != sp.S.NegativeOne:
-                # If rational < 0, factor out negative and declare positive rational
+                # Ignore replacing exponent of power function with symbol
+                if subtree.func == sp.Pow: continue
+                # If rational < 0, factor out negative, leaving positive rational
                 sign = 1 if subexpr >= 0 else -1
                 subexpr *= sign
-                # Check whether rational was already declared, otherwise declare rational
+                # Declare unique symbol for rational on first appearance
                 try: repl = map_rat_to_sym[subexpr]
                 except KeyError:
                     p, q = subexpr.p, subexpr.q
@@ -53,40 +43,30 @@ def cse_preprocess(expr_list, prefix='', declare=False, negative=False, factor=T
                     repl = sp.Symbol(var_name)
                     map_sym_to_rat[repl], map_rat_to_sym[subexpr] = subexpr, repl
                 subtree.expr = repl * sign
-                if sign < 0: tree.build(subtree, clear=True)
-            # If declare == True, then declare symbol for -1 or extracted negative
-            elif declare and subexpr == sp.S.NegativeOne:
+                if sign < 0: tree.build(subtree)
+            # If declare == True, then declare symbol for negative one
+            elif declare == True and subexpr == sp.S.NegativeOne:
                 try: subtree.expr = map_rat_to_sym[sp.S.NegativeOne]
                 except KeyError:
                     repl = _NegativeOne_
                     map_sym_to_rat[repl], map_rat_to_sym[subexpr] = subexpr, repl
                     subtree.expr = repl
-        # If exponent was replaced with symbol (usually -1), then back-substitute
-        for subtree in tree.preorder(tree.root):
-            subexpr = subtree.expr
-            if subexpr.func == sp.Pow:
-                exponent = subtree.children[1].expr
-                if exponent.func == sp.Symbol:
-                    subtree.children[1].expr = map_sym_to_rat[exponent]
         expr = tree.reconstruct()
-        # If factor == True, then perform partial factoring (excluding negative one)
+        # If factor == True, then perform partial factoring
         if factor == True:
-            # Handle the separate case of function arguments
+            # Handle function arguments as separate case
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
                     for var in map_sym_to_rat:
-                        if var != _NegativeOne_:
+                        if negative == True or var != _NegativeOne_:
                             child = subtree.children[0]
                             child.expr = sp.collect(child.expr, var)
                             child.children.clear()
             expr = tree.reconstruct()
             # Perform partial factoring on the expression(s)
             for var in map_sym_to_rat:
-                if var != _NegativeOne_:
+                if negative == True or var != _NegativeOne_:
                     expr = sp.collect(expr, var)
-        # If negative == True, then perform partial factoring on negative one
-        if negative == True:
-            expr = sp.collect(expr, _NegativeOne_)
         # If debug == True, then back-substitute everything and check difference
         if debug == True:
             def lookup_rational(arg):
