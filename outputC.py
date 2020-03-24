@@ -296,7 +296,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             # If SIMD_enable == True, then declare _NegativeOne_ in preprocessing
             factor_negative = outCparams.SIMD_enable and outCparams.SIMD_find_more_subs
             sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr, prefix=varprefix, \
-                declare=eval(outCparams.SIMD_enable),negative=factor_negative,factor=eval(outCparams.CSE_preprocess))
+                declare=eval(outCparams.SIMD_enable),negative=eval(factor_negative),factor=eval(outCparams.CSE_preprocess))
             for v in map_sym_to_rat:
                 p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 if outCparams.SIMD_enable == "False":

@@ -37,7 +37,7 @@ class ExprTree:
     """
 
     def __init__(self, expr):
-        self.root = self.Node(expr)
+        self.root = self.Node(expr, None)
         self.build(self.root)
     
     def build(self, node, clear=False):
@@ -56,7 +56,7 @@ class ExprTree:
         """
         if clear: node.children.clear()
         for arg in node.expr.args:
-            subtree = self.Node(arg)
+            subtree = self.Node(arg, node.expr.func)
             node.append(subtree)
             self.build(subtree)
 
@@ -144,8 +144,9 @@ class ExprTree:
         return self.root.expr
 
     class Node:
-        def __init__(self, expr):
+        def __init__(self, expr, func):
             self.expr = expr
+            self.func = func
             self.children = []
 
         def append(self, node):
