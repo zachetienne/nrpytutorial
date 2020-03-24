@@ -49,9 +49,8 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
             elif declare == True and subexpr == sp.S.NegativeOne:
                 try: subtree.expr = map_rat_to_sym[sp.S.NegativeOne]
                 except KeyError:
-                    repl = _NegativeOne_
-                    map_sym_to_rat[repl], map_rat_to_sym[subexpr] = subexpr, repl
-                    subtree.expr = repl
+                    map_sym_to_rat[_NegativeOne_], map_rat_to_sym[subexpr] = subexpr, _NegativeOne_
+                    subtree.expr = _NegativeOne_
         expr = tree.reconstruct()
         # If factor or negative == True, then perform partial factoring
         if factor == True or negative == True:
@@ -84,6 +83,19 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
             expr_diff  = expr - debug_expr
             if sp.simplify(expr_diff) != 0:
                 raise Warning('Expression Difference: ' + str(expr_diff))
+        # Replace any left-over one(s) after partial factoring
+        _One_ = sp.Symbol(prefix + '_Integer_1')
+        tree.build(tree.root, clear=True)
+        for subtree in tree.preorder():
+            if subtree.expr == sp.S.One:
+                subtree.expr = _One_
+        tmp_expr = tree.reconstruct()
+        if tmp_expr != expr:
+            try: map_rat_to_sym[sp.S.One]
+            except KeyError:
+                map_sym_to_rat[_One_], map_rat_to_sym[sp.S.One] = sp.S.One, _One_
+                subtree.expr = _One_
+            expr = tmp_expr
         expr_list[i] = expr
     if len(expr_list) == 1:
         expr_list = expr_list[0]
