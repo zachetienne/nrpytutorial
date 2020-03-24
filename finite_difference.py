@@ -498,7 +498,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                                 ": Read from main memory and compute finite difference stencils:\n */\n")
         NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
         # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
-        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix=FDPart1,includebraces=False"+",CSE_preprocess=True",
+        Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring",params=params + ",CSE_varprefix=FDPart1,includebraces=False"+",CSE_preprocess=True,SIMD_find_more_subs=True",
                                         prestring=read_from_memory_Ccode))
 
     # Step 5b.iv: Implement control-vector upwinding algorithm.

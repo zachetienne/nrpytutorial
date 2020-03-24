@@ -10,6 +10,7 @@ the resulting replaced/reduced expressions after the CSE procedure was applied.
 
 from SIMDExprTree import ExprTree
 import sympy as sp
+import sys
 
 # Input:  expr_list = single SymPy expression or list of SymPy expressions
 #         prefix    = string prefix for variable names (i.e. rational symbols)
@@ -52,20 +53,20 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
                     map_sym_to_rat[repl], map_rat_to_sym[subexpr] = subexpr, repl
                     subtree.expr = repl
         expr = tree.reconstruct()
-        # If factor == True, then perform partial factoring
-        if factor == True:
-            # Handle function arguments as separate case
+        # If factor or negative == True, then perform partial factoring
+        if factor == True or negative == True:
+            # Perform partial factoring on function argument
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
                     for var in map_sym_to_rat:
-                        if negative == True or var != _NegativeOne_:
-                            child = subtree.children[0]
-                            child.expr = sp.collect(child.expr, var)
-                            child.children.clear()
+                        if factor == True and (negative == True or var != _NegativeOne_):
+                            arg = subtree.children[0]
+                            arg.expr = sp.collect(arg.expr, var)
             expr = tree.reconstruct()
-            # Perform partial factoring on the expression(s)
+            # Perform partial factoring on expression(s)
             for var in map_sym_to_rat:
-                if negative == True or var != _NegativeOne_:
+                if (factor == True and var != _NegativeOne_) or \
+                        (negative == True and var == _NegativeOne_):
                     expr = sp.collect(expr, var)
         # If debug == True, then back-substitute everything and check difference
         if debug == True:
