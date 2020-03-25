@@ -1,5 +1,5 @@
 ## BASED ON mclachlan/par/qc0-mclachlan.par
-# Modifications for BaikalVacuum compatibility by Z. Etienne.
+# Modifications for BaikalVacuum compatibility and stability (ensure r=0 does not appear on num. grid; decrease CFL from 0.5 to 0.45) by Z. Etienne.
 
 Cactus::cctk_run_title = "QC-0"
 
@@ -7,7 +7,7 @@ Cactus::cctk_full_warnings         = yes
 Cactus::highlight_warning_messages = no
 
 Cactus::terminate       = "time"
-Cactus::cctk_final_time = 200.0
+Cactus::cctk_final_time = 300.0
 
 
 
@@ -59,7 +59,7 @@ Carpet::storage_verbose   = no
 CarpetLib::output_bboxes  = no
 
 Carpet::domain_from_coordbase = yes
-Carpet::max_refinement_levels = 10
+Carpet::max_refinement_levels = 7
 
 driver::ghost_size       = 4
 Carpet::use_buffer_zones = yes
@@ -75,15 +75,15 @@ Carpet::init_fill_timelevels = yes
 Carpet::poison_new_timelevels = yes
 CarpetLib::poison_new_memory  = yes
 
-Carpet::output_timers_every      = 5120
-CarpetLib::print_timestats_every = 5120
-CarpetLib::print_memstats_every  = 5120
+Carpet::output_timers_every      = 512
+CarpetLib::print_timestats_every = 512
+CarpetLib::print_memstats_every  = 512
 
 
 
 ActiveThorns = "NaNChecker"
 
-NaNChecker::check_every     = 512
+NaNChecker::check_every     = 128
 #NaNChecker::verbose         = "all"
 #NaNChecker::action_if_found = "just warn"
 NaNChecker::action_if_found = "terminate"
@@ -106,12 +106,12 @@ ActiveThorns = "Boundary CartGrid3D CoordBase SymBase"
 
 CoordBase::domainsize = "minmax"
 
-CoordBase::xmin = -120.00
-CoordBase::ymin = -120.00
-CoordBase::zmin = -120.00
-CoordBase::xmax = +120.00
-CoordBase::ymax = +120.00
-CoordBase::zmax = +120.00
+CoordBase::xmin = -120.01562500000000000000
+CoordBase::ymin = -120.01562500000000000000
+CoordBase::zmin = -120.01562500000000000000
+CoordBase::xmax = +119.98437500000000000000
+CoordBase::ymax = +119.98437500000000000000
+CoordBase::zmax = +119.98437500000000000000
 CoordBase::dx   =    2.00
 CoordBase::dy   =    2.00
 CoordBase::dz   =    2.00
@@ -192,7 +192,7 @@ CarpetTracker::surface[0] = 0
 CarpetTracker::surface[1] = 1
 CarpetTracker::surface[2] = 2
 
-CarpetRegrid2::regrid_every            = 128
+CarpetRegrid2::regrid_every            = 16
 CarpetRegrid2::freeze_unaligned_levels = yes
 #CarpetRegrid2::symmetry_rotating180    = yes
 CarpetRegrid2::verbose                 = yes
@@ -237,9 +237,9 @@ MoL::ODE_Method             = "RK4"
 MoL::MoL_Intermediate_Steps = 4
 MoL::MoL_Num_Scratch_Levels = 1
 
-Carpet::time_refinement_factors = "[1, 1, 2, 4, 8, 16, 32, 64, 128, 256]"
+Carpet::time_refinement_factors = "[1, 1, 2, 4, 8, 16, 32]"
 
-Time::dtfac = 0.25
+Time::dtfac = 0.225
 
 
 
@@ -291,9 +291,8 @@ ADMBase::dtshift_evolution_method = "BaikalVacuum"
 Boundary::radpower                     = 2
 
 BaikalVacuum::diss_strength = 0.1
-BaikalVacuum::FD_order      = 6
 BaikalVacuum::eta           = 1.0
-
+BaikalVacuum::FD_order      = 6
 
 
 ActiveThorns = "WeylScal4 Multipole"
@@ -302,7 +301,7 @@ WeylScal4::fd_order                  = "4th"
 WeylScal4::verbose                   = 0 
 
 Multipole::nradii = 8
-Multipole::out_every = 128
+Multipole::out_every = 16
 Multipole::radius[0] = 15
 Multipole::radius[1] = 30
 Multipole::radius[2] = 40
@@ -317,7 +316,7 @@ Multipole::l_max = 4
 
 ActiveThorns = "AHFinderDirect"
 
-AHFinderDirect::find_every = 128
+AHFinderDirect::find_every = 16
 
 AHFinderDirect::run_at_CCTK_POST_RECOVER_VARIABLES = no
 
@@ -393,11 +392,13 @@ QuasiLocalMeasures::surface_index[5] = 5
 
 ActiveThorns = "CarpetIOBasic"
 
-IOBasic::outInfo_every      = 32
+IOBasic::outInfo_every      = 8
 IOBasic::outInfo_reductions = "norm2"
 IOBasic::outInfo_vars       = "
         Carpet::physical_time_per_hour
         BaikalVacuum::HGF
+        SphericalSurface::sf_radius
+        QuasiLocalMeasures::qlm_spin[0]
 "
 
 
@@ -406,7 +407,7 @@ ActiveThorns = "CarpetIOScalar"
 
 IOScalar::one_file_per_group = yes
 
-IOScalar::outScalar_every = 128
+IOScalar::outScalar_every = 16
 IOScalar::outScalar_vars  = "
         CarpetReduce::weight
         Carpet::physical_time_per_hour
@@ -414,20 +415,10 @@ IOScalar::outScalar_vars  = "
         ADMBase::curv
         ADMBase::lapse
         ADMBase::shift
-        ADMBase::dtlapse
         ADMBase::dtshift
         WEYLSCAL4::Psi4r
         WEYLSCAL4::Psi4i
-        BaikalVacuum::HGF
-        BaikalVacuum::MU0GF
-        BaikalVacuum::MU1GF
-        BaikalVacuum::MU2GF
-        BaikalVacuum::vetU0GF
-        BaikalVacuum::betU0GF
-        BaikalVacuum::hDD00GF
-        BaikalVacuum::lambdaU0GF
-        BaikalVacuum::cfGF
-        BaikalVacuum::alphaGF
+        BaikalVacuum::aux_variables # <- BSSN Hamiltonian and momentum constraints
         SphericalSurface::sf_radius
         QuasiLocalMeasures::qlm_newman_penrose
         QuasiLocalMeasures::qlm_weyl_scalars
@@ -448,7 +439,7 @@ IOASCII::one_file_per_group = yes
 IOASCII::output_symmetry_points = no
 IOASCII::out3D_ghosts           = no
 
-IOASCII::out0D_every = 128
+IOASCII::out0D_every = 32
 IOASCII::out0D_vars  = "
         Carpet::timing
         CarpetReduce::weight
@@ -456,20 +447,10 @@ IOASCII::out0D_vars  = "
         ADMBase::curv
         ADMBase::lapse
         ADMBase::shift
-        ADMBase::dtlapse
         ADMBase::dtshift
         WEYLSCAL4::Psi4r
         WEYLSCAL4::Psi4i
-        BaikalVacuum::HGF
-        BaikalVacuum::MU0GF
-        BaikalVacuum::MU1GF
-        BaikalVacuum::MU2GF
-        BaikalVacuum::vetU0GF
-        BaikalVacuum::betU0GF
-        BaikalVacuum::hDD00GF
-        BaikalVacuum::lambdaU0GF
-        BaikalVacuum::cfGF
-        BaikalVacuum::alphaGF
+        BaikalVacuum::aux_variables # <- BSSN Hamiltonian and momentum constraints
         SphericalSurface::sf_active
         SphericalSurface::sf_valid
         SphericalSurface::sf_info
@@ -483,27 +464,17 @@ IOASCII::out0D_vars  = "
         QuasiLocalMeasures::qlm_multipole_moments
 "
 
-IOASCII::out1D_every = 256
+IOASCII::out1D_every = 64
 IOASCII::out1D_vars  = "
         CarpetReduce::weight
         ADMBase::metric
         ADMBase::curv
         ADMBase::lapse
         ADMBase::shift
-        ADMBase::dtlapse
         ADMBase::dtshift
         WEYLSCAL4::Psi4r
         WEYLSCAL4::Psi4i
-        BaikalVacuum::HGF
-        BaikalVacuum::MU0GF
-        BaikalVacuum::MU1GF
-        BaikalVacuum::MU2GF
-        BaikalVacuum::vetU0GF
-        BaikalVacuum::betU0GF
-        BaikalVacuum::hDD00GF
-        BaikalVacuum::lambdaU0GF
-        BaikalVacuum::cfGF
-        BaikalVacuum::alphaGF
+        BaikalVacuum::aux_variables # <- BSSN Hamiltonian and momentum constraints
         SphericalSurface::sf_radius
         QuasiLocalMeasures::qlm_shapes
         QuasiLocalMeasures::qlm_coordinates
@@ -572,7 +543,7 @@ TerminationTrigger::termination_from_file   = "yes"
 
 ActiveThorns = "TimerReport"
 
-TimerReport::out_every                  = 5120
+TimerReport::out_every                  = 512
 TimerReport::out_filename               = "TimerReport"
 TimerReport::output_all_timers_together = yes
 TimerReport::output_all_timers_readable = yes
