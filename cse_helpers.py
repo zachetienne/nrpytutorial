@@ -10,7 +10,6 @@ the resulting replaced/reduced expressions after the CSE procedure was applied.
 
 from SIMDExprTree import ExprTree
 import sympy as sp
-import sys
 
 # Input:  expr_list = single SymPy expression or list of SymPy expressions
 #         prefix    = string prefix for variable names (i.e. rational symbols)
@@ -57,11 +56,11 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
             # Handle the separate case of function argument(s)
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
+                    arg = subtree.children[0]
                     for var in map_sym_to_rat:
                         if var != _NegativeOne_:
-                            arg = subtree.children[0]
                             arg.expr = sp.collect(arg.expr, var)
-                            arg.children.clear()
+                    tree.build(arg, clear=True)
             expr = tree.reconstruct()
             # Perform partial factoring on expression(s)
             for var in map_sym_to_rat:
@@ -75,7 +74,7 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
                 if isinstance(subtree.expr, sp.Function):
                     arg = subtree.children[0]
                     arg.expr = sp.collect(arg.expr, _NegativeOne_)
-                    arg.children.clear()
+                    tree.build(arg, clear=True)
             expr = sp.collect(tree.reconstruct(), _NegativeOne_)
             tree.root.expr = expr
             tree.build(tree.root, clear=True)
