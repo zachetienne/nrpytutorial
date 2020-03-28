@@ -22,7 +22,7 @@
 
 ###############################
 # Step 0: Import needed core NRPy+ and standard Python modules
-import os, sys                # Standard Python modules for multiplatform OS-level functions
+import os, sys                  # Standard Python modules for multiplatform OS-level functions
 import pickle                   # Standard Python module for converting arbitrary data structures to a uniform format.
 
 nrpy_dir_path = os.path.join(".")
@@ -76,6 +76,23 @@ nrpy_dir_path = os.path.join(".")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
+# Create all output directories if they do not yet exist
+import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
+import shutil                    # Standard Python module for multiplatform OS-level functions
+for ThornName in ["Baikal","BaikalVacuum"]:
+    outrootdir = ThornName
+    cmd.mkdir(os.path.join(outrootdir))
+    outdir = os.path.join(outrootdir,"src") # Main C code output directory
+
+    # Copy SIMD/SIMD_intrinsics.h to $outdir/SIMD/SIMD_intrinsics.h
+    cmd.mkdir(os.path.join(outdir,"SIMD"))
+    shutil.copy(os.path.join(nrpy_dir_path,"SIMD/")+"SIMD_intrinsics.h",os.path.join(outdir,"SIMD/"))
+
+    cmd.mkdir(os.path.join(outdir,"rfm_files"))
+
+# Start parallel C code generation (codegen)
+# NRPyEnvVars stores the NRPy+ environment from all the subprocesses in the following
+#     parallel codegen
 NRPyEnvVars = []
 
 import time   # Standard Python module for benchmarking
@@ -97,7 +114,7 @@ if __name__ == "__main__":
         #           Note that lambdifying this doesn't work in Python 3
         def master_func(i):
             import BaikalETK.BaikalETK_C_kernels_codegen as BCk
-            return BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=paramslist[i])
+            return BCk.BaikalETK_C_kernels_codegen_onepart(params=paramslist[i])
         
         # Step 3.d.iv: Evaluate list of functions in parallel if possible;
         #           otherwise fallback to serial evaluation:
@@ -117,7 +134,7 @@ if __name__ == "__main__":
         #       This will happen on Android and Windows systems
         import BaikalETK.BaikalETK_C_kernels_codegen as BCk
         for param in paramslist:
-            NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join("."),params=param))
+            NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(params=param))
 
 print("Finished C kernel codegen for Baikal and BaikalVacuum in "+str(time.time()-start)+" seconds.")
 ###############################
@@ -151,7 +168,7 @@ Cparm_list = []
 for WhichParamSet in NRPyEnvVars[0]:
     # gridfunctions
     i=0
-    print("Length of WhichParamSet:",str(len(WhichParamSet)))
+    # print("Length of WhichParamSet:",str(len(WhichParamSet)))
     num_elements = pickle.loads(WhichParamSet[i]); i+=1
     for lst in range(num_elements):
         grfcs_list.append(gri.glb_gridfc(gftype=pickle.loads(WhichParamSet[i+0]),

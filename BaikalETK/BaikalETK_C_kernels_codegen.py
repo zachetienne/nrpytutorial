@@ -7,14 +7,13 @@ import grid as gri               # NRPy+: Functions having to do with numerical 
 import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
-import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
+import os, sys                   # Standard Python modules for multiplatform OS-level functions
 import time                      # Standard Python module; useful for benchmarking
 import BSSN.BSSN_RHSs as rhs
 import BSSN.BSSN_gauge_RHSs as gaugerhs
 
-def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
-       params="WhichPart=BSSN_RHSs,ThornName=Baikal,FD_order=4,enable_stress_energy_source_terms=True"):
+def BaikalETK_C_kernels_codegen_onepart(params=
+        "WhichPart=BSSN_RHSs,ThornName=Baikal,FD_order=4,enable_stress_energy_source_terms=True"):
     # Set default parameters
     WhichPart = "BSSN_RHSs"
     ThornName = "Baikal"
@@ -69,14 +68,8 @@ def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
                 print("BaikalETK Error: Could not parse input param: "+parnm[i])
                 sys.exit(1)
 
-    # Create directory for BaikalETK thorn & subdirectories in case they don't exist.
-    outrootdir = ThornName
-    cmd.mkdir(os.path.join(outrootdir))
-    outdir = os.path.join(outrootdir,"src") # Main C code output directory
-
-    # Copy SIMD/SIMD_intrinsics.h to $outdir/SIMD/SIMD_intrinsics.h
-    cmd.mkdir(os.path.join(outdir,"SIMD"))
-    shutil.copy(os.path.join(NRPyDir,"SIMD/")+"SIMD_intrinsics.h",os.path.join(outdir,"SIMD/"))
+    # Set output directory for C kernels
+    outdir = os.path.join(ThornName, "src")  # Main C code output directory
 
     # Set spatial dimension (must be 3 for BSSN)
     par.set_parval_from_str("grid::DIM",3)
@@ -138,7 +131,6 @@ def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
         #   BSSN RHSs that are free of transcendental functions,
         #   even in curvilinear coordinates, so long as 
         #   ConformalFactor is set to "W" (default).
-        cmd.mkdir(os.path.join(outdir,"rfm_files/"))
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","True")
         par.set_parval_from_str("reference_metric::rfm_precompute_Ccode_outdir",os.path.join(outdir,"rfm_files/"))
 
@@ -261,8 +253,10 @@ def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
                                     ["#pragma omp parallel for",
                                                  "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
                                                  r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
-    #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
-    #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize"""],"",
+    #if (defined __INTEL_COMPILER && __INTEL_COMPILER_BUILD_DATE >= 20180804)
+        #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
+        #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
+    #endif"""],"",
                                                  "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+BSSN_RHSs_string))
             end = time.time()
             print("Finished BSSN_RHS C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
@@ -279,8 +273,10 @@ def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
                                     ["#pragma omp parallel for",
                                                  "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
                                                  r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
-    #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
-    #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize"""],"",
+    #if (defined __INTEL_COMPILER && __INTEL_COMPILER_BUILD_DATE >= 20180804)
+        #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
+        #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
+    #endif"""],"",
                                                  "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+Ricci_string))
             end = time.time()
             print("Finished Ricci C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
@@ -341,7 +337,6 @@ def BaikalETK_C_kernels_codegen_onepart(NRPyDir=os.path.join(".."),
         #   BSSN RHSs that are free of transcendental functions,
         #   even in curvilinear coordinates, so long as 
         #   ConformalFactor is set to "W" (default).
-        cmd.mkdir(os.path.join(outdir,"rfm_files/"))
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","True")
         par.set_parval_from_str("reference_metric::rfm_precompute_Ccode_outdir",os.path.join(outdir,"rfm_files/"))
 
