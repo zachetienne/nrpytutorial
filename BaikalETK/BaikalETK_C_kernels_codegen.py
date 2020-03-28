@@ -251,13 +251,13 @@ def BaikalETK_C_kernels_codegen_onepart(params=
                ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
                                    ["1","1","SIMD_width"],
                                     ["#pragma omp parallel for",
-                                                 "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
-                                                 r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
+                                     "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
+                                     r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
     #if (defined __INTEL_COMPILER && __INTEL_COMPILER_BUILD_DATE >= 20180804)
         #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
         #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
     #endif"""],"",
-                                                 "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+BSSN_RHSs_string))
+                        "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+BSSN_RHSs_string))
             end = time.time()
             print("Finished BSSN_RHS C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
 
@@ -271,13 +271,13 @@ def BaikalETK_C_kernels_codegen_onepart(params=
                ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
                                    ["1","1","SIMD_width"],
                                     ["#pragma omp parallel for",
-                                                 "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
-                                                 r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
+                                     "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
+                                     r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
     #if (defined __INTEL_COMPILER && __INTEL_COMPILER_BUILD_DATE >= 20180804)
         #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
         #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
     #endif"""],"",
-                                                 "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+Ricci_string))
+                        "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+Ricci_string))
             end = time.time()
             print("Finished Ricci C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
         else:

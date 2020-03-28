@@ -6,7 +6,7 @@ import finite_difference as fin  # NRPy+: Finite difference C code generation mo
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import os, sys           # Standard Python modules for multiplatform OS-level functions
+import os, sys                   # Standard Python modules for multiplatform OS-level functions
 # We need the function keep_param__return_type() from this module:
 import BaikalETK.BaikalETK_ETK_ccl_files_codegen as ccl
 
