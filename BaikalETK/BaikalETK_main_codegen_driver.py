@@ -79,6 +79,7 @@ if nrpy_dir_path not in sys.path:
 NRPyEnvVars = []
 
 import time   # Standard Python module for benchmarking
+import logging
 start = time.time()
 if __name__ == "__main__":
     try:
@@ -105,6 +106,7 @@ if __name__ == "__main__":
         pool.terminate()
         pool.join()
     except:
+        logging.exception("Ignore this warning/backtrace if on a system in which serial codegen is necessary:")
         print("***************************************")
         print("Starting serial C kernel codegen...")
         print("(If you were running in parallel before,")
