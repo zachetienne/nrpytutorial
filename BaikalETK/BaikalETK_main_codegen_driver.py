@@ -88,6 +88,9 @@ if __name__ == "__main__":
             raise Exception("Parallel codegen currently not available in Windows")
         # Step 3.d.ii: Import the multiprocessing module.
         import multiprocessing
+        print("***************************************")
+        print("Starting parallel C kernel codegen...")
+        print("***************************************")
         
         # Step 3.d.iii: Define master function for parallelization.
         #           Note that lambdifying this doesn't work in Python 3
@@ -102,6 +105,11 @@ if __name__ == "__main__":
         pool.terminate()
         pool.join()
     except:
+        print("***************************************")
+        print("Starting serial C kernel codegen...")
+        print("(If you were running in parallel before,")
+        print(" this means parallel codegen failed)")
+        print("***************************************")
         NRPyEnvVars = [] # Reset NRPyEnvVars in case multiprocessing wrote to it and failed.
         # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
         #       This will happen on Android and Windows systems
@@ -141,6 +149,7 @@ Cparm_list = []
 for WhichParamSet in NRPyEnvVars[0]:
     # gridfunctions
     i=0
+    print("Length of WhichParamSet:",str(len(WhichParamSet)))
     num_elements = pickle.loads(WhichParamSet[i]); i+=1
     for lst in range(num_elements):
         grfcs_list.append(gri.glb_gridfc(gftype=pickle.loads(WhichParamSet[i+0]),
