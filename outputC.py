@@ -171,6 +171,13 @@ def parse_outCparams_string(params):
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 sys.exit(1)
+    
+    sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+    sympy_major_version = int(sympy_version.split(".")[0])
+    sympy_minor_version = int(sympy_version.split(".")[1])
+    if sympy_major_version < 1 or sympy_minor_version < 4:
+        print('Warning: SymPy version', sympy_version, 'does not support CSE preprocessing.')
+        CSE_preprocess = "False"
 
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,
                       CSE_enable,CSE_varprefix,CSE_sorting,CSE_preprocess,
