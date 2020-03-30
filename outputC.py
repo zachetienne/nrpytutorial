@@ -171,6 +171,13 @@ def parse_outCparams_string(params):
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 sys.exit(1)
+    
+    sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+    sympy_major_version = int(sympy_version.split(".")[0])
+    sympy_minor_version = int(sympy_version.split(".")[1])
+    if sympy_major_version < 1 or sympy_minor_version < 4:
+        print('Warning: SymPy version', sympy_version, 'does not support CSE preprocessing.')
+        CSE_preprocess = "False"
 
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,
                       CSE_enable,CSE_varprefix,CSE_sorting,CSE_preprocess,
@@ -294,9 +301,9 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         if outCparams.CSE_preprocess == "True" or outCparams.SIMD_enable == "True":
             # If CSE_preprocess == True, then perform partial factorization
             # If SIMD_enable == True, then declare _NegativeOne_ in preprocessing
-            factor_negative = outCparams.SIMD_enable and outCparams.SIMD_find_more_subs
-            sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr, prefix=varprefix, \
-                declare=eval(outCparams.SIMD_enable),negative=eval(factor_negative),factor=eval(outCparams.CSE_preprocess))
+            factor_negative = eval(outCparams.SIMD_enable) and eval(outCparams.SIMD_find_more_subs)
+            sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr,prefix=varprefix,\
+                declare=eval(outCparams.SIMD_enable),negative=factor_negative,factor=eval(outCparams.CSE_preprocess))
             for v in map_sym_to_rat:
                 p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 if outCparams.SIMD_enable == "False":

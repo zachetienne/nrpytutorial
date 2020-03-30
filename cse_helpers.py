@@ -10,7 +10,6 @@ the resulting replaced/reduced expressions after the CSE procedure was applied.
 
 from SIMDExprTree import ExprTree
 import sympy as sp
-import sys
 
 # Input:  expr_list = single SymPy expression or list of SymPy expressions
 #         prefix    = string prefix for variable names (i.e. rational symbols)
@@ -49,25 +48,36 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
             elif declare == True and subexpr == sp.S.NegativeOne:
                 try: subtree.expr = map_rat_to_sym[sp.S.NegativeOne]
                 except KeyError:
-                    repl = _NegativeOne_
-                    map_sym_to_rat[repl], map_rat_to_sym[subexpr] = subexpr, repl
-                    subtree.expr = repl
+                    map_sym_to_rat[_NegativeOne_], map_rat_to_sym[subexpr] = subexpr, _NegativeOne_
+                    subtree.expr = _NegativeOne_
         expr = tree.reconstruct()
-        # If factor or negative == True, then perform partial factoring
-        if factor == True or negative == True:
-            # Perform partial factoring on function argument
+        # If factor == True, then perform partial factoring (excluding _NegativeOne_)
+        if factor == True:
+            # Handle the separate case of function argument(s)
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
+                    arg = subtree.children[0]
                     for var in map_sym_to_rat:
-                        if factor == True and (negative == True or var != _NegativeOne_):
-                            arg = subtree.children[0]
+                        if var != _NegativeOne_:
                             arg.expr = sp.collect(arg.expr, var)
+                    tree.build(arg, clear=True)
             expr = tree.reconstruct()
             # Perform partial factoring on expression(s)
             for var in map_sym_to_rat:
-                if (factor == True and var != _NegativeOne_) or \
-                        (negative == True and var == _NegativeOne_):
+                if var != _NegativeOne_:
                     expr = sp.collect(expr, var)
+            tree.root.expr = expr
+            tree.build(tree.root, clear=True)
+        # If negative == True, then perform partial factoring on _NegativeOne_
+        if negative == True:
+            for subtree in tree.preorder():
+                if isinstance(subtree.expr, sp.Function):
+                    arg = subtree.children[0]
+                    arg.expr = sp.collect(arg.expr, _NegativeOne_)
+                    tree.build(arg, clear=True)
+            expr = sp.collect(tree.reconstruct(), _NegativeOne_)
+            tree.root.expr = expr
+            tree.build(tree.root, clear=True)
         # If debug == True, then back-substitute everything and check difference
         if debug == True:
             def lookup_rational(arg):
@@ -84,6 +94,19 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
             expr_diff  = expr - debug_expr
             if sp.simplify(expr_diff) != 0:
                 raise Warning('Expression Difference: ' + str(expr_diff))
+        # Replace any left-over one(s) after partial factoring
+        if factor == True or negative == True:
+            _One_ = sp.Symbol(prefix + '_Integer_1')
+            for subtree in tree.preorder():
+                if subtree.expr == sp.S.One:
+                    subtree.expr = _One_
+            tmp_expr = tree.reconstruct()
+            if tmp_expr != expr:
+                try: map_rat_to_sym[sp.S.One]
+                except KeyError:
+                    map_sym_to_rat[_One_], map_rat_to_sym[sp.S.One] = sp.S.One, _One_
+                    subtree.expr = _One_
+                expr = tmp_expr
         expr_list[i] = expr
     if len(expr_list) == 1:
         expr_list = expr_list[0]
