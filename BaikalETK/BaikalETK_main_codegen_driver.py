@@ -67,6 +67,8 @@ for WhichPart in ["BSSN_RHSs","Ricci","BSSN_constraints","detgammabar_constraint
             paramstr+= "enable_stress_energy_source_terms="+str(enable_stress_energy)
             paramslist.append(paramstr)
             WhichParamSet = WhichParamSet + 1
+
+paramslist.sort() # Sort the list alphabetically.
 ###############################
 
 ###############################
