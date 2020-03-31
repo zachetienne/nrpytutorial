@@ -243,7 +243,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             print("Generating C code for BSSN RHSs (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
             start = time.time()
             BSSN_RHSs_string = fin.FD_outputC("returnstring",BSSN_RHSs_SymbExpressions, 
-                                              params="outCverbose=False,SIMD_enable=True",
+                                              params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True",
                                               upwindcontrolvec=betaU)
 
             with open(os.path.join(outdir,"BSSN_RHSs_FD_order_"+str(FD_order)+"_enable_Tmunu_"+str(enable_stress_energy_source_terms)+".h"), "w") as file:
@@ -265,7 +265,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             print("Generating C code for Ricci tensor (FD_order="+str(FD_order)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
             start = time.time()
             Ricci_string = fin.FD_outputC("returnstring", Ricci_SymbExpressions,
-                                           params="outCverbose=False,SIMD_enable=True")
+                                           params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True")
             with open(os.path.join(outdir,"BSSN_Ricci_FD_order_"+str(FD_order)+".h"), "w") as file:
                 file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
                ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],

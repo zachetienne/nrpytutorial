@@ -166,6 +166,11 @@ def parse_outCparams_string(params):
                 SIMD_debug = value[i]
             elif parnm[i] == "enable_TYPE":
                 enable_TYPE = value[i]
+            elif parnm[i] == "GoldenKernelsEnable" and value[i] == "True":
+                # GoldenKernelsEnable==True enables the most optimized kernels,
+                #   at the expense of ~3x longer codegen runtimes.
+                CSE_preprocess      = "True"
+                SIMD_find_more_subs = "True"
             elif parnm[i] == "gridsuffix":
                 gridsuffix = value[i]
             else:
