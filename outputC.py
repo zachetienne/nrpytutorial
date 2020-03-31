@@ -15,7 +15,7 @@ import sympy as sp                            # Import SymPy
 import re, sys, os                            # Standard Python: regular expressions, system, and multiplatform OS funcs
 from collections import namedtuple            # Standard Python: Enable namedtuple data type
 lhrh = namedtuple('lhrh', 'lhs rhs')
-outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix CSE_sorting CSE_preprocess SIMD_enable SIMD_find_more_FMAsFMSs SIMD_debug enable_TYPE gridsuffix')
+outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix CSE_sorting CSE_preprocess SIMD_enable SIMD_find_more_subs SIMD_find_more_FMAsFMSs SIMD_debug enable_TYPE gridsuffix')
 
 # Sometimes SymPy has problems evaluating complicated expressions involving absolute
 #    values, resulting in hangs. So instead of using sp.Abs(), if we instead use
@@ -105,6 +105,7 @@ def parse_outCparams_string(params):
     CSE_varprefix = "tmp"
     CSE_preprocess = "False"
     SIMD_enable = "False"
+    SIMD_find_more_subs = "False"
     SIMD_find_more_FMAsFMSs = "False" # Finding too many FMAs/FMSs can degrade performance; currently tuned to optimize BSSN
     SIMD_debug = "False"
     enable_TYPE = "True"
@@ -157,6 +158,8 @@ def parse_outCparams_string(params):
                 CSE_preprocess = value[i]
             elif parnm[i] == "SIMD_enable":
                 SIMD_enable = value[i]
+            elif parnm[i] == "SIMD_find_more_subs":
+                SIMD_find_more_subs = value[i]
             elif parnm[i] == "SIMD_find_more_FMAsFMSs":
                 SIMD_find_more_FMAsFMSs = value[i]
             elif parnm[i] == "SIMD_debug":
@@ -168,10 +171,17 @@ def parse_outCparams_string(params):
             else:
                 print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
                 sys.exit(1)
+    
+    sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+    sympy_major_version = int(sympy_version.split(".")[0])
+    sympy_minor_version = int(sympy_version.split(".")[1])
+    if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 4):
+        print('Warning: SymPy version', sympy_version, 'does not support CSE preprocessing.')
+        CSE_preprocess = "False"
 
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,
                       CSE_enable,CSE_varprefix,CSE_sorting,CSE_preprocess,
-                      SIMD_enable,SIMD_find_more_FMAsFMSs,SIMD_debug,
+                      SIMD_enable,SIMD_find_more_subs,SIMD_find_more_FMAsFMSs,SIMD_debug,
                       enable_TYPE,gridsuffix)
 
 # Input: sympyexpr = a single SymPy expression *or* a list of SymPy expressions
@@ -291,8 +301,9 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         if outCparams.CSE_preprocess == "True" or outCparams.SIMD_enable == "True":
             # If CSE_preprocess == True, then perform partial factorization
             # If SIMD_enable == True, then declare _NegativeOne_ in preprocessing
-            sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr, prefix=varprefix, \
-                declare=eval(outCparams.SIMD_enable), factor=eval(outCparams.CSE_preprocess))
+            factor_negative = eval(outCparams.SIMD_enable) and eval(outCparams.SIMD_find_more_subs)
+            sympyexpr, map_sym_to_rat = cse_preprocess(sympyexpr,prefix=varprefix,\
+                declare=eval(outCparams.SIMD_enable),negative=factor_negative,factor=eval(outCparams.CSE_preprocess))
             for v in map_sym_to_rat:
                 p, q = float(map_sym_to_rat[v].p), float(map_sym_to_rat[v].q)
                 if outCparams.SIMD_enable == "False":

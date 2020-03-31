@@ -37,7 +37,7 @@ class ExprTree:
     """
 
     def __init__(self, expr):
-        self.root = self.Node(expr)
+        self.root = self.Node(expr, None)
         self.build(self.root)
     
     def build(self, node, clear=False):
@@ -56,7 +56,7 @@ class ExprTree:
         """
         if clear: node.children.clear()
         for arg in node.expr.args:
-            subtree = self.Node(arg)
+            subtree = self.Node(arg, node.expr.func)
             node.append(subtree)
             self.build(subtree)
 
@@ -102,26 +102,6 @@ class ExprTree:
                 yield subtree
         yield node
     
-    def replace(self, rule):
-        """
-        Replace subexpression(s) from dictionary mapping.
-
-        :arg:    replacement dictionary {original: substitution}
-        :return: root expression
-
-        >>> from sympy.abc import a, b, x
-        >>> from sympy import cos
-        >>> tree = ExprTree(a*b + cos(a + b)**2)
-        >>> tree.replace({a*b: x, a + b: x})
-        x + cos(x)**2
-        """
-        from sympy.parsing.sympy_parser import parse_expr
-        for expr in rule:
-            self.root.expr = parse_expr(str(self.root.expr).\
-                replace(str(expr), str(rule[expr])))
-        self.build(self.root, clear=True)
-        return self.root.expr
-    
     def reconstruct(self, evaluate=False):
         """
         Reconstruct root expression from expression tree.
@@ -144,8 +124,9 @@ class ExprTree:
         return self.root.expr
 
     class Node:
-        def __init__(self, expr):
+        def __init__(self, expr, func):
             self.expr = expr
+            self.func = func
             self.children = []
 
         def append(self, node):
