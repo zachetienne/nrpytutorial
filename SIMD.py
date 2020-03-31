@@ -168,7 +168,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
                 tree.build(subtree, clear=True)
             except StopIteration: pass
     expr = tree.reconstruct()
-    
+
     # Step 3: Replace addition and multiplication expressions.
     #   Note: SIMD addition and multiplication compiler intrinsics can read
     #         only two arguments at once, whereas SymPy's Mul() and Add()
