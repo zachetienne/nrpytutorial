@@ -24,7 +24,7 @@ __author__ = 'Ken Sible'
 
 class ExprTree:
     """ SymPy (N-Ary) Expression Tree
-    
+
         >>> from sympy.abc import a, b, x
         >>> from sympy import cos
         >>> tree = ExprTree(cos(a + b)**2)
@@ -39,7 +39,7 @@ class ExprTree:
     def __init__(self, expr):
         self.root = self.Node(expr, None)
         self.build(self.root)
-    
+
     def build(self, node, clear=False):
         """ Build expression (sub)tree.
 
@@ -80,7 +80,7 @@ class ExprTree:
         for child in node.children:
             for subtree in self.preorder(child):
                 yield subtree
-    
+
     def postorder(self, node=None):
         """ Generate iterator for postorder traversal.
 
@@ -101,7 +101,7 @@ class ExprTree:
             for subtree in self.postorder(child):
                 yield subtree
         yield node
-    
+
     def reconstruct(self, evaluate=False):
         """
         Reconstruct root expression from expression tree.
@@ -131,7 +131,7 @@ class ExprTree:
 
         def append(self, node):
             self.children.append(node)
-    
+
     def __repr__(self):
         return str([node.expr for node in self.preorder()])
 

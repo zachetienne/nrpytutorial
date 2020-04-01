@@ -112,7 +112,7 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
         expr_list = expr_list[0]
     return expr_list, map_sym_to_rat
 
-# Input:  cse_output = output from SymPy CSE with tuple format: (list of ordered pairs that 
+# Input:  cse_output = output from SymPy CSE with tuple format: (list of ordered pairs that
 #            contain substituted symbols and their replaced expressions, reduced SymPy expression)
 # Output: output from SymPy CSE where postprocessing, such as back-substitution of addition/product
 #            of symbols, has been applied to the replaced/reduced expression(s)

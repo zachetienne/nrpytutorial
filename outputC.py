@@ -106,7 +106,7 @@ def parse_outCparams_string(params):
     CSE_preprocess = "False"
     SIMD_enable = "False"
     SIMD_find_more_subs = "False"
-    SIMD_find_more_FMAsFMSs = "False" # Finding too many FMAs/FMSs can degrade performance; currently tuned to optimize BSSN
+    SIMD_find_more_FMAsFMSs = "True" # Finding too many FMAs/FMSs can degrade performance; currently tuned to optimize BSSN
     SIMD_debug = "False"
     enable_TYPE = "True"
     gridsuffix = ""
@@ -169,8 +169,9 @@ def parse_outCparams_string(params):
             elif parnm[i] == "GoldenKernelsEnable" and value[i] == "True":
                 # GoldenKernelsEnable==True enables the most optimized kernels,
                 #   at the expense of ~3x longer codegen runtimes.
-                CSE_preprocess      = "True"
-                SIMD_find_more_subs = "True"
+                CSE_preprocess          = "True"
+                SIMD_find_more_subs     = "True"
+                SIMD_find_more_FMAsFMSs = "True"
             elif parnm[i] == "gridsuffix":
                 gridsuffix = value[i]
             else:
@@ -200,7 +201,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
     if outCparams.enable_TYPE == "False":
         TYPE = ""
-    
+
     # Step 0: Initialize
     #  commentblock: comment block containing the input SymPy string,
     #                set only if outCverbose==True
@@ -301,7 +302,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         # If CSE is enabled:
         SIMD_const_varnms = []
         SIMD_const_values = []
-        
+
         varprefix = '' if outCparams.CSE_varprefix == 'tmp' else outCparams.CSE_varprefix
         if outCparams.CSE_preprocess == "True" or outCparams.SIMD_enable == "True":
             # If CSE_preprocess == True, then perform partial factorization
@@ -317,10 +318,10 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                     # the denominator q = 1 to determine if a rational is an integer.
                     if q != 1: RATIONAL_decls += str(p) + '/' + str(q) + ';\n'
                     else:      RATIONAL_decls += str(p) + ';\n'
-        
+
         CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
             order=outCparams.CSE_sorting))
-        
+
         for commonsubexpression in CSE_results[0]:
             FULLTYPESTRING = "const " + TYPE + " "
             if outCparams.enable_TYPE == "False":
@@ -332,7 +333,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             else:
                 outstring += outCparams.preindent+indent+FULLTYPESTRING+ccode_postproc(sp.ccode(commonsubexpression[1],commonsubexpression[0],
                                                                                                 user_functions=custom_functions_for_SymPy_ccode))+"\n"
-        
+
         for i,result in enumerate(CSE_results[1]):
             if outCparams.SIMD_enable == "True":
                 outstring += outtypestring + output_varname_str[i] + " = " + \
@@ -350,11 +351,11 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                 SIMD_const_varnms.extend([str(v)])
                 if q != 1: SIMD_const_values.extend([str(p) + '/' + str(q)])
                 else:      SIMD_const_values.extend([str(p)])
-        
+
         # Step 6b.i: If SIMD_enable == True , and
-        #            there is at least one SIMD const variable, 
+        #            there is at least one SIMD const variable,
         #            then declare the SIMD_const_varnms and SIMD_const_values arrays
-        if outCparams.SIMD_enable == "True" and len(SIMD_const_varnms) != 0: 
+        if outCparams.SIMD_enable == "True" and len(SIMD_const_varnms) != 0:
             # Step 6a) Sort the list of definitions. Idea from:
             # https://stackoverflow.com/questions/9764298/is-it-possible-to-sort-two-listswhich-reference-each-other-in-the-exact-same-w
             SIMD_const_varnms, SIMD_const_values = \

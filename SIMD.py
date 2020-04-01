@@ -1,5 +1,5 @@
 from sympy import (Integer, Rational, Float, Function, Symbol,
-    Add, Mul, Pow, Abs, S, sign, srepr, simplify, 
+    Add, Mul, Pow, Abs, S, sign, srepr, simplify,
     var, sin, cos, exp, log, preorder_traversal)
 from SIMDExprTree import ExprTree
 
@@ -141,7 +141,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
             else:
                 subtree.expr = PowSIMD(*args)
     expr = tree.reconstruct()
-    
+
     # Step 2: Replace subtraction expressions.
     #   Note: SymPy: srepr(a - b) = Add(a, Mul(-1, b))
     #         NRPy:  srepr(a - b) = SubSIMD(a, b)
@@ -191,7 +191,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
             subtree.expr = subexpr
             tree.build(subtree, clear=True)
     expr = tree.reconstruct()
-    
+
     # Step 4: Replace the pattern Mul(Div(1, b), a) or Mul(a, Div(1, b)) with Div(a, b).
     for subtree in tree.preorder():
         func = subtree.expr.func
@@ -302,7 +302,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
         expr_check = expr_check.subs(-1, Symbol('_NegativeOne_'))
 
         expr_diff = expr_check - expr_orig
-        # The eval(str(srepr())) below normalizes the expression, 
+        # The eval(str(srepr())) below normalizes the expression,
         # fixing a cancellation issue in SymPy ~0.7.4.
         expr_diff = eval(str(srepr(expr_diff)))
         tree_diff = ExprTree(expr_diff)
