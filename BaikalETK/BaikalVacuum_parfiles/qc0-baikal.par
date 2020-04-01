@@ -398,7 +398,7 @@ IOBasic::outInfo_vars       = "
         Carpet::physical_time_per_hour
         BaikalVacuum::HGF
         SphericalSurface::sf_radius
-        QuasiLocalMeasures::qlm_spin[0]
+#       QuasiLocalMeasures::qlm_spin[0]
 "
 
 

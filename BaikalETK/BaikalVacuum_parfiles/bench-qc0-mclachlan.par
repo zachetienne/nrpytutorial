@@ -75,15 +75,15 @@ Carpet::init_fill_timelevels = yes
 Carpet::poison_new_timelevels = yes
 CarpetLib::poison_new_memory  = yes
 
-Carpet::output_timers_every      = 512
-CarpetLib::print_timestats_every = 512
-CarpetLib::print_memstats_every  = 512
+Carpet::output_timers_every      = 512000
+CarpetLib::print_timestats_every = 512000
+CarpetLib::print_memstats_every  = 512000
 
 
 
 ActiveThorns = "NaNChecker"
 
-NaNChecker::check_every     = 128
+NaNChecker::check_every     = 128000
 #NaNChecker::verbose         = "all"
 #NaNChecker::action_if_found = "just warn"
 NaNChecker::action_if_found = "terminate"
@@ -346,7 +346,7 @@ WeylScal4::fd_order                  = "4th"
 WeylScal4::verbose                   = 0 
 
 Multipole::nradii = 8
-Multipole::out_every = 16
+Multipole::out_every = 160000
 Multipole::radius[0] = 15
 Multipole::radius[1] = 30
 Multipole::radius[2] = 40
@@ -441,8 +441,8 @@ IOBasic::outInfo_every      = 8
 IOBasic::outInfo_reductions = "norm2"
 IOBasic::outInfo_vars       = "
         Carpet::physical_time_per_hour
-        ML_ADMConstraints::H
-        SphericalSurface::sf_radius
+#        ML_ADMConstraints::H
+#        SphericalSurface::sf_radius
 #        QuasiLocalMeasures::qlm_spin[0]
 "
 
@@ -450,125 +450,18 @@ IOBasic::outInfo_vars       = "
 
 ActiveThorns = "CarpetIOScalar"
 
-IOScalar::one_file_per_group = yes
+IOScalar::one_file_per_group = no
 
 IOScalar::outScalar_every = 16
 IOScalar::outScalar_vars  = "
-        CarpetReduce::weight
         Carpet::physical_time_per_hour
-        ADMBase::metric
-        ADMBase::curv
-        ADMBase::lapse
-        ADMBase::shift
-        ADMBase::dtshift
-        WEYLSCAL4::Psi4r
-        WEYLSCAL4::Psi4i
-        ML_ADMConstraints::ML_Ham
-        ML_ADMConstraints::ML_mom
-        SphericalSurface::sf_radius
-        QuasiLocalMeasures::qlm_newman_penrose
-        QuasiLocalMeasures::qlm_weyl_scalars
-        QuasiLocalMeasures::qlm_ricci_scalars
-        QuasiLocalMeasures::qlm_twometric
-        QuasiLocalMeasures::qlm_killing_vector
-        QuasiLocalMeasures::qlm_killed_twometric
-        QuasiLocalMeasures::qlm_invariant_coordinates
-        QuasiLocalMeasures::qlm_3determinant
 "
 
-
-
-ActiveThorns = "CarpetIOASCII"
-
-IOASCII::one_file_per_group = yes
-
-IOASCII::output_symmetry_points = no
-IOASCII::out3D_ghosts           = no
-
-IOASCII::out0D_every = 32
-IOASCII::out0D_vars  = "
-        Carpet::timing
-        CarpetReduce::weight
-        ADMBase::metric
-        ADMBase::curv
-        ADMBase::lapse
-        ADMBase::shift
-        ADMBase::dtshift
-        WEYLSCAL4::Psi4r
-        WEYLSCAL4::Psi4i
-        ML_ADMConstraints::ML_Ham
-        ML_ADMConstraints::ML_mom
-        SphericalSurface::sf_active
-        SphericalSurface::sf_valid
-        SphericalSurface::sf_info
-        SphericalSurface::sf_radius
-        SphericalSurface::sf_origin
-        SphericalSurface::sf_coordinate_descriptors
-        QuasiLocalMeasures::qlm_state
-        QuasiLocalMeasures::qlm_grid_int
-        QuasiLocalMeasures::qlm_grid_real
-        QuasiLocalMeasures::qlm_scalars
-        QuasiLocalMeasures::qlm_multipole_moments
-"
-
-IOASCII::out1D_every = 64
-IOASCII::out1D_vars  = "
-        CarpetReduce::weight
-        ADMBase::metric
-        ADMBase::curv
-        ADMBase::lapse
-        ADMBase::shift
-        ADMBase::dtshift
-        WEYLSCAL4::Psi4r
-        WEYLSCAL4::Psi4i
-        ML_ADMConstraints::ML_Ham
-        ML_ADMConstraints::ML_mom
-        SphericalSurface::sf_radius
-        QuasiLocalMeasures::qlm_shapes
-        QuasiLocalMeasures::qlm_coordinates
-        QuasiLocalMeasures::qlm_tetrad_l
-        QuasiLocalMeasures::qlm_tetrad_n
-        QuasiLocalMeasures::qlm_tetrad_m
-        QuasiLocalMeasures::qlm_newman_penrose
-        QuasiLocalMeasures::qlm_weyl_scalars
-        QuasiLocalMeasures::qlm_ricci_scalars
-        QuasiLocalMeasures::qlm_twometric
-        QuasiLocalMeasures::qlm_killing_vector
-        QuasiLocalMeasures::qlm_killed_twometric
-        QuasiLocalMeasures::qlm_invariant_coordinates
-        QuasiLocalMeasures::qlm_3determinant
-"
-
-# IOASCII::out2D_every = 128
-# IOASCII::out2D_vars  = "
-#         SphericalSurface::sf_radius
-# "
 
 
 
 Activethorns = "CarpetIOHDF5"
 
-# IOHDF5::out_every              = 512
-# IOHDF5::one_file_per_group     = yes
-# IOHDF5::output_symmetry_points = no
-# IOHDF5::out3D_ghosts           = no
-# IOHDF5::compression_level      = 1
-# IOHDF5::use_checksums          = yes
-# IOHDF5::out_vars               = "
-#         CarpetReduce::weight
-#         ADMBase::metric
-#         ADMBase::curv
-#         ADMBase::lapse
-#         ADMBase::shift
-#         ADMBase::dtlapse
-#         ADMBase::dtshift
-#         WEYLSCAL4::Psi4r
-#         WEYLSCAL4::Psi4i
-#         BaikalETK::HGF
-#         BaikalETK::MU0GF
-#         BaikalETK::MU1GF
-#         BaikalETK::MU2GF
-# "
 
 IOHDF5::checkpoint                  = yes
 IO::checkpoint_dir                  = $parfile
@@ -590,7 +483,7 @@ TerminationTrigger::termination_from_file   = "yes"
 
 ActiveThorns = "TimerReport"
 
-TimerReport::out_every                  = 512
+TimerReport::out_every                  = 512000
 TimerReport::out_filename               = "TimerReport"
 TimerReport::output_all_timers_together = yes
 TimerReport::output_all_timers_readable = yes
