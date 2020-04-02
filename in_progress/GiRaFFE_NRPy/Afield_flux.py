@@ -105,17 +105,8 @@ def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul):
 #     return (- cmin*cmax*(Ur-Ul) )/(cmax + cmin)
     return (cmin*Fr + cmax*Fl - cmin*cmax*(Ur-Ul) )/(cmax + cmin)
 
-def calculate_E_i_flux(flux_dirn,inputs_provided=True,alpha_face=None,gamma_faceDD=None,beta_faceU=None,\
+def calculate_E_i_flux(flux_dirn,alpha_face=None,gamma_faceDD=None,beta_faceU=None,\
                        Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None):
-    if not inputs_provided:
-        # declare all variables
-        alpha_face = sp.symbols(alpha_face)
-        beta_faceU = ixp.declarerank1("beta_faceU")
-        gamma_faceDD = ixp.declarerank2("gamma_faceDD","sym01")
-        Valenciav_rU = ixp.declarerank1("Valenciav_rU")
-        B_rU = ixp.declarerank1("B_rU")
-        Valenciav_lU = ixp.declarerank1("Valenciav_lU")
-        B_lU = ixp.declarerank1("B_lU")
     global E_fluxD
     E_fluxD = ixp.zerorank1()
     for field_comp in range(3):
@@ -129,3 +120,83 @@ def calculate_E_i_flux(flux_dirn,inputs_provided=True,alpha_face=None,gamma_face
         Fl = F
         Ul = U
         E_fluxD[field_comp] += HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul)
+        
+def generate_Afield_flux_function_files(out_dir,subdir,alpha_face,gamma_faceDD,beta_faceU,\
+                                        Valenciav_rU,B_rU,Valenciav_lU,B_lU,inputs_provided=True):
+    if not inputs_provided:
+        # declare all variables
+        alpha_face = sp.symbols(alpha_face)
+        beta_faceU = ixp.declarerank1("beta_faceU")
+        gamma_faceDD = ixp.declarerank2("gamma_faceDD","sym01")
+        Valenciav_rU = ixp.declarerank1("Valenciav_rU")
+        B_rU = ixp.declarerank1("B_rU")
+        Valenciav_lU = ixp.declarerank1("Valenciav_lU")
+        B_lU = ixp.declarerank1("B_lU")
+        
+    Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
+    const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
+    const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];
+    const double gamma_faceDD02 = auxevol_gfs[IDX4S(GAMMA_FACEDD02GF, i0,i1,i2)];
+    const double gamma_faceDD11 = auxevol_gfs[IDX4S(GAMMA_FACEDD11GF, i0,i1,i2)];
+    const double gamma_faceDD12 = auxevol_gfs[IDX4S(GAMMA_FACEDD12GF, i0,i1,i2)];
+    const double gamma_faceDD22 = auxevol_gfs[IDX4S(GAMMA_FACEDD22GF, i0,i1,i2)];
+    const double beta_faceU0 = auxevol_gfs[IDX4S(BETA_FACEU0GF, i0,i1,i2)];
+    const double beta_faceU1 = auxevol_gfs[IDX4S(BETA_FACEU1GF, i0,i1,i2)];
+    const double beta_faceU2 = auxevol_gfs[IDX4S(BETA_FACEU2GF, i0,i1,i2)];
+    const double Valenciav_rU0 = auxevol_gfs[IDX4S(VALENCIAV_RU0GF, i0,i1,i2)];
+    const double Valenciav_rU1 = auxevol_gfs[IDX4S(VALENCIAV_RU1GF, i0,i1,i2)];
+    const double Valenciav_rU2 = auxevol_gfs[IDX4S(VALENCIAV_RU2GF, i0,i1,i2)];
+    const double B_rU0 = auxevol_gfs[IDX4S(B_RU0GF, i0,i1,i2)];
+    const double B_rU1 = auxevol_gfs[IDX4S(B_RU1GF, i0,i1,i2)];
+    const double B_rU2 = auxevol_gfs[IDX4S(B_RU2GF, i0,i1,i2)];
+    const double Valenciav_lU0 = auxevol_gfs[IDX4S(VALENCIAV_LU0GF, i0,i1,i2)];
+    const double Valenciav_lU1 = auxevol_gfs[IDX4S(VALENCIAV_LU1GF, i0,i1,i2)];
+    const double Valenciav_lU2 = auxevol_gfs[IDX4S(VALENCIAV_LU2GF, i0,i1,i2)];
+    const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
+    const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
+    const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
+    REAL A_rhsD0 = 0; REAL A_rhsD1 = 0; REAL A_rhsD2 = 0;
+    """
+    Memory_Write = """rhs_gfs[IDX4S(AD0GF,i0,i1,i2)] += A_rhsD0;
+    rhs_gfs[IDX4S(AD1GF,i0,i1,i2)] += A_rhsD1;
+    rhs_gfs[IDX4S(AD2GF,i0,i1,i2)] += A_rhsD2;
+    """
+
+    indices = ["i0","i1","i2"]
+    indicesp1 = ["i0+1","i1+1","i2+1"]
+
+    for flux_dirn in range(3):
+        calculate_E_i_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
+                              Valenciav_rU,B_rU,Valenciav_lU,B_lU)
+
+        E_field_to_print = [\
+                            sp.Rational(1,4)*E_fluxD[(flux_dirn+1)%3],
+                            sp.Rational(1,4)*E_fluxD[(flux_dirn+2)%3],
+                           ]
+        E_field_names = [\
+                         "A_rhsD"+str((flux_dirn+1)%3),
+                         "A_rhsD"+str((flux_dirn+2)%3),
+                        ]
+
+        desc = "Calculate the electric flux on the left face in direction " + str(flux_dirn) + "."
+        name = "calculate_E_field_D" + str(flux_dirn) + "_right"
+        outCfunction(
+            outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
+            params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
+            body     =  Memory_Read \
+                       +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
+                       +Memory_Write,
+            loopopts ="InteriorPoints",
+            rel_path_for_Cparams=os.path.join("../"))
+
+        desc = "Calculate the electric flux on the left face in direction " + str(flux_dirn) + "."
+        name = "calculate_E_field_D" + str(flux_dirn) + "_left"
+        outCfunction(
+            outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
+            params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
+            body     =  Memory_Read.replace(indices[flux_dirn],indicesp1[flux_dirn]) \
+                       +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
+                       +Memory_Write,
+            loopopts ="InteriorPoints",
+            rel_path_for_Cparams=os.path.join("../"))
+
