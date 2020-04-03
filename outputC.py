@@ -243,6 +243,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         output_varname_str = output_varname_strtmp
         sympyexprtmp = [sympyexpr]
         sympyexpr = sympyexprtmp
+    sympyexpr = sympyexpr[:] # pass-by-value (copy list)
 
 
     # Step 3: If outCparams.verbose = True, then output the original SymPy
