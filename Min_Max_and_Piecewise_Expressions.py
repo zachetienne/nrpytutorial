@@ -6,10 +6,18 @@ TINYDOUBLE = par.Cparameters("REAL", thismodule, "TINYDOUBLE", 1e-100)
 
 def min_noif(a,b):
     # Returns the minimum of a and b
+    if a==sp.sympify(0):
+        return sp.Rational(1,2) * (b-nrpyAbs(b))
+    if b==sp.sympify(0):
+        return sp.Rational(1,2) * (a-nrpyAbs(a))
     return sp.Rational(1,2) * (a+b-nrpyAbs(a-b))
 
 def max_noif(a,b):
     # Returns the maximum of a and b
+    if a==sp.sympify(0):
+        return sp.Rational(1,2) * (b+nrpyAbs(b))
+    if b==sp.sympify(0):
+        return sp.Rational(1,2) * (a+nrpyAbs(a))
     return sp.Rational(1,2) * (a+b+nrpyAbs(a-b))
 
 def coord_leq_bound(x,xstar): 
