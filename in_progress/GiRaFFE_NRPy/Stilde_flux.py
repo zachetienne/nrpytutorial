@@ -43,22 +43,19 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
     # First, we need to find the characteristic speeds on each face
     gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
     find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
-    cpr = cplus
-    cmr = cminus
-    find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
-    cpl = cplus
-    cml = cminus
+    cp = cplus
+    cm = cminus
     
     # The following algorithms have been verified with random floats:
     
     global cmax,cmin
+    # Now, we need to set cmax to the larger of cpr,cpl, and 0
     
     import Min_Max_and_Piecewise_Expressions as noif
-    cmax = noif.max_noif(noif.max_noif(cpr,cpl),sp.sympify(0))
+    cmax = noif.max_noif(cp,sp.sympify(0))
     
     # And then, set cmin to the smaller of cmr,cml, and 0
-    cmin = -noif.min_noif(noif.min_noif(cmr,cml),sp.sympify(0))
-
+    cmin = -noif.min_noif(cm,sp.sympify(0))
 # We'll rewrite this assuming that we've passed the entire reconstructed
 # gridfunctions. You could also do this with only one point, but then you'd 
 # need to declare everything as a Cparam in NRPy+
