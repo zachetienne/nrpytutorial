@@ -11,13 +11,18 @@ Calculate the electric flux on both faces in the input direction.
   TO CALL THIS FROM MAIN DRIVER:
 
           for(int count = 1;count <= 2;count++) {
-            int Ai = (flux_dirn+count)%3;
+            int Ai = (flux_dirn+count)%3; // flux_dirn=1, count=1; Ai = 2
+            //                               flux_dirn=1, count=2; Ai = 0
+            //                               flux_dirn=0, count=1; Ai = 1
+            //                               flux_dirn=0, count=2; Ai = 2
+            //                               flux_dirn=2, count=1; Ai = 0
+            //                               flux_dirn=2, count=2; Ai = 1
             calculate_E_field_flat_all_in_one_zachsversion(params,
                                                            &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(Ai+2)%3, 0)],
                                                            &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(Ai+2)%3, 0)],
-                                                           &auxevol_gfs[IDX4ptS(B_RU0GF+(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF+(Ai+2)%3,0)],&auxevol_gfs[IDX4ptS(B_RU0GF+Ai, 0)],
-                                                           &auxevol_gfs[IDX4ptS(B_LU0GF+(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF+(Ai+2)%3,0)],&auxevol_gfs[IDX4ptS(B_LU0GF+Ai, 0)],
-                                                           &rhs_gfs[IDX4ptS(Ai,0)], Ai, flux_dirn);
+                                                           &auxevol_gfs[IDX4ptS(B_RU0GF        +(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(Ai+2)%3,0)],&auxevol_gfs[IDX4ptS(B_RU0GF+Ai, 0)],
+                                                           &auxevol_gfs[IDX4ptS(B_LU0GF        +(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(Ai+2)%3,0)],&auxevol_gfs[IDX4ptS(B_LU0GF+Ai, 0)],
+                                                           &rhs_gfs[IDX4ptS(AD0GF+Ai,0)], Ai, flux_dirn);
           }
 
  */
