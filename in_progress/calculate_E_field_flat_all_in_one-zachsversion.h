@@ -10,21 +10,36 @@ Calculate the electric flux on both faces in the input direction.
 /*
   TO CALL THIS FROM MAIN DRIVER:
 
-          for(int count = 1;count <= 2;count++) {
-            int Ai = (flux_dirn+count)%3; // flux_dirn=1, count=1; Ai = 2
-            //                               flux_dirn=1, count=2; Ai = 0
-            //                               flux_dirn=0, count=1; Ai = 1
-            //                               flux_dirn=0, count=2; Ai = 2
-            //                               flux_dirn=2, count=1; Ai = 0
-            //                               flux_dirn=2, count=2; Ai = 1
+        for(int count = 1;count <= 2;count++) {
+          int Ai = (flux_dirn+count)%3; // flux_dirn=1, count=1; Ai = 2: A2_rhs += - 0.25*[+FyBx(jp)+FyBx(jm)] : SIGN=-1
+          //                               flux_dirn=1, count=2; Ai = 0
+          //                               flux_dirn=0, count=1; Ai = 1
+          //                               flux_dirn=0, count=2; Ai = 2: A2_rhs += - 0.25*[-FxBy(ip)-FxBy(im)] : SIGN=+1
+          //                               flux_dirn=2, count=1; Ai = 0
+          //                               flux_dirn=2, count=2; Ai = 1
+
+          REAL SIGN=1.0;
+          if(Ai == 0 && flux_dirn == 2) SIGN=-1.0;
+          if(Ai == 1 && flux_dirn == 0) SIGN=-1.0;
+          if(Ai == 2 && flux_dirn == 1) SIGN=-1.0;
+
+          //printf("hey flux_dirn=%d ; Ai=%d ; SIGN=%e\n",flux_dirn,Ai,SIGN);
+          if(SIGN==1.0) {
             calculate_E_field_flat_all_in_one_zachsversion(params,
                                                            &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(Ai+2)%3, 0)],
                                                            &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(Ai+2)%3, 0)],
                                                            &auxevol_gfs[IDX4ptS(B_RU0GF        +(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(Ai+2)%3,0)],&auxevol_gfs[IDX4ptS(B_RU0GF+Ai, 0)],
                                                            &auxevol_gfs[IDX4ptS(B_LU0GF        +(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(Ai+2)%3,0)],&auxevol_gfs[IDX4ptS(B_LU0GF+Ai, 0)],
-                                                           &rhs_gfs[IDX4ptS(AD0GF+Ai,0)], Ai, flux_dirn);
+                                                           &rhs_gfs[IDX4ptS(AD0GF+Ai,0)], SIGN, flux_dirn);
+          } else {
+            calculate_E_field_flat_all_in_one_zachsversion(params,
+                                                           &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(Ai+2)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(Ai+1)%3, 0)],
+                                                           &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(Ai+2)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(Ai+1)%3, 0)],
+                                                           &auxevol_gfs[IDX4ptS(B_RU0GF        +(Ai+2)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF+Ai, 0)],
+                                                           &auxevol_gfs[IDX4ptS(B_LU0GF        +(Ai+2)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(Ai+1)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF+Ai, 0)],
+                                                           &rhs_gfs[IDX4ptS(AD0GF+Ai,0)], SIGN, flux_dirn);
           }
-
+        }
  */
 
 void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
@@ -34,9 +49,8 @@ void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
                                                     const REAL *Br0,const REAL *Br1,const REAL *Br2,
                                                     const REAL *Bl0,const REAL *Bl1,const REAL *Bl2,
                                        
-                                                    REAL *Az_rhs,const int Bfield_dirn,const int flux_dirn) {
+                                                    REAL *Az_rhs,const REAL SIGN,const int flux_dirn) {
 #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
-
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
         for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++) {
@@ -98,7 +112,7 @@ void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
                 // Basic HLLE solver
                 const REAL FHLL_0B1_p1 = 0.5*(F0B1_r_p1 + F0B1_l_p1 - (U_r_p1-U_l_p1));
                 
-                Az_rhs[index] += 0.25*(FHLL_0B1 + FHLL_0B1_p1);
+                Az_rhs[index] += SIGN*0.25*(FHLL_0B1 + FHLL_0B1_p1);
             } // END LOOP: for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++)
         } // END LOOP: for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++)
     } // END LOOP: for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++)
