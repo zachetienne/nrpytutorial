@@ -188,3 +188,11 @@ def delete_existing_files(file_or_wildcard):
 def mkdir(newpath):
     if not os.path.exists(os.path.join(newpath)):
         os.makedirs(os.path.join(newpath))
+
+def output_Jupyter_notebook_to_LaTeXed_PDF(notebookname,verbose=True):
+    Execute_input_string(r"jupyter nbconvert --to latex --template latex_nrpy_style.tplx --log-level='WARN' "+notebookname+".ipynb",verbose=False)
+    for i in range(3):
+        Execute_input_string(r"pdflatex -interaction=batchmode "+notebookname+".tex",verbose=False)
+    delete_existing_files("Tut*.out Tut*.aux Tut*.log")
+    if verbose:
+        print("Created "+notebookname+".tex, and compiled LaTeX file to PDF file "+notebookname+".pdf")
