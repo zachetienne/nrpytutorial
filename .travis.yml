@@ -3,16 +3,136 @@ language: python
 
 matrix:
   include:
-    # - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
+    - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
+      os: linux
+      dist: xenial
+      python: pypy3.5-6.0
+      install:
+        - pip install mpmath testfixtures
+        - pip install -U git+https://github.com/sympy/sympy/
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
+
+
+    - name: "Ubuntu Linux Xenial pypy2.7-6.0"
+      os: linux
+      dist: xenial
+      python: pypy2.7-6.0
+      install:
+        - pip install mpmath sympy testfixtures
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
+
+    - name: "Ubuntu Linux Xenial pypy3.5-6.0"
+      os: linux
+      dist: xenial
+      python: pypy3.5-6.0
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+
+    - name: "Ubuntu Linux Trusty pypy3.5"
+      os: linux
+      dist: trusty
+      python: pypy3.5
+      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+
+    - name: "Windows Python 3.8.0"
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: sh          # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python3
+        - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
+        - ls /c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/opt/bin/
+        - python -m ensurepip
+        - python -m pip install --upgrade pip wheel
+      install:
+        - pip3 install mpmath sympy
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python
+
+    - name: "OS X Python 3.7"
+      os: osx
+      language: sh
+      python: 3.7
+      before_script: pip3 install mpmath sympy
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    # https://docs.travis-ci.com/user/languages/python/
+    - name: "OS X, xcode 10.2 Python 3.7"
+      os: osx
+      osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
+      language: shell       # 'language: python' is an error on Travis CI macOS
+      before_script: pip3 install mpmath sympy
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Xenial CPython 2.7"
+      os: linux
+      dist: xenial
+      python: 2.7
+      before_script: pip install testfixtures
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python
+
+    - name: "Ubuntu Linux Xenial CPython 3.4"
+      os: linux
+      dist: xenial
+      python: 3.4
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    # According to https://github.com/tornadoweb/tornado/blob/master/.travis.yml:
+    #  3.5.2 is interesting because it's the version in ubuntu 16.04, and due to python's
+    # "provisional feature" rules there are significant differences between patch
+    # versions for asyncio and typing.
+    - name: "Ubuntu Linux Xenial CPython 3.5.2"
+      os: linux
+      dist: xenial
+      python: 3.5.2
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Xenial CPython 3.7"
+      os: linux
+      dist: xenial
+      python: 3.7
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    # Unstable at times (pip broken):
+    # - name: "Ubuntu Linux Xenial CPython 3.8-dev"
     #   os: linux
     #   dist: xenial
-    #   python: pypy3.5-6.0
-    #   install:
-    #     - pip install mpmath testfixtures
-    #     - pip install -U git+https://github.com/sympy/sympy/
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
+    #   before_script: python3 -m pip install --upgrade pip mpmath sympy
+    #   python: 3.8-dev
+    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    # Unstable at times (pip broken):
+    # - name: "Ubuntu Linux Bionic CPython 3.9-dev"
+    #   os: linux
+    #   dist: bionic
+    #   python: 3.9-dev
+    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    # Unstable at times (pip broken):
+    # - name: "Ubuntu Linux Xenial CPython NIGHTLY"
+    #   os: linux
+    #   dist: xenial
+    #   python: nightly
+    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Bionic Python 3.6.7"
+      os: linux
+      dist: bionic
+      python: 3.6.7
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "Ubuntu Linux Bionic Python 3.7.1"
+      os: linux
+      dist: bionic
+      python: 3.7.1
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     - name: "Ubuntu Linux Bionic Python 3.8"
+      os: linux
+      dist: bionic
+      python: 3.8
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
+    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Bionic Python 3.8"
       os: linux
       dist: bionic
       python: 3.8
@@ -22,122 +142,7 @@ matrix:
         - pip install mpmath jupyter matplotlib
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./run_Jupyter_notebook.sh Tutorial-Finite_Difference_Derivatives.ipynb && git diff Tutorial-Finite_Difference_Derivatives.ipynb
-
-    # - name: "Ubuntu Linux Xenial pypy2.7-6.0"
-    #   os: linux
-    #   dist: xenial
-    #   python: pypy2.7-6.0
-    #   install:
-    #     - pip install mpmath sympy testfixtures
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
-
-    # - name: "Ubuntu Linux Xenial pypy3.5-6.0"
-    #   os: linux
-    #   dist: xenial
-    #   python: pypy3.5-6.0
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
-
-    # - name: "Ubuntu Linux Trusty pypy3.5"
-    #   os: linux
-    #   dist: trusty
-    #   python: pypy3.5
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
-
-    # - name: "Windows Python 3.8.0"
-    #   os: windows           # Windows 10.0.17134 N/A Build 17134
-    #   language: sh          # 'language: python' is an error on Travis CI Windows
-    #   before_install:
-    #     - choco install python3
-    #     - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
-    #     - ls /c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/opt/bin/
-    #     - python -m ensurepip
-    #     - python -m pip install --upgrade pip wheel
-    #   install:
-    #     - pip3 install mpmath sympy
-    #   env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
-    #   env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python
-
-    # - name: "OS X Python 3.7"
-    #   os: osx
-    #   language: sh
-    #   python: 3.7
-    #   before_script: pip3 install mpmath sympy
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # # https://docs.travis-ci.com/user/languages/python/
-    # - name: "OS X, xcode 10.2 Python 3.7"
-    #   os: osx
-    #   osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
-    #   language: shell       # 'language: python' is an error on Travis CI macOS
-    #   before_script: pip3 install mpmath sympy
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # - name: "Ubuntu Linux Xenial CPython 2.7"
-    #   os: linux
-    #   dist: xenial
-    #   python: 2.7
-    #   before_script: pip install testfixtures
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python
-
-    # - name: "Ubuntu Linux Xenial CPython 3.4"
-    #   os: linux
-    #   dist: xenial
-    #   python: 3.4
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # # According to https://github.com/tornadoweb/tornado/blob/master/.travis.yml:
-    # #  3.5.2 is interesting because it's the version in ubuntu 16.04, and due to python's
-    # # "provisional feature" rules there are significant differences between patch
-    # # versions for asyncio and typing.
-    # - name: "Ubuntu Linux Xenial CPython 3.5.2"
-    #   os: linux
-    #   dist: xenial
-    #   python: 3.5.2
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # - name: "Ubuntu Linux Xenial CPython 3.7"
-    #   os: linux
-    #   dist: xenial
-    #   python: 3.7
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # # Unstable at times (pip broken):
-    # # - name: "Ubuntu Linux Xenial CPython 3.8-dev"
-    # #   os: linux
-    # #   dist: xenial
-    # #   before_script: python3 -m pip install --upgrade pip mpmath sympy
-    # #   python: 3.8-dev
-    # #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # # Unstable at times (pip broken):
-    # # - name: "Ubuntu Linux Bionic CPython 3.9-dev"
-    # #   os: linux
-    # #   dist: bionic
-    # #   python: 3.9-dev
-    # #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # # Unstable at times (pip broken):
-    # # - name: "Ubuntu Linux Xenial CPython NIGHTLY"
-    # #   os: linux
-    # #   dist: xenial
-    # #   python: nightly
-    # #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # - name: "Ubuntu Linux Bionic Python 3.6.7"
-    #   os: linux
-    #   dist: bionic
-    #   python: 3.6.7
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # - name: "Ubuntu Linux Bionic Python 3.7.1"
-    #   os: linux
-    #   dist: bionic
-    #   python: 3.7.1
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # - name: "Ubuntu Linux Bionic Python 3.8"
-    #   os: linux
-    #   dist: bionic
-    #   python: 3.8
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+      script: ./run_Jupyter_notebook.sh Tutorial-Numerical_Grids.ipynb && git diff Tutorial-Numerical_Grids.ipynb
+      script: ./run_Jupyter_notebook.sh Tutorial-Coutput__Parameter_Interface.ipynb && git diff Tutorial-Coutput__Parameter_Interface.ipynb
+      script: ./run_Jupyter_notebook.sh Tutorial-cmdline_helper.ipynb && git diff Tutorial-cmdline_helper.ipynb
+      script: ./run_Jupyter_notebook.sh Tutorial-Symbolic_Tensor_Rotation.ipynb && git diff Tutorial-Symbolic_Tensor_Rotation.ipynb
