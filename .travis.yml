@@ -141,8 +141,4 @@ matrix:
         - sudo apt-get -y install texlive-latex-base pandoc
         - pip install mpmath jupyter matplotlib
         - pip install -U git+https://github.com/sympy/sympy/
-      script: ./run_Jupyter_notebook.sh Tutorial-Finite_Difference_Derivatives.ipynb && git diff Tutorial-Finite_Difference_Derivatives.ipynb
-      script: ./run_Jupyter_notebook.sh Tutorial-Numerical_Grids.ipynb && git diff Tutorial-Numerical_Grids.ipynb
-      script: ./run_Jupyter_notebook.sh Tutorial-Coutput__Parameter_Interface.ipynb && git diff Tutorial-Coutput__Parameter_Interface.ipynb
-      script: ./run_Jupyter_notebook.sh Tutorial-cmdline_helper.ipynb && git diff Tutorial-cmdline_helper.ipynb
-      script: ./run_Jupyter_notebook.sh Tutorial-Symbolic_Tensor_Rotation.ipynb && git diff Tutorial-Symbolic_Tensor_Rotation.ipynb
+      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
