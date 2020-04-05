@@ -3,6 +3,28 @@ language: python
 
 matrix:
   include:
+    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Bionic Python 3.8"
+      os: linux
+      dist: bionic
+      python: 3.8
+      sudo: true
+      install:
+        - sudo apt-get -y install texlive-latex-base pandoc
+        - pip install mpmath jupyter matplotlib
+        - pip install -U git+https://github.com/sympy/sympy/
+      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
+    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7"
+      os: linux
+      dist: xenial
+      python: 2.7
+      before_script: pip install testfixtures
+      sudo: true
+      install:
+        - sudo apt-get -y install texlive-latex-base pandoc
+        - pip install sympy mpmath jupyter matplotlib
+      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
     - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
       os: linux
       dist: xenial
@@ -11,7 +33,6 @@ matrix:
         - pip install mpmath testfixtures
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
-
 
     - name: "Ubuntu Linux Xenial pypy2.7-6.0"
       os: linux
@@ -131,14 +152,3 @@ matrix:
       dist: bionic
       python: 3.8
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Bionic Python 3.8"
-      os: linux
-      dist: bionic
-      python: 3.8
-      sudo: true
-      install:
-        - sudo apt-get -y install texlive-latex-base pandoc
-        - pip install mpmath jupyter matplotlib
-        - pip install -U git+https://github.com/sympy/sympy/
-      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
