@@ -12,6 +12,15 @@ matrix:
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
+    - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
+      os: linux
+      dist: xenial
+      python: pypy3.5-6.0
+      install:
+        - pip install mpmath jupyter matplotlib
+        - pip install -U git+https://github.com/sympy/sympy/
+      script: ./run_Jupyter_notebook.sh Tutorial-Coutput__Parameter_Interface.ipynb && git diff Tutorial-Coutput__Parameter_Interface.ipynb
+
     - name: "Ubuntu Linux Xenial pypy2.7-6.0"
       os: linux
       dist: xenial
