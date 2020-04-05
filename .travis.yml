@@ -16,8 +16,9 @@ matrix:
       os: linux
       dist: bionic
       python: 3.8
+      sudo: true
       install:
-        - apt-get -y install pdflatex pandoc
+        - sudo apt-get -y install pdflatex pandoc
         - pip install mpmath jupyter matplotlib
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./run_Jupyter_notebook.sh Tutorial-Coutput__Parameter_Interface.ipynb && git diff Tutorial-Coutput__Parameter_Interface.ipynb
