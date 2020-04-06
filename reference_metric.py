@@ -886,6 +886,64 @@ for(int i1=0;i1<Nxx_plus_2NGHOSTS1;i1++) for(int i0=0;i0<Nxx_plus_2NGHOSTS0;i0++
         with open(os.path.join(outdir,"rfm_struct__freemem.h"), "w") as file:
             file.write(freemm_str)
 
+####################################################
+# Core Jacobian (basis) transformation functions,
+#      for reference metric basis to/from the
+#      Cartesian basis.
+
+# We define Jacobians relative to the reference metric
+#   basis at a point x^j_rfm=(xx0,xx1,xx2)_rfm on the source grid:
+#
+#  Jac_dUCart_dDrfmUD[i][j] = dx^i_Cart / dx^j_rfm
+#
+# via exact differentiation (courtesy SymPy), and the inverse Jacobian
+#
+#  Jac_dUrfm_dDCartUD[i][j] = dx^i_rfm / dx^j_Cart
+#
+# using NRPy+'s generic_matrix_inverter3x3() function
+
+def compute_Jacobian_and_inverseJacobian_tofrom_Cartesian():
+    # Step 2.a: First construct Jacobian matrix:
+    Jac_dUCart_dDrfmUD = ixp.zerorank2()
+    for i in range(3):
+        for j in range(3):
+            Jac_dUCart_dDrfmUD[i][j] = sp.diff(xxCart[i],xx[j])
+    Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)
+    return Jac_dUCart_dDrfmUD,Jac_dUrfm_dDCartUD
+
+def basis_transform_vectorU_from_rfmbasis_to_Cartesian(Jac_dUCart_dDrfmUD, src_vectorU):
+    Cart_dst_vectorU = ixp.zerorank1()
+    for i in range(3):
+        for l in range(3):
+            Cart_dst_vectorU[i] += Jac_dUCart_dDrfmUD[i][l] * src_vectorU[l]
+    return Cart_dst_vectorU
+
+def basis_transform_tensorDD_from_rfmbasis_to_Cartesian(Jac_dUrfm_dDCartUD, src_tensorDD):
+    Cart_dst_tensorDD = ixp.zerorank2()
+    for i in range(3):
+        for j in range(3):
+            for l in range(3):
+                for m in range(3):
+                    Cart_dst_tensorDD[i][j] += Jac_dUrfm_dDCartUD[l][i]*Jac_dUrfm_dDCartUD[m][j]*src_tensorDD[l][m]
+    return Cart_dst_tensorDD
+
+def basis_transform_vectorU_from_Cartesian_to_rfmbasis(Jac_dUrfm_dDCartUD, Cart_src_vectorU):
+    rfm_dst_vectorU = ixp.zerorank1()
+    for i in range(3):
+        for l in range(3):
+            rfm_dst_vectorU[i] += Jac_dUrfm_dDCartUD[i][l] * Cart_src_vectorU[l]
+    return rfm_dst_vectorU
+
+def basis_transform_tensorDD_from_Cartesian_to_rfmbasis(Jac_dUCart_dDrfmUD, Cart_src_tensorDD):
+    rfm_dst_tensorDD = ixp.zerorank2()
+    for i in range(3):
+        for j in range(3):
+            for l in range(3):
+                for m in range(3):
+                    rfm_dst_tensorDD[i][j] += Jac_dUCart_dDrfmUD[l][i]*Jac_dUCart_dDrfmUD[m][j]*Cart_src_tensorDD[l][m]
+    return rfm_dst_tensorDD
+##################################################
+            
 def get_EigenCoord():
     CoordSystem_orig = par.parval_from_str("reference_metric::CoordSystem")
     for EigenCoordstr in ["Spherical","Cylindrical","SymTP","Cartesian"]:
