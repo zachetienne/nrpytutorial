@@ -24,7 +24,7 @@ else
     cat $1 | sed "s/   \"name\": \"python3\"/   \"name\": \"python2\"/g" > $1-tmp ; mv $1-tmp $1
 fi
 
-if [ $2 == 'notimer' ]; then
+if [ "$2" == "notimer" ]; then
     jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1
 else
     time jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1

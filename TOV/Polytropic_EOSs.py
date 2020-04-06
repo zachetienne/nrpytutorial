@@ -189,7 +189,7 @@ def set_up_EOS_parameters__complete_set_of_input_variables(neos,rho_poly_tab,Gam
     # Error check #2: Verify if the correct number of Gamma_poly_tab has been given by the user
     if len(Gamma_poly_tab) != neos:
         print("Error: neos="+str(neos)+". Expected "+str(neos)+" values of Gamma_poly_tab, but "+str(len(Gamma_poly_tab))+" values were given.")
-        sys.exit(2)
+        sys.exit(1)
 
     # Create the arrays to store the values of K_poly_tab and eps_integ_const_tab
     K_poly_tab          = [0 for i in range(neos)]
@@ -685,7 +685,7 @@ EOS_omni::hybrid_gamma_th = %.15e
         if Gamma_thermal == None:
             print("Error: Please set Gamma_thermal. Usage:")
             print("generate_IllinoisGRMHD_EOS_parameter_file(\"piecewise\",outfilename,Gamma_thermal=Gamma_th,EOS_struct=eos_named_tuple)")
-            sys.exit(2)
+            sys.exit(1)
             
         atm_index  = polytropic_index_from_rhob(EOS_struct,rho_atmosphere)
         Gamma_atm  = EOS_struct.Gamma_poly_tab[atm_index]
@@ -797,7 +797,7 @@ EOS_omni::hybrid_gamma_th = %.15e
         import TOV.Piecewise_Polytrope__dict
         if EOSname not in TOV.Piecewise_Polytrope__dict.EOS_Read_et_al_dict:
             print("ERROR: Unknown EOS name "+EOSname)
-            sys.exit(3)
+            sys.exit(1)
 
         if Gamma_thermal == None:
             print("Error: Please set Gamma_thermal. Usage:")

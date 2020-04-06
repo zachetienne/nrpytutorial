@@ -9,7 +9,7 @@ matrix:
       python: 3.8.2
       sudo: true
       install:
-        - sudo apt-get -y install texlive-latex-base pandoc
+        - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install mpmath jupyter matplotlib scipy
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
@@ -21,7 +21,7 @@ matrix:
       before_script: pip install testfixtures
       sudo: true
       install:
-        - sudo apt-get -y install texlive-latex-base pandoc
+        - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install sympy mpmath jupyter matplotlib scipy
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
