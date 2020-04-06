@@ -3,6 +3,28 @@ language: python
 
 matrix:
   include:
+    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Bionic Python 3.8"
+      os: linux
+      dist: bionic
+      python: 3.8.2
+      sudo: true
+      install:
+        - sudo apt-get -y install texlive-latex-base pandoc
+        - pip install mpmath jupyter matplotlib scipy
+        - pip install -U git+https://github.com/sympy/sympy/
+      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
+    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7"
+      os: linux
+      dist: xenial
+      python: 2.7
+      before_script: pip install testfixtures
+      sudo: true
+      install:
+        - sudo apt-get -y install texlive-latex-base pandoc
+        - pip install sympy mpmath jupyter matplotlib scipy
+      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
     - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
       os: linux
       dist: xenial

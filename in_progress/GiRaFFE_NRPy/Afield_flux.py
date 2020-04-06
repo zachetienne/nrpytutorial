@@ -50,11 +50,8 @@ def find_cmax_cmin(field_comp,gamma_faceDD,beta_faceU,alpha_face):
     # First, we need to find the characteristic speeds on each face
     gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
     find_cp_cm(alpha_face,beta_faceU[field_comp],gamma_faceUU[field_comp][field_comp])
-    cpr = cplus
-    cmr = cminus
-    find_cp_cm(alpha_face,beta_faceU[field_comp],gamma_faceUU[field_comp][field_comp])
-    cpl = cplus
-    cml = cminus
+    cp = cplus
+    cm = cminus
     
     # The following algorithms have been verified with random floats:
     
@@ -62,10 +59,10 @@ def find_cmax_cmin(field_comp,gamma_faceDD,beta_faceU,alpha_face):
     # Now, we need to set cmax to the larger of cpr,cpl, and 0
     
     import Min_Max_and_Piecewise_Expressions as noif
-    cmax = noif.max_noif(noif.max_noif(cpr,cpl),sp.sympify(0))
+    cmax = noif.max_noif(cp,sp.sympify(0))
     
     # And then, set cmin to the smaller of cmr,cml, and 0
-    cmin = -noif.min_noif(noif.min_noif(cmr,cml),sp.sympify(0))
+    cmin = -noif.min_noif(cm,sp.sympify(0))
 
 def calculate_flux_and_state_for_Induction(field_comp,flux_dirn, gammaDD,betaU,alpha,ValenciavU,BU):
     # Define Levi-Civita symbol
