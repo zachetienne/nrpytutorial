@@ -2,8 +2,10 @@
 
 set -e # Error out if any commands complete with an error.
 
-for i in Tutorial-[A-RT-Z]*.ipynb Tutorial-S[A-SU-Z]*.ipynb; do
-    ./run_Jupyter_notebook.sh $i && git diff $i
+# Skip Baikal and 
+for i in Tutorial-[A]*.ipynb Tutorial-[C-RT-Z]*.ipynb Tutorial-B[B-Z]*.ipynb Tutorial-S[A-SU-Z]*.ipynb; do
+    ./run_Jupyter_notebook.sh $i notimer
+    git diff $i
 done
 # ./run_Jupyter_notebook.sh Tutorial-Finite_Difference_Derivatives.ipynb && git diff Tutorial-Finite_Difference_Derivatives.ipynb && \
 # ./run_Jupyter_notebook.sh Tutorial-Numerical_Grids.ipynb && git diff Tutorial-Numerical_Grids.ipynb && \
