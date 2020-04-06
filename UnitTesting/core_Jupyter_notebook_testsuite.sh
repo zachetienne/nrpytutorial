@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set -e # Error out if any commands complete with an error.
+
 for i in Tutorial-[A-RT-Z]*.ipynb Tutorial-S[A-SU-Z]*.ipynb; do
     ./run_Jupyter_notebook.sh $i && git diff $i
 done
