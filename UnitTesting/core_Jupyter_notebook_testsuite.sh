@@ -2,8 +2,8 @@
 
 set -e # Error out if any commands complete with an error.
 
-# Skip Baikal and all Start-to-Finish notebooks
-for i in Tutorial-[A]*.ipynb Tutorial-[C-RT-Z]*.ipynb Tutorial-B[B-Z]*.ipynb Tutorial-S[A-SU-Z]*.ipynb; do
+# Skip Baikal and all Start-to-Finish notebooks, except ScalarWave for now
+for i in Tutorial-[A]*.ipynb Tutorial-[C-RT-Z]*.ipynb Tutorial-B[B-Z]*.ipynb Tutorial-S[A-SU-Z]*.ipynb Tutorial-Start_to_Finish-ScalarWave.ipynb; do
     ./run_Jupyter_notebook.sh $i notimer
     cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i
     git diff $i | grep -v "image/png" | cdiff | cat
