@@ -54,7 +54,7 @@ class ExprTree:
             >>> repr(tree)
             '[sin(a*b)**2, sin(a*b), a*b, a, b, 2]'
         """
-        if clear: node.children.clear()
+        if clear: del node.children[:]
         for arg in node.expr.args:
             subtree = self.Node(arg, node.expr.func)
             node.append(subtree)
