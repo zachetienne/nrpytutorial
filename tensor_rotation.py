@@ -30,7 +30,7 @@ def rotate(tensor, axis, angle):
     if isinstance(tensor[0], list):
         tensor = Matrix(tensor)
         if tensor.shape != (3, 3):
-            raise Exception('Invalid Matrix Dimension')
+            raise Exception('Invalid Matrix Size')
         # Rotation Formula: M' = (q.(q.M.q*)^T.q*)^T
         M = [quat(0, *tensor[:, i]) for i in range(tensor.shape[1])]
         M = mul(q, mul(M, q.conjugate()))
@@ -45,6 +45,6 @@ def rotate(tensor, axis, angle):
         if len(tensor) != 3:
             raise Exception('Invalid Vector Length')
         # Rotation Formula: v' = q.v.q*
-        tensor = q * quat(0, *tensor) * q.conjugate()
-        return [tensor.b, tensor.c, tensor.d]
-    raise Exception('Invalid Tensor Type: Matrix or Vector')
+        v = q * quat(0, *tensor) * q.conjugate()
+        return [v.b, v.c, v.d]
+    raise Exception('Unsupported Tensor Type')
