@@ -150,7 +150,7 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
 def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, verbose=True):
 
     if verbose:
-        print("Executing `"+input_string+"`...")
+        print("(EXEC): Executing `"+input_string+"`...")
     start = time.time()
     # https://docs.python.org/3/library/subprocess.html
     if os.name != 'nt':
@@ -171,7 +171,7 @@ def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, verbo
     delete_existing_files(filename)
     end = time.time()
     if verbose:
-        print("Finished executing in "+str(end-start)+" seconds.")
+        print("(BENCH): Finished executing in "+str(end-start)+" seconds.")
 
 # delete_existing_files(file_or_wildcard): 
 #          Runs del file_or_wildcard in Windows, or
