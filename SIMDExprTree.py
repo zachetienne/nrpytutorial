@@ -32,8 +32,6 @@ class ExprTree:
         ExprTree(cos(a + b)**2)
         >>> repr(tree)
         '[cos(a + b)**2, cos(a + b), a + b, a, b, 2]'
-        >>> tree.replace({a + b: x})
-        cos(x)**2
     """
 
     def __init__(self, expr):
