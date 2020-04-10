@@ -55,7 +55,12 @@ add_test u0_smallb_Poynting__Cartesian/tests/test_u0_smallb_Poynting__Cartesian.
 add_test WeylScal4NRPy/tests/test_WeylScal4NRPy.py
 
 # TODO: add your tests here
-
+echo "Starting doctest unit tests!"
+for file in SIMDExprTree.py loop.py; do
+    echo Running doctest on file: $file
+    $PYTHONEXEC -m doctest $file
+    echo Doctest of $file finished.
+done
 
 # Checking failed_tests.txt to see what failed
 contents=$(<$failed_tests_file)
