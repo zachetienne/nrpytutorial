@@ -8,7 +8,7 @@
     # Email: ksible@outlook.com
 import sys
 
-def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma='#pragma omp parallel for', padding=0):
+def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma='#pragma omp parallel for', padding=''):
     """ Generate a one-dimensional loop in C.
 
             :arg:    index variable for the loop
@@ -28,21 +28,21 @@ def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma=
             } // END LOOP: for (int i = 0; i < N; i++)
             <BLANKLINE>
             
-            >>> header, footer = loop1D(increment='2', pragma='', padding=1)
+            >>> header, footer = loop1D(increment='2', pragma='', padding='    ')
             >>> print(header)
                 for (int i = 0; i < N; i += 2) {
             <BLANKLINE>
     """
     if any(not isinstance(i, str) for i in (idx_var, lower_bound, upper_bound, increment, pragma)):
         raise ValueError('all parameters must have type string.')
-    pragma     = pragma + '\n' if pragma else ''
+    pragma     = padding + pragma + '\n' if pragma else ''
     increment  = ' += ' + increment if increment != '1' else '++'
-    header     = padding*'    ' + 'for (int {i0} = {i1}; {i0} < {i2}; {i0}{i3})'.format(\
+    header     = padding + 'for (int {i0} = {i1}; {i0} < {i2}; {i0}{i3})'.format(\
                      i0=idx_var, i1=lower_bound, i2=upper_bound, i3=increment)
-    footer     = padding*'    ' + '} // END LOOP: ' + header.strip() + '\n'
+    footer     = padding + '} // END LOOP: ' + header.strip() + '\n'
     return pragma + header + ' {\n', footer
 
-def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding=0, interior="", tile_size=""):
+def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', interior="", tile_size=""):
     """ Generate a nested loop of arbitrary dimension in C.
 
             :arg:    index variable for the loop
@@ -98,39 +98,39 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding=0, interi
     header_list, footer_list = [], []
     for i in range(length):
         if len(tile_size) > 0:
-            ext_header, ext_footer = loop1D(idx_var[i] + 'B', lower_bound[i], upper_bound[i], tile_size[i], '', padding + i)
+            ext_header, ext_footer = loop1D(idx_var[i] + 'B', lower_bound[i], upper_bound[i], tile_size[i], '', padding + i*'    ')
             header, footer = loop1D(idx_var[i], idx_var[i] + 'B', 'MIN(%s, %s + %s)' % (upper_bound[i], idx_var[i] + 'B', \
-                tile_size[i]), increment[i], pragma[i], padding + length + i)
+                tile_size[i]), increment[i], pragma[i], padding + (length + i)*'    ')
             header_list.insert(i, ext_header)
             footer_list.insert(i, ext_footer)
         else:
-            header, footer = loop1D(idx_var[i], lower_bound[i], upper_bound[i], increment[i], pragma[i], padding + i)
+            header, footer = loop1D(idx_var[i], lower_bound[i], upper_bound[i], increment[i], pragma[i], padding + i*'    ')
         header_list.append(header)
         footer_list.append(footer)
     if interior:
-        interior = [(padding + length + len(tile_size))*'    ' + line + '\n' for line in interior.split('\n')]
+        interior = [padding + (length + len(tile_size))*'    ' + line + '\n' for line in interior.split('\n')]
     header = ''.join(header_list)
     footer = ''.join(footer_list[::-1])
     if not interior: return header, footer
     return header + ''.join(interior) + footer
 
 def simple_loop(options, interior):
-    """ Generate a simple loop in C with specified options.
+    """ Generate a simple loop (for use inside a function) in C.
 
             :arg:    loop options
             :arg:    loop interior
             :return: string of the loop
             
             >>> print(simple_loop('AllPoints', ''))
-            #pragma omp parallel for
-            for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
-                for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++) {
-                    for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++) {
+                #pragma omp parallel for
+                for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
+                    for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++) {
+                        for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++) {
             <BLANKLINE>
             <BLANKLINE>
-                    } // END LOOP: for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++)
-                } // END LOOP: for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++)
-            } // END LOOP: for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++)
+                        } // END LOOP: for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++)
+                    } // END LOOP: for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++)
+                } // END LOOP: for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++)
             <BLANKLINE>
     """
     if not options: return interior
@@ -172,7 +172,7 @@ def simple_loop(options, interior):
     tile_size = ["16", "16", "16"] if "EnableLoopTiling" in options else ""
 
     return loop(["i2","i1","i0"], i2i1i0_mins, i2i1i0_maxs, increment, [pragma, Read_1Darrays[2], Read_1Darrays[1]], \
-        interior=Read_1Darrays[0] + "\n" + interior, tile_size=tile_size)
+        padding='    ', interior=Read_1Darrays[0] + "\n" + interior, tile_size=tile_size)
 
 if __name__ == "__main__":
     import doctest
