@@ -3,9 +3,9 @@
     dimension in C, and has support for cache blocking (loop tiling).
 """
 # Author: Zachariah B. Etienne
-    # Email: zachetie@gmail.com
+    # Email: zachetie **at** gmail **dot* com
 # Contributor: Ken Sible
-    # Email: ksible@outlook.com
+    # Email: ksible **at** outlook **dot* com
 import sys
 
 def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma='#pragma omp parallel for', padding=''):

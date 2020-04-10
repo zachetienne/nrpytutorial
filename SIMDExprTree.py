@@ -18,7 +18,7 @@ and root expression. The Node subclass has a field for an expression and
 a field for subexpression children (implemented as a mutable list).
 """
 # Author: Ken Sible
-# Email:  ksible@outlook.com
+# Email:  ksible **at** outlook **dot* com
 
 __author__ = 'Ken Sible'
 
