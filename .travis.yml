@@ -59,11 +59,11 @@ matrix:
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
         - choco install python --version 3.8.2
-        - python -m ensurepip
-        - python -m pip install --upgrade pip
+#        - python -m ensurepip
+#        - python -m pip3 install --upgrade pip3
       env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       install:
-        - pip3 install --upgrade pip  # all three OSes agree about 'pip3'
+        - pip3 install --upgrade pip # all three OSes agree about 'pip3'
         - pip3 install mpmath sympy
       env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
