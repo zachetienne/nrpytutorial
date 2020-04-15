@@ -20,6 +20,8 @@ def FusedMulAddSIMD_check(a, b, c):
     return a*b + c
 def FusedMulSubSIMD_check(a, b, c):
     return a*b - c
+def NegFusedMulAddSIMD_check(a, b, c):
+    return -a*b + c
 def DivSIMD_check(a, b):
     return a / b
 def signSIMD_check(a):
@@ -68,6 +70,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     MulSIMD  = Function("MulSIMD")
     FusedMulAddSIMD = Function("FusedMulAddSIMD")
     FusedMulSubSIMD = Function("FusedMulSubSIMD")
+    NegFusedMulAddSIMD = Function("NegFusedMulAddSIMD")
     DivSIMD  = Function("DivSIMD")
     SignSIMD = Function("SignSIMD")
 
@@ -296,6 +299,58 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
                                                                args[1]))
                 tree.build(subtree, clear=True)
         expr = tree.reconstruct()
+
+    # Step 5.d: NegFusedMulAddSIMD(a,b,c) = -a*b + c:
+    for subtree in tree.preorder():
+        func = subtree.expr.func
+        args = subtree.expr.args
+        # FMA(a,Mul(-1,b),c) >> NFMA(a,b,c)
+        if   func == FusedMulAddSIMD and args[1].func == MulSIMD and \
+             lookup_rational(args[1].args[0]) == -1:
+            subtree.expr = NegFusedMulAddSIMD(args[0],args[1].args[1],args[2])
+            tree.build(subtree, clear=True)
+        # FMA(a,Mul(b,-1),c) >> NFMA(a,b,c)
+        elif func == FusedMulAddSIMD and args[1].func == MulSIMD and \
+             lookup_rational(args[1].args[1]) == -1:
+            subtree.expr = NegFusedMulAddSIMD(args[0],args[1].args[0],args[2])
+            tree.build(subtree, clear=True)
+        # FMA(Mul(-1,a), b,c) >> NFMA(a,b,c)
+        elif func == FusedMulAddSIMD and args[0].func == MulSIMD and \
+             lookup_rational(args[0].args[0]) == -1:
+            subtree.expr = NegFusedMulAddSIMD(args[0].args[1],args[1],args[2])
+            tree.build(subtree, clear=True)
+        # FMA(Mul(a,-1), b,c) >> NFMA(a,b,c)
+        elif func == FusedMulAddSIMD and args[0].func == MulSIMD and \
+             lookup_rational(args[0].args[1]) == -1:
+            subtree.expr = NegFusedMulAddSIMD(args[0].args[0],args[1],args[2])
+            tree.build(subtree, clear=True)
+    expr = tree.reconstruct()
+
+    # Step 5.e: Replace e.g., FMA(-1,b,c) with SubSIMD(c,b) and similar patterns
+    for subtree in tree.preorder():
+        func = subtree.expr.func
+        args = subtree.expr.args
+        # FMA(-1,b,c) >> SubSIMD(c,b)
+        if   func == FusedMulAddSIMD and lookup_rational(args[0]) == -1:
+            subtree.expr = SubSIMD(args[2], args[1])
+            tree.build(subtree, clear=True)
+        # FMS(a,-1,c) >> MulSIMD(-1,AddSIMD(a,c))
+        elif func == FusedMulSubSIMD and lookup_rational(args[1]) == -1:
+            subtree.expr = MulSIMD(args[1], AddSIMD(args[0], args[2]))
+            tree.build(subtree, clear=True)
+        # FMS(-1,b,c) >> MulSIMD(-1,AddSIMD(b,c))
+        elif func == FusedMulSubSIMD and lookup_rational(args[0]) == -1:
+            subtree.expr = MulSIMD(args[0], AddSIMD(args[1], args[2]))
+            tree.build(subtree, clear=True)
+        # # AddSIMD(a, MulSIMD(b, c)) >> FusedMulAddSIMD(b, c, a)
+        # elif func == AddSIMD and args[1].func == MulSIMD:
+        #     subtree.expr = FusedMulAddSIMD(args[1].args[0], args[1].args[1], args[0])
+        #     tree.build(subtree, clear=True)
+        # # SubSIMD(MulSIMD(b, c), a) >> FusedMulSubSIMD(b, c, a)
+        # elif func == SubSIMD and args[0].func == MulSIMD:
+        #     subtree.expr = FusedMulSubSIMD(args[0].args[0], args[0].args[1], args[1])
+        #     tree.build(subtree, clear=True)
+    expr = tree.reconstruct()
 
     if debug == "True":
         expr_check = eval(str(expr).replace("SIMD", "SIMD_check"))

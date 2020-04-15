@@ -17,6 +17,8 @@
 // All AVX512 chips have FMA enabled
 #define FusedMulAddSIMD(a,b,c) _mm512_fmadd_pd((a),(b),(c))
 #define FusedMulSubSIMD(a,b,c) _mm512_fmsub_pd((a),(b),(c))
+#define NegFusedMulAddSIMD(a,b,c) _mm512_fnmadd_pd((a),(b),(c))
+// Not added since I haven't yet figured how to implement on CPUs not supporting FMA: #define NegFusedMulSubSIMD(a,b,c) _mm512_fnmsub_pd((a),(b),(c))
 // In the case of 512-bit SIMD:
 //    The result from this comparison is: result[i] = (a OP b) ? 1 : 0, stored in an 8-bit mask array.
 //    Then if result==1 we set upwind = 0+1, and if result==0 we set upwind = 0
@@ -49,9 +51,13 @@
 #ifdef __FMA__
 #define FusedMulAddSIMD(a,b,c) _mm256_fmadd_pd((a),(b),(c))
 #define FusedMulSubSIMD(a,b,c) _mm256_fmsub_pd((a),(b),(c))
+#define NegFusedMulAddSIMD(a,b,c) _mm256_fnmadd_pd((a),(b),(c))
+// Not added since I haven't yet figured how to implement on CPUs not supporting FMA: #define NegFusedMulSubSIMD(a,b,c) _mm256_fnmsub_pd((a),(b),(c))
 #else
 #define FusedMulAddSIMD(a,b,c) _mm256_add_pd(_mm256_mul_pd((a),(b)), (c)) // a*b+c
 #define FusedMulSubSIMD(a,b,c) _mm256_sub_pd(_mm256_mul_pd((a),(b)), (c)) // a*b-c
+#define NegFusedMulAddSIMD(a,b,c) _mm256_sub_pd( (c), _mm256_mul_pd((a),(b)) ) // c-a*b
+// #define NegFusedMulSubSIMD(a,b,c) TODO: HOW?
 #endif
 
 
@@ -79,6 +85,8 @@
 #else
 #define FusedMulAddSIMD(a,b,c) _mm_add_pd(_mm_mul_pd((a),(b)), (c)) // a*b+c
 #define FusedMulSubSIMD(a,b,c) _mm_sub_pd(_mm_mul_pd((a),(b)), (c)) // a*b-c
+#define NegFusedMulAddSIMD(a,b,c) _mm_sub_pd( (c), _mm_mul_pd((a),(b)) ) // c-a*b
+// #define NegFusedMulSubSIMD(a,b,c) TODO: HOW?
 #endif
 
 #else
@@ -92,6 +100,7 @@
 #define DivSIMD(a,b) ((a)/(b))
 #define FusedMulAddSIMD(a,b,c) ((a)*(b) + (c))
 #define FusedMulSubSIMD(a,b,c) ((a)*(b) - (c))
+#define NegFusedMulAddSIMD(a,b,c) ((c) - (a)*(b))
 #define SqrtSIMD(a) (sqrt(a))
 #define ExpSIMD(a) (exp(a))
 #define SinSIMD(a) (sin(a))
