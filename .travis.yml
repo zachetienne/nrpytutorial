@@ -54,20 +54,34 @@ matrix:
       python: pypy3.5
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
 
-    - name: "Windows Python 3.8.0"
+    - name: "Windows Python 3.8.0-new"
       os: windows           # Windows 10.0.17134 N/A Build 17134
-      language: sh          # 'language: python' is an error on Travis CI Windows
+      language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
-        - choco install python3
-        - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
-        - ls /c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/opt/bin/
-        - python -m ensurepip
-        - python -m pip install --upgrade pip wheel
+        - choco install python --version 3.8.2
+        - python -m pip install --upgrade pip
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       install:
+        - pip3 install --upgrade pip  # all three OSes agree about 'pip3'
         - pip3 install mpmath sympy
       env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
       script: ./UnitTesting/run_NRPy_UnitTests.sh python
+
+    # - name: "Windows Python 3.8.0"
+    #   os: windows           # Windows 10.0.17134 N/A Build 17134
+    #   language: sh          # 'language: python' is an error on Travis CI Windows
+    #   before_install:
+    #     - choco install python3
+    #     - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
+    #     - ls /c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/opt/bin/
+    #     - python -m ensurepip
+    #     - python -m pip install --upgrade pip wheel
+    #   install:
+    #     - pip3 install mpmath sympy
+    #   env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+    #   env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python
 
     - name: "OS X Python 3.7"
       os: osx
