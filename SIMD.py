@@ -334,6 +334,10 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
         if   func == FusedMulAddSIMD and lookup_rational(args[0]) == -1:
             subtree.expr = SubSIMD(args[2], args[1])
             tree.build(subtree, clear=True)
+        # FMA(a,-1,c) >> SubSIMD(c,a)
+        elif func == FusedMulAddSIMD and lookup_rational(args[1]) == -1:
+            subtree.expr = SubSIMD(args[2], args[0])
+            tree.build(subtree, clear=True)
         # FMS(a,-1,c) >> MulSIMD(-1,AddSIMD(a,c))
         elif func == FusedMulSubSIMD and lookup_rational(args[1]) == -1:
             subtree.expr = MulSIMD(args[1], AddSIMD(args[0], args[2]))
@@ -342,14 +346,6 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
         elif func == FusedMulSubSIMD and lookup_rational(args[0]) == -1:
             subtree.expr = MulSIMD(args[0], AddSIMD(args[1], args[2]))
             tree.build(subtree, clear=True)
-        # # AddSIMD(a, MulSIMD(b, c)) >> FusedMulAddSIMD(b, c, a)
-        # elif func == AddSIMD and args[1].func == MulSIMD:
-        #     subtree.expr = FusedMulAddSIMD(args[1].args[0], args[1].args[1], args[0])
-        #     tree.build(subtree, clear=True)
-        # # SubSIMD(MulSIMD(b, c), a) >> FusedMulSubSIMD(b, c, a)
-        # elif func == SubSIMD and args[0].func == MulSIMD:
-        #     subtree.expr = FusedMulSubSIMD(args[0].args[0], args[0].args[1], args[1])
-        #     tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
     if debug == "True":
