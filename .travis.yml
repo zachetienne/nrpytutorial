@@ -3,64 +3,111 @@ language: python
 
 matrix:
   include:
-    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Bionic Python 3.8"
-      os: linux
-      dist: bionic
-      python: 3.8.2
-      sudo: true
+    ### - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Bionic Python 3.8"
+    ###   os: linux
+    ###   dist: bionic
+    ###   python: 3.8.2
+    ###   sudo: true
+    ###   install:
+    ###     - sudo apt-get -y install texlive-latex-base pandoc colordiff
+    ###     - pip install mpmath jupyter matplotlib scipy
+    ###     - pip install -U git+https://github.com/sympy/sympy/
+    ###   script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
+    ### - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7"
+    ###   os: linux
+    ###   dist: xenial
+    ###   python: 2.7
+    ###   before_script: pip install testfixtures
+    ###   sudo: true
+    ###   install:
+    ###     - sudo apt-get -y install texlive-latex-base pandoc colordiff
+    ###     - pip install sympy mpmath jupyter matplotlib scipy
+    ###   script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
+    ### - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
+    ###   os: linux
+    ###   dist: xenial
+    ###   python: pypy3.5-6.0
+    ###   install:
+    ###     - pip install mpmath testfixtures
+    ###     - pip install -U git+https://github.com/sympy/sympy/
+    ###   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
+
+    ### - name: "Ubuntu Linux Xenial pypy2.7-6.0"
+    ###   os: linux
+    ###   dist: xenial
+    ###   python: pypy2.7-6.0
+    ###   install:
+    ###     - pip install mpmath sympy testfixtures
+    ###   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
+
+    ### - name: "Ubuntu Linux Xenial pypy3.5-6.0"
+    ###   os: linux
+    ###   dist: xenial
+    ###   python: pypy3.5-6.0
+    ###   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+
+    ### - name: "Ubuntu Linux Trusty pypy3.5"
+    ###   os: linux
+    ###   dist: trusty
+    ###   python: pypy3.5
+    ###   script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+
+    - name: "Windows Python 3.8.0-new0"
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: shell       # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.8.0
+        - python -m ensurepip
+        - python -m pip install --upgrade pip wheel
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       install:
-        - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - pip install mpmath jupyter matplotlib scipy
-        - pip install -U git+https://github.com/sympy/sympy/
-      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+        - pip3 install --upgrade pip # all three OSes agree about 'pip3'
+        - pip3 install mpmath sympy
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python
 
-    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7"
-      os: linux
-      dist: xenial
-      python: 2.7
-      before_script: pip install testfixtures
-      sudo: true
+    - name: "Windows Python 3.8.0-new1"
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: shell       # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.8.2
+#        - python -m ensurepip
+        - python -m pip3 install --upgrade pip3
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       install:
-        - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - pip install sympy mpmath jupyter matplotlib scipy
-      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+        - pip3 install --upgrade pip # all three OSes agree about 'pip3'
+        - pip3 install mpmath sympy
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python
 
-    - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
-      os: linux
-      dist: xenial
-      python: pypy3.5-6.0
-      install:
-        - pip install mpmath testfixtures
-        - pip install -U git+https://github.com/sympy/sympy/
-      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
-
-    - name: "Ubuntu Linux Xenial pypy2.7-6.0"
-      os: linux
-      dist: xenial
-      python: pypy2.7-6.0
-      install:
-        - pip install mpmath sympy testfixtures
-      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
-
-    - name: "Ubuntu Linux Xenial pypy3.5-6.0"
-      os: linux
-      dist: xenial
-      python: pypy3.5-6.0
-      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
-
-    - name: "Ubuntu Linux Trusty pypy3.5"
-      os: linux
-      dist: trusty
-      python: pypy3.5
-      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
-
-    - name: "Windows Python 3.8.0-new"
+    - name: "Windows Python 3.8.0-new2"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: shell       # 'language: python' is an error on Travis CI Windows
       before_install:
         - choco install python --version 3.8.2
 #        - python -m ensurepip
 #        - python -m pip3 install --upgrade pip3
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      install:
+        - python -m ensurepip
+        - python -m pip3 install --upgrade pip3
+        - pip3 install --upgrade pip # all three OSes agree about 'pip3'
+        - pip3 install mpmath sympy
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python
+
+    - name: "Windows Python 3.8.0-new3"
+      os: windows           # Windows 10.0.17134 N/A Build 17134
+      language: shell       # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.8.2
+#        - python -m ensurepip
+        - python3 -m pip3 install --upgrade pip3
       env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
       install:
         - pip3 install --upgrade pip # all three OSes agree about 'pip3'
