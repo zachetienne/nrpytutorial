@@ -172,6 +172,8 @@ def parse_outCparams_string(params):
                 CSE_preprocess          = "True"
                 SIMD_find_more_subs     = "True"
                 SIMD_find_more_FMAsFMSs = "True"
+            elif parnm[i] == "GoldenKernelsEnable" and value[i] == "False":
+                pass # Do nothing; just allow user to set GoldenKernelsEnable="False".
             elif parnm[i] == "gridsuffix":
                 gridsuffix = value[i]
             else:

@@ -10,8 +10,8 @@ matrix:
       sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - pip install mpmath jupyter matplotlib scipy
-        - pip install -U git+https://github.com/sympy/sympy/
+        - pip install mpmath jupyter matplotlib scipy sympy
+#        - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
     - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7"
@@ -30,8 +30,8 @@ matrix:
       dist: xenial
       python: pypy3.5-6.0
       install:
-        - pip install mpmath testfixtures
-        - pip install -U git+https://github.com/sympy/sympy/
+        - pip install mpmath testfixtures sympy
+#        - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
     - name: "Ubuntu Linux Xenial pypy2.7-6.0"
@@ -54,11 +54,11 @@ matrix:
       python: pypy3.5
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
 
-    - name: "Windows Python 3.8.0"
+    - name: "Windows Python 3.8.2"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: sh          # 'language: python' is an error on Travis CI Windows
       before_install:
-        - choco install python3
+        - choco install python
         - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
         - ls /c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/opt/bin/
         - python -m ensurepip
