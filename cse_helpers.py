@@ -122,9 +122,8 @@ def cse_postprocess(cse_output):
     while i < len(replaced):
         sym, expr = replaced[i]
         # Search through replaced expressions for negative symbols
-        if (expr.func == sp.Mul and len(expr.args) == 2 and \
-                any((arg.func == sp.Symbol) for arg in expr.args) and \
-                any((arg == sp.S.NegativeOne or '_NegativeOne_' in str(arg)) for arg in expr.args)):
+        if (expr.func == sp.Mul and all((arg.func == sp.Symbol or \
+                arg == sp.S.NegativeOne or '_NegativeOne_' in str(arg)) for arg in expr.args)):
             for k in range(i + 1, len(replaced)):
                 if sym in replaced[k][1].free_symbols:
                     replaced[k] = (replaced[k][0], replaced[k][1].subs(sym, expr))
