@@ -78,6 +78,30 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
             expr = sp.collect(tree.reconstruct(), _NegativeOne_)
             tree.root.expr = expr
             tree.build(tree.root, clear=True)
+        # If declare == True, then simplify (-1)^n
+        if declare == True:
+            _One_ = sp.Symbol(prefix + '_Integer_1')
+            for subtree in tree.preorder():
+                subexpr = subtree.expr
+                if subexpr.func == sp.Pow:
+                    base, expo = subexpr.args[0], subexpr.args[1]
+                    if base == _NegativeOne_:
+                        subtree.expr = _One_ if expo % 2 == 0 else _NegativeOne_
+                        tree.build(subtree, clear=True)
+            expr = tree.reconstruct()
+        # Replace any left-over one(s) after partial factoring
+        if factor == True or negative == True:
+            _One_ = sp.Symbol(prefix + '_Integer_1')
+            for subtree in tree.preorder():
+                if subtree.expr == sp.S.One:
+                    subtree.expr = _One_
+            tmp_expr = tree.reconstruct()
+            if tmp_expr != expr:
+                try: map_rat_to_sym[sp.S.One]
+                except KeyError:
+                    map_sym_to_rat[_One_], map_rat_to_sym[sp.S.One] = sp.S.One, _One_
+                    subtree.expr = _One_
+                expr = tmp_expr
         # If debug == True, then back-substitute everything and check difference
         if debug == True:
             def lookup_rational(arg):
@@ -94,19 +118,6 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
             expr_diff  = expr - debug_expr
             if sp.simplify(expr_diff) != 0:
                 raise Warning('Expression Difference: ' + str(expr_diff))
-        # Replace any left-over one(s) after partial factoring
-        if factor == True or negative == True:
-            _One_ = sp.Symbol(prefix + '_Integer_1')
-            for subtree in tree.preorder():
-                if subtree.expr == sp.S.One:
-                    subtree.expr = _One_
-            tmp_expr = tree.reconstruct()
-            if tmp_expr != expr:
-                try: map_rat_to_sym[sp.S.One]
-                except KeyError:
-                    map_sym_to_rat[_One_], map_rat_to_sym[sp.S.One] = sp.S.One, _One_
-                    subtree.expr = _One_
-                expr = tmp_expr
         expr_list[i] = expr
     if len(expr_list) == 1:
         expr_list = expr_list[0]
