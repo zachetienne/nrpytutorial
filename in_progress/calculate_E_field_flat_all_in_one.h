@@ -45,21 +45,21 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,const REAL *aux
                 const double B_lU0_p1 = auxevol_gfs[IDX4ptS(B_LU0GF, indexp1)];
                 const double B_lU1_p1 = auxevol_gfs[IDX4ptS(B_LU1GF, indexp1)];
                 const double B_lU2_p1 = auxevol_gfs[IDX4ptS(B_LU2GF, indexp1)];
-                
+
                 // Calculate the flux vector on each face for each component of the E-field:
                 const REAL F1B2_r = (Valenciav_rU1*B_rU2 - Valenciav_rU2*B_rU1);
                 const REAL F1B2_l = (Valenciav_lU1*B_lU2 - Valenciav_lU2*B_lU1);
-                
+
                 const REAL F2B0_r = (Valenciav_rU2*B_rU0 - Valenciav_rU0*B_rU2);
                 const REAL F2B0_l = (Valenciav_lU2*B_lU0 - Valenciav_lU0*B_lU2);
-                
+
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
-                
+
                 // Compute the state vector for this flux direction
                 const REAL U_r = B_rU0*k_delta[flux_dirn][0] + B_rU1*k_delta[flux_dirn][1] + B_rU2*k_delta[flux_dirn][2];
                 const REAL U_l = B_lU0*k_delta[flux_dirn][0] + B_lU1*k_delta[flux_dirn][1] + B_lU2*k_delta[flux_dirn][2];
-                
+
                 // Repeat at i+1
                 // Calculate the flux vector on each face for each component of the E-field:
                 const REAL F1B2_r_p1 = (Valenciav_rU1_p1*B_rU2_p1 - Valenciav_rU2_p1*B_rU1_p1);
@@ -76,19 +76,25 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,const REAL *aux
                 const REAL U_l_p1 = B_lU0_p1*k_delta[flux_dirn][0] + B_lU1_p1*k_delta[flux_dirn][1] + B_lU2_p1*k_delta[flux_dirn][2];
 
                 // Basic HLLE solver: 
-                const REAL FHLL_1B2 = 0.5*(F1B2_r + F1B2_l - (U_r-U_l));
+                const REAL FHLL_1B2 = 0.5*(F1B2_r + F1B2_l - (U_r-U_l)); // HLL(F1B2_r, F1B2_l, U_r, U_l, METRICstuff)
                 const REAL FHLL_2B0 = 0.5*(F2B0_r + F2B0_l - (U_r-U_l));
                 const REAL FHLL_0B1 = 0.5*(F0B1_r + F0B1_l - (U_r-U_l));
-                
+
                 // Basic HLLE solver, but at the next point: 
                 const REAL FHLL_1B2p1 = 0.5*(F1B2_r_p1 + F1B2_l_p1 - (U_r_p1-U_l_p1));
                 const REAL FHLL_2B0p1 = 0.5*(F2B0_r_p1 + F2B0_l_p1 - (U_r_p1-U_l_p1));
                 const REAL FHLL_0B1p1 = 0.5*(F0B1_r_p1 + F0B1_l_p1 - (U_r_p1-U_l_p1));
-                
-                
+
                 rhs_gfs[IDX4ptS(AD0GF,index)] += 0.25*(FHLL_1B2 + FHLL_1B2p1)*(flux_dirn!=0); // Set to zero for the component in flux_dirn. Is it more efficient to do this sooner? An array-based implementation might be better, too.
                 rhs_gfs[IDX4ptS(AD1GF,index)] += 0.25*(FHLL_2B0 + FHLL_2B0p1)*(flux_dirn!=1); 
                 rhs_gfs[IDX4ptS(AD2GF,index)] += 0.25*(FHLL_0B1 + FHLL_0B1p1)*(flux_dirn!=2);
+                // flux dirn = 0 ===================>   i-1/2       i+1/2
+                //               Eq 11 in Giacomazzo:
+                //               -FxBy(avg over i-1/2 and i+1/2) + FyBx(avg over j-1/2 and j+1/2)
+                //               Eq 6 in Giacomazzo:
+                //               FxBy = vxBy - vyBx
+                //             -> 
+                //               FHLL_0B1 = vyBx - vxBy
                 
             } // END LOOP: for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++)
         } // END LOOP: for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++)

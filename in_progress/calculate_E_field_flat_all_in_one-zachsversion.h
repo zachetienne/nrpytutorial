@@ -48,7 +48,7 @@ void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
 
                                                     const REAL *Br0,const REAL *Br1,const REAL *Br2,
                                                     const REAL *Bl0,const REAL *Bl1,const REAL *Bl2,
-                                       
+
                                                     REAL *Az_rhs,const REAL SIGN,const int flux_dirn) {
 #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 #pragma omp parallel for
@@ -93,20 +93,22 @@ void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
                 const double Valenciav_rU1_p1 = Vr1[indexp1];
                 const double B_rU0_p1         = Br0[indexp1];
                 const double B_rU1_p1         = Br1[indexp1];
-                const double B_rU2_p1         = Br2[indexp1];
+                //const double B_rU2_p1         = Br2[indexp1];
 
                 const double Valenciav_lU0_p1 = Vl0[indexp1];
                 const double Valenciav_lU1_p1 = Vl1[indexp1];
                 const double B_lU0_p1         = Bl0[indexp1];
                 const double B_lU1_p1         = Bl1[indexp1];
-                const double B_lU2_p1         = Bl2[indexp1];
+                //const double B_lU2_p1         = Bl2[indexp1];
 
                 // Calculate the flux vector on each face for each component of the E-field:
                 const REAL F0B1_r_p1 = (Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
                 
-                // Compute the state vector for this flux direction
+                // WRONG (fixme):  Compute the state vector for this flux direction
                 const REAL U_r_p1 = B_rU2_p1;
+                printf("DO NOT USE calculate_E_field_flat_all_in_one-zachsversion.h!\n");
+                exit(1);
                 const REAL U_l_p1 = B_lU2_p1;
                 
                 // Basic HLLE solver
