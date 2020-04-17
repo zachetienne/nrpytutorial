@@ -3,15 +3,15 @@ language: python
 
 matrix:
   include:
-    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Bionic Python 3.8"
+    - name: "JUPYTER NOTEBOOK TESTS SymPy-dev Ubuntu Linux Bionic Python 3.8"
       os: linux
       dist: bionic
       python: 3.8.2
       sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - pip install mpmath jupyter matplotlib scipy sympy
-#        - pip install -U git+https://github.com/sympy/sympy/
+        - pip install mpmath jupyter matplotlib scipy
+        - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
     - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7"
@@ -30,8 +30,8 @@ matrix:
       dist: xenial
       python: pypy3.5-6.0
       install:
-        - pip install mpmath testfixtures sympy
-#        - pip install -U git+https://github.com/sympy/sympy/
+        - pip install mpmath testfixtures
+        - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
     - name: "Ubuntu Linux Xenial pypy2.7-6.0"
