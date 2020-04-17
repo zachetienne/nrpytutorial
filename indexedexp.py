@@ -213,7 +213,7 @@ def declarerank4(objname, symmetry_option, DIM=-1):
 # We use the following functions to evaluate 3-metric inverses
 def symm_matrix_inverter3x3(a):
     # It is far more efficient to write out the matrix determinant and inverse by hand
-    #   instead of using symmetry_optionPy's built-in functions, since the matrix is symmetric.
+    #   instead of using SymPy's built-in functions, since the matrix is symmetric.
     outDET = -a[0][2]**2*a[1][1] + 2*a[0][1]*a[0][2]*a[1][2] - \
                 a[0][0]*a[1][2]**2 - a[0][1]**2*a[2][2] + \
                 a[0][0]*a[1][1]*a[2][2]
@@ -234,7 +234,7 @@ def symm_matrix_inverter3x3(a):
 
 def symm_matrix_inverter4x4(a):
     # It is far more efficient to write out the matrix determinant and inverse by hand
-    #   instead of using symmetry_optionPy's built-in functions, since the matrix is symmetric.
+    #   instead of using SymPy's built-in functions, since the matrix is symmetric.
     outDET = + a[0][2]*a[0][2]*a[1][3]*a[1][3] + a[0][3]*a[0][3]*a[1][2]*a[1][2] + a[0][1]*a[0][1]*a[2][3]*a[2][3] \
              - a[0][0]*a[1][3]*a[1][3]*a[2][2] - a[0][3]*a[0][3]*a[1][1]*a[2][2] - a[0][0]*a[1][1]*a[2][3]*a[2][3] \
              - 2*(+ a[0][1]*a[0][2]*a[1][3]*a[2][3] - a[0][0]*a[1][2]*a[1][3]*a[2][3]                              \
@@ -268,7 +268,7 @@ def symm_matrix_inverter4x4(a):
     return outINV, outDET
 
 
-# symmetry_optionPy's generic matrix inverter is highly inefficient for 3x3 matrices, so here we have an optimized version.
+# SymPy's generic matrix inverter takes a long time to invert 3x3 matrices, so here we have an optimized version.
 def generic_matrix_inverter3x3(a):
     outDET = -a[0][2]*a[1][1]*a[2][0] + a[0][1]*a[1][2]*a[2][0] + \
               a[0][2]*a[1][0]*a[2][1] - a[0][0]*a[1][2]*a[2][1] - \
