@@ -169,10 +169,9 @@ def simple_loop(options, interior):
 
     pragma    = "" if "DisableOpenMP" in options else "#pragma omp parallel for"
     increment = ["1", "1", "SIMD_width"] if "EnableSIMD" in options else ["1","1","1"]
-    tile_size = ["16", "16", "16"] if "EnableLoopTiling" in options else ""
 
     return loop(["i2","i1","i0"], i2i1i0_mins, i2i1i0_maxs, increment, [pragma, Read_1Darrays[2], Read_1Darrays[1]], \
-        padding='    ', interior=Read_1Darrays[0] + "\n" + interior, tile_size=tile_size)
+        padding='    ', interior=Read_1Darrays[0] + "\n" + interior)
 
 if __name__ == "__main__":
     import doctest
