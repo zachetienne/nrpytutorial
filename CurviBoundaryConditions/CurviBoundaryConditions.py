@@ -26,7 +26,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
     #          from CurviBoundaryConditions/boundary_conditions to Ccodesdir/
     if enable_copy_of_static_Ccodes:
         cmd.mkdir(os.path.join(Ccodesdir))
-        for file in ["apply_bcs_curvilinear.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
+        for file in ["apply_bcs_curvilinear.h", "apply_bcs_sommerfeld.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
                      "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
             shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
                         os.path.join(Ccodesdir))
@@ -215,3 +215,44 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
     # Step 6: Restore reference_metric::CoordSystem back to the original CoordSystem
     par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
     rfm.reference_metric()
+
+# Sommerfeld boundary condition class; generates Sommerfeld parameters
+# Author: Terrence Pierre Jacques
+class sommerfeld_bc():
+    # class variables should be the resulting dicts
+    def __init__(self, vars_at_inf_default = 0., vars_radpower_default = 0., vars_speed_default = 1.):
+        evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = \
+                                                        gri.gridfunction_lists()
+        self.vars_at_infinity = {}
+        self.vars_speed = {}
+        self.vars_radpower = {}
+        for gf in evolved_variables_list:
+            self.vars_at_infinity[gf.upper() + 'GF'] = vars_at_inf_default
+            self.vars_radpower[gf.upper() + 'GF'] = vars_radpower_default
+            self.vars_speed[gf.upper() + 'GF'] = vars_speed_default
+
+    def write_to_sommerfeld_params_file(self, Ccodesdir):
+
+        var_at_inf_string = "{"
+        for gf,val in self.vars_at_infinity.items():
+            var_at_inf_string += str(val) + ", "
+        var_at_inf_string = var_at_inf_string[:-2] + "};"
+
+        var_radpow_string = "{"
+        for gf,val in self.vars_radpower.items():
+            var_radpow_string += str(val) + ", "
+        var_radpow_string = var_radpow_string[:-2] + "};"
+
+        var_speed_string = "{"
+        for gf,val in self.vars_speed.items():
+            var_speed_string += str(val) + ", "
+        var_speed_string = var_speed_string[:-2] + "};"
+
+        with open(os.path.join(Ccodesdir,"boundary_conditions/sommerfeld_params.h"),"w") as file:
+            file.write("""
+// Coordinate system 
+const char coord[] = """+"\""+str(par.parval_from_str("reference_metric::CoordSystem"))+"\""+""";
+const REAL evolgf_at_inf[NUM_EVOL_GFS] = """+var_at_inf_string+"""
+const REAL evolgf_radpower[NUM_EVOL_GFS] = """+var_radpow_string+"""
+const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
+""")
