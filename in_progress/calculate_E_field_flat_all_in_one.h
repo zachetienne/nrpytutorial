@@ -1,4 +1,6 @@
 REAL HLLE_solve(F0B1_r, F0B1_l, U_r, U_l) {
+  // Eq. 15 of https://epubs.siam.org/doi/abs/10.1137/1025002?journalCode=siread
+  // F_HLLE = (c_min F_R + c_max F_L - c_min c_max (U_R-U_L)) / (c_min + c_max)
   return 0.5*(F0B1_r+F0B1_l-(U_r-U_l));
   // FIXME: Curved space implementation!
 }
@@ -52,6 +54,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double B_lU1_p1 = Bl1[indexp1];
 
                 // Calculate the flux vector on each face for each component of the E-field:
+		// The F(B) terms are as Eq. 6 in Giacomazzo: https://arxiv.org/pdf/1009.2468.pdf
+		// [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 
@@ -74,7 +78,14 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // Basic HLLE solver, but at the next point: 
                 const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1);
 
-                Az_rhs[index]+= SIGN*0.25*(FHLL_0B1 + FHLL_0B1p1)*(flux_dirn!=2);
+		// With the Riemann problem solved, we add the contributions to the RHSs:
+		// -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
+		//                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
+		// (Eq. 11 in https://arxiv.org/pdf/1009.2468.pdf)
+		// This code, as written, solves the first two terms for flux_dirn=0. Calling this function for count=1
+		// flips x for y to solve the latter two, switching to SIGN=-1 as well.
+
+                Az_rhs[index]+= SIGN*0.25*(FHLL_0B1 + FHLL_0B1p1);
                 // flux dirn = 0 ===================>   i-1/2       i+1/2
                 //               Eq 11 in Giacomazzo:
                 //               -FxBy(avg over i-1/2 and i+1/2) + FyBx(avg over j-1/2 and j+1/2)

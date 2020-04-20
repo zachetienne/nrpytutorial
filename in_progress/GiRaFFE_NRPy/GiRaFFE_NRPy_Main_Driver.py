@@ -467,6 +467,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 
     // In each direction, perform the PPM reconstruction procedure.
     // Then, add the fluxes to the RHS as appropriate.
+    int count;
     for(int flux_dirn=0;flux_dirn<3;flux_dirn++) {
         // In each direction, interpolate the metric gfs (gamma,beta,alpha) to cell faces.
         interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
@@ -485,7 +486,20 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             // Now, compute the electric field on each face of a cell and add it to the RHSs as appropriate
             //calculate_E_field_D0_right(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D0_left(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_flat_all_in_one(params,auxevol_gfs,rhs_gfs,flux_dirn);
+            count=0;
+            calculate_E_field_flat_all_in_one(params,
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+count+2)),0)], count, flux_dirn);
+            count=1;
+            calculate_E_field_flat_all_in_one(params,
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+count+2)),0)], count, flux_dirn);
             // Finally, we calculate the flux of StildeD and add the appropriate finite-differences 
             // to the RHSs.
             calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
@@ -495,7 +509,20 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D1_right(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D1_left(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_flat_all_in_one(params,auxevol_gfs,rhs_gfs,flux_dirn);
+            count=0;
+            calculate_E_field_flat_all_in_one(params,
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+count+2)),0)], count, flux_dirn);
+            count=1;
+            calculate_E_field_flat_all_in_one(params,
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+count+2)),0)], count, flux_dirn);
             calculate_Stilde_flux_D1_right(params,auxevol_gfs,rhs_gfs);
             calculate_Stilde_flux_D1_left(params,auxevol_gfs,rhs_gfs);
         }
@@ -503,12 +530,32 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D2_right(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D2_left(params,auxevol_gfs,rhs_gfs);
-            calculate_E_field_flat_all_in_one(params,auxevol_gfs,rhs_gfs,flux_dirn);
+            count=0;
+            calculate_E_field_flat_all_in_one(params,
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+count+2)),0)], count, flux_dirn);
+            count=1;
+            calculate_E_field_flat_all_in_one(params,
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+count+2)),0)], count, flux_dirn);
             calculate_Stilde_flux_D2_right(params,auxevol_gfs,rhs_gfs);
             calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
         }
     }
 }
+            calculate_E_field_flat_all_in_one(params,
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn+count)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF    +(flux_dirn-count+1)%3, 0)],
+                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+count+2)),0)], count, flux_dirn);
+
 
 void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs,const int n) {
     // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
