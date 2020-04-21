@@ -3,17 +3,20 @@
 The following script will perform symbolic tensor rotation using quaternions.
 """
 # Author: Ken Sible
-# Email:  ksible@outlook.com
+# Email:  ksible **at** outlook **dot* com
 
 from sympy import Quaternion as quat
 from sympy import Matrix
 from sympy.functions import transpose
 
-# Input:  tensor = 3-vector or (3x3)-matrix
-#         axis   = rotation axis (normal 3-vector)
-#         angle  = rotation angle (in radians)
-# Output: rotated tensor (of original type)
 def rotate(tensor, axis, angle):
+    """ Rotate symbolic vector or tensor about an arbitrary axis
+
+        :arg:    3-vector or (3x3)-matrix
+        :arg:    rotation axis (normal 3-vector)
+        :arg:    rotation angle (in radians)
+        :return: rotated tensor (of original type)
+    """
     # Quaternion-Matrix Multiplication
     def mul(*args):
         if isinstance(args[0], list):

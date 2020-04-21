@@ -11,27 +11,27 @@ import sys
 def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma='#pragma omp parallel for', padding=''):
     """ Generate a one-dimensional loop in C.
 
-            :arg:    index variable for the loop
-            :arg:    lower bound on index variable
-            :arg:    upper bound on index variable
-            :arg:    increment for the index variable
-            :arg:    OpenMP pragma (https://en.wikipedia.org/wiki/OpenMP)
-            :arg:    padding before a line (tab number)
-            :return: string header, string footer
-            
-            >>> header, footer = loop1D(pragma='')
-            >>> print(header)
-            for (int i = 0; i < N; i++) {
-            <BLANKLINE>
-            
-            >>> print(footer)
-            } // END LOOP: for (int i = 0; i < N; i++)
-            <BLANKLINE>
-            
-            >>> header, footer = loop1D(increment='2', pragma='', padding='    ')
-            >>> print(header)
-                for (int i = 0; i < N; i += 2) {
-            <BLANKLINE>
+        :arg:    index variable for the loop
+        :arg:    lower bound on index variable
+        :arg:    upper bound on index variable
+        :arg:    increment for the index variable
+        :arg:    OpenMP pragma (https://en.wikipedia.org/wiki/OpenMP)
+        :arg:    padding before a line (tab number)
+        :return: string header, string footer
+        
+        >>> header, footer = loop1D(pragma='')
+        >>> print(header)
+        for (int i = 0; i < N; i++) {
+        <BLANKLINE>
+        
+        >>> print(footer)
+        } // END LOOP: for (int i = 0; i < N; i++)
+        <BLANKLINE>
+        
+        >>> header, footer = loop1D(increment='2', pragma='', padding='    ')
+        >>> print(header)
+            for (int i = 0; i < N; i += 2) {
+        <BLANKLINE>
     """
     if any(not isinstance(i, str) for i in (idx_var, lower_bound, upper_bound, increment, pragma)):
         raise ValueError('all parameters must have type string.')
@@ -45,46 +45,46 @@ def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma=
 def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', interior="", tile_size=""):
     """ Generate a nested loop of arbitrary dimension in C.
 
-            :arg:    index variable for the loop
-            :arg:    lower bound on index variable
-            :arg:    upper bound on index variable
-            :arg:    increment for the index variable
-            :arg:    OpenMP pragma (https://en.wikipedia.org/wiki/OpenMP)
-            :arg:    padding before a line (tab number)
-            :arg:    interior of the loop
-            :arg:    tile size for cache blocking
-            :return: (header, footer) or string of the loop
-            
-            >>> header, footer = loop('i', '0', 'N', '1', '')
-            >>> print(header)
-            for (int i = 0; i < N; i++) {
-            <BLANKLINE>
-            
-            >>> print(footer)
-            } // END LOOP: for (int i = 0; i < N; i++)
-            <BLANKLINE>
-            
-            >>> print(loop('i', '0', 'N', '1', '', interior='print(i)'))
-            for (int i = 0; i < N; i++) {
+        :arg:    index variable for the loop
+        :arg:    lower bound on index variable
+        :arg:    upper bound on index variable
+        :arg:    increment for the index variable
+        :arg:    OpenMP pragma (https://en.wikipedia.org/wiki/OpenMP)
+        :arg:    padding before a line (tab number)
+        :arg:    interior of the loop
+        :arg:    tile size for cache blocking
+        :return: (header, footer) or string of the loop
+        
+        >>> header, footer = loop('i', '0', 'N', '1', '')
+        >>> print(header)
+        for (int i = 0; i < N; i++) {
+        <BLANKLINE>
+        
+        >>> print(footer)
+        } // END LOOP: for (int i = 0; i < N; i++)
+        <BLANKLINE>
+        
+        >>> print(loop('i', '0', 'N', '1', '', interior='print(i)'))
+        for (int i = 0; i < N; i++) {
+            print(i)
+        } // END LOOP: for (int i = 0; i < N; i++)
+        <BLANKLINE>
+        
+        >>> print(loop('i', '0', 'N', '1', '', interior='print(i)', tile_size='16'))
+        for (int iB = 0; iB < N; iB += 16) {
+            for (int i = iB; i < MIN(N, iB + 16); i++) {
                 print(i)
-            } // END LOOP: for (int i = 0; i < N; i++)
-            <BLANKLINE>
-            
-            >>> print(loop('i', '0', 'N', '1', '', interior='print(i)', tile_size='16'))
-            for (int iB = 0; iB < N; iB += 16) {
-                for (int i = iB; i < MIN(N, iB + 16); i++) {
-                    print(i)
-                } // END LOOP: for (int i = iB; i < MIN(N, iB + 16); i++)
-            } // END LOOP: for (int iB = 0; iB < N; iB += 16)
-            <BLANKLINE>
-            
-            >>> print(loop(['i', 'j'], ['0', '0'], ['Nx', 'Ny'], ['1', '1'], ['', ''], interior='print(i, j)'))
-            for (int i = 0; i < Nx; i++) {
-                for (int j = 0; j < Ny; j++) {
-                    print(i, j)
-                } // END LOOP: for (int j = 0; j < Ny; j++)
-            } // END LOOP: for (int i = 0; i < Nx; i++)
-            <BLANKLINE>
+            } // END LOOP: for (int i = iB; i < MIN(N, iB + 16); i++)
+        } // END LOOP: for (int iB = 0; iB < N; iB += 16)
+        <BLANKLINE>
+        
+        >>> print(loop(['i', 'j'], ['0', '0'], ['Nx', 'Ny'], ['1', '1'], ['', ''], interior='print(i, j)'))
+        for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
+                print(i, j)
+            } // END LOOP: for (int j = 0; j < Ny; j++)
+        } // END LOOP: for (int i = 0; i < Nx; i++)
+        <BLANKLINE>
     """
     if (all(isinstance(i, str) for i in (idx_var, lower_bound, upper_bound, increment, pragma))):
         idx_var, lower_bound, upper_bound, increment, pragma = [idx_var], [lower_bound], [upper_bound], [increment], [pragma]
@@ -117,21 +117,21 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
 def simple_loop(options, interior):
     """ Generate a simple loop (for use inside a function) in C.
 
-            :arg:    loop options
-            :arg:    loop interior
-            :return: string of the loop
-            
-            >>> print(simple_loop('AllPoints', ''))
-                #pragma omp parallel for
-                for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
-                    for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++) {
-                        for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++) {
-            <BLANKLINE>
-            <BLANKLINE>
-                        } // END LOOP: for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++)
-                    } // END LOOP: for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++)
-                } // END LOOP: for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++)
-            <BLANKLINE>
+        :arg:    loop options
+        :arg:    loop interior
+        :return: string of the loop
+        
+        >>> print(simple_loop('AllPoints', ''))
+            #pragma omp parallel for
+            for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
+                for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++) {
+                    for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++) {
+        <BLANKLINE>
+        <BLANKLINE>
+                    } // END LOOP: for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++)
+                } // END LOOP: for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++)
+            } // END LOOP: for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++)
+        <BLANKLINE>
     """
     if not options: return interior
 

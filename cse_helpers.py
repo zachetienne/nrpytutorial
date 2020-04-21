@@ -6,21 +6,54 @@ identification of undesirable patterns, and perform post-processing on the
 the resulting replaced/reduced expressions after the CSE procedure was applied.
 """
 # Author: Ken Sible
-# Email:  ksible@outlook.com
+# Email:  ksible **at** outlook **dot* com
 
 from SIMDExprTree import ExprTree
 import sympy as sp
 
-# Input:  expr_list = single SymPy expression or list of SymPy expressions
-#         prefix    = string prefix for variable names (i.e. rational symbols)
-#         declare   = declare symbol for negative one (i.e. _NegativeOne_)
-#         factor    = perform partial factorization (excluding negative)
-#         negative  = include negative in partial factorization
-# Output: modified SymPy expression(s) where all integers and rationals were replaced
-#           with temporary placeholder variables that allow for partial factorization
 def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=False, debug=False):
+    """ Perform CSE Preprocessing
+
+        :arg:    single SymPy expression or list of SymPy expressions
+        :arg:    string prefix for variable names (i.e. rational symbols)
+        :arg:    declare symbol for negative one (i.e. _NegativeOne_)
+        :arg:    perform partial factorization (excluding negative symbol)
+        :arg:    include negative symbol in partial factorization
+        :arg:    back-substitute and check difference for debugging
+        :return: modified SymPy expression(s) where all integers and rationals were replaced
+                    with temporary placeholder variables that allow for partial factorization
+
+        >>> from sympy.abc import x, y, z
+        >>> expr = -x/12 - y/12 + z
+        >>> cse_preprocess(expr)
+        (_Rational_1_12*(-x - y) + z, {_Rational_1_12: 1/12})
+
+        >>> cse_preprocess(expr, declare=True)
+        (_Rational_1_12*(_NegativeOne_*x + _NegativeOne_*y) + z, {_Rational_1_12: 1/12, _NegativeOne_: -1})
+
+        >>> expr = -x/12 - y/12 + z
+        >>> cse_preprocess(expr, declare=True, negative=True)
+        (_NegativeOne_*_Rational_1_12*(x + y) + z, {_Rational_1_12: 1/12, _NegativeOne_: -1})
+
+        >>> cse_preprocess(expr, factor=False)
+        ((-_Rational_1_12)*x + (-_Rational_1_12)*y + z, {_Rational_1_12: 1/12})
+
+        >>> cse_preprocess(expr, prefix='FD')
+        (FD_Rational_1_12*(-x - y) + z, {FD_Rational_1_12: 1/12})
+
+        >>> from sympy import exp
+        >>> expr = exp(3*x + 3*y)
+        >>> cse_preprocess(expr)
+        (exp(_Integer_3*(x + y)), {_Integer_3: 3})
+
+        >>> from sympy import Mul
+        >>> expr = Mul((-1)**3, (3*x + 3*y), evaluate=False)
+        >>> cse_preprocess(expr, declare=True)
+        (_Integer_3*_NegativeOne_*(x + y), {_NegativeOne_: -1, _Integer_3: 3})
+    """
     if not isinstance(expr_list, list):
         expr_list = [expr_list]
+    expr_list = expr_list[:]
     _NegativeOne_ = sp.Symbol(prefix + '_NegativeOne_')
     map_sym_to_rat, map_rat_to_sym = {}, {}
     for i, expr in enumerate(expr_list):
@@ -123,12 +156,54 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
         expr_list = expr_list[0]
     return expr_list, map_sym_to_rat
 
-# Input:  cse_output = output from SymPy CSE with tuple format: (list of ordered pairs that
-#            contain substituted symbols and their replaced expressions, reduced SymPy expression)
-# Output: output from SymPy CSE where postprocessing, such as back-substitution of addition/product
-#            of symbols, has been applied to the replaced/reduced expression(s)
 def cse_postprocess(cse_output):
+    """ Perform CSE Postprocessing
+
+        :arg:    output from SymPy CSE with tuple format: (list of ordered pairs that
+                    contain substituted symbols and their replaced expressions, reduced SymPy expression)
+        :return: output from SymPy CSE where postprocessing, such as back-substitution of addition/product
+                    of symbols, has been applied to the replaced/reduced expression(s)
+
+        >>> from sympy.abc import x, y
+        >>> from sympy import cse, cos, sin
+
+        >>> cse_out = cse(3 + x + cos(3 + x))
+        >>> cse_postprocess(cse_out)
+        ([], [x + cos(x + 3) + 3])
+
+        >>> cse_out = cse(3 + x + y + cos(3 + x + y))
+        >>> cse_postprocess(cse_out)
+        ([(x0, x + y + 3)], [x0 + cos(x0)])
+
+        >>> cse_out = cse(3*x + cos(3*x))
+        >>> cse_postprocess(cse_out)
+        ([], [3*x + cos(3*x)])
+
+        >>> cse_out = cse(3*x*y + cos(3*x*y))
+        >>> cse_postprocess(cse_out)
+        ([(x0, 3*x*y)], [x0 + cos(x0)])
+
+        >>> cse_out = cse(x**2 + cos(x**2))
+        >>> cse_postprocess(cse_out)
+        ([], [x**2 + cos(x**2)])
+
+        >>> cse_out = cse(x**3 + cos(x**3))
+        >>> cse_postprocess(cse_out)
+        ([(x0, x**3)], [x0 + cos(x0)])
+
+        >>> cse_out = cse(3*x + cos(3*x) + sin(3*x))
+        >>> cse_postprocess(cse_out)
+        ([(x0, 3*x)], [x0 + sin(x0) + cos(x0)])
+
+        >>> from sympy import exp, log
+        >>> expr = -x + exp(-x) + log(-x)
+        >>> cse_pre = cse_preprocess(expr, declare=True)
+        >>> cse_out = cse(cse_pre[0])
+        >>> cse_postprocess(cse_out)
+        ([], [_NegativeOne_*x + exp(_NegativeOne_*x) + log(_NegativeOne_*x)])
+    """
     replaced, reduced = cse_output
+    replaced, reduced = replaced[:], reduced[:]
     i = 0
     while i < len(replaced):
         sym, expr = replaced[i]
@@ -173,3 +248,7 @@ def cse_postprocess(cse_output):
                 replaced.pop(i); i -= 1
         i += 1
     return replaced, reduced
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
