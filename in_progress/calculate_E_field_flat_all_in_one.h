@@ -1,4 +1,4 @@
-REAL HLLE_solve(F0B1_r, F0B1_l, U_r, U_l) {
+REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l) {
   // Eq. 15 of https://epubs.siam.org/doi/abs/10.1137/1025002?journalCode=siread
   // F_HLLE = (c_min F_R + c_max F_L - c_min c_max (U_R-U_L)) / (c_min + c_max)
   return 0.5*(F0B1_r+F0B1_l-(U_r-U_l));
@@ -21,7 +21,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
   // FIXME: include metric functions!
 #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 
-  REAL SIGN = 1.0-2.0*((REAl) count); // 1.0 if count=0, -1.0 if count=1
+  REAL SIGN = 1.0-2.0*((REAL)count); // 1.0 if count=0, -1.0 if count=1
   
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
@@ -31,7 +31,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // one point in the direction of reconstruction. These correspond to the faces at at 
                 // i-1/2 and i+1/2
                 int index   = IDX3S(i0,i1,i2);
-                int indexp1 = IDX3S(i0+k_delta[flux_dirn][0],i1+k_delta[flux_dirn][1],i2+k_delta[flux_dirn][2]);
+                int indexp1 = IDX3S(i0+(flux_dirn==0),i1+(flux_dirn==1),i2+(flux_dirn==2));
                 
                 // Now, we read in memory. We need all components of velocity and magnetic field on both 
                 // the left and right sides of the interface at *both* faces.
