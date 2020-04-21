@@ -191,9 +191,9 @@ def cse_postprocess(cse_output):
         >>> cse_postprocess(cse_out)
         ([(x0, x**3)], [x0 + cos(x0)])
 
-        >>> cse_out = cse(3*x + cos(3*x) + sin(3*x))
+        >>> cse_out = cse(x*y + cos(x*y) + sin(x*y))
         >>> cse_postprocess(cse_out)
-        ([(x0, 3*x)], [x0 + sin(x0) + cos(x0)])
+        ([(x0, x*y)], [x0 + sin(x0) + cos(x0)])
 
         >>> from sympy import exp, log
         >>> expr = -x + exp(-x) + log(-x)
@@ -206,10 +206,10 @@ def cse_postprocess(cse_output):
     replaced, reduced = replaced[:], reduced[:]
     i = 0
     while i < len(replaced):
-        sym, expr = replaced[i]
+        sym, expr = replaced[i]; args = expr.args
         # Search through replaced expressions for negative symbols
-        if (expr.func == sp.Mul and len(expr.args) == 2 and all((arg.func == sp.Symbol or \
-                arg == sp.S.NegativeOne or '_NegativeOne_' in str(arg)) for arg in expr.args)):
+        if (expr.func == sp.Mul and len(expr.args) == 2 and any(a1.func == sp.Symbol and \
+               (a2 == sp.S.NegativeOne or '_NegativeOne_' in str(a2)) for a1, a2 in [args, reversed(args)])):
             for k in range(i + 1, len(replaced)):
                 if sym in replaced[k][1].free_symbols:
                     replaced[k] = (replaced[k][0], replaced[k][1].subs(sym, expr))
