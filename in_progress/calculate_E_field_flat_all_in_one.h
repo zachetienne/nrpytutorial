@@ -21,7 +21,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
   // FIXME: include metric functions!
 #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 
-  REAL SIGN = 1.0-2.0*((REAL)count); // 1.0 if count=0, -1.0 if count=1
+  REAL SIGN = 2.0*((REAL)count)-1.0; // -1.0 if count=0, 1.0 if count=1
   
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
