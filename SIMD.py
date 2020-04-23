@@ -448,6 +448,16 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
              lookup_rational(args[1].args[1]) == -1:
             subtree.expr = NegFusedMulSubSIMD(args[0],args[1].args[0],args[2])
             tree.build(subtree, clear=True)
+        # FMS(a,Mul([something],Mul(-1,b)),c) >> NFMS(a,Mul([something],b),c)
+        elif func == FusedMulSubSIMD and args[1].func == MulSIMD and \
+             args[1].args[1].func == MulSIMD and lookup_rational(args[1].args[1].args[0]) == -1:
+            subtree.expr = NegFusedMulSubSIMD(args[0], MulSIMD(args[1].args[0],args[1].args[1].args[1]), args[2])
+            tree.build(subtree, clear=True)
+        # FMS(a,Mul([something],Mul(b,-1)),c) >> NFMS(a,Mul([something],b),c)
+        elif func == FusedMulSubSIMD and args[1].func == MulSIMD and \
+             args[1].args[1].func == MulSIMD and lookup_rational(args[1].args[1].args[1]) == -1:
+            subtree.expr = NegFusedMulSubSIMD(args[0], MulSIMD(args[1].args[0],args[1].args[1].args[0]), args[2])
+            tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
     # Step 5.g: Find single FMA patterns again, as some new ones might be found.
