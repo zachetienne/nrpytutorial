@@ -506,12 +506,25 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
         }
         for(int count=0;count<=1;count++) {
+        // Example: Az_rhs needs updating. The correct expression (cite paper) is:
+        //  Az_rhs = ..........
+
+        // We compute this by calling the below function twice:
+        // count = 0, flux_dirn = x?:
+        //  calculate_E_field_flat_all_in_one(vxr,vyr,   vxl,vyl,   Bxr,Byr,   Bxl,Byl,  Az_rhs)
+        //   Az_rhs += (E_? + E_?)  [ note that Az_rhs set to zero above]
+        // count = 1, flux_dirn = y?
+        // FIXME: calculate_E_field_flat_all_in_one(vxr,vyr,   vxl,vyl,   Bxr,Byr,   Bxl,Byl,  Az_rhs)
+        // FIXME:  Az_rhs += (E_? + E_?)  [ note that Az_rhs set to zero above]
+        // ... and now Az_rhs = (4 terms ), as described in 
+
+        /// count = 0: 
             calculate_E_field_flat_all_in_one(params,
-                                              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count-1)%3, 0)],
-                                              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count-1)%3, 0)],
-                                              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn-count-1)%3, 0)],
-                                              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count-1)%3, 0)],
-                                              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+1+count),0)], count, flux_dirn);
+&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count-1)%3, 0)],
+&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count-1)%3, 0)],
+&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn-count-1)%3, 0)],
+&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count-1)%3, 0)],
+&rhs_gfs[    IDX4ptS(AD0GF          +(flux_dirn+1+count),0)], count, flux_dirn);
         }
 
     }
