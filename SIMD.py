@@ -2,6 +2,7 @@ from sympy import (Integer, Rational, Float, Function, Symbol,
     Add, Mul, Pow, Abs, S, sign, srepr, simplify,
     var, sin, cos, exp, log, preorder_traversal)
 from SIMDExprTree import ExprTree
+from cse_helpers import cse_preprocess
 
 # Basic Arithmetic Operations (Debugging)
 def ConstSIMD_check(a):
@@ -45,12 +46,71 @@ def SinSIMD_check(a):
 def CosSIMD_check(a):
     return cos(a)
 
-# Input:  expr = SymPy expression
-# Output: SymPy expression containing all needed SIMD compiler intrinsics
-def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more_FMAsFMSs="False", debug="False"):
-    # OVERRIDE; THIS NEW DEFAULT IS FASTER
-    SIMD_find_more_FMAsFMSs="True"
+def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find_more_FMAsFMSs="True", debug="False"):
+    """ Convert expression to SIMD compiler intrinsics
 
+        :arg:    SymPy expression
+        :arg:    symbol to rational dictionary
+        :arg:    option to find more FMA/FMS patterns
+        :arg:    back-substitute and check difference
+        :return: expression containing SIMD compiler intrinsics
+
+        >>> from sympy.abc import a, b, c, d
+        >>> from cse_helpers import cse_preprocess
+        >>> convert = expr_convert_to_SIMD_intrins
+
+        >>> convert(a**2)
+        MulSIMD(a, a)
+
+        >>> convert(a**(-2))
+        DivSIMD(_Integer_1, MulSIMD(a, a))
+
+        >>> convert(a**(1/2))
+        SqrtSIMD(a)
+
+        >>> convert(a**(-1/2))
+        DivSIMD(1, SqrtSIMD(a))
+
+        >>> from sympy import Rational
+        >>> convert(a**Rational(1, 3))
+        CbrtSIMD(a)
+
+        >>> convert(a**b)
+        PowSIMD(a, b)
+
+        >>> convert(a - b)
+        SubSIMD(a, b)
+
+        >>> convert(a + b - c)
+        AddSIMD(b, SubSIMD(a, c))
+
+        >>> convert(a + b + c)
+        AddSIMD(a, AddSIMD(b, c))
+
+        >>> convert(a + b + c + d)
+        AddSIMD(AddSIMD(a, b), AddSIMD(c, d))
+
+        >>> convert(a*b*c)
+        MulSIMD(a, MulSIMD(b, c))
+
+        >>> convert(a*b*c*d)
+        MulSIMD(MulSIMD(a, b), MulSIMD(c, d))
+
+        >>> convert(a/b)
+        DivSIMD(a, b)
+
+        >>> convert(a*b + c)
+        FusedMulAddSIMD(a, b, c)
+
+        >>> convert(a*b - c)
+        FusedMulSubSIMD(a, b, c)
+
+        >>> convert(-a*b + c)
+        NegFusedMulAddSIMD(a, b, c)
+
+        >>> convert(-a*b - c)
+        NegFusedMulSubSIMD(a, b, c)
+    """
     for item in preorder_traversal(expr):
         for arg in item.args:
             if isinstance(arg, Symbol):
@@ -61,6 +121,9 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
             try: arg = map_sym_to_rat[arg]
             except KeyError: pass
         return arg
+
+    if map_sym_to_rat == None:
+        expr, map_sym_to_rat = cse_preprocess(expr)
 
     map_rat_to_sym = {map_sym_to_rat[v]:v for v in map_sym_to_rat}
 
@@ -89,8 +152,8 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
     #   Note: SymPy does not represent fractional integers as rationals since
     #         those are explicitly declared using the rational class, and hence
     #         the following algorithm does not affect fractional integers.
-    #         SymPy: srepr(a/b) = Mul(a, Pow(b, -1))
-    #         NRPy:  srepr(a/b) = DivSIMD(a, b)
+    #         SymPy: srepr(a**(-2)) = Pow(a, -2)
+    #         NRPy:  srepr(a**(-2)) = DivSIMD(1, MulSIMD(a, a))
     for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
@@ -266,6 +329,16 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
         elif func == SubSIMD and args[0].func == MulSIMD:
             subtree.expr = FusedMulSubSIMD(args[0].args[0], args[0].args[1], args[1])
             tree.build(subtree, clear=True)
+        # SubSIMD(a, MulSIMD(b, c)) >> NegativeFusedMulAddSIMD(b, c, a)
+        elif func == SubSIMD and args[1].func == MulSIMD:
+            subtree.expr = NegFusedMulAddSIMD(args[1].args[0], args[1].args[1], args[0])
+            tree.build(subtree, clear=True)
+        # FMS(-1, MulSIMD(a, b), c) >> NegativeFusedMulSubSIMD(b, c, a)
+        func = subtree.expr.func
+        args = subtree.expr.args
+        if func == FusedMulSubSIMD and args[1].func == MulSIMD and lookup_rational(args[0]) == -1:
+            subtree.expr = NegFusedMulSubSIMD(args[1].args[0], args[1].args[1], args[2])
+            tree.build(subtree, clear=True)
     expr = tree.reconstruct()
 
     # Step 5.c: Remaining double FMA patterns that previously in Step 5.a were difficult to find.
@@ -416,3 +489,8 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat, prefix="", SIMD_find_more
             if simp_expr_diff != 0:
                 raise Warning('Expression Difference: ' + str(simp_expr_diff))
     return(expr)
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
