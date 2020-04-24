@@ -506,25 +506,28 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
         }
         for(int count=0;count<=1;count++) {
-        // Example: Az_rhs needs updating. The correct expression (cite paper) is:
-        //  Az_rhs = ..........
-
-        // We compute this by calling the below function twice:
-        // count = 0, flux_dirn = x?:
-        //  calculate_E_field_flat_all_in_one(vxr,vyr,   vxl,vyl,   Bxr,Byr,   Bxl,Byl,  Az_rhs)
-        //   Az_rhs += (E_? + E_?)  [ note that Az_rhs set to zero above]
-        // count = 1, flux_dirn = y?
-        // FIXME: calculate_E_field_flat_all_in_one(vxr,vyr,   vxl,vyl,   Bxr,Byr,   Bxl,Byl,  Az_rhs)
-        // FIXME:  Az_rhs += (E_? + E_?)  [ note that Az_rhs set to zero above]
-        // ... and now Az_rhs = (4 terms ), as described in 
-
-        /// count = 0: 
+            // This function is written to be general, using notation that matches the forward permutation added to AD2,
+            // i.e., [F_HLL^x(B^y)]_z corresponding to flux_dirn=0, count=1. By cyclically permuting with flux_dirn, we 
+            // get contributions to the other components, and by incrementing count, we get the backward permutations:
+            // flux_dirn | count | [F_HLL^i(B^j)]_k OR A_k += vi*Bj - vj*Bi
+            //      0    |    0  |  0 2 1
+            //      0    |    1  |  0 1 2
+            //      1    |    0  |  1 0 2
+            //      1    |    1  |  1 2 0
+            //      2    |    0  |  2 1 0
+            //      2    |    1  |  2 0 1
             calculate_E_field_flat_all_in_one(params,
-&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count-1)%3, 0)],
-&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count-1)%3, 0)],
-&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn-count-1)%3, 0)],
-&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count-1)%3, 0)],
-&rhs_gfs[    IDX4ptS(AD0GF          +(flux_dirn+1+count),0)], count, flux_dirn);
+              &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+2)%3, 0)],
+              &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+2)%3, 0)],
+              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn-count+2)%3, 0)],
+              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count+2)%3, 0)],
+              &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+1+count)%3,0)], 2.0*((REAL)count)-1.0, flux_dirn);
+            // SIGN = -1.0 if count=0, 1.0 if count=1
+            // This is necessary because 
+            // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
+            //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
+            // Note the negative signs on the reversed permuation terms!
+
         }
 
     }

@@ -13,16 +13,20 @@ then the permutation is backwards and the final results will need to be
 multiplied by -1.0
  */
 void calculate_E_field_flat_all_in_one(const paramstruct *params,
-				       const REAL *Vr0,const REAL *Vr1,
-				       const REAL *Vl0,const REAL *Vl1,
-				       const REAL *Br0,const REAL *Br1,
-				       const REAL *Bl0,const REAL *Bl1,
-				       REAL *Az_rhs,const int count,const int flux_dirn) {
-  // FIXME: include metric functions!
+                                       const REAL *Vr0,const REAL *Vr1,
+                                       const REAL *Vl0,const REAL *Vl1,
+                                       const REAL *Br0,const REAL *Br1,
+                                       const REAL *Bl0,const REAL *Bl1,
+                                       REAL *A2_rhs,const REAL SIGN,const int flux_dirn) {
+    // FIXME: include metric functions!
+    // This function is written to be generic and compute the contribution for all three AD RHSs.
+    // However, for convenience, the notation used in the function itself is for the contribution
+    // to AD2, specifically the [F_HLL^x(B^y)]_z term, with reconstructions in the x direction. This
+    // corresponds to flux_dirn=0 and count=1 (which corresponds to SIGN=+1.0).
+    // Thus, Az(i,j,k) += 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)) are solved here.
+    // The other terms are computed by cyclically permuting the indices when calling this function.
 #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 
-  REAL SIGN = 2.0*((REAL)count)-1.0; // -1.0 if count=0, 1.0 if count=1
-  
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
         for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++) {
@@ -32,6 +36,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // i-1/2 and i+1/2
                 int index   = IDX3S(i0,i1,i2);
                 int indexp1 = IDX3S(i0+(flux_dirn==0),i1+(flux_dirn==1),i2+(flux_dirn==2));
+                if(flux_dirn==0 && SIGN>0 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
+                    printf("index=%d & indexp1=%d\n",index,indexp1);
+                }
                 
                 // Now, we read in memory. We need all components of velocity and magnetic field on both 
                 // the left and right sides of the interface at *both* faces.
@@ -44,7 +51,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double B_lU0 = Bl0[index];
                 const double B_lU1 = Bl1[index];
                 
-                const double Valenciav_rU0_p1 = Vr0[index];
+                const double Valenciav_rU0_p1 = Vr0[indexp1];
                 const double Valenciav_rU1_p1 = Vr1[indexp1];
                 const double B_rU0_p1 = Br0[indexp1];
                 const double B_rU1_p1 = Br1[indexp1];
@@ -54,14 +61,14 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double B_lU1_p1 = Bl1[indexp1];
 
                 // Calculate the flux vector on each face for each component of the E-field:
-		// The F(B) terms are as Eq. 6 in Giacomazzo: https://arxiv.org/pdf/1009.2468.pdf
-		// [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
+                // The F(B) terms are as Eq. 6 in Giacomazzo: https://arxiv.org/pdf/1009.2468.pdf
+                // [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 
                 // Compute the state vector for this flux direction
-                const REAL U_r = B_rU0;
-                const REAL U_l = B_lU0;
+                const REAL U_r = B_rU1;
+                const REAL U_l = B_lU1;
 
                 // Repeat at i+1
                 // Calculate the flux vector on each face for each component of the E-field:
@@ -69,8 +76,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
                 
                 // Compute the state vector for this flux direction
-                const REAL U_r_p1 = B_rU0_p1;
-                const REAL U_l_p1 = B_lU0_p1;
+                const REAL U_r_p1 = B_rU1_p1;
+                const REAL U_l_p1 = B_lU1_p1;
 
                 // Basic HLLE solver: 
                 const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
@@ -78,14 +85,14 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // Basic HLLE solver, but at the next point: 
                 const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1);
 
-		// With the Riemann problem solved, we add the contributions to the RHSs:
-		// -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
-		//                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
-		// (Eq. 11 in https://arxiv.org/pdf/1009.2468.pdf)
-		// This code, as written, solves the first two terms for flux_dirn=0. Calling this function for count=1
-		// flips x for y to solve the latter two, switching to SIGN=-1 as well.
+                // With the Riemann problem solved, we add the contributions to the RHSs:
+                // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
+                //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
+                // (Eq. 11 in https://arxiv.org/pdf/1009.2468.pdf)
+                // This code, as written, solves the first two terms for flux_dirn=0. Calling this function for count=1
+                // flips x for y to solve the latter two, switching to SIGN=-1 as well.
 
-                Az_rhs[index]+= SIGN*0.25*(FHLL_0B1 + FHLL_0B1p1);
+                A2_rhs[index] += SIGN*0.25*(FHLL_0B1 + FHLL_0B1p1);
                 // flux dirn = 0 ===================>   i-1/2       i+1/2
                 //               Eq 11 in Giacomazzo:
                 //               -FxBy(avg over i-1/2 and i+1/2) + FyBx(avg over j-1/2 and j+1/2)
