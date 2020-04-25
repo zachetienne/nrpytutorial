@@ -322,6 +322,7 @@ def output_make_code_defn(dictionary, ThornName):
 # Source files in this directory
 SRCS =""")
         filestring = ""
+
         list_of_C_driver_files = list(dictionary.keys())
         for i in range(len(list_of_C_driver_files)):
             filestring += "      "+list_of_C_driver_files[i]

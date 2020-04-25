@@ -124,7 +124,6 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         # Set new finite-differencing order:
         par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
 
-
         print("Generating symbolic expressions for BSSN RHSs and Ricci tensor...")
         start = time.time()
         # Enable rfm_precompute infrastructure, which results in 
@@ -194,7 +193,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","False") # Reset to False to disable rfm_precompute.
         rfm.ref_metric__hatted_quantities()
         end = time.time()
-        print("Finished BSSN symbolic expressions in "+str(end-start)+" seconds.")
+        print("(BENCH) Finished BSSN symbolic expressions in "+str(end-start)+" seconds.")
         # Restore original finite-differencing order:
         par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
         # END: GENERATE SYMBOLIC EXPRESSIONS
@@ -246,7 +245,8 @@ def BaikalETK_C_kernels_codegen_onepart(params=
                                               params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True",
                                               upwindcontrolvec=betaU)
 
-            with open(os.path.join(outdir,"BSSN_RHSs_FD_order_"+str(FD_order)+"_enable_Tmunu_"+str(enable_stress_energy_source_terms)+".h"), "w") as file:
+            filename = "BSSN_RHSs_enable_Tmunu_"+str(enable_stress_energy_source_terms)+"_FD_order_"+str(FD_order)+".h"
+            with open(os.path.join(outdir,filename), "w") as file:
                 file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
                ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
                                    ["1","1","SIMD_width"],
@@ -259,14 +259,16 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     #endif"""],"",
                         "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+BSSN_RHSs_string))
             end = time.time()
-            print("Finished BSSN_RHS C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
+            print("(BENCH) Finished BSSN_RHS C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
 
         elif(which_expressions == "Ricci"):
             print("Generating C code for Ricci tensor (FD_order="+str(FD_order)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
             start = time.time()
             Ricci_string = fin.FD_outputC("returnstring", Ricci_SymbExpressions,
                                            params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True")
-            with open(os.path.join(outdir,"BSSN_Ricci_FD_order_"+str(FD_order)+".h"), "w") as file:
+
+            filename = "BSSN_Ricci_FD_order_"+str(FD_order)+".h"
+            with open(os.path.join(outdir, filename), "w") as file:
                 file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
                ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
                                    ["1","1","SIMD_width"],
@@ -279,7 +281,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     #endif"""],"",
                         "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+Ricci_string))
             end = time.time()
-            print("Finished Ricci C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
+            print("(BENCH) Finished Ricci C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
         else:
             print("Error: unexpected argument, "+str(which_expressions)+" to BSSN_RHSs_Ricci__generate_Ccode()")
 
@@ -318,12 +320,12 @@ def BaikalETK_C_kernels_codegen_onepart(params=
                                          lhrh(lhs=gri.gfaccess("aux_gfs", "MU2"), rhs=bssncon.MU[2])],
                                         params="outCverbose=False")
 
-        with open(os.path.join(outdir,"BSSN_constraints_FD_order_"+str(FD_order)+"_enable_Tmunu_"+str(enable_stress_energy_source_terms)+".h"), "w") as file:
+        with open(os.path.join(outdir,"BSSN_constraints_enable_Tmunu_"+str(enable_stress_energy_source_terms)+"_FD_order_"+str(FD_order)+".h"), "w") as file:
             file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
            ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
                                ["1","1","1"],["#pragma omp parallel for","",""], "", Ham_mom_string))
         end = time.time()
-        print("Finished Hamiltonian & momentum constraint C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
+        print("(BENCH) Finished Hamiltonian & momentum constraint C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
 
     def enforce_detgammabar_eq_detgammahat__generate_symbolic_expressions_and_C_code():
         ######################################
@@ -370,7 +372,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
                                      "#include \"rfm_files/rfm_struct__read1.h\""],"",
                                      "#include \"rfm_files/rfm_struct__read0.h\"\n"+enforce_gammadet_string))
         end = time.time()
-        print("Finished gamma constraint C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
+        print("(BENCH) Finished gamma constraint C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
 
     if WhichPart=="BSSN_RHSs":
         BSSN_RHSs_Ricci__generate_Ccode("BSSN_RHSs", BSSN_RHSs_Ricci__generate_symbolic_expressions())
