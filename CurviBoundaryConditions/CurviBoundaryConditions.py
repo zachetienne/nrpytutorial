@@ -1,8 +1,9 @@
 # This module provides functions for setting up Curvilinear boundary conditions,
 #     as documented in Tutorial-Start_to_Finish-Curvilinear_BCs.ipynb
 
-# Author: Zachariah B. Etienne
+# Authors: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
+#          Terrence Pierre Jacques
 
 # First we import needed core NRPy+ modules
 from outputC import *            # NRPy+: Core C code output module
@@ -14,7 +15,7 @@ import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line int
 import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
 
 def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.join("../"),
-                                   enable_copy_of_static_Ccodes=True):
+                                   enable_copy_of_static_Ccodes=True, BoundaryCondition="QPE"):
     # Step P0: Check that Ccodesdir is not the same as CurviBoundaryConditions/boundary_conditions,
     #          to prevent trusted versions of these C codes from becoming contaminated.
     if os.path.join(Ccodesdir) == os.path.join("CurviBoundaryConditions", "boundary_conditions"):
@@ -26,10 +27,45 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
     #          from CurviBoundaryConditions/boundary_conditions to Ccodesdir/
     if enable_copy_of_static_Ccodes:
         cmd.mkdir(os.path.join(Ccodesdir))
-        for file in ["apply_bcs_curvilinear.h", "apply_bcs_sommerfeld.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
-                     "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
-            shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
-                        os.path.join(Ccodesdir))
+
+        # Choosing boundary condition drivers with in NRPy+
+        #  - current options are Quadratic Polynomial Extrapolation for any coordinate system,
+        #    and the Sommerfeld boundary condition for only cartesian coordinates
+        if   str(BoundaryCondition) == "QPE":
+            for file in ["apply_bcs_curvilinear.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
+                         "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
+                shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
+                            os.path.join(Ccodesdir))
+
+            with open(os.path.join(Ccodesdir,"CurviBC_include_Cfunctions.h"),"a") as file:
+                file.write("\n#include \"apply_bcs_curvilinear.h\"")
+
+        
+        elif str(BoundaryCondition) == "Sommerfeld":
+            for file in ["apply_bcs_sommerfeld.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
+                         "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
+                shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
+                            os.path.join(Ccodesdir))
+
+            with open(os.path.join(Ccodesdir,"CurviBC_include_Cfunctions.h"),"a") as file:
+                file.write("\n#include \"apply_bcs_sommerfeld.h\"")
+
+        
+        elif str(BoundaryCondition) == "QPE&Sommerfeld":
+            for file in ["apply_bcs_curvilinear.h","apply_bcs_sommerfeld.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
+                         "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
+                shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
+                            os.path.join(Ccodesdir))
+
+            with open(os.path.join(Ccodesdir,"CurviBC_include_Cfunctions.h"),"a") as file:
+                file.write("\n#include \"apply_bcs_sommerfeld.h\"" +
+                           "\n#include \"apply_bcs_curvilinear.h\"")
+        
+        
+        else:
+            print("ERROR: Only Quadratic Polynomial Extrapolation (QPE) and Sommerfeld boundary conditions are currently supported\n")
+            sys.exit(1)
+
 
     # Step P2: Output correct #include for set_Cparameters.h to
     #          Ccodesdir/boundary_conditions/RELATIVE_PATH__set_Cparameters.h
@@ -216,38 +252,58 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
     par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
     rfm.reference_metric()
 
-# Sommerfeld boundary condition class; generates Sommerfeld parameters
+# Sommerfeld boundary condition class; generates Sommerfeld parameters to be used in subsequent
+# C code
 # Author: Terrence Pierre Jacques
 class sommerfeld_bc():
     # class variables should be the resulting dicts
-    def __init__(self, vars_at_inf_default = 0., vars_radpower_default = 0., vars_speed_default = 1.):
+    # Set class variable default values
+    # radial falloff power n = 3 has been found to yield the best results
+    #  - see Tutorial-SommerfeldBoundaryCondition.ipynb Step 2 for details
+    def __init__(self, vars_at_inf_default = 0., vars_radpower_default = 3., vars_speed_default = 1.):
         evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = \
                                                         gri.gridfunction_lists()
+        
+        # Define class dictionaries to store sommerfeld parameters for each EVOL gridfunction
+        
+        # EVOL gridfunction asymptotic value at infinity
         self.vars_at_infinity = {}
+        
+        # EVOL gridfunction wave speed at outer boundaries
         self.vars_speed = {}
+        
+        # EVOL gridfunction radial falloff power
         self.vars_radpower = {}
+        
+        # Set default values for each specific EVOL gridfunction
         for gf in evolved_variables_list:
             self.vars_at_infinity[gf.upper() + 'GF'] = vars_at_inf_default
             self.vars_radpower[gf.upper() + 'GF'] = vars_radpower_default
             self.vars_speed[gf.upper() + 'GF'] = vars_speed_default
 
     def write_to_sommerfeld_params_file(self, Ccodesdir):
-
+        # Write parameters to C file
+        
+        # Creating array for EVOL gridfunction values at infinity
         var_at_inf_string = "{"
         for gf,val in self.vars_at_infinity.items():
             var_at_inf_string += str(val) + ", "
         var_at_inf_string = var_at_inf_string[:-2] + "};"
-
+        
+        # Creating array for EVOL gridfunction values of radial falloff power
         var_radpow_string = "{"
         for gf,val in self.vars_radpower.items():
             var_radpow_string += str(val) + ", "
         var_radpow_string = var_radpow_string[:-2] + "};"
 
+        # Creating array for EVOL gridfunction values of wave speed at outer boundaries
         var_speed_string = "{"
         for gf,val in self.vars_speed.items():
             var_speed_string += str(val) + ", "
         var_speed_string = var_speed_string[:-2] + "};"
 
+        # Writing to values to sommerfeld_params.h file
+        # Note that we also record the coordinate system
         with open(os.path.join(Ccodesdir,"boundary_conditions/sommerfeld_params.h"),"w") as file:
             file.write("""
 // Coordinate system 

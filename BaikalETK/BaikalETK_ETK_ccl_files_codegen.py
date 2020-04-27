@@ -78,14 +78,14 @@ restricted:
 CCTK_INT FD_order "Finite-differencing order"
 {\n""".replace("BaikalETK",ThornName))
         FDorders = []
-        for root, dirs, files in os.walk(ThornName,"src"):
+        for root, dirs, files in os.walk(os.path.join(ThornName,"src")):
             for Cfilename in files:
-                if "BSSN_Ricci_FD_order" in Cfilename:
+                if ("BSSN_Ricci_FD_order" in Cfilename) and (".h" in Cfilename):
                     array = Cfilename.replace(".","_").split("_")
-                    FDorders.append(int(array[4]))
+                    FDorders.append(int(array[-2]))
+        FDorders.sort()
         for order in FDorders:
             file.write(" "+str(order)+":"+str(order)+"   :: \"finite-differencing order = "+str(order)+"\"\n")
-        FDorders.sort()
         FDorder_default = 4
         if not (FDorder_default in FDorders):
             print("WARNING: 4th-order FD kernel was not output!?! Changing default FD order to "+str(FDorders[0]))

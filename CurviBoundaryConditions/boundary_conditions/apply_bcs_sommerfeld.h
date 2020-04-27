@@ -2,7 +2,7 @@
 //          boundary faces of the 3D numerical domain, filling in the 
 //          outer boundary ghost zone layers, starting with the innermost
 //          layer and working outward.
-#ifdef using_sommerfeld
+
 #include "sommerfeld_params.h"
 #include <string.h>
 
@@ -169,15 +169,13 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
   }// END if coord = Cartesian  
-  else {
+ /* else {
     #pragma omp parallel for
         for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
           REAL var_at_infinity = evolgf_at_inf[which_gf];
           REAL radpower = evolgf_radpower[which_gf];
           REAL char_speed = evolgf_speed[which_gf];
-            
-        #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
-                                                 * accounting for the relative path */   
+              
             for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
                 for(int pt=0;pt<bcstruct->num_ob_gz_pts[which_gz];pt++) {                
                     int i0 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i0;
@@ -231,9 +229,8 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
             }// END for(int pt=0;pt<num_ib_gz_pts[which_gz];pt++)
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
-  } else {
+  }*/ else {
     printf("ERROR: Sommerfeld boundary conditions are currently only enabled for Cartesian coordinates.\n");
     exit(1);
   } // END coord != Cartesian
 } // END function
-#endif

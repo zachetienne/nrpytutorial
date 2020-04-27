@@ -359,14 +359,15 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
 """
 
     path = os.path.join(ThornName,"src")
-    BSSN_RHS_FD_orders_output = []
+    BSSN_FD_orders_output = []
     for root, dirs, files in os.walk(path):
         for file in files:
-            if "BSSN_RHSs_FD_order" in file:
+            if "BSSN_RHSs_" in file:
                 array = file.replace(".","_").split("_")
-                BSSN_RHS_FD_orders_output.append(int(array[4]))
+                BSSN_FD_orders_output.append(int(array[-2]))
+    BSSN_FD_orders_output.sort()
 
-    for current_FD_order in BSSN_RHS_FD_orders_output:
+    for current_FD_order in BSSN_FD_orders_output:
         # Store original finite-differencing order:
         orig_FD_order = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
         # Set new finite-differencing order:
@@ -450,21 +451,19 @@ void BaikalETK_BSSN_to_ADM(CCTK_ARGUMENTS) {
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("BSSN_to_ADM.c")] = outstr.replace("BaikalETK",ThornName)
 
-    # Next, the driver for computing the Ricci tensor:
-    outstr = """
+    ###########################
+    ###########################
+    # BSSN_RHSs and Ricci driver functions
+    ###########################
+    common_includes = """
 #include <math.h>
-
-#include "SIMD/SIMD_intrinsics.h"
-
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
-
-void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
+#include "SIMD/SIMD_intrinsics.h"
+"""
+    common_preloop = """
     DECLARE_CCTK_ARGUMENTS;
-
-    const CCTK_INT *FD_order = CCTK_ParameterGet("FD_order","BaikalETK",NULL);
-
     const CCTK_REAL NOSIMDinvdx0 = 1.0/CCTK_DELTA_SPACE(0);
     const REAL_SIMD_ARRAY invdx0 = ConstSIMD(NOSIMDinvdx0);
     const CCTK_REAL NOSIMDinvdx1 = 1.0/CCTK_DELTA_SPACE(1);
@@ -472,19 +471,67 @@ void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
     const CCTK_REAL NOSIMDinvdx2 = 1.0/CCTK_DELTA_SPACE(2);
     const REAL_SIMD_ARRAY invdx2 = ConstSIMD(NOSIMDinvdx2);
 """
-    path = os.path.join(ThornName,"src")
 
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if "BSSN_Ricci_FD_order" in file:
-                array = file.replace(".","_").split("_")
-                outstr += "    if(*FD_order == "+str(array[4])+") {\n"
-                outstr += "        #include \""+file+"\"\n"
-                outstr += "    }\n"
-    outstr += "}\n"
-    
+    # Output the driver code for computing the Ricci tensor:
+    outstr = common_includes
+    for order in BSSN_FD_orders_output:
+        outstr += """extern void """+ThornName+"_"+"BSSN_Ricci_FD_order_"+str(order)+"(CCTK_ARGUMENTS);\n"
+    outstr += """
+void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
+    DECLARE_CCTK_ARGUMENTS;
+    const CCTK_INT *FD_order = CCTK_ParameterGet("FD_order","BaikalETK",NULL);
+"""
+    for order in BSSN_FD_orders_output:
+        outstr += "    if(*FD_order == "+str(order)+") {\n"
+        outstr += "        "+ThornName+"_"+"BSSN_Ricci_FD_order_"+str(order)+"(CCTK_PASS_CTOC);\n"
+        outstr += "    }\n"
+    outstr += "} // END FUNCTION\n"
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("driver_pt1_BSSN_Ricci.c")] = outstr.replace("BaikalETK",ThornName)
+
+    # Create functions for the largest C kernels (BSSN RHSs and Ricci) and output
+    #    the .h files to .c files with function wrappers; delete original .h files
+    path = os.path.join(ThornName, "src")
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if ("BSSN_Ricci_FD_order_") in file and (".h" in file):
+                outstr = common_includes + "void BaikalETK_"+file.replace(".h","")+"(CCTK_ARGUMENTS) {\n"
+                outstr += common_preloop
+                with open(os.path.join(path,file), "r") as currfile:
+                    outstr += currfile.read()
+                # Now that we've inserted the contents of the kernel into this file,
+                #     we delete the file containing the kernel
+                os.remove(os.path.join(path,file))
+                outstr += "} // END FUNCTION\n"
+                # Add C code string to dictionary (Python dictionaries are immutable)
+                Csrcdict[append_to_make_code_defn_list(file.replace(".h",".c"))] = outstr.replace("BaikalETK",ThornName)
+    ###########################
+    # Output BSSN RHSs driver function
+    path = os.path.join(ThornName, "src")
+    outstr = common_includes
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+            if "BSSN_RHSs_" in filename:
+                outstr += """extern void """ + ThornName+"_"+filename.replace(".h", "(CCTK_ARGUMENTS);") + "\n"
+
+    outstr += """
+void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
+    DECLARE_CCTK_ARGUMENTS;
+
+    const CCTK_INT *FD_order = CCTK_ParameterGet("FD_order","BaikalETK",NULL);
+
+"""
+    path = os.path.join(ThornName, "src")
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+            if "BSSN_RHSs_" in filename:
+                array = filename.replace(".", "_").split("_")
+                outstr += "    if(*FD_order == " + str(array[-2]) + ") {\n"
+                outstr += "        " + ThornName+"_"+filename.replace(".h", "(CCTK_PASS_CTOC);") + "\n"
+                outstr += "    }\n"
+    outstr += "} // END FUNCTION\n"
+    # Add C code string to dictionary (Python dictionaries are immutable)
+    Csrcdict[append_to_make_code_defn_list("driver_pt2_BSSN_RHSs.c")] = outstr.replace("BaikalETK", ThornName)
 
     def SIMD_declare_C_params():
         SIMD_declare_C_params_str = ""
@@ -501,63 +548,37 @@ void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
                 SIMD_declare_C_params_str += "    const REAL_SIMD_ARRAY "+parname+" = ConstSIMD(*NOSIMD"+parname+");\n"
         return SIMD_declare_C_params_str
 
-    # Next, the driver for computing the BSSN RHSs:
-    outstr = """
-#include <math.h>
-
-#include "SIMD/SIMD_intrinsics.h"
-
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
-
-void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
-    DECLARE_CCTK_ARGUMENTS;
-
-    const CCTK_INT *FD_order = CCTK_ParameterGet("FD_order","BaikalETK",NULL);
-
-    const CCTK_REAL NOSIMDinvdx0 = 1.0/CCTK_DELTA_SPACE(0);
-    const REAL_SIMD_ARRAY invdx0 = ConstSIMD(NOSIMDinvdx0);
-    const CCTK_REAL NOSIMDinvdx1 = 1.0/CCTK_DELTA_SPACE(1);
-    const REAL_SIMD_ARRAY invdx1 = ConstSIMD(NOSIMDinvdx1);
-    const CCTK_REAL NOSIMDinvdx2 = 1.0/CCTK_DELTA_SPACE(2);
-    const REAL_SIMD_ARRAY invdx2 = ConstSIMD(NOSIMDinvdx2);
-"""+SIMD_declare_C_params()
-    
-    path = os.path.join(ThornName,"src")
-
+    # Create functions for the largest C kernels (BSSN RHSs and Ricci) and output
+    #    the .h files to .c files with function wrappers; delete original .h files
+    path = os.path.join(ThornName, "src")
     for root, dirs, files in os.walk(path):
         for file in files:
-            if "BSSN_RHSs_FD_order" in file:
-                array = file.replace(".","_").split("_")
-                outstr += "    if(*FD_order == "+str(array[4])+") {\n"
-                outstr += "        #include \""+file+"\"\n"
-                outstr += "    }\n"
-    outstr += "}\n"
-
-    # Add C code string to dictionary (Python dictionaries are immutable)
-    Csrcdict[append_to_make_code_defn_list("driver_pt2_BSSN_RHSs.c")] = outstr.replace("BaikalETK",ThornName)
+            if ("BSSN_RHSs_enable_") in file and (".h" in file):
+                outstr = common_includes + "void BaikalETK_"+file.replace(".h","")+"(CCTK_ARGUMENTS) {\n"
+                outstr += common_preloop+SIMD_declare_C_params()
+                with open(os.path.join(path,file), "r") as currfile:
+                    outstr += currfile.read()
+                # Now that we've inserted the contents of the kernel into this file,
+                #     we delete the file containing the kernel
+                os.remove(os.path.join(path,file))
+                outstr += "} // END FUNCTION\n"
+                # Add C code string to dictionary (Python dictionaries are immutable)
+                Csrcdict[append_to_make_code_defn_list(file.replace(".h",".c"))] = outstr.replace("BaikalETK",ThornName)
 
     # Next, the driver for enforcing detgammabar = detgammahat constraint:
-    outstr = """
-#include <math.h>
-
-#include "cctk.h"
-#include "cctk_Arguments.h"
-#include "cctk_Parameters.h"
-
+    outstr = common_includes+"""
 void BaikalETK_enforce_detgammabar_constraint(CCTK_ARGUMENTS) {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
 """
     
-    path = os.path.join(ThornName,"src")
+    path = os.path.join(ThornName, "src")
         
     for root, dirs, files in os.walk(path):
         for file in files:
             if "enforcedetgammabar_constraint_FD_order" in file:
                 array = file.replace(".","_").split("_")
-                outstr += "    if(FD_order == "+str(array[4])+") {\n"
+                outstr += "    if(FD_order == "+str(array[-2])+") {\n"
                 outstr += "        #include \""+file+"\"\n"
                 outstr += "    }\n"
     outstr += "}\n"
@@ -583,12 +604,11 @@ void BaikalETK_BSSN_constraints(CCTK_ARGUMENTS) {
     const CCTK_REAL invdx2 = 1.0/CCTK_DELTA_SPACE(2);
 """
     path = os.path.join(ThornName,"src")
-        
     for root, dirs, files in os.walk(path):
         for file in files:
-            if "BSSN_constraints_FD_order" in file:
+            if "BSSN_constraints_" in file:
                 array = file.replace(".","_").split("_")
-                outstr += "    if(FD_order == "+str(array[4])+") {\n"
+                outstr += "    if(FD_order == "+str(array[-2])+") {\n"
                 outstr += "        #include \""+file+"\"\n"
                 outstr += "    }\n"
     outstr += "}\n"
