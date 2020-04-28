@@ -507,35 +507,44 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
         }
         for(int count=0;count<=1;count++) {
             // This function is written to be general, using notation that matches the forward permutation added to AD2,
-            // i.e., [F_HLL^x(B^y)]_z corresponding to flux_dirn=0, count=1. By cyclically permuting with flux_dirn, we 
+            // i.e., [F_HLL^x(B^y)]_z corresponding to flux_dirn=0, count=1. 
+            // The SIGN parameter is necessary because 
+            // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
+            //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
+            // Note the negative signs on the reversed permuation terms!
+
+            // By cyclically permuting with flux_dirn, we 
             // get contributions to the other components, and by incrementing count, we get the backward permutations:
-            // flux_dirn | count | [F_HLL^i(B^j)]_k OR A_k += vi*Bj - vj*Bi
-            //      0    |    0  |  0 2 1
-            //      0    |    1  |  0 1 2
-            //      1    |    0  |  1 0 2
-            //      1    |    1  |  1 2 0
-            //      2    |    0  |  2 1 0
-            //      2    |    1  |  2 0 1
+            // Let's suppose flux_dirn = 0. Then we will need to update Ay (count=0) and Az (count=1):
+            //     flux_dirn=count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (0+1+0)%3=AD1GF <- Updating Ay!
+            //        (flux_dirn)%3 = (0)%3 = 0               Vx
+            //        (flux_dirn-count+2)%3 = (0-0+2)%3 = 2   Vz .  Inputs Vx, Vz -> SIGN = -1 ; 2.0*((REAL)count)-1.0=-1 check!
+            // Let's suppose flux_dirn = 0. Then we will need to update Ay (count=0) and Az (count=1):
+            //     flux_dirn=0,count=1 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (0+1+1)%3=AD2GF <- Updating Az!
+            //        (flux_dirn)%3 = (0)%3 = 0               Vx
+            //        (flux_dirn-count+2)%3 = (0-1+2)%3 = 1   Vy .  Inputs Vx, Vy -> SIGN = +1 ; 2.0*((REAL)count)-1.0=2-1=+1 check!
+            // Let's suppose flux_dirn = 1. Then we will need to update Az (count=0) and Ax (count=1):
+            //     flux_dirn=1,count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (1+1+0)%3=AD2GF <- Updating Az!
+            //        (flux_dirn)%3 = (1)%3 = 1               Vy
+            //        (flux_dirn-count+2)%3 = (1-0+2)%3 = 0   Vx .  Inputs Vy, Vx -> SIGN = -1 ; 2.0*((REAL)count)-1.0=-1 check!
+            // Let's suppose flux_dirn = 1. Then we will need to update Az (count=0) and Ax (count=1):
+            //     flux_dirn=count=1 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (1+1+1)%3=AD0GF <- Updating Ax!
+            //        (flux_dirn)%3 = (1)%3 = 1               Vy
+            //        (flux_dirn-count+2)%3 = (1-1+2)%3 = 2   Vz .  Inputs Vy, Vz -> SIGN = +1 ; 2.0*((REAL)count)-1.0=2-1=+1 check!
+            // Let's suppose flux_dirn = 2. Then we will need to update Ax (count=0) and Ay (count=1):
+            //     flux_dirn=2,count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (2+1+0)%3=AD0GF <- Updating Ax!
+            //        (flux_dirn)%3 = (2)%3 = 2               Vz
+            //        (flux_dirn-count+2)%3 = (2-0+2)%3 = 1   Vy .  Inputs Vz, Vy -> SIGN = -1 ; 2.0*((REAL)count)-1.0=-1 check!
+            // Let's suppose flux_dirn = 2. Then we will need to update Ax (count=0) and Ay (count=1):
+            //     flux_dirn=2,count=1 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (2+1+1)%3=AD1GF <- Updating Ay!
+            //        (flux_dirn)%3 = (2)%3 = 2               Vz
+            //        (flux_dirn-count+2)%3 = (2-1+2)%3 = 0   Vx .  Inputs Vz, Vx -> SIGN = +1 ; 2.0*((REAL)count)-1.0=2-1=+1 check!
             calculate_E_field_flat_all_in_one(params,
               &auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_RU0GF+(flux_dirn-count+2)%3, 0)],
               &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+2)%3, 0)],
               &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn-count+2)%3, 0)],
               &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count+2)%3, 0)],
               &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+1+count)%3,0)], 2.0*((REAL)count)-1.0, flux_dirn);
-// Let's suppose flux_dirn = 0. Then we will need to update Ay (count=0) and Az (count=1):
-//     flux_dirn=count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (0+1+0)%3=AD1GF <- Updating Ay!
-//        (flux_dirn)%3 = (0)%3 = 0               Vx
-//        (flux_dirn-count+2)%3 = (0-0+2)%3 = 2   Vz .  Inputs Vx, Vz -> SIGN = -1 ; 2.0*((REAL)count)-1.0=-1 check!
-// Let's suppose flux_dirn = 0. Then we will need to update Ay (count=0) and Az (count=1):
-//     flux_dirn=0,count=1 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (0+1+1)%3=AD2GF <- Updating Az!
-//        (flux_dirn)%3 = (0)%3 = 0               Vx
-//        (flux_dirn-count+2)%3 = (0-1+2)%3 = 1   Vy .  Inputs Vx, Vy -> SIGN = +1 ; 2.0*((REAL)count)-1.0=2-1=+1 check!
-            // SIGN = -1.0 if count=0, 1.0 if count=1
-            // This is necessary because 
-            // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
-            //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
-            // Note the negative signs on the reversed permuation terms!
-
         }
 
     }
