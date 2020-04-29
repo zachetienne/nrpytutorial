@@ -33,8 +33,10 @@ def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma=
             for (int i = 0; i < N; i += 2) {
         <BLANKLINE>
     """
+    # If some argument has a different type other than string, then throw an error
     if any(not isinstance(i, str) for i in (idx_var, lower_bound, upper_bound, increment, pragma)):
         raise ValueError('all parameters must have type string.')
+    # Generate header and footer for a one-dimensional loop with optional parallelization using OpenMP
     pragma     = padding + pragma + '\n' if pragma else ''
     increment  = ' += ' + increment if increment != '1' else '++'
     header     = padding + 'for (int {i0} = {i1}; {i0} < {i2}; {i0}{i3})'.format(\
@@ -50,7 +52,7 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
         :arg:    upper bound on index variable
         :arg:    increment for the index variable
         :arg:    OpenMP pragma (https://en.wikipedia.org/wiki/OpenMP)
-        :arg:    padding before a line (tab number)
+        :arg:    padding before a line (tab stop)
         :arg:    interior of the loop
         :arg:    tile size for cache blocking
         :return: (header, footer) or string of the loop
@@ -86,11 +88,14 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
         } // END LOOP: for (int i = 0; i < Nx; i++)
         <BLANKLINE>
     """
+    # If every argument has type string, then nest each argument inside a list
     if (all(isinstance(i, str) for i in (idx_var, lower_bound, upper_bound, increment, pragma))):
         idx_var, lower_bound, upper_bound, increment, pragma = [idx_var], [lower_bound], [upper_bound], [increment], [pragma]
     length = len(idx_var)
+    # If some argument has a different length than another, then throw an error
     if any(len(i) != length for i in (lower_bound, upper_bound, increment, pragma)):
         raise ValueError('all list parameters must have the same length.')
+    # If loop tiling is enabled, repeat string and length check for tile_size parameter
     if tile_size:
         if isinstance(tile_size, str): tile_size = [tile_size]
         if len(tile_size) != length:
@@ -98,24 +103,29 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
     header_list, footer_list = [], []
     for i in range(length):
         if len(tile_size) > 0:
+            # Generate header and footer for a single loop dimension over each tile
             ext_header, ext_footer = loop1D(idx_var[i] + 'B', lower_bound[i], upper_bound[i], tile_size[i], '', padding + i*'    ')
+            # Generate header and footer for a nested loop over the iteration space inside of each tile
             header, footer = loop1D(idx_var[i], idx_var[i] + 'B', 'MIN(%s, %s + %s)' % (upper_bound[i], idx_var[i] + 'B', \
                 tile_size[i]), increment[i], pragma[i], padding + (length + i)*'    ')
             header_list.insert(i, ext_header)
             footer_list.insert(i, ext_footer)
         else:
+            # Generate header and footer for a single loop dimension
             header, footer = loop1D(idx_var[i], lower_bound[i], upper_bound[i], increment[i], pragma[i], padding + i*'    ')
         header_list.append(header)
         footer_list.append(footer)
+    # If loop interior was provided, generate the loop body with appropriate formatting
     if interior:
         interior = [padding + (length + len(tile_size))*'    ' + line + '\n' for line in interior.split('\n')]
+    # Build global looping structure from each generated header/footer
     header = ''.join(header_list)
     footer = ''.join(footer_list[::-1])
     if not interior: return header, footer
     return header + ''.join(interior) + footer
 
 def simple_loop(options, interior):
-    """ Generate a simple loop (for use inside a function) in C.
+    """ Generate a simple loop in C (for use inside of a function).
 
         :arg:    loop options
         :arg:    loop interior
@@ -135,11 +145,13 @@ def simple_loop(options, interior):
     """
     if not options: return interior
 
+    # 'AllPoints': loop over all points on a numerical grid, including ghost zones
     if "AllPoints" in options:
         i2i1i0_mins = ["0", "0", "0"]
         i2i1i0_maxs = ["Nxx_plus_2NGHOSTS2", "Nxx_plus_2NGHOSTS1", "Nxx_plus_2NGHOSTS0"]
         if "oldloops" in options:
             i2i1i0_maxs = ["Nxx_plus_2NGHOSTS[2]", "Nxx_plus_2NGHOSTS[1]", "Nxx_plus_2NGHOSTS[0]"]
+    # 'InteriorPoints': loop over the interior of a numerical grid, i.e. exclude ghost zones        
     elif "InteriorPoints" in options:
         i2i1i0_mins = ["NGHOSTS","NGHOSTS","NGHOSTS"]
         i2i1i0_maxs = ["NGHOSTS+Nxx2","NGHOSTS+Nxx1","NGHOSTS+Nxx0"]
@@ -148,13 +160,14 @@ def simple_loop(options, interior):
     else: raise ValueError('no interation space was specified.')
 
     Read_1Darrays = ["", "", ""]
+    # 'Read_xxs': read the xx[3][:] 1D coordinate arrays, as some interior dependency exists
     if "Read_xxs" in options:
         if not "EnableSIMD" in options:
             Read_1Darrays = ["const REAL xx0 = xx[0][i0];",
                              "            const REAL xx1 = xx[1][i1];",
                              "        const REAL xx2 = xx[2][i2];", ]
         else: raise ValueError('no SIMD support for Read_xxs (currently).')
-
+    # 'Enable_rfm_precompute': enable pre-computation of reference metric
     if "Enable_rfm_precompute" in options:
         if "Read_xxs" in options:
             raise ValueError('Enable_rfm_precompute and Read_xxs cannot both be enabled.')
@@ -166,7 +179,7 @@ def simple_loop(options, interior):
             Read_1Darrays = ["#include \"rfm_files/rfm_struct__read0.h\"",
                              "#include \"rfm_files/rfm_struct__read1.h\"",
                              "#include \"rfm_files/rfm_struct__read2.h\""]
-
+    # 'DisableOpenMP': disable loop parallelization using OpenMP
     pragma    = "" if "DisableOpenMP" in options else "#pragma omp parallel for"
     increment = ["1", "1", "SIMD_width"] if "EnableSIMD" in options else ["1","1","1"]
 
