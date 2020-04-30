@@ -33,14 +33,14 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
             for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++) {
                 // First, we set the index from which we will read memory. indexp1 is incremented by
                 // one point in the direction of reconstruction. These correspond to the faces at at 
-                // i-1/2 and i+1/2
+                // i-1/2 and i+1/2, respectively.
                 int index   = IDX3S(i0,i1,i2);
                 int indexp1 = IDX3S(i0+(flux_dirn==0),i1+(flux_dirn==1),i2+(flux_dirn==2));
                 if(flux_dirn==0 && SIGN>0 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
                     printf("index=%d & indexp1=%d\n",index,indexp1);
                 }
                 
-                // Now, we read in memory. We need all components of velocity and magnetic field on both 
+                // Now, we read in memory. We need the x and y components of velocity and magnetic field on both 
                 // the left and right sides of the interface at *both* faces.
                 const double Valenciav_rU0 = Vr0[index];
                 const double Valenciav_rU1 = Vr1[index];
@@ -60,21 +60,26 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double B_lU0_p1 = Bl0[indexp1];
                 const double B_lU1_p1 = Bl1[indexp1];
 
+                // Since we are computing A_z, the relevant equation here is:
                 // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
                 //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
-                // We will construct the above sum one half at a time, first with SIGN=+1, which corresponds to flux_dirn = ???, and
-                //  takes care of the term:
-                //  [...............]
+                // We will construct the above sum one half at a time, first with SIGN=+1, which 
+                // corresponds to flux_dirn = 0, count=1, and
+                //  takes care of the terms:
+                //  [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
 
-                // ( Note that we will repeat the above with flux_dirn = ???, with SIGN = ????
-                //   so that we get the term
-                //  [...............]
+                // ( Note that we will repeat the above with flux_dirn = 1, count = 0, with SIGN=-1
+                //   AND with the input components switched (x->y,y->x) so that we get the term
+                // -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k)
                 // thus completing the above sum. )
-
+                
+                // Here, [F_HLL^i(B^j)]_k = (v^i B^j - v^j B^i) in general.
+                
                 // Calculate the flux vector on each face for each component of the E-field:
                 // The F(B) terms are as Eq. 6 in Giacomazzo: https://arxiv.org/pdf/1009.2468.pdf
                 // [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
-                // Therefore for blah
+                // Therefore since we want [F_HLL^x(B^y)]_z,
+                // we will code (v^x B^y - v^y B^x) at both points.
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 
@@ -103,7 +108,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // (Eq. 11 in https://arxiv.org/pdf/1009.2468.pdf)
                 // This code, as written, solves the first two terms for flux_dirn=0. Calling this function for count=1
                 // flips x for y to solve the latter two, switching to SIGN=-1 as well.
-
+                
+                // Here, we finally add together the output of the HLLE solver at i-1/2 and i+1/2
+                // We also multiply by the SIGN dictated by the order of the input vectors and divide by 4.
                 A2_rhs[index] += SIGN*0.25*(FHLL_0B1 + FHLL_0B1p1);
                 // flux dirn = 0 ===================>   i-1/2       i+1/2
                 //               Eq 11 in Giacomazzo:
