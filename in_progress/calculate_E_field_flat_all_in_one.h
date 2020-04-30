@@ -1,5 +1,5 @@
 REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l) {
-  // Eq. 15 of https://epubs.siam.org/doi/abs/10.1137/1025002?journalCode=siread
+  // Eq. 3.15 of https://epubs.siam.org/doi/abs/10.1137/1025002?journalCode=siread
   // F_HLLE = (c_min F_R + c_max F_L - c_min c_max (U_R-U_L)) / (c_min + c_max)
   return 0.5*(F0B1_r+F0B1_l-(U_r-U_l));
   // FIXME: Curved space implementation!
