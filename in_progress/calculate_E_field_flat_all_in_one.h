@@ -17,6 +17,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                                        const REAL *Vl0,const REAL *Vl1,
                                        const REAL *Br0,const REAL *Br1,
                                        const REAL *Bl0,const REAL *Bl1,
+                                       const REAL *Brflux_dirn,
+                                       const REAL *Blflux_dirn,
                                        REAL *A2_rhs,const REAL SIGN,const int flux_dirn) {
     // FIXME: include metric functions!
     // This function is written to be generic and compute the contribution for all three AD RHSs.
@@ -43,10 +45,12 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double Valenciav_rU1 = Vr1[index];
                 const double B_rU0         = Br0[index];
                 const double B_rU1         = Br1[index];
+                const double B_rflux_dirn  = Brflux_dirn[index];
                 const double Valenciav_lU0 = Vl0[index];
                 const double Valenciav_lU1 = Vl1[index];
                 const double B_lU0         = Bl0[index];
                 const double B_lU1         = Bl1[index];
+                const double B_lflux_dirn  = Blflux_dirn[index];
 
                 // *******************************
                 // REPEAT ABOVE, but at i+1, which corresponds to point (i+1/2,j,k)
@@ -59,10 +63,12 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double Valenciav_rU1_p1 = Vr1[indexp1];
                 const double B_rU0_p1         = Br0[indexp1];
                 const double B_rU1_p1         = Br1[indexp1];
+                const double B_rflux_dirn_p1  = Brflux_dirn[indexp1];
                 const double Valenciav_lU0_p1 = Vl0[indexp1];
                 const double Valenciav_lU1_p1 = Vl1[indexp1];
                 const double B_lU0_p1         = Bl0[indexp1];
                 const double B_lU1_p1         = Bl1[indexp1];
+                const double B_lflux_dirn_p1  = Blflux_dirn[indexp1];
                 // *******************************
 
                 // DEBUGGING:
@@ -93,9 +99,10 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 
+                // ZACH SAYS: Make sure the below is documented!
                 // Compute the state vector for this flux direction
-                const REAL U_r = B_rU1;
-                const REAL U_l = B_lU1;
+                const REAL U_r = B_rflux_dirn; //B_rU1;
+                const REAL U_l = B_lflux_dirn; 
 
                 // Basic HLLE solver: 
                 const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
@@ -108,8 +115,10 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
                 
                 // Compute the state vector for this flux direction
-                const REAL U_r_p1 = B_rU1_p1;
-                const REAL U_l_p1 = B_lU1_p1;
+                const REAL U_r_p1 = B_rflux_dirn_p1;
+                const REAL U_l_p1 = B_lflux_dirn_p1;
+                //const REAL U_r_p1 = B_rU1_p1;
+                //const REAL U_l_p1 = B_lU1_p1;
                 // Basic HLLE solver, but at the next point: 
                 const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1);
                 // ************************************
