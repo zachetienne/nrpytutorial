@@ -34,31 +34,41 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // First, we set the index from which we will read memory. indexp1 is incremented by
                 // one point in the direction of reconstruction. These correspond to the faces at at 
                 // i-1/2 and i+1/2, respectively.
-                int index   = IDX3S(i0,i1,i2);
-                int indexp1 = IDX3S(i0+(flux_dirn==0),i1+(flux_dirn==1),i2+(flux_dirn==2));
+
+                // Now, we read in memory. We need the x and y components of velocity and magnetic field on both 
+                // the left and right sides of the interface at *both* faces.
+                // Here, the point (i0,i1,i2) corresponds to the point (i-1/2,j,k)
+                const int index            = IDX3S(i0,i1,i2);
+                const double Valenciav_rU0 = Vr0[index];
+                const double Valenciav_rU1 = Vr1[index];
+                const double B_rU0         = Br0[index];
+                const double B_rU1         = Br1[index];
+                const double Valenciav_lU0 = Vl0[index];
+                const double Valenciav_lU1 = Vl1[index];
+                const double B_lU0         = Bl0[index];
+                const double B_lU1         = Bl1[index];
+
+                // *******************************
+                // REPEAT ABOVE, but at i+1, which corresponds to point (i+1/2,j,k)
+                //     Recall that the documentation here assumes flux_dirn==0, but the
+                //     algorithm is generalized so that any flux_dirn or velocity/magnetic
+                //     field component can be computed via permuting the inputs into this
+                //     function.
+                const int indexp1             = IDX3S(i0+(flux_dirn==0),i1+(flux_dirn==1),i2+(flux_dirn==2));
+                const double Valenciav_rU0_p1 = Vr0[indexp1];
+                const double Valenciav_rU1_p1 = Vr1[indexp1];
+                const double B_rU0_p1         = Br0[indexp1];
+                const double B_rU1_p1         = Br1[indexp1];
+                const double Valenciav_lU0_p1 = Vl0[indexp1];
+                const double Valenciav_lU1_p1 = Vl1[indexp1];
+                const double B_lU0_p1         = Bl0[indexp1];
+                const double B_lU1_p1         = Bl1[indexp1];
+                // *******************************
+
+                // DEBUGGING:
                 if(flux_dirn==0 && SIGN>0 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
                     printf("index=%d & indexp1=%d\n",index,indexp1);
                 }
-                
-                // Now, we read in memory. We need the x and y components of velocity and magnetic field on both 
-                // the left and right sides of the interface at *both* faces.
-                const double Valenciav_rU0 = Vr0[index];
-                const double Valenciav_rU1 = Vr1[index];
-                const double B_rU0 = Br0[index];
-                const double B_rU1 = Br1[index];
-                const double Valenciav_lU0 = Vl0[index];
-                const double Valenciav_lU1 = Vl1[index];
-                const double B_lU0 = Bl0[index];
-                const double B_lU1 = Bl1[index];
-                
-                const double Valenciav_rU0_p1 = Vr0[indexp1];
-                const double Valenciav_rU1_p1 = Vr1[indexp1];
-                const double B_rU0_p1 = Br0[indexp1];
-                const double B_rU1_p1 = Br1[indexp1];
-                const double Valenciav_lU0_p1 = Vl0[indexp1];
-                const double Valenciav_lU1_p1 = Vl1[indexp1];
-                const double B_lU0_p1 = Bl0[indexp1];
-                const double B_lU1_p1 = Bl1[indexp1];
 
                 // Since we are computing A_z, the relevant equation here is:
                 // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
@@ -79,7 +89,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // The F(B) terms are as Eq. 6 in Giacomazzo: https://arxiv.org/pdf/1009.2468.pdf
                 // [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
                 // Therefore since we want [F_HLL^x(B^y)]_z,
-                // we will code (v^x B^y - v^y B^x) at both points.
+                // we will code     (v^x           B^y   - v^y           B^x) on both left and right faces.
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 
@@ -87,7 +97,12 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL U_r = B_rU1;
                 const REAL U_l = B_lU1;
 
-                // Repeat at i+1
+                // Basic HLLE solver: 
+                const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
+
+                // ************************************
+                // ************************************
+                // REPEAT ABOVE, but at point i+1
                 // Calculate the flux vector on each face for each component of the E-field:
                 const REAL F0B1_r_p1 = (Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
@@ -95,13 +110,12 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // Compute the state vector for this flux direction
                 const REAL U_r_p1 = B_rU1_p1;
                 const REAL U_l_p1 = B_lU1_p1;
-
-                // Basic HLLE solver: 
-                const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
-
                 // Basic HLLE solver, but at the next point: 
                 const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1);
+                // ************************************
+                // ************************************
 
+                
                 // With the Riemann problem solved, we add the contributions to the RHSs:
                 // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
                 //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
