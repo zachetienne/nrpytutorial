@@ -60,9 +60,21 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double B_lU0_p1 = Bl0[indexp1];
                 const double B_lU1_p1 = Bl1[indexp1];
 
+                // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
+                //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
+                // We will construct the above sum one half at a time, first with SIGN=+1, which corresponds to flux_dirn = ???, and
+                //  takes care of the term:
+                //  [...............]
+
+                // ( Note that we will repeat the above with flux_dirn = ???, with SIGN = ????
+                //   so that we get the term
+                //  [...............]
+                // thus completing the above sum. )
+
                 // Calculate the flux vector on each face for each component of the E-field:
                 // The F(B) terms are as Eq. 6 in Giacomazzo: https://arxiv.org/pdf/1009.2468.pdf
                 // [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
+                // Therefore for blah
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 

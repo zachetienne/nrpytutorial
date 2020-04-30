@@ -519,7 +519,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             //     flux_dirn=count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (0+1+0)%3=AD1GF <- Updating Ay!
             //        (flux_dirn)%3 = (0)%3 = 0               Vx
             //        (flux_dirn-count+2)%3 = (0-0+2)%3 = 2   Vz .  Inputs Vx, Vz -> SIGN = -1 ; 2.0*((REAL)count)-1.0=-1 check!
-            // Let's suppose flux_dirn = 0. Then we will need to update Ay (count=0) and Az (count=1):
             //     flux_dirn=0,count=1 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (0+1+1)%3=AD2GF <- Updating Az!
             //        (flux_dirn)%3 = (0)%3 = 0               Vx
             //        (flux_dirn-count+2)%3 = (0-1+2)%3 = 1   Vy .  Inputs Vx, Vy -> SIGN = +1 ; 2.0*((REAL)count)-1.0=2-1=+1 check!
@@ -527,7 +526,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             //     flux_dirn=1,count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (1+1+0)%3=AD2GF <- Updating Az!
             //        (flux_dirn)%3 = (1)%3 = 1               Vy
             //        (flux_dirn-count+2)%3 = (1-0+2)%3 = 0   Vx .  Inputs Vy, Vx -> SIGN = -1 ; 2.0*((REAL)count)-1.0=-1 check!
-            // Let's suppose flux_dirn = 1. Then we will need to update Az (count=0) and Ax (count=1):
             //     flux_dirn=count=1 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (1+1+1)%3=AD0GF <- Updating Ax!
             //        (flux_dirn)%3 = (1)%3 = 1               Vy
             //        (flux_dirn-count+2)%3 = (1-1+2)%3 = 2   Vz .  Inputs Vy, Vz -> SIGN = +1 ; 2.0*((REAL)count)-1.0=2-1=+1 check!
@@ -535,7 +533,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             //     flux_dirn=2,count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (2+1+0)%3=AD0GF <- Updating Ax!
             //        (flux_dirn)%3 = (2)%3 = 2               Vz
             //        (flux_dirn-count+2)%3 = (2-0+2)%3 = 1   Vy .  Inputs Vz, Vy -> SIGN = -1 ; 2.0*((REAL)count)-1.0=-1 check!
-            // Let's suppose flux_dirn = 2. Then we will need to update Ax (count=0) and Ay (count=1):
             //     flux_dirn=2,count=1 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (2+1+1)%3=AD1GF <- Updating Ay!
             //        (flux_dirn)%3 = (2)%3 = 2               Vz
             //        (flux_dirn-count+2)%3 = (2-1+2)%3 = 0   Vx .  Inputs Vz, Vx -> SIGN = +1 ; 2.0*((REAL)count)-1.0=2-1=+1 check!
