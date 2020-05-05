@@ -27,7 +27,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
     // corresponds to flux_dirn=0 and count=1 (which corresponds to SIGN=+1.0).
     // Thus, Az(i,j,k) += 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)) are solved here.
     // The other terms are computed by cyclically permuting the indices when calling this function.
-#include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
+#include "Validation/set_Cparameters.h"
 
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
@@ -72,9 +72,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // *******************************
 
                 // DEBUGGING:
-                if(flux_dirn==0 && SIGN>0 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
-                    printf("index=%d & indexp1=%d\n",index,indexp1);
-                }
+//                 if(flux_dirn==0 && SIGN>0 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
+//                     printf("index=%d & indexp1=%d\n",index,indexp1);
+//                 }
 
                 // Since we are computing A_z, the relevant equation here is:
                 // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
@@ -101,8 +101,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
 
                 // ZACH SAYS: Make sure the below is documented!
                 // Compute the state vector for this flux direction
-                const REAL U_r = B_rflux_dirn; //B_rU1;
-                const REAL U_l = B_lflux_dirn; 
+                const REAL U_r = SIGN*B_rflux_dirn; //B_rU1;
+                const REAL U_l = SIGN*B_lflux_dirn; 
 
                 // Basic HLLE solver: 
                 const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
@@ -115,8 +115,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
                 
                 // Compute the state vector for this flux direction
-                const REAL U_r_p1 = B_rflux_dirn_p1;
-                const REAL U_l_p1 = B_lflux_dirn_p1;
+                const REAL U_r_p1 = SIGN*B_rflux_dirn_p1;
+                const REAL U_l_p1 = SIGN*B_lflux_dirn_p1;
                 //const REAL U_r_p1 = B_rU1_p1;
                 //const REAL U_l_p1 = B_lU1_p1;
                 // Basic HLLE solver, but at the next point: 
