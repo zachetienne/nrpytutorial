@@ -101,7 +101,11 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
 
                 // ZACH SAYS: Make sure the below is documented!
                 // Compute the state vector for this flux direction
-                const REAL U_r = SIGN*B_rflux_dirn; //B_rU1;
+                // We must also multiply by sign so that we use the positive for the forward permutation
+                // and negative for the backwards permutation. For Az, that means that we add +Ay and -Ax,
+                // exactly as is done in the original GiRaFFE's A_i_rhs_no_gauge_terms.C, in line with 
+                // Del Zanna, 2003 [https://arxiv.org/pdf/astro-ph/0210618.pdf], Eq. 44
+                const REAL U_r = SIGN*B_rflux_dirn; //B_rU0;
                 const REAL U_l = SIGN*B_lflux_dirn; 
 
                 // Basic HLLE solver: 
