@@ -22,7 +22,28 @@ if nrpy_dir_path not in sys.path:
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 
-# Step 1: Define the rank-3 version of the Levi-Civita symbol. Amongst
+# Step 1: Declare several global variables used throughout
+#         NRPyPN
+m1,m2 = sp.symbols('m1 m2',real=True)
+S1U = ixp.declarerank1("S1U")
+S2U = ixp.declarerank1("S2U")
+pU = ixp.declarerank1("pU")
+nU = ixp.declarerank1("nU")
+
+drdt = sp.symbols('drdt', real=True)
+Pt, Pr = sp.symbols('Pt Pr', real=True)
+# Some references use r, others use q to represent the 
+#   distance between the two point masses. This is rather
+#   confusing since q is also used to represent the
+#   mass ratio m2/m1. However, q is the canonical position
+#   variable name in Hamiltonian mechanics, so both are
+#   well justified. It should be obvious which is which
+#   throughout NRPyPN.
+r, q = sp.symbols('r q', real=True)
+chi1U = ixp.declarerank1('chi1U')
+chi2U = ixp.declarerank1('chi2U')
+
+# Step 2.a: Define the rank-3 version of the Levi-Civita symbol. Amongst
 #         other uses, this is needed for the construction of the approximate 
 #         quasi-Kinnersley tetrad.
 def define_LeviCivitaSymbol_rank3_dim3():
@@ -34,7 +55,7 @@ def define_LeviCivitaSymbol_rank3_dim3():
                 LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
     return LeviCivitaSymbol
 
-# Step 2: Define dot and cross product of vectors
+# Step 2.b: Define dot and cross product of vectors
 def dot(vec1,vec2):
     vec1_dot_vec2 = sp.sympify(0)
     for i in range(3):
@@ -50,11 +71,11 @@ def cross(vec1,vec2):
                 vec1_cross_vec2[i] += LeviCivitaSymbol[i][j][k]*vec1[j]*vec2[k]
     return vec1_cross_vec2
 
-# Step 3: Construct rational numbers a/b via div(a,b)
+# Step 2.c: Construct rational numbers a/b via div(a,b)
 def div(a,b):
     return sp.Rational(a,b)
 
-# Step 4: num_eval(expr), a means to numerically evaluate SymPy/NRPyPN
+# Step 3: num_eval(expr), a means to numerically evaluate SymPy/NRPyPN
 #         expressions
 def num_eval(expr, 
              qmassratio =  1.0,  # must be >= 1
