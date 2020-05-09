@@ -43,6 +43,17 @@ r, q = sp.symbols('r q', real=True)
 chi1U = ixp.declarerank1('chi1U')
 chi2U = ixp.declarerank1('chi2U')
 
+# Derived quantities used in Damour et al papers:
+n12U = ixp.zerorank1()
+n21U = ixp.zerorank1()
+p1U = ixp.zerorank1()
+p2U = ixp.zerorank1()
+for i in range(3):
+    n12U[i] = +nU[i]
+    n21U[i] = -nU[i]
+    p1U[i]     = +pU[i]
+    p2U[i]     = -pU[i]
+
 # Step 2.a: Define the rank-3 version of the Levi-Civita symbol. Amongst
 #         other uses, this is needed for the construction of the approximate 
 #         quasi-Kinnersley tetrad.
