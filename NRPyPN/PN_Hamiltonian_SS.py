@@ -27,7 +27,7 @@ if nrpy_dir_path not in sys.path:
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 from outputC import *            # NRPy+: Core C code output module
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyNR: shortcuts for e.g., vector operations
+from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################
