@@ -1,6 +1,6 @@
 # As documented in the NRPyPN notebook
 # PN-Hamiltonian-Spin-Orbit.ipynb, this Python script
-# generates spin-orbit coupling  pieces of the
+# generates spin-orbit coupling pieces of the
 # post-Newtonian (PN) Hamiltonian, up to and
 # including 3.5PN order.
 
