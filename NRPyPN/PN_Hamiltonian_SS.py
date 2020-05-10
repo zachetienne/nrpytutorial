@@ -31,81 +31,69 @@ from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################
-
 # 2PN spin-spin term, from Eqs. 2.18 and 2.19 of
 #      Buonanno, Chen, and Damour (2006):
 #     https://arxiv.org/abs/gr-qc/0508067
 def f_H_SS_2PN(m1,m2, S1U,S2U, nU, q):
-    S_0U = ixp.zerorank1()
+    S0U = ixp.zerorank1()
     for i in range(3):
-        S_0U[i] = (1 + m2/m1)*S1U[i] + (1 + m1/m2)*S2U[i]
-    mu = m1*m2 / (m1+m2)
+        S0U[i] = (1 + m2/m1)*S1U[i] + (1 + m1/m2)*S2U[i]
     global H_SS_2PN
-    H_SS_2PN = div(1,2)*mu/(m1+m2)*( 3*dot(S_0U,nU)**2 - dot(S_0U,S_0U) )/q**3
+    mu = m1*m2 / (m1 + m2)
+    H_SS_2PN = mu/(m1 + m2) * (3*dot(S0U,nU)**2 - dot(S0U,S0U)) / (2*q**3)
 
 #################################
 #################################
-
 # 3PN spin-spin S_1,S_2 coupling term, from Eq. 2.11 of
 #       Steinhoff, Hergt, and Schäfer (2008a)
 #         https://arxiv.org/abs/0712.1716
-def f_H_SS_S1S2_3PN(m1,m2, n12U, S1U,S2U, p1U,p2U, q):
-    def SHS2008a_HS1S2_3PN_pt1(m1,m2, n12U, S1U,S2U, p1U,p2U, q):
-        Hpt1 = ( div(3,2)*(dot(cross(p1U,S1U),n12U)*dot(cross(p2U,S2U),n12U))  # line 1
-                 +6 *dot(cross(p2U,S1U),n12U)*dot(cross(p1U,S2U),n12U)         # line 1
-                 -15*dot(S1U,n12U)*dot(S2U,n12U)*dot(p1U,n12U)*dot(p2U,n12U)   # line 2
-                 -3*dot(S1U,n12U)*dot(S2U,n12U)*dot(p1U,p2U)                   # line 2
-                 +3*dot(S1U,p2U)*dot(S2U,n12U)*dot(p1U,n12U) # line 3
-                 +3*dot(S2U,p1U)*dot(S1U,n12U)*dot(p2U,n12U) # line 3
-                 +3*dot(S1U,p1U)*dot(S2U,n12U)*dot(p1U,n12U) # line 3
-                 +3*dot(S2U,p2U)*dot(S1U,n12U)*dot(p1U,n12U)                     # line 4
-                 -div(1,2)*dot(S1U,p2U)*dot(S2U,p1U) + dot(S1U,p1U)*dot(S2U,p2U) # line 4
-                 -3*dot(S1U,S2U)*dot(p1U,n12U)*dot(p2U,n12U)            # line 5
-                 +div(1,2)*dot(S1U,S2U)*dot(p1U,p2U) )/(2*m1*m2*q**3)   # line 5
-        return Hpt1
-    def SHS2008a_HS1S2_3PN_pt2(m1,m2, n12U, S1U,S2U, p1U,p2U, q):
-        Hpt2 = ( -dot(cross(p1U,S1U),n12U)*dot(cross(p1U,S2U),n12U)                # line 6
-                 +dot(S1U,S2U)*dot(p1U,n12U)**2                                    # line 6
-                 -dot(S1U,n12U)*dot(S2U,p1U)*dot(p1U,n12U) )*div(3,2)/(m1**2*q**3) # line 6
-        return Hpt2
-    def SHS2008a_HS1S2_3PN_pt3(m1,m2, n12U, S1U,S2U, p1U,p2U, q):
-        Hpt3 = ( -dot(cross(p2U,S2U),n12U)*dot(cross(p2U,S2U),n12U)                # line 7
-                 +dot(S1U,S2U)*dot(p2U,n12U)**2                                    # line 7
-                 -dot(S2U,n12U)*dot(S1U,p1U)*dot(p2U,n12U) )*div(3,2)/(m2**2*q**3) # line 7
-        return Hpt3
-    def SHS2008a_HS1S2_3PN_pt4(m1,m2, n12U, S1U,S2U, p1U,p2U, q):
-        Hpt4 = ( dot(S1U,S2U) - 2*dot(S1U,n12U)*dot(S2U,n12U) ) * 6*(m1+m2)/q**4   # line 8
-        return Hpt4
+def f_H_SS_S1S2_3PN(m1,m2, n12U, S1U,S2U, p1U,p2U, r12):
     global H_SS_S1S2_3PN
-    H_SS_S1S2_3PN = ( +SHS2008a_HS1S2_3PN_pt1(m1,m2, n12U, S1U,S2U, p1U,p2U, q)
-                      +SHS2008a_HS1S2_3PN_pt2(m1,m2, n12U, S1U,S2U, p1U,p2U, q)
-                      +SHS2008a_HS1S2_3PN_pt3(m1,m2, n12U, S1U,S2U, p1U,p2U, q)
-                      +SHS2008a_HS1S2_3PN_pt4(m1,m2, n12U, S1U,S2U, p1U,p2U, q) )
+    H_SS_S1S2_3PN = (+div(3,2)*(dot(cross(p1U,S1U),n12U)*dot(cross(p2U,S2U),n12U))
+                     +       6*(dot(cross(p2U,S1U),n12U)*dot(cross(p1U,S2U),n12U))
+                     -15*dot(S1U,n12U)*dot(S2U,n12U)*dot(p1U,n12U)*dot(p2U,n12U)
+                     -3*dot(S1U,n12U)*dot(S2U,n12U)*dot(p1U,p2U)
+                     +3*dot(S1U,p2U)*dot(S2U,n12U)*dot(p1U,n12U)
+                     +3*dot(S2U,p1U)*dot(S1U,n12U)*dot(p2U,n12U)
+                     +3*dot(S1U,p1U)*dot(S2U,n12U)*dot(p2U,n12U)
+                     +3*dot(S2U,p2U)*dot(S1U,n12U)*dot(p1U,n12U)
+                     -div(1,2)*dot(S1U,p2U)*dot(S2U,p1U)
+                     +dot(S1U,p1U)*dot(S2U,p2U)
+                     -3*dot(S1U,S2U)*dot(p1U,n12U)*dot(p2U,n12U)
+                     +div(1,2)*dot(S1U,S2U)*dot(p1U,p2U))/(2*m1*m2*r12**3)
+    H_SS_S1S2_3PN+= (-dot(cross(p1U,S1U),n12U)*dot(cross(p1U,S2U),n12U)
+                     +dot(S1U,S2U)*dot(p1U,n12U)**2
+                     -dot(S1U,n12U)*dot(S2U,p1U)*dot(p1U,n12U))*3/(2*m1**2*r12**3)
+    H_SS_S1S2_3PN+= (-dot(cross(p2U,S2U),n12U)*dot(cross(p2U,S1U),n12U)
+                     +dot(S1U,S2U)*dot(p2U,n12U)**2
+                     -dot(S2U,n12U)*dot(S1U,p1U)*dot(p2U,n12U))*3/(2*m2**2*r12**3)
+    H_SS_S1S2_3PN+= (+dot(S1U,S2U)-2*dot(S1U,n12U)*dot(S2U,n12U))*6*(m1+m2)/r12**4
 
 #################################
 #################################
 # 3PN spin-orbit coupling term, from Eq. 9 of
 #    Steinhoff, Hergt, and Schäfer (2008b)
 #       https://arxiv.org/abs/0809.2200
-def f_H_SS_S1sq_S2sq_3PN(m1,m2, n12U,n21U, S1U,S2U, p1U,p2U, q):
-    def SHS2008b_HSsq_3PN_pt(m1,m2, n12U, S1U, p1U,p2U, q):
-        H = ( +div(1,4)*m2/m1**3*dot(p1U,S1U)**2 + div(3,8)*m2/m1**3*dot(p1U,n12U)**2*dot(S1U,S1U) # line 1
-              -div(3,8)*m2/m1**3*dot(p1U,p1U)*dot(S1U,n12U)**2                                     # line 1
-              -div(3,4)*m2/m1**3*dot(p1U,n12U)*dot(S1U,n12U)*dot(p1U,S1U) # line 2
-              -div(3,4)/(m1*m2) *dot(p2U,p2U)*dot(S1U,S1U)                # line 2
-              +div(9,4)/(m1*m2) *dot(p2U,p2U)*dot(S1U,n12U)**2 # line 3
-              +div(3,4)/m1**2   *dot(p1U,p2U)*dot(S1U,S1U)     # line 3
-              -div(3,4)/m1**2   *dot(p1U,p2U)*dot(S1U,n12U)**2 # line 3
-              -div(3,2)/m1**2   *dot(p1U,n12U)*dot(p2U,S1U)*dot(S1U,n12U) # line 4
-              +       3/m1**2   *dot(p2U,n12U)*dot(p2U,S1U)*dot(S1U,n12U) # line 4
-              +div(3,4)/m1**2   *dot(p1U,n12U)*dot(p2U,n12U)*dot(S1U,S1U)            # line 5
-              -div(15,4)/m1**2  *dot(p1U,n12U)*dot(p2U,n12U)*dot(S1U,n12U)**2 )/q**3 \
-            -( +div(9,2)*dot(S1U,n12U)**2          # line 6
-               -div(5,2)*dot(S1U,S1U)              # line 6
-               +       7*m2/m1*dot(S1U,n12U)**2    # line 6
-               -       3*m2/m1*dot(S1U,S1U) )/q**4 # line 6
-        return H
-
+def f_H_SS_S1sq_S2sq_3PN(m1,m2, n12U,n21U, S1U,S2U, p1U,p2U, r12):
+    def f_H_SS_particle(m1,m2, n12U, S1U,S2U, p1U,p2U, r12):
+        H_SS_S1sq_S2sq_3PN_particle = (
+            +  m2/(4*m1**3)*dot(p1U,S1U)**2
+            +3*m2/(8*m1**3)*dot(p1U,n12U)**2*dot(S1U,S1U)
+            -3*m2/(8*m1**3)*dot(p1U,p1U)*dot(S1U,n12U)**2
+            -3*m2/(4*m1**3)*dot(p1U,n12U)*dot(S1U,n12U)*dot(p1U,S1U)
+            -3/(4*m1*m2)*dot(p2U,p2U)*dot(S1U,S1U)
+            +9/(4*m1*m2)*dot(p2U,p2U)*dot(S1U,n12U)**2
+            +3/(4*m1**2)*dot(p1U,p2U)*dot(S1U,S1U)
+            -9/(4*m1**2)*dot(p1U,p2U)*dot(S1U,n12U)**2
+            -3/(2*m1**2)*dot(p1U,n12U)*dot(p2U,S1U)*dot(S1U,n12U)
+            +3/(m1**2)  *dot(p2U,n12U)*dot(p1U,S1U)*dot(S1U,n12U)
+            +3/(4*m1**2)*dot(p1U,n12U)*dot(p2U,n12U)*dot(S1U,S1U)
+            -15/(4*m1**2)*dot(p1U,n12U)*dot(p2U,n12U)*dot(S1U,n12U)**2)/r12**3
+        H_SS_S1sq_S2sq_3PN_particle+= -(+div(9,2)*dot(S1U,n12U)**2
+                                         -div(5,2)*dot(S1U,S1U)
+                                         +7*m2/m1*dot(S1U,n12U)**2
+                                         -3*m2/m1*dot(S1U,S1U))*m2/r12**4
+        return H_SS_S1sq_S2sq_3PN_particle
     global H_SS_S1sq_S2sq_3PN
-    H_SS_S1sq_S2sq_3PN = ( +SHS2008b_HSsq_3PN_pt(m1,m2, n12U, S1U, p1U,p2U, q)   # S_1^2 term
-                           +SHS2008b_HSsq_3PN_pt(m2,m1, n21U, S2U, p2U,p1U, q) ) # S_2^2 term
+    H_SS_S1sq_S2sq_3PN = (+f_H_SS_particle(m1,m2, n12U, S1U,S2U, p1U,p2U, r12)
+                          +f_H_SS_particle(m2,m1, n21U, S2U,S1U, p2U,p1U, r12))
