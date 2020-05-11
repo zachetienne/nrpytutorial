@@ -268,7 +268,7 @@ auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
     }
 """,
         loopopts="InteriorPoints",
-        rel_path_for_Cparams=os.path.join("../")).replace("=NGHOSTS","=NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
+        rel_path_for_Cparams=os.path.join("../")).replace("= NGHOSTS","= NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
 
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
         file.write(driver_Ccode)
