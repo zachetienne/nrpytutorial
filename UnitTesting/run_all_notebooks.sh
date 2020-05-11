@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for i in *.ipynb; do
+for i in *.ipynb NRPyPN/*.ipynb; do
 
     echo $i;
 
