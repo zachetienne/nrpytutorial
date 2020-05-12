@@ -72,12 +72,14 @@ def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni):
             sys.exit(1)
 
         nu,delta,  l,chi_a,chi_s,  s_l,s_n,sigma_l,sigma_n = dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U)
-        # Compute Mdot:
-        dM_dt = (-div(1,4)*(+(1-3*nu)*dot(chi_s,l)*(1+3*dot(chi_s,l)**2+9*dot(chi_a,l)**2)
+        x = (mOmega)**div(2,3)
+
+        # Compute b_5_Mdot:
+        b_5_Mdot = (-div(1,4)*(+(1-3*nu)*dot(chi_s,l)*(1+3*dot(chi_s,l)**2+9*dot(chi_a,l)**2)
                             +(1-  nu)*delta*dot(chi_a,l)*(1+3*dot(chi_a,l)**2+9*dot(chi_s,l)**2)))
         if which_quantity == "dM_dt":
-            return dM_dt
-        x = (mOmega)**div(2,3)
+            return div(32,5)*nu**2*x**5*b_5_Mdot*x**div(5,2)
+
         b = ixp.zerorank1(DIM=10)
         b[2] = -div(1247,336) - div(35,12)*nu
         b[3] = +4*sp.pi - 4*s_l - div(5,4)*delta*sigma_l
@@ -90,7 +92,7 @@ def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni):
         b[5] =(-div(8191,672)*sp.pi - div(9,2)*s_l - div(13,16)*delta*sigma_l
                +nu*(-div(583,24)*sp.pi + div(272,9)*s_l + div(43,4)*delta*sigma_l))
         if which_quantity == "dE_GW_dt_plus_dM_dt":
-            b[5]+= dM_dt
+            b[5]+= b_5_Mdot
         b[6] =(+div(6643739519,69854400) + div(16,3)*sp.pi**2 - div(1712,105)*gamma_EulerMascheroni
                -div(856,105)*sp.log(16*x) + (-div(134543,7776) + div(41,48)*sp.pi**2)*nu
                -div(94403,3024)*nu**2 - div(775,324)*nu**3 - 16*sp.pi*s_l - div(31,6)*sp.pi*delta*sigma_l)
@@ -103,6 +105,7 @@ def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni):
         for k in range(9):
             b_sum += b[k]*x**div(k,2)
         return div(32,5)*nu**2*x**5*b_sum
+
     global dE_GW_dt_plus_dM_dt, dE_GW_dt, dM_dt
     dE_GW_dt_plus_dM_dt = \
                f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni,"dE_GW_dt_plus_dM_dt")
