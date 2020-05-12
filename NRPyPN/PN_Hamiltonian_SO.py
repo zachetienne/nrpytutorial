@@ -34,7 +34,7 @@ from NRPyPN_shortcuts import *  # NRPyPN: shortcuts for e.g., vector operations
 #################################
 
 # 1.5PN spin-orbit coupling term, from Eq. 4.11a of
-#    Damour, Jaranowski, and Schäfer (2008)
+#    Damour, Jaranowski, and Sch\"afer (2008)
 #      https://arxiv.org/abs/0711.1048
 def f_H_SO_1p5PN(m1,m2, n12U,n21U, S1U, S2U, p1U,p2U, r12):
     def f_Omega1(m1,m2, n12U, p1U,p2U, r12):
@@ -51,7 +51,7 @@ def f_H_SO_1p5PN(m1,m2, n12U,n21U, S1U, S2U, p1U,p2U, r12):
 #################################
 
 # 2.5PN spin-orbit coupling term, from Eq. 4.11b of
-#    Damour, Jaranowski, and Schäfer (2008)
+#    Damour, Jaranowski, and Sch\"afer (2008)
 #      https://arxiv.org/abs/0711.1048
 def f_H_SO_2p5PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r12):
     def f_Omega_SO_2p5PN(m1, m2, n12U, p1U, p2U, r12):
