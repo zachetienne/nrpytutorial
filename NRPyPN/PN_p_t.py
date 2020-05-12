@@ -12,8 +12,8 @@
 
 # Core functions:
 # f_p_t(m1,m2, chi1U,chi2U, r)
-#       Compute the complete p_t term and store to
-#                     global variable of the same name.
+#       Compute the p_t and store to
+#       global variable of the same name.
 
 # Author:  Zach Etienne
 #          zachetie **at** gmail **dot* com
@@ -114,7 +114,7 @@ def p_t__a_7(m1,m2, chi1x,chi1y,chi1z, chi2x,chi2y,chi2z):
            -5*(q+4)*chi1z**3/(8*(q+1)**4))
 
 # Finally, sum the expressions for a_k to construct p_t as prescribed:
-# p_t = q/(sqrt(r)*(1+q)^2) (1 + \sum_{k=2}^7 (a_k/r^{k/2})
+# p_t = q/(sqrt(r)*(1+q)^2) (1 + \sum_{k=2}^7 (a_k/r^{k/2}))
 def f_p_t(m1,m2, chi1U,chi2U, r):
     q = m2/m1 # It is assumed that q >= 1, so m2 >= m1.
     a = ixp.zerorank1(DIM=10)
