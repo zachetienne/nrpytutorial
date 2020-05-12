@@ -8,9 +8,8 @@ REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l) {
 /*
 Calculate the electric flux on both faces in the input direction.
 The input count is an integer that is either 0 or 1. If it is 0, this implies
-that the components are input in order of a forward permutation. If it is 1, 
-then the permutation is backwards and the final results will need to be 
-multiplied by -1.0
+that the components are input in order of a backwards permutation  and the final 
+results will need to be multiplied by -1.0. If it is 1, then the permutation is fowards.
  */
 void calculate_E_field_flat_all_in_one(const paramstruct *params,
                                        const REAL *Vr0,const REAL *Vr1,
@@ -27,7 +26,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
     // corresponds to flux_dirn=0 and count=1 (which corresponds to SIGN=+1.0).
     // Thus, Az(i,j,k) += 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)) are solved here.
     // The other terms are computed by cyclically permuting the indices when calling this function.
-#include "Validation/set_Cparameters.h"
+#include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
@@ -77,8 +76,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
 //                 }
 
                 // Since we are computing A_z, the relevant equation here is:
-                // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
-                //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
+                // -E_z(x_i,y_j,z_k) = 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
+                //                           -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
                 // We will construct the above sum one half at a time, first with SIGN=+1, which 
                 // corresponds to flux_dirn = 0, count=1, and
                 //  takes care of the terms:
@@ -102,11 +101,11 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // ZACH SAYS: Make sure the below is documented!
                 // Compute the state vector for this flux direction
                 // We must also multiply by sign so that we use the positive for the forward permutation
-                // and negative for the backwards permutation. For Az, that means that we add +Ay and -Ax,
+                // and negative for the backwards permutation. For Az, that means that we add +By and -Bx,
                 // exactly as is done in the original GiRaFFE's A_i_rhs_no_gauge_terms.C, in line with 
                 // Del Zanna, 2003 [https://arxiv.org/pdf/astro-ph/0210618.pdf], Eq. 44
-                const REAL U_r = SIGN*B_rflux_dirn; //B_rU0;
-                const REAL U_l = SIGN*B_lflux_dirn; 
+                const REAL U_r = B_rflux_dirn; //B_rU0;
+                const REAL U_l = B_lflux_dirn; 
 
                 // Basic HLLE solver: 
                 const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
@@ -119,8 +118,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
                 
                 // Compute the state vector for this flux direction
-                const REAL U_r_p1 = SIGN*B_rflux_dirn_p1;
-                const REAL U_l_p1 = SIGN*B_lflux_dirn_p1;
+                const REAL U_r_p1 = B_rflux_dirn_p1;
+                const REAL U_l_p1 = B_lflux_dirn_p1;
                 //const REAL U_r_p1 = B_rU1_p1;
                 //const REAL U_l_p1 = B_lU1_p1;
                 // Basic HLLE solver, but at the next point: 

@@ -106,7 +106,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,const REAL *in_gfs,const REAL *auxevol_gfs,REAL *rhs_gfs",
         body     = fin.FD_outputC("returnstring",RHSs_to_print,params="outCverbose=False").replace("IDX4","IDX4S"),
         loopopts ="InteriorPoints",
-        rel_path_for_Cparams=os.path.join("../")).replace("=NGHOSTS","=NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
+        rel_path_for_Cparams=os.path.join("../")).replace("= NGHOSTS","= NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
     # Note the above .replace() functions. These serve to expand the loop range into the ghostzones, since 
     # the second-order FD needs fewer than some other algorithms we use do. 
     with open(os.path.join(out_dir,subdir,name+".h"),"w") as file:
@@ -509,9 +509,9 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             // This function is written to be general, using notation that matches the forward permutation added to AD2,
             // i.e., [F_HLL^x(B^y)]_z corresponding to flux_dirn=0, count=1. 
             // The SIGN parameter is necessary because 
-            // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
-            //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
-            // Note the negative signs on the reversed permuation terms!
+            // -E_z(x_i,y_j,z_k) = 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
+            //                           -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
+            // Note the negative signs on the reversed permutation terms!
 
             // By cyclically permuting with flux_dirn, we 
             // get contributions to the other components, and by incrementing count, we get the backward permutations:
