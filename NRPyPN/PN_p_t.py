@@ -3,7 +3,7 @@
 # generates the expression for the transverse
 # component of momentum p_t up to and
 # including terms at 3.5PN order.
-# It largely follows the presentation of
+# This is an implementation of the equations of
 #  Ramos-Buades, Husa, and Pratten (2018)
 #    https://arxiv.org/abs/1810.00036
 # but validates against the relevant equation
@@ -12,7 +12,7 @@
 
 # Core functions:
 # f_p_t(m1,m2, chi1U,chi2U, r)
-#       Compute the p_t and store to
+#       Compute p_t and store to
 #       global variable of the same name.
 
 # Author:  Zach Etienne
