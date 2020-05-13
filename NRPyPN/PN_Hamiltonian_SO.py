@@ -172,21 +172,21 @@ def f_H_SO_3p5PN(m1,m2, n12U,n21U, S1U, S2U, p1U,p2U, r12):
     Omega1_3p5PNU = ixp.zerorank1()
     Omega2_3p5PNU = ixp.zerorank1()
     for i in range(3):
-        Omega1_3p5PNU[i] = HS2011_Omega_SO_3p5PN_pt1(m1,m2, n12U, p1U,p2U, q)[i]
-        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt2(m1,m2, n12U, p1U,p2U, q)[i]
-        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt3(m1,m2, n12U, p1U,p2U, q)[i]
-        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt4(m1,m2, n12U, p1U,p2U, q)[i]
-        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt5(m1,m2, n12U, p1U,p2U, q)[i]
-        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt6(m1,m2, n12U, p1U,p2U, q)[i]
-        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt7(m1,m2, n12U, p1U,p2U, q)[i]
+        Omega1_3p5PNU[i] = HS2011_Omega_SO_3p5PN_pt1(m1,m2, n12U, p1U,p2U, r12)[i]
+        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt2(m1,m2, n12U, p1U,p2U, r12)[i]
+        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt3(m1,m2, n12U, p1U,p2U, r12)[i]
+        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt4(m1,m2, n12U, p1U,p2U, r12)[i]
+        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt5(m1,m2, n12U, p1U,p2U, r12)[i]
+        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt6(m1,m2, n12U, p1U,p2U, r12)[i]
+        Omega1_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt7(m1,m2, n12U, p1U,p2U, r12)[i]
 
-        Omega2_3p5PNU[i] = HS2011_Omega_SO_3p5PN_pt1(m2,m1, n21U, p2U,p1U, q)[i]
-        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt2(m2,m1, n21U, p2U,p1U, q)[i]
-        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt3(m2,m1, n21U, p2U,p1U, q)[i]
-        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt4(m2,m1, n21U, p2U,p1U, q)[i]
-        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt5(m2,m1, n21U, p2U,p1U, q)[i]
-        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt6(m2,m1, n21U, p2U,p1U, q)[i]
-        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt7(m2,m1, n21U, p2U,p1U, q)[i]
+        Omega2_3p5PNU[i] = HS2011_Omega_SO_3p5PN_pt1(m2,m1, n21U, p2U,p1U, r12)[i]
+        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt2(m2,m1, n21U, p2U,p1U, r12)[i]
+        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt3(m2,m1, n21U, p2U,p1U, r12)[i]
+        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt4(m2,m1, n21U, p2U,p1U, r12)[i]
+        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt5(m2,m1, n21U, p2U,p1U, r12)[i]
+        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt6(m2,m1, n21U, p2U,p1U, r12)[i]
+        Omega2_3p5PNU[i]+= HS2011_Omega_SO_3p5PN_pt7(m2,m1, n21U, p2U,p1U, r12)[i]
 
     global H_SO_3p5PN
     H_SO_3p5PN = dot(Omega1_3p5PNU,S1U) + dot(Omega2_3p5PNU,S2U)

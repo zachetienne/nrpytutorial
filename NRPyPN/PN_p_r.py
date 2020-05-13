@@ -67,18 +67,17 @@ from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
 #         expression for a binary instantaneously
 #         orbiting on the xy plane, store
 #         result to Htot_xyplane_binary
-def f_Htot_xyplane_binary(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, q):
+def f_Htot_xyplane_binary(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r):
     def make_replacements(expr):
         zero = sp.sympify(0)
         one = sp.sympify(1)
         return expr.subs(p1U[1], Pt).subs(p2U[1], -Pt).subs(p1U[2], zero).subs(p2U[2], zero).subs(p1U[0], -Pr).subs(
             p2U[0], Pr) \
-            .subs(nU[0], one).subs(nU[1], zero).subs(nU[2], zero) \
-            .subs(q, r)
+            .subs(nU[0], one).subs(nU[1], zero).subs(nU[2], zero)
 
     import PN_Hamiltonian_NS as H_NS
-    H_NS.f_H_Newt__H_NS_1PN__H_NS_2PN(m1, m2, pU, nU, q)
-    H_NS.f_H_NS_3PN(m1, m2, pU, nU, q)
+    H_NS.f_H_Newt__H_NS_1PN__H_NS_2PN(m1, m2, pU, nU, r)
+    H_NS.f_H_NS_3PN(m1, m2, pU, nU, r)
 
     global Htot_xyplane_binary
     Htot_xyplane_binary = make_replacements(+H_NS.H_Newt
@@ -87,23 +86,23 @@ def f_Htot_xyplane_binary(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, q):
                                             + H_NS.H_NS_3PN)
 
     import PN_Hamiltonian_SO as H_SO
-    H_SO.f_H_SO_1p5PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, q)
-    H_SO.f_H_SO_2p5PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, q)
-    H_SO.f_H_SO_3p5PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, q)
+    H_SO.f_H_SO_1p5PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r)
+    H_SO.f_H_SO_2p5PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r)
+    H_SO.f_H_SO_3p5PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r)
     Htot_xyplane_binary += make_replacements(+H_SO.H_SO_1p5PN
                                              + H_SO.H_SO_2p5PN
                                              + H_SO.H_SO_3p5PN)
 
     import PN_Hamiltonian_SS as H_SS
-    H_SS.f_H_SS_2PN(m1, m2, S1U, S2U, nU, q)
-    H_SS.f_H_SS_S1S2_3PN(m1, m2, n12U, S1U, S2U, p1U, p2U, q)
-    H_SS.f_H_SS_S1sq_S2sq_3PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, q)
+    H_SS.f_H_SS_2PN(m1, m2, S1U, S2U, nU, r)
+    H_SS.f_H_SS_S1S2_3PN(m1, m2, n12U, S1U, S2U, p1U, p2U, r)
+    H_SS.f_H_SS_S1sq_S2sq_3PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r)
     Htot_xyplane_binary += make_replacements(+H_SS.H_SS_2PN
                                              + H_SS.H_SS_S1S2_3PN
                                              + H_SS.H_SS_S1sq_S2sq_3PN)
 
     import PN_Hamiltonian_SSS as H_SSS
-    H_SSS.f_H_SSS_3PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, q)
+    H_SSS.f_H_SSS_3PN(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r)
     Htot_xyplane_binary += make_replacements(+H_SSS.H_SSS_3PN)
 
 # Function for computing dr/dt
@@ -141,7 +140,7 @@ def f_p_r_fullHam(m1,m2, n12U,n21U, chi1U,chi2U, S1U,S2U, p1U,p2U, r):
     p_r_fullHam = (dr_dt - dHdpr_przero)/(d2Hdpr2_przero)
 
 # Here's the Ramos-Buades, Husa, and Pratten (2018)
-#  approach for computing p_r, which we use as default.
+#  approach for computing p_r.
 # Transcribed from Eq 2.18 of
 # Ramos-Buades, Husa, and Pratten (2018),
 #   https://arxiv.org/abs/1810.00036
