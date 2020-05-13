@@ -7,7 +7,7 @@
 # Core functions:
 # dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
 #       Define constants used in the dE_GW/dt expression.
-# f_dE_GW_dt(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni):
+# f_dE_GW_dt(mOmega, m1,m2, n12U, S1U,S2U):
 #       Compute dE_GW_dt and store to global variable of the same name.
 
 # Author:  Zach Etienne
@@ -63,8 +63,8 @@ def dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
 #       Eq A.14 of https://arxiv.org/abs/0709.0093 for Mdot
 #       and correction on b[7] term by comparison with
 #  https://link.springer.com/content/pdf/10.12942/lrr-2014-2.pdf
-def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni):
-    def f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni,which_quantity):
+def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U):
+    def f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, which_quantity):
         if not (which_quantity == "dM_dt" or
                 which_quantity == "dE_GW_dt" or
                 which_quantity == "dE_GW_dt_plus_dM_dt"):
@@ -108,6 +108,6 @@ def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni):
 
     global dE_GW_dt_plus_dM_dt, dE_GW_dt, dM_dt
     dE_GW_dt_plus_dM_dt = \
-               f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni,"dE_GW_dt_plus_dM_dt")
-    dE_GW_dt = f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni,"dE_GW_dt")
-    dM_dt    = f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, gamma_EulerMascheroni,"dM_dt")
+               f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, "dE_GW_dt_plus_dM_dt")
+    dE_GW_dt = f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, "dE_GW_dt")
+    dM_dt    = f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, "dM_dt")

@@ -43,6 +43,9 @@ r, q = sp.symbols('r q', real=True)
 chi1U = ixp.declarerank1('chi1U')
 chi2U = ixp.declarerank1('chi2U')
 
+# Euler-Mascheroni gamma constant:
+gamma_EulerMascheroni = sp.symbols('gamma_EulerMascheroni',real=True)
+
 # Derived quantities used in Damour et al papers:
 n12U = ixp.zerorank1()
 n21U = ixp.zerorank1()
@@ -88,7 +91,7 @@ def div(a,b):
 
 # Step 3: num_eval(expr), a means to numerically evaluate SymPy/NRPyPN
 #         expressions
-def num_eval(expr, 
+def num_eval(expr,
              qmassratio =  1.0,  # must be >= 1
              nr         = 12.0,  # Orbital separation
              nchi1x     = +0.,
@@ -107,7 +110,7 @@ def num_eval(expr,
     nm2   = qmassratio/(1+qmassratio)
     # This way nm1+nm2 = (qmassratio+1)/(1+qmassratio) = 1 CHECK
     #      and nm2/nm1 = qmassratio                        CHECK
-    
+
     nS1U0 = nchi1x*nm1**2
     nS1U1 = nchi1y*nm1**2
     nS1U2 = nchi1z*nm1**2
@@ -127,4 +130,5 @@ def num_eval(expr,
 .subs(S2U[0],nS2U0).subs(S2U[1],nS2U1).subs(S2U[2],nS2U2)\
 .subs(chi1U[0],nchi1x).subs(chi1U[1],nchi1y).subs(chi1U[2],nchi1z)\
 .subs(chi2U[0],nchi2x).subs(chi2U[1],nchi2y).subs(chi2U[2],nchi2z)\
-.subs(r,nr).subs(q,nr).subs(sp.pi,sp.N(sp.pi))
+.subs(r,nr).subs(q,nr).subs(sp.pi,sp.N(sp.pi)\
+.subs(gamma_EulerMascheroni,0.5772156649015328606065120900824024310421))
