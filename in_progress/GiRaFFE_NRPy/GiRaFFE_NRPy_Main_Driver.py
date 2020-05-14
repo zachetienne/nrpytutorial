@@ -541,8 +541,8 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
               &auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(VALENCIAV_LU0GF+(flux_dirn-count+2)%3, 0)],
               &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn-count+2)%3, 0)],
               &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn)%3, 0)],&auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count+2)%3, 0)],
-              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn)%3, 0)],
-              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn)%3, 0)],
+              &auxevol_gfs[IDX4ptS(B_RU0GF        +(flux_dirn-count+2)%3, 0)],
+              &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count+2)%3, 0)],
               &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+1+count)%3,0)], 2.0*((REAL)count)-1.0, flux_dirn);
         }
 
