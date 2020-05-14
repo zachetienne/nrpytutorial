@@ -26,7 +26,7 @@ class Lexer:
 			:arg: sentence (raw string)
 		"""
 		self.sentence = sentence
-		self.index    = 0
+		self.index = 0
 
 	def tokenize(self):
 		""" Tokenize Sentence
@@ -35,7 +35,9 @@ class Lexer:
 		"""
 		while self.index < len(self.sentence):
 			token = self.regex.match(self.sentence, self.index)
-			if not token and self.sentence[self.index] != ' ':
+			if self.sentence[self.index].isspace():
+				self.index += 1; continue
+			if not token:
 				raise RuntimeError('Unexpected \'' + self.sentence[self.index] + '\'')
 			self.index = token.end()
 			yield token.lastgroup
