@@ -16,9 +16,9 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
    *    interpolations.
    */
 
-  const REAL dXm1=1.0/dX[0];
-  const REAL dYm1=1.0/dX[1];
-  const REAL dZm1=1.0/dX[2];
+  const REAL dXm1=invdx0;
+  const REAL dYm1=invdx1;
+  const REAL dZm1=invdx2;
 
   // The stencil here is {-1,1},{-1,1},{-1,1} for x,y,z directions, respectively.
   //     Note that ALL input variables are defined at ALL gridpoints, so no

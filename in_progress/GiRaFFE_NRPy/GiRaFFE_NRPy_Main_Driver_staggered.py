@@ -42,6 +42,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     alpha = gri.register_gridfunctions("AUXEVOL","alpha")
     AD = ixp.register_gridfunctions_for_single_rank1("EVOL","AD")
     BU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","BU")
+    BstaggerU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","BstaggerU")
     ValenciavU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","ValenciavU")
     psi6Phi = gri.register_gridfunctions("EVOL","psi6Phi")
     StildeD = ixp.register_gridfunctions_for_single_rank1("EVOL","StildeD")
