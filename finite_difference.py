@@ -487,7 +487,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     #              results to main memory.
     NRPy_FD_StepNumber = 1
     NRPy_FD__Number_of_Steps = 1
-    if len(list_of_deriv_vars) > 0:
+    if len(read_from_memory_Ccode) > 0:
         NRPy_FD__Number_of_Steps += 1
     if upwindcontrolvec != "" and len(upwind_directions) > 0:
         NRPy_FD__Number_of_Steps += 1
