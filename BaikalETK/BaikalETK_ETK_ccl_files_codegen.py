@@ -43,6 +43,8 @@ def output_param_ccl(ThornName="BaikalETK",enable_stress_energy_source_terms=Fal
 #   You are advised against modifying it directly; instead
 #   modify the Python code that generates it.
 
+shares: ADMBase   # Extends multiple ADMBase variables:
+
 EXTENDS CCTK_KEYWORD evolution_method "evolution_method"
 {
   "BaikalETK" :: ""
@@ -314,6 +316,11 @@ schedule BaikalETK_NewRad in MoL_CalcRHS after BaikalETK_RHS
 {
   LANG: C
 } "NewRad boundary conditions, scheduled right after RHS eval."
+
+schedule BaikalETK_floor_the_lapse in MoL_PostStep before BaikalETK_enforce_detgammabar_constraint before BC_Update
+{
+  LANG: C
+} "Set lapse = max(lapse_floor, lapse)"
 
 schedule BaikalETK_enforce_detgammabar_constraint in MoL_PostStep before BC_Update
 {

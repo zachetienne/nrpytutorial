@@ -232,6 +232,9 @@ gri.glb_gridfcs_list = grfcs_list_uniq
 par.glb_params_list  = param_list_uniq
 par.glb_Cparams_list = Cparm_list_uniq
 
+# Set lapse_floor to default to 1e-15
+lap_floor = par.Cparameters("REAL", "BaikalETK", "lapse_floor", 1e-15)
+
 # Step 3.b: Override defaults with values used here.
 #           Note that almost no NRPy+ parameters
 #           are used after this point (DIM is definitely

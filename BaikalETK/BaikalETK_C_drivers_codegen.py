@@ -149,6 +149,34 @@ void BaikalETK_zero_rhss(CCTK_ARGUMENTS)
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("zero_rhss.c")] = outstr.replace("BaikalETK",ThornName)
 
+    # Next floor the lapse
+    outstr = """
+#include "cctk.h"
+#include "cctk_Arguments.h"
+#include "cctk_Parameters.h"
+#include "Symmetry.h"
+
+#ifndef MAX
+#define MAX(a,b) ( ((a) > (b)) ? (a) : (b) )
+
+void BaikalETK_floor_the_lapse(CCTK_ARGUMENTS)
+{
+  DECLARE_CCTK_ARGUMENTS;
+  DECLARE_CCTK_PARAMETERS;
+"""
+    outstr += lp.loop(["i2", "i1", "i0"], ["0", "0", "0"],
+                      ["cctk_lsh[2]", "cctk_lsh[1]", "cctk_lsh[0]"],
+                      ["1", "1", "1"],
+                      ["#pragma omp parallel for", "", "", ], "", """
+alphaGF[CCTK_GFINDEX3D(cctkGH, i0,i1,i2)] = MAX(alphaGF[CCTK_GFINDEX3D(cctkGH, i0,i1,i2)], lapse_floor);
+""")
+    outstr += """
+}
+#undef MAX
+#endif\n"""
+    # Add C code string to dictionary (Python dictionaries are immutable)
+    Csrcdict[append_to_make_code_defn_list("floor_the_lapse.c")] = outstr.replace("BaikalETK", ThornName)
+
     # Next registration with the Method of Lines thorn
     outstr = """
 //--------------------------------------------------------------------------
