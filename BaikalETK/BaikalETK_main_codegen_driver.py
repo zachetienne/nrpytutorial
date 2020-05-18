@@ -111,7 +111,7 @@ if __name__ == "__main__":
         print("***************************************")
         print("Starting parallel C kernel codegen...")
         print("***************************************")
-        
+
         # Step 3.d.iii: Define master function for parallelization.
         #           Note that lambdifying this doesn't work in Python 3
         def master_func(i):

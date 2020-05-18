@@ -364,7 +364,9 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
         for file in files:
             if "BSSN_RHSs_" in file:
                 array = file.replace(".","_").split("_")
-                BSSN_FD_orders_output.append(int(array[-2]))
+                FDorder =  int(array[-2])
+                if FDorder not in BSSN_FD_orders_output:
+                    BSSN_FD_orders_output.append(FDorder)
     BSSN_FD_orders_output.sort()
 
     for current_FD_order in BSSN_FD_orders_output:
@@ -511,7 +513,7 @@ void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
     outstr = common_includes
     for root, dirs, files in os.walk(path):
         for filename in files:
-            if "BSSN_RHSs_" in filename:
+            if ("BSSN_RHSs_" in filename) and (".h" in filename):
                 outstr += """extern void """ + ThornName+"_"+filename.replace(".h", "(CCTK_ARGUMENTS);") + "\n"
 
     outstr += """
@@ -524,7 +526,7 @@ void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
     path = os.path.join(ThornName, "src")
     for root, dirs, files in os.walk(path):
         for filename in files:
-            if "BSSN_RHSs_" in filename:
+            if ("BSSN_RHSs_" in filename) and (".h" in filename):
                 array = filename.replace(".", "_").split("_")
                 outstr += "    if(*FD_order == " + str(array[-2]) + ") {\n"
                 outstr += "        " + ThornName+"_"+filename.replace(".h", "(CCTK_PASS_CTOC);") + "\n"
@@ -553,7 +555,7 @@ void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
     path = os.path.join(ThornName, "src")
     for root, dirs, files in os.walk(path):
         for file in files:
-            if ("BSSN_RHSs_enable_") in file and (".h" in file):
+            if ("BSSN_RHSs_" in file) and (".h" in file):
                 outstr = common_includes + "void BaikalETK_"+file.replace(".h","")+"(CCTK_ARGUMENTS) {\n"
                 outstr += common_preloop+SIMD_declare_C_params()
                 with open(os.path.join(path,file), "r") as currfile:
