@@ -125,7 +125,19 @@ class Parser:
 		else: self.expect('INTEGER')
 		return number
 	
-	def command(self): pass
+	def command(self):
+		if self.accept('CMD_SQRT'):
+			return self.sqrt()
+	
+	def sqrt(self):
+		if self.accept('LEFT_BRACKET'):
+			root = self.number()
+			self.expect('RIGHT_BRACKET')
+		else: root = 2
+		self.expect('LEFT_BRACE')
+		expr = self.expression()
+		self.expect('RIGHT_BRACE')
+		return 'Pow(%s, Rational(1, %s))' % (expr, root)
 	
 	def peek(self, token_type):
 		return self.lexer.token == token_type
