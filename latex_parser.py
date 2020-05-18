@@ -62,6 +62,15 @@ class Lexer:
 		return self.token
 
 class Parser:
+	""" NRPy+ LaTeX Grammar
+		<EXPRESSION> -> { - } <TERM> { ( + | - ) <TERM> }
+		<TERM>		 -> <FACTOR> { { ( / | ^ | _ ) } <FACTOR> }
+		<FACTOR>	 -> <SYMBOL> | <NUMBER> | <COMMAND> | \(<EXPRESSION>\)
+		<SYMBOL>	 -> a | ... | z | A | ... | Z |
+		<NUMBER>     -> <RATIONAL> | <DECIMAL> | <INTEGER>
+		<COMMAND>    -> \ ( <SQRT> | ... )
+		<SQRT>		 -> sqrt { [<INTEGER>] } \{<EXPRESSION>\}
+	"""
 
 	def __init__(self):
 		self.lexer = Lexer()
@@ -70,6 +79,53 @@ class Parser:
 		self.lexer.initialize(sentence)
 		self.lexer.lex()
 		return parse_expr(self.expression())
+
+	def expression(self):
+		sign = '-' if self.accept('MINUS') else ''
+		expr = sign + self.term()
+		while self.peek('PLUS') or self.peek('MINUS'):
+			operator = self.lexer.word
+			self.lexer.lex()
+			expr += operator + self.term()
+		return expr
+
+	def term(self):
+		expr = self.factor()
+		while self.peek('DIVIDE'):
+			operator = self.lexer.word
+			self.lexer.lex()
+			expr += operator + self.factor()
+		while any(self.peek(i) for i in ('COMMAND', 'LEFT_PAREN', \
+				'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER')):
+			expr += '*' + self.factor()
+		return expr
+	
+	def factor(self):
+		literal = self.lexer.word
+		if self.accept('SYMBOL'):
+			return literal
+		elif any(self.peek(i) for i in ('RATIONAL', 'DECIMAL', 'INTEGER')):
+			return self.number()
+		elif self.accept('COMMAND'):
+			return self.command()
+		elif self.accept('LEFT_PAREN'):
+			expr = '(' + self.expression() + ')'
+			self.expect('RIGHT_PAREN')
+			return expr
+	
+	def number(self):
+		number = self.lexer.word
+		if self.accept('RATIONAL'):
+			rational = re.match(r'([1-9][0-9]*)\/([1-9][0-9]*)', number)
+			if not rational:
+				rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
+			number = 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
+		elif self.accept('DECIMAL'):
+			number = 'Float(%s)' % number
+		else: self.expect('INTEGER')
+		return number
+	
+	def command(self): pass
 	
 	def peek(self, token_type):
 		return self.lexer.token == token_type
