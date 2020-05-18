@@ -232,7 +232,12 @@ def BaikalETK_C_kernels_codegen_onepart(params=
 
         # Next compute Ricci tensor
         # par.set_parval_from_str("BSSN.BSSN_quantities::LeaveRicciSymbolic","False")
-        RbarDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","RbarDD","sym01")
+        RbarDD_already_registered = False
+        for i in range(len(gri.glb_gridfcs_list)):
+            if "RbarDD00" in gri.glb_gridfcs_list[i].name:
+                RbarDD_already_registered = True
+        if not RbarDD_already_registered:
+            RbarDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","RbarDD","sym01")
         rhs.BSSN_RHSs()
         Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
 
