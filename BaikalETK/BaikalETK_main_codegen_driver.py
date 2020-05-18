@@ -111,7 +111,7 @@ if __name__ == "__main__":
         print("***************************************")
         print("Starting parallel C kernel codegen...")
         print("***************************************")
-        
+
         # Step 3.d.iii: Define master function for parallelization.
         #           Note that lambdifying this doesn't work in Python 3
         def master_func(i):
@@ -231,6 +231,9 @@ par.glb_Cparams_list = []
 gri.glb_gridfcs_list = grfcs_list_uniq
 par.glb_params_list  = param_list_uniq
 par.glb_Cparams_list = Cparm_list_uniq
+
+# Set lapse_floor to default to 1e-15
+lap_floor = par.Cparameters("REAL", "BaikalETK", "lapse_floor", 1e-15)
 
 # Step 3.b: Override defaults with values used here.
 #           Note that almost no NRPy+ parameters

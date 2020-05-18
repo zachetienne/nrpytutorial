@@ -116,15 +116,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         H  = gri.register_gridfunctions("AUX","H")
         MU = ixp.register_gridfunctions_for_single_rank1("AUX", "MU")
 
-    def BSSN_RHSs_Ricci__generate_symbolic_expressions():
+    def BSSN_RHSs__generate_symbolic_expressions():
         ######################################
         # START: GENERATE SYMBOLIC EXPRESSIONS
-        # Store original finite-differencing order:
-        FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
-        # Set new finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
-
-        print("Generating symbolic expressions for BSSN RHSs and Ricci tensor...")
+        print("Generating symbolic expressions for BSSN RHSs...")
         start = time.time()
         # Enable rfm_precompute infrastructure, which results in 
         #   BSSN RHSs that are free of transcendental functions,
@@ -182,20 +177,15 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         Bq.BSSN_basic_tensors()
         betaU = Bq.betaU
 
-        # Next compute Ricci tensor
-        par.set_parval_from_str("BSSN.BSSN_quantities::LeaveRicciSymbolic","False")
-        Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
-
         # Now that we are finished with all the rfm hatted
         #           quantities in generic precomputed functional
         #           form, let's restore them to their closed-
         #           form expressions.
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","False") # Reset to False to disable rfm_precompute.
         rfm.ref_metric__hatted_quantities()
+        par.set_parval_from_str("BSSN.BSSN_quantities::LeaveRicciSymbolic","False")
         end = time.time()
-        print("(BENCH) Finished BSSN symbolic expressions in "+str(end-start)+" seconds.")
-        # Restore original finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
+        print("(BENCH) Finished BSSN RHS symbolic expressions in "+str(end-start)+" seconds.")
         # END: GENERATE SYMBOLIC EXPRESSIONS
         ######################################
 
@@ -224,6 +214,45 @@ def BaikalETK_C_kernels_codegen_onepart(params=
                                      lhrh(lhs=gri.gfaccess("rhs_gfs","vetU1"),   rhs=gaugerhs.vet_rhsU[1]),
                                      lhrh(lhs=gri.gfaccess("rhs_gfs","vetU2"),   rhs=gaugerhs.vet_rhsU[2]) ]
 
+        return [betaU,BSSN_RHSs_SymbExpressions]
+
+    def Ricci__generate_symbolic_expressions():
+        ######################################
+        # START: GENERATE SYMBOLIC EXPRESSIONS
+        print("Generating symbolic expressions for Ricci tensor...")
+        start = time.time()
+        # Enable rfm_precompute infrastructure, which results in
+        #   BSSN RHSs that are free of transcendental functions,
+        #   even in curvilinear coordinates, so long as
+        #   ConformalFactor is set to "W" (default).
+        par.set_parval_from_str("reference_metric::enable_rfm_precompute","True")
+        par.set_parval_from_str("reference_metric::rfm_precompute_Ccode_outdir",os.path.join(outdir,"rfm_files/"))
+
+        # Evaluate BSSN + BSSN gauge RHSs with rfm_precompute enabled:
+        import BSSN.BSSN_quantities as Bq
+
+        # Next compute Ricci tensor
+        # par.set_parval_from_str("BSSN.BSSN_quantities::LeaveRicciSymbolic","False")
+        RbarDD_already_registered = False
+        for i in range(len(gri.glb_gridfcs_list)):
+            if "RbarDD00" in gri.glb_gridfcs_list[i].name:
+                RbarDD_already_registered = True
+        if not RbarDD_already_registered:
+            RbarDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","RbarDD","sym01")
+        rhs.BSSN_RHSs()
+        Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
+
+        # Now that we are finished with all the rfm hatted
+        #           quantities in generic precomputed functional
+        #           form, let's restore them to their closed-
+        #           form expressions.
+        par.set_parval_from_str("reference_metric::enable_rfm_precompute","False") # Reset to False to disable rfm_precompute.
+        rfm.ref_metric__hatted_quantities()
+        end = time.time()
+        print("(BENCH) Finished Ricci symbolic expressions in "+str(end-start)+" seconds.")
+        # END: GENERATE SYMBOLIC EXPRESSIONS
+        ######################################
+
         Ricci_SymbExpressions = [lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD00"),rhs=Bq.RbarDD[0][0]),
                                  lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD01"),rhs=Bq.RbarDD[0][1]),
                                  lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD02"),rhs=Bq.RbarDD[0][2]),
@@ -231,63 +260,75 @@ def BaikalETK_C_kernels_codegen_onepart(params=
                                  lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD12"),rhs=Bq.RbarDD[1][2]),
                                  lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD22"),rhs=Bq.RbarDD[2][2])]
 
-        return [betaU,BSSN_RHSs_SymbExpressions,Ricci_SymbExpressions]
+        return [Ricci_SymbExpressions]
 
-    def BSSN_RHSs_Ricci__generate_Ccode(which_expressions, all_RHSs_Ricci_exprs_list):
+    def BSSN_RHSs__generate_Ccode(all_RHSs_Ricci_exprs_list):
         betaU                     = all_RHSs_Ricci_exprs_list[0]
         BSSN_RHSs_SymbExpressions = all_RHSs_Ricci_exprs_list[1]
-        Ricci_SymbExpressions     = all_RHSs_Ricci_exprs_list[2]
 
-        if(which_expressions == "BSSN_RHSs"):
-            print("Generating C code for BSSN RHSs (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
-            start = time.time()
-            BSSN_RHSs_string = fin.FD_outputC("returnstring",BSSN_RHSs_SymbExpressions, 
-                                              params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True",
-                                              upwindcontrolvec=betaU)
+        print("Generating C code for BSSN RHSs (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
+        start = time.time()
+        # Store original finite-differencing order:
+        FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
+        # Set new finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
 
-            filename = "BSSN_RHSs_enable_Tmunu_"+str(enable_stress_energy_source_terms)+"_FD_order_"+str(FD_order)+".h"
-            with open(os.path.join(outdir,filename), "w") as file:
-                file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
-               ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
-                                   ["1","1","SIMD_width"],
-                                    ["#pragma omp parallel for",
-                                     "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
-                                     r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
+        BSSN_RHSs_string = fin.FD_outputC("returnstring",BSSN_RHSs_SymbExpressions,
+                                          params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True",
+                                          upwindcontrolvec=betaU)
+
+        # Restore original finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
+
+        filename = "BSSN_RHSs_enable_Tmunu_"+str(enable_stress_energy_source_terms)+"_FD_order_"+str(FD_order)+".h"
+        with open(os.path.join(outdir,filename), "w") as file:
+            file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
+           ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
+                               ["1","1","SIMD_width"],
+                                ["#pragma omp parallel for",
+                                 "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
+                                 r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
     #if (defined __INTEL_COMPILER && __INTEL_COMPILER_BUILD_DATE >= 20180804)
         #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
         #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
     #endif"""],"",
-                        "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+BSSN_RHSs_string))
-            end = time.time()
-            print("(BENCH) Finished BSSN_RHS C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
+                    "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+BSSN_RHSs_string))
+        end = time.time()
+        print("(BENCH) Finished BSSN_RHS C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
 
-        elif(which_expressions == "Ricci"):
-            print("Generating C code for Ricci tensor (FD_order="+str(FD_order)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
-            start = time.time()
-            Ricci_string = fin.FD_outputC("returnstring", Ricci_SymbExpressions,
-                                           params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True")
+    def Ricci__generate_Ccode(Ricci_exprs_list):
+        Ricci_SymbExpressions     = Ricci_exprs_list[0]
 
-            filename = "BSSN_Ricci_FD_order_"+str(FD_order)+".h"
-            with open(os.path.join(outdir, filename), "w") as file:
-                file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
-               ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
-                                   ["1","1","SIMD_width"],
-                                    ["#pragma omp parallel for",
-                                     "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
-                                     r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
+        print("Generating C code for Ricci tensor (FD_order="+str(FD_order)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
+        start = time.time()
+        # Store original finite-differencing order:
+        FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
+        # Set new finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
+
+        Ricci_string = fin.FD_outputC("returnstring", Ricci_SymbExpressions,
+                                       params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True")
+
+        # Restore original finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
+
+        filename = "BSSN_Ricci_FD_order_"+str(FD_order)+".h"
+        with open(os.path.join(outdir, filename), "w") as file:
+            file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
+           ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
+                               ["1","1","SIMD_width"],
+                                ["#pragma omp parallel for",
+                                 "#include \"rfm_files/rfm_struct__SIMD_outer_read2.h\"",
+                                 r"""    #include "rfm_files/rfm_struct__SIMD_outer_read1.h"
     #if (defined __INTEL_COMPILER && __INTEL_COMPILER_BUILD_DATE >= 20180804)
         #pragma ivdep         // Forces Intel compiler (if Intel compiler used) to ignore certain SIMD vector dependencies
         #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
     #endif"""],"",
-                        "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+Ricci_string))
-            end = time.time()
-            print("(BENCH) Finished Ricci C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
-        else:
-            print("Error: unexpected argument, "+str(which_expressions)+" to BSSN_RHSs_Ricci__generate_Ccode()")
+                    "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+Ricci_string))
+        end = time.time()
+        print("(BENCH) Finished Ricci C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
 
     def BSSN_constraints__generate_symbolic_expressions_and_C_code():
-        ######################################
-        # START: GENERATE SYMBOLIC EXPRESSIONS
         ######################################
         # START: GENERATE SYMBOLIC EXPRESSIONS
         # Store original finite-differencing order:
@@ -375,9 +416,9 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         print("(BENCH) Finished gamma constraint C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
 
     if WhichPart=="BSSN_RHSs":
-        BSSN_RHSs_Ricci__generate_Ccode("BSSN_RHSs", BSSN_RHSs_Ricci__generate_symbolic_expressions())
+        BSSN_RHSs__generate_Ccode(BSSN_RHSs__generate_symbolic_expressions())
     elif WhichPart=="Ricci":
-        BSSN_RHSs_Ricci__generate_Ccode("Ricci", BSSN_RHSs_Ricci__generate_symbolic_expressions())
+        Ricci__generate_Ccode(Ricci__generate_symbolic_expressions())
     elif WhichPart=="BSSN_constraints":
         BSSN_constraints__generate_symbolic_expressions_and_C_code()
     elif WhichPart=="detgammabar_constraint":
