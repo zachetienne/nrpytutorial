@@ -43,11 +43,6 @@ def output_param_ccl(ThornName="BaikalETK",enable_stress_energy_source_terms=Fal
 #   You are advised against modifying it directly; instead
 #   modify the Python code that generates it.
 
-shares: ADMBase
-USES CCTK_INT lapse_timelevels   # Needed to ensure ADMBase gridfunctions are allocated (see top of schedule.ccl)
-USES CCTK_INT shift_timelevels   # Needed to ensure ADMBase gridfunctions are allocated (see top of schedule.ccl)
-USES CCTK_INT metric_timelevels  # Needed to ensure ADMBase gridfunctions are allocated (see top of schedule.ccl)
-
 EXTENDS CCTK_KEYWORD evolution_method "evolution_method"
 {
   "BaikalETK" :: ""
@@ -238,8 +233,10 @@ def output_schedule_ccl(ThornName="BaikalETK",enable_stress_energy_source_terms=
 #   You are advised against modifying it directly; instead
 #   modify the Python code that generates it.
 
-# First allocate storage for all ADMBase gridfunctions, which are needed by NRPy+
-STORAGE: ADMBase::metric[metric_timelevels], ADMBase::curv[metric_timelevels], ADMBase::lapse[lapse_timelevels], ADMBase::shift[shift_timelevels]
+# First allocate storage for one timelevel of ADMBase gridfunctions, which is the 
+#    bare minimum needed by NRPy+. If another thorn (e.g., ADMBase itself) requests
+#    more timelevels of storage, Cactus automatically allocates the maximum requested.
+STORAGE: ADMBase::metric[1], ADMBase::curv[1], ADMBase::lapse[1], ADMBase::shift[1]
 
 # Next allocate storage for all 3 gridfunction groups used in BaikalETK
 STORAGE: evol_variables[3]     # Evolution variables
@@ -301,11 +298,6 @@ schedule BaikalETK_driver_BSSN_T4UU in MoL_CalcRHS as BaikalETK_T4UU before Baik
 {
   LANG: C
 } "MoL: Compute T4UU, needed for BSSN RHSs."
-
-schedule BaikalETK_BSSN_to_ADM in MoL_CalcRHS after BaikalETK_T4UU before BaikalETK_Ricci
-{
-  LANG: C
-} "Perform BSSN-to-ADM conversion. Needed for HydroBase coupling."
 """
     outstr += """
 schedule BaikalETK_driver_pt1_BSSN_Ricci in MoL_CalcRHS as BaikalETK_Ricci before BaikalETK_RHS

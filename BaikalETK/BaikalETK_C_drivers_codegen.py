@@ -78,42 +78,47 @@ void BaikalETK_Symmetry_registration(CCTK_ARGUMENTS)
   //     in their base names are forbidden in NRPy+).
 """
     outstr += ""
-    for gf in full_gfs_list:
+    for gfname in full_gfs_list:
+        gfname_without_GFsuffix = gfname[:-2]
         # Do not add T4UU gridfunctions if enable_stress_energy_source_terms==False:
-        if not (enable_stress_energy_source_terms == False and "T4UU" in gf):
+        if not (enable_stress_energy_source_terms == False and "T4UU" in gfname_without_GFsuffix):
             outstr += """
-  // Default to scalar symmetry:
-  sym[0] = 1; sym[1] = 1; sym[2] = 1;
-  // Now modify sym[0], sym[1], and/or sym[2] as needed 
-  //    to account for gridfunction parity across 
-  //    x=0, y=0, and/or z=0 planes, respectively
+      // Default to scalar symmetry:
+      sym[0] = 1; sym[1] = 1; sym[2] = 1;
+      // Now modify sym[0], sym[1], and/or sym[2] as needed
+      //    to account for gridfunction parity across
+      //    x=0, y=0, and/or z=0 planes, respectively
 """
             # If gridfunction name does not end in a digit, by NRPy+ syntax, it must be a scalar
-            if gf[len(gf) - 1].isdigit() == False:
-                pass # Scalar = default
-            elif len(gf) > 2:
+            if gfname_without_GFsuffix[len(gfname_without_GFsuffix) - 1].isdigit() == False:
+                outstr += "      // (this gridfunction is a scalar -- no need to change default sym[]'s!)\n"
+                pass  # Scalar = default
+            elif len(gfname_without_GFsuffix) > 2:
                 # Rank-1 indexed expression (e.g., vector)
-                if gf[len(gf) - 2].isdigit() == False:
-                    if int(gf[-1]) > 2:
-                        print("Error: Found invalid gridfunction name: "+gf)
+                if gfname_without_GFsuffix[len(gfname_without_GFsuffix) - 2].isdigit() == False:
+                    if int(gfname_without_GFsuffix[-1]) > 2:
+                        print("Error: Found invalid gridfunction name: " + gfname)
                         sys.exit(1)
-                    symidx = gf[-1]
-                    outstr += "  sym["+symidx+"] = -1;\n"
+                    symidx = gfname_without_GFsuffix[-1]
+                    outstr += "      sym[" + symidx + "] = -1;\n"
                 # Rank-2 indexed expression
-                elif gf[len(gf) - 2].isdigit() == True:
-                    if len(gf) > 3 and gf[len(gf) - 3].isdigit() == True:
-                        print("Error: Found a Rank-3 or above gridfunction: "+gf+", which is at the moment unsupported.")
+                elif gfname_without_GFsuffix[len(gfname_without_GFsuffix) - 2].isdigit() == True:
+                    if len(gfname_without_GFsuffix) > 3 and gfname_without_GFsuffix[
+                        len(gfname_without_GFsuffix) - 3].isdigit() == True:
+                        print(
+                            "Error: Found a Rank-3 or above gridfunction: " + gfname + ", which is at the moment unsupported.")
                         print("It should be easy to support this if desired.")
                         sys.exit(1)
-                    symidx0 = gf[-2]
-                    outstr += "  sym["+symidx0+"] *= -1;\n"
-                    symidx1 = gf[-1]
-                    outstr += "  sym["+symidx1+"] *= -1;\n"
+                    symidx0 = gfname_without_GFsuffix[-2]
+                    outstr += "      sym[" + symidx0 + "] *= -1;\n"
+                    symidx1 = gfname_without_GFsuffix[-1]
+                    outstr += "      sym[" + symidx1 + "] *= -1;\n"
             else:
-                print("Don't know how you got this far with a gridfunction named "+gf+", but I'll take no more of this nonsense.")
+                print(
+                    "Don't know how you got this far with a gridfunction named " + gfname + ", but I'll take no more of this nonsense.")
                 print("   Please follow best-practices and rename your gridfunction to be more descriptive")
                 sys.exit(1)
-            outstr += "  SetCartSymVN(cctkGH, sym, \"BaikalETK::"+gf+"\");\n"
+            outstr += "      SetCartSymVN(cctkGH, sym, \"BaikalETK::" + gfname + "\");\n"
     outstr += "}\n"
 
     # Add C code string to dictionary (Python dictionaries are immutable)
@@ -256,7 +261,7 @@ void BaikalETK_NewRad(CCTK_ARGUMENTS) {
         var_char_speed    = "1.0"
         var_radpower      = "1.0"
 
-        if gf == "alpha":
+        if "alpha" in gf:
             var_at_infinite_r = "1.0"
             if LapseCondition == "OnePlusLog":
                 var_char_speed = "sqrt(2.0)"
