@@ -183,6 +183,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         #           form expressions.
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","False") # Reset to False to disable rfm_precompute.
         rfm.ref_metric__hatted_quantities()
+        par.set_parval_from_str("BSSN.BSSN_quantities::LeaveRicciSymbolic","False")
         end = time.time()
         print("(BENCH) Finished BSSN RHS symbolic expressions in "+str(end-start)+" seconds.")
         # END: GENERATE SYMBOLIC EXPRESSIONS
