@@ -1,22 +1,27 @@
+from sympy.parsing.sympy_parser import parse_expr
 import re
 
 class Lexer:
 
 	def __init__(self):
-		self.grammar = { r'[a-zA-Z]'       : 'SYMBOL',
-						 r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})' : 'RATIONAL',
+		self.grammar = { r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})' : 'RATIONAL',
 						 r'[0-9]+\.[0-9]+' : 'DECIMAL',
 						 r'[1-9][0-9]*'    : 'INTEGER',
-						 r'\+'			   : 'ADDITION',
-						 r'\-'			   : 'SUBTRACTION',
-						 r'\/'			   : 'DIVISION',
+						 r'\+'			   : 'PLUS',
+						 r'\-'			   : 'MINUS',
+						 r'\/'			   : 'DIVIDE',
 						 r'\^'			   : 'SUPERSCRIPT',
 						 r'\_'			   : 'SUBSCRIPT',
 						 r'\('			   : 'LEFT_PAREN',
 						 r'\)'			   : 'RIGHT_PAREN',
-						 r'{'			   : 'LEFT_BRACKET',
-						 r'}'			   : 'RIGHT_BRACKET',
-						 r'\\[a-zA-Z]+'	   : 'COMMAND' }
+						 r'\{'			   : 'LEFT_BRACE',
+						 r'\}'			   : 'RIGHT_BRACE',
+						 r'\['			   : 'LEFT_BRACKET',
+						 r'\]'			   : 'RIGHT_BRACKET',
+						 r'\\'	   		   : 'COMMAND',
+						 r'sqrt'           : 'CMD_SQRT',
+						 r'int'			   : 'CMD_INT',
+						 r'[a-zA-Z]'       : 'SYMBOL' }
 		self.regex = re.compile('|'.join(['(?P<%s>%s)' % \
 			(self.grammar[pattern], pattern) for pattern in self.grammar]))
 	
@@ -26,7 +31,9 @@ class Lexer:
 			:arg: sentence (raw string)
 		"""
 		self.sentence = sentence
-		self.index = 0
+		self.token    = None
+		self.word     = None
+		self.index    = 0
 
 	def tokenize(self):
 		""" Tokenize Sentence
@@ -40,29 +47,36 @@ class Lexer:
 			if not token:
 				raise RuntimeError('Unexpected \'' + self.sentence[self.index] + '\'')
 			self.index = token.end()
+			self.word = token.group()
 			yield token.lastgroup
-		yield None
 	
-	def token(self):
+	def lex(self):
 		""" Retrieve Current Token
 
 			:return: next token in iterator
 		"""
-		return next(self.tokenize())
+		try:
+			self.token = next(self.tokenize())
+		except StopIteration:
+			self.token = None
+		return self.token
 
 class Parser:
 
-	def parse(self, sentence):
+	def __init__(self):
 		self.lexer = Lexer()
-		self.lexer.initialize(sentence)
-		self.token = self.lexer.tokenize()
 
+	def parse(self, sentence):
+		self.lexer.initialize(sentence)
+		self.lexer.lex()
+		return parse_expr(self.expression())
+	
 	def peek(self, token_type):
-		return self.token == token_type
+		return self.lexer.token == token_type
 
 	def accept(self, token_type):
 		if self.peek(token_type):
-			self.token = self.tokenize()
+			self.lexer.lex()
 			return True
 		return False
 	
