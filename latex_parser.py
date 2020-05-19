@@ -168,6 +168,18 @@ class Parser:
 		if not self.__accept(token_type):
 			raise RuntimeError('Expected \'' + token_type + '\'')
 
+def parse(expression):
+	""" Convert LaTeX Expression to SymPy Expression
+
+		:arg:    LaTeX Expression
+		:return: SymPy Expression
+
+		>>> from latex_parser import parse
+		>>> parse(r'-a(b - \\frac{2}{3}) + \\sqrt[5]{3}')
+		-a*(b - 2/3) + 3**(1/5)
+	"""
+	return Parser().parse(expression)
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
