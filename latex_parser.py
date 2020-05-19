@@ -18,6 +18,7 @@ class Lexer:
 						 r'\+'			   : 'PLUS',
 						 r'\-'			   : 'MINUS',
 						 r'\/'			   : 'DIVIDE',
+						 r'\^'			   : 'SUPERSCRIPT',
 						 r'\('			   : 'LEFT_PAREN',
 						 r'\)'			   : 'RIGHT_PAREN',
 						 r'\{'			   : 'LEFT_BRACE',
@@ -73,8 +74,8 @@ class Parser:
 		The following class will parse an expression according to the defined grammar:
 	
 		<EXPRESSION> -> { - } <TERM> { ( + | - ) <TERM> }
-		<TERM>		 -> <FACTOR> { { / } <FACTOR> }
-		<FACTOR>	 -> <OPERAND> | \(<EXPRESSION>\)
+		<TERM>		 -> <FACTOR> { { ( / | ^ ) } <FACTOR> }
+		<FACTOR>	 -> <OPERAND> | \(<EXPRESSION>\) | \{<EXPRESSION>\}
 		<OPERAND>	 -> <SYMBOL> | <NUMBER> | <COMMAND>
 		<SYMBOL>	 -> a | ... | z | A | ... | Z
 		<NUMBER>     -> <RATIONAL> | <DECIMAL> | <INTEGER>
@@ -111,8 +112,9 @@ class Parser:
 	def __term(self):
 		expr = self.__factor()
 		while any(self.__peek(i) for i in ('COMMAND', 'LEFT_PAREN', 'SYMBOL', \
-				'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE')):
-			operator = self.lexer.word if self.__peek('DIVIDE') else '*'
+				'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE', 'SUPERSCRIPT')):
+			operator = self.lexer.word if self.__peek('DIVIDE') \
+				else '**' if self.__peek('SUPERSCRIPT') else '*'
 			if operator != '*': self.lexer.lex()
 			expr += operator + self.__factor()
 		return expr
@@ -121,6 +123,10 @@ class Parser:
 		if self.__accept('LEFT_PAREN'):
 			expr = '(' + self.__expression() + ')'
 			self.__expect('RIGHT_PAREN')
+			return expr
+		elif self.__accept('LEFT_BRACE'):
+			expr = '(' + self.__expression() + ')'
+			self.__expect('RIGHT_BRACE')
 			return expr
 		return self.__operand()
 	
@@ -189,8 +195,8 @@ def parse(expression):
 		:return: SymPy Expression
 
 		>>> from latex_parser import parse
-		>>> parse(r'-a(b - \\frac{2}{3}) + \\sqrt[5]{3}')
-		-a*(b - 2/3) + 3**(1/5)
+		>>> parse(r'-a(b^{2a} - \\frac{2}{3}) + \\sqrt[5]{3}')
+		-a*(b**(2*a) - 2/3) + 3**(1/5)
 	"""
 	return Parser().parse(expression)
 
