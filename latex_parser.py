@@ -1,7 +1,15 @@
+""" NRPy+ LaTeX to Sympy Parser """
+# Author: Ken Sible
+# Email:  ksible *at* outlook *dot* com
+
 from sympy.parsing.sympy_parser import parse_expr
 import re
 
 class Lexer:
+	""" LaTeX Lexer
+
+		The following class will tokenize an expression for usage in parsing.
+	"""
 
 	def __init__(self):
 		self.grammar = { r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})' : 'RATIONAL',
@@ -20,7 +28,6 @@ class Lexer:
 						 r'\]'			   : 'RIGHT_BRACKET',
 						 r'\\'	   		   : 'COMMAND',
 						 r'sqrt'           : 'CMD_SQRT',
-						 r'int'			   : 'CMD_INT',
 						 r'[a-zA-Z]'       : 'SYMBOL' }
 		self.regex = re.compile('|'.join(['(?P<%s>%s)' % \
 			(self.grammar[pattern], pattern) for pattern in self.grammar]))
@@ -62,7 +69,11 @@ class Lexer:
 		return self.token
 
 class Parser:
-	""" NRPy+ LaTeX Grammar
+	""" LaTeX Parser
+
+		The following class will parse an expression according to a defined grammar.
+	
+		NRPy+ LaTeX Grammar
 		<EXPRESSION> -> { - } <TERM> { ( + | - ) <TERM> }
 		<TERM>		 -> <FACTOR> { { ( / | ^ | _ ) } <FACTOR> }
 		<FACTOR>	 -> <SYMBOL> | <NUMBER> | <COMMAND> | \(<EXPRESSION>\)
@@ -76,79 +87,88 @@ class Parser:
 		self.lexer = Lexer()
 
 	def parse(self, sentence):
+		""" Parse Sentence
+
+			:arg:    sentence (raw string)
+			:return: parsed sentence
+		"""
 		self.lexer.initialize(sentence)
 		self.lexer.lex()
-		return parse_expr(self.expression())
+		return parse_expr(self.__expression())
 
-	def expression(self):
-		sign = '-' if self.accept('MINUS') else ''
-		expr = sign + self.term()
-		while self.peek('PLUS') or self.peek('MINUS'):
+	def __expression(self):
+		sign = '-' if self.__accept('MINUS') else ''
+		expr = sign + self.__term()
+		while self.__peek('PLUS') or self.__peek('MINUS'):
 			operator = self.lexer.word
 			self.lexer.lex()
-			expr += operator + self.term()
+			expr += operator + self.__term()
 		return expr
 
-	def term(self):
-		expr = self.factor()
-		while self.peek('DIVIDE'):
+	def __term(self):
+		expr = self.__factor()
+		while self.__peek('DIVIDE'):
 			operator = self.lexer.word
 			self.lexer.lex()
-			expr += operator + self.factor()
-		while any(self.peek(i) for i in ('COMMAND', 'LEFT_PAREN', \
+			expr += operator + self.__factor()
+		while any(self.__peek(i) for i in ('COMMAND', 'LEFT_PAREN', \
 				'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER')):
-			expr += '*' + self.factor()
+			expr += '*' + self.__factor()
 		return expr
 	
-	def factor(self):
+	def __factor(self):
 		literal = self.lexer.word
-		if self.accept('SYMBOL'):
+		if self.__accept('SYMBOL'):
 			return literal
-		elif any(self.peek(i) for i in ('RATIONAL', 'DECIMAL', 'INTEGER')):
-			return self.number()
-		elif self.accept('COMMAND'):
-			return self.command()
-		elif self.accept('LEFT_PAREN'):
-			expr = '(' + self.expression() + ')'
-			self.expect('RIGHT_PAREN')
+		elif any(self.__peek(i) for i in ('RATIONAL', 'DECIMAL', 'INTEGER')):
+			return self.__number()
+		elif self.__accept('COMMAND'):
+			return self.__command()
+		elif self.__accept('LEFT_PAREN'):
+			expr = '(' + self.__expression() + ')'
+			self.__expect('RIGHT_PAREN')
 			return expr
 	
-	def number(self):
+	def __number(self):
 		number = self.lexer.word
-		if self.accept('RATIONAL'):
+		if self.__accept('RATIONAL'):
 			rational = re.match(r'([1-9][0-9]*)\/([1-9][0-9]*)', number)
 			if not rational:
 				rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
 			number = 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
-		elif self.accept('DECIMAL'):
+		elif self.__accept('DECIMAL'):
 			number = 'Float(%s)' % number
-		else: self.expect('INTEGER')
+		else: self.__expect('INTEGER')
 		return number
 	
-	def command(self):
-		if self.accept('CMD_SQRT'):
-			return self.sqrt()
+	def __command(self):
+		if self.__accept('CMD_SQRT'):
+			return self.__sqrt()
 	
-	def sqrt(self):
-		if self.accept('LEFT_BRACKET'):
-			root = self.number()
-			self.expect('RIGHT_BRACKET')
+	def __sqrt(self):
+		if self.__accept('LEFT_BRACKET'):
+			root = self.__number()
+			self.__expect('RIGHT_BRACKET')
 		else: root = 2
-		self.expect('LEFT_BRACE')
-		expr = self.expression()
-		self.expect('RIGHT_BRACE')
+		self.__expect('LEFT_BRACE')
+		expr = self.__expression()
+		self.__expect('RIGHT_BRACE')
 		return 'Pow(%s, Rational(1, %s))' % (expr, root)
 	
-	def peek(self, token_type):
+	def __peek(self, token_type):
 		return self.lexer.token == token_type
 
-	def accept(self, token_type):
-		if self.peek(token_type):
+	def __accept(self, token_type):
+		if self.__peek(token_type):
 			self.lexer.lex()
 			return True
 		return False
 	
-	def expect(self, token_type):
-		if not self.accept(token_type):
+	def __expect(self, token_type):
+		if not self.__accept(token_type):
 			raise RuntimeError('Expected \'' + token_type + '\'')
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
 	
