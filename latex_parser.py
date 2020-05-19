@@ -18,8 +18,6 @@ class Lexer:
 						 r'\+'			   : 'PLUS',
 						 r'\-'			   : 'MINUS',
 						 r'\/'			   : 'DIVIDE',
-						 r'\^'			   : 'SUPERSCRIPT',
-						 r'\_'			   : 'SUBSCRIPT',
 						 r'\('			   : 'LEFT_PAREN',
 						 r'\)'			   : 'RIGHT_PAREN',
 						 r'\{'			   : 'LEFT_BRACE',
@@ -52,7 +50,8 @@ class Lexer:
 			if self.sentence[self.index].isspace():
 				self.index += 1; continue
 			if not token:
-				raise RuntimeError('Unexpected \'' + self.sentence[self.index] + '\'')
+				raise ParsingError('unexpected token \'%s\' at position %d' % \
+					(self.sentence[self.index], self.index))
 			self.index = token.end()
 			self.word = token.group()
 			yield token.lastgroup
@@ -71,13 +70,13 @@ class Lexer:
 class Parser:
 	""" LaTeX Parser
 
-		The following class will parse an expression according to a defined grammar.
+		The following class will parse an expression according to the defined grammar:
 	
-		NRPy+ LaTeX Grammar
 		<EXPRESSION> -> { - } <TERM> { ( + | - ) <TERM> }
-		<TERM>		 -> <FACTOR> { { ( / | ^ | _ ) } <FACTOR> }
-		<FACTOR>	 -> <SYMBOL> | <NUMBER> | <COMMAND> | \(<EXPRESSION>\)
-		<SYMBOL>	 -> a | ... | z | A | ... | Z |
+		<TERM>		 -> <FACTOR> { { / } <FACTOR> }
+		<FACTOR>	 -> <OPERAND> | \(<EXPRESSION>\)
+		<OPERAND>	 -> <SYMBOL> | <NUMBER> | <COMMAND>
+		<SYMBOL>	 -> a | ... | z | A | ... | Z
 		<NUMBER>     -> <RATIONAL> | <DECIMAL> | <INTEGER>
 		<COMMAND>    -> \ ( <SQRT> | ... )
 		<SQRT>		 -> sqrt { [<INTEGER>] } \{<EXPRESSION>\}
@@ -94,7 +93,11 @@ class Parser:
 		"""
 		self.lexer.initialize(sentence)
 		self.lexer.lex()
-		return parse_expr(self.__expression())
+		try:
+			return parse_expr(self.__expression())
+		except TypeError:
+			raise ParsingError('unexpected token \'%s\' at position %d' % \
+					(sentence[self.lexer.index], self.lexer.index))
 
 	def __expression(self):
 		sign = '-' if self.__accept('MINUS') else ''
@@ -107,27 +110,27 @@ class Parser:
 
 	def __term(self):
 		expr = self.__factor()
-		while self.__peek('DIVIDE'):
-			operator = self.lexer.word
-			self.lexer.lex()
+		while any(self.__peek(i) for i in ('COMMAND', 'LEFT_PAREN', 'SYMBOL', \
+				'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE')):
+			operator = self.lexer.word if self.__peek('DIVIDE') else '*'
+			if operator != '*': self.lexer.lex()
 			expr += operator + self.__factor()
-		while any(self.__peek(i) for i in ('COMMAND', 'LEFT_PAREN', \
-				'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER')):
-			expr += '*' + self.__factor()
 		return expr
 	
 	def __factor(self):
-		literal = self.lexer.word
-		if self.__accept('SYMBOL'):
-			return literal
-		elif any(self.__peek(i) for i in ('RATIONAL', 'DECIMAL', 'INTEGER')):
-			return self.__number()
-		elif self.__accept('COMMAND'):
-			return self.__command()
-		elif self.__accept('LEFT_PAREN'):
+		if self.__accept('LEFT_PAREN'):
 			expr = '(' + self.__expression() + ')'
 			self.__expect('RIGHT_PAREN')
 			return expr
+		return self.__operand()
+	
+	def __operand(self):
+		operand = self.lexer.word
+		if self.__accept('SYMBOL'):
+			return operand
+		elif self.__accept('COMMAND'):
+			return self.__command()
+		return self.__number()
 	
 	def __number(self):
 		number = self.lexer.word
@@ -135,9 +138,9 @@ class Parser:
 			rational = re.match(r'([1-9][0-9]*)\/([1-9][0-9]*)', number)
 			if not rational:
 				rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
-			number = 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
+			return 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
 		elif self.__accept('DECIMAL'):
-			number = 'Float(%s)' % number
+			return 'Float(%s)' % number
 		else: self.__expect('INTEGER')
 		return number
 	
@@ -166,7 +169,18 @@ class Parser:
 	
 	def __expect(self, token_type):
 		if not self.__accept(token_type):
-			raise RuntimeError('Expected \'' + token_type + '\'')
+			raise ParsingError('expected %s token at position %d' % \
+					(token_type, self.lexer.index))
+	
+class ParsingError(Exception):
+	""" LaTeX to SymPy Parsing Error """
+
+	def __init__(self, message=None):
+		self.message = message
+	
+	def __str__(self):
+		return self.message if self.message else ''
+
 
 def parse(expression):
 	""" Convert LaTeX Expression to SymPy Expression
