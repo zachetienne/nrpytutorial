@@ -1,12 +1,12 @@
 """ CSE Partial Factorization and Post-Processing
 
-The following script will perform partial factorization on SymPy expressions,
-which should occur before common subexpression elimination (CSE) to prevent the
-identification of undesirable patterns, and perform post-processing on the
-the resulting replaced/reduced expressions after the CSE procedure was applied.
+    The following script will perform partial factorization on SymPy expressions,
+    which should occur before common subexpression elimination (CSE) to prevent the
+    identification of undesirable patterns, and perform post-processing on the
+    the resulting replaced/reduced expressions after the CSE procedure was applied.
 """
 # Author: Ken Sible
-# Email:  ksible **at** outlook **dot* com
+# Email:  ksible *at* outlook *dot* com
 
 from SIMDExprTree import ExprTree
 import sympy as sp

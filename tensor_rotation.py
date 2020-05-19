@@ -1,9 +1,9 @@
 """ Symbolic Tensor (Quaternion) Rotation
 
-The following script will perform symbolic tensor rotation using quaternions.
+    The following script will perform symbolic tensor rotation using quaternions.
 """
 # Author: Ken Sible
-# Email:  ksible **at** outlook **dot* com
+# Email:  ksible *at* outlook *dot* com
 
 from sympy import Quaternion as quat
 from sympy import Matrix

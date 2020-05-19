@@ -1,3 +1,7 @@
+""" Convert Expression to SIMD Compiler Intrinsics """
+# Author: Ken Sible
+# Email:  ksible *at* outlook *dot* com
+
 from sympy import (Integer, Rational, Float, Function, Symbol,
     Add, Mul, Pow, Abs, S, sign, srepr, simplify,
     var, sin, cos, exp, log, preorder_traversal)
@@ -499,7 +503,6 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
             if simp_expr_diff != 0:
                 raise Warning('Expression Difference: ' + str(simp_expr_diff))
     return(expr)
-
 
 if __name__ == "__main__":
     import doctest
