@@ -4,7 +4,7 @@
 
 This repository houses
 * [The newest version of NRPy+: Python-Based Code Generation for Numerical Relativity... and Beyond](https://arxiv.org/abs/1712.07658),
-* The second version of SENR, the Simple, Efficient Numerical Relativity code (see the "Colliding Black Holes" Start-to-Finish tutorial module), and 
+* The second version of SENR, the Simple, Efficient Numerical Relativity code (see the "Colliding Black Holes" Start-to-Finish tutorial notebook), and 
 * The NRPy+ Jupyter Tutorial: An Introduction to Python-Based Code Generation for Numerical Relativity... and Beyond!
 
 To explore the NRPy+ tutorial without downloading, check out the [NRPy+ tutorial mybinder](https://mybinder.org/v2/gh/zachetienne/nrpytutorial/master?filepath=NRPyPlus_Tutorial.ipynb).
