@@ -110,9 +110,11 @@ void BaikalETK_Symmetry_registration(CCTK_ARGUMENTS)
                         print("It should be easy to support this if desired.")
                         sys.exit(1)
                     symidx0 = gfname_without_GFsuffix[-2]
-                    outstr += "      sym[" + symidx0 + "] *= -1;\n"
+                    if "T4UU" in gfname: symidx0 = str(int(symidx0)-1) # E.g., T4UU23 is T4UUyz, corresponding to directions 1,2
+                    if int(symidx0) >= 0: outstr += "      sym[" + symidx0 + "] *= -1;\n"
                     symidx1 = gfname_without_GFsuffix[-1]
-                    outstr += "      sym[" + symidx1 + "] *= -1;\n"
+                    if "T4UU" in gfname: symidx1 = str(int(symidx1)-1) # E.g., T4UU23 is T4UUyz, corresponding to directions 1,2
+                    if int(symidx1) >= 0: outstr += "      sym[" + symidx1 + "] *= -1;\n"
             else:
                 print(
                     "Don't know how you got this far with a gridfunction named " + gfname + ", but I'll take no more of this nonsense.")
