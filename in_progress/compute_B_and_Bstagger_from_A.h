@@ -1,7 +1,7 @@
-#include <cstdio>
-#include <cstdlib>
-#include <cmath>
-#include <sys/time.h>
+// #include <cstdio>
+// #include <cstdlib>
+// #include <cmath>
+// #include <sys/time.h>
 // #include "GiRaFFE_headers.h"
 
 #define LOOP_DEFINE_SIMPLE                      \
@@ -10,10 +10,10 @@
     for(int j=0;j<Nxx_plus_2NGHOSTS1;j++)              \
       for(int i=0;i<Nxx_plus_2NGHOSTS0;i++)
 
-extern "C" void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
-                                                      const REAL *gxx, const REAL *gxy, const REAL *gxz, const REAL *gyy, const REAL *gyz,const REAL *gzz,
-                                                      REAL *psi_bssn, const REAL *Ax, const REAL *Ay, const REAL *Az,
-                                                      REAL Bx, REAL By, REAL Bz, REAL Bx_stagger, REAL By_stagger, REAL Bz_stagger) {
+void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
+                                           const REAL *gxx, const REAL *gxy, const REAL *gxz, const REAL *gyy, const REAL *gyz,const REAL *gzz,
+                                           REAL *psi3_bssn, const REAL *Ax, const REAL *Ay, const REAL *Az,
+                                           REAL *Bx, REAL *By, REAL *Bz, REAL *Bx_stagger, REAL *By_stagger, REAL *Bz_stagger) {
 #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 
   const REAL dxi = invdx0;
@@ -22,11 +22,11 @@ extern "C" void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
 
   LOOP_DEFINE_SIMPLE {
     const int index=IDX3S(i,j,k);
-    psi3_bssn[index] = sqrt(sqrt(gxx*gyy*gzz 
-                               -  gxx*gyz*gyz
-                               +2*gxy*gxz*gyz
-                               -  gyy*gxz*gxz
-                               -  gzz*gxy*gxy));
+    psi3_bssn[index] = sqrt(sqrt( gxx[index]*gyy[index]*gzz[index] 
+                               -  gxx[index]*gyz[index]*gyz[index]
+                               +2*gxy[index]*gxz[index]*gyz[index]
+                               -  gyy[index]*gxz[index]*gxz[index]
+                               -  gzz[index]*gxy[index]*gxy[index]));
   }
 
   LOOP_DEFINE_SIMPLE {
@@ -70,7 +70,7 @@ extern "C" void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     // Now multiply Bx and Bx_stagger by 1/sqrt(gamma(i+1/2,j,k)]) = 1/sqrt(1/2 [gamma + gamma_ip1]) = exp(-6 x 1/2 [phi + phi_ip1] )
     const int imax_minus_i = (Nxx_plus_2NGHOSTS0-1)-i;
     const int indexip1jk = IDX3S(i + ( (imax_minus_i > 0) - (0 > imax_minus_i) ),j,k);
-    Bx_stagger[actual_index] *= Psim3/psi3_bxxn[index];
+    Bx_stagger[actual_index] *= Psim3/psi3_bssn[index];
 
     /**************/
     /* By_stagger */
@@ -85,7 +85,7 @@ extern "C" void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     // Now multiply By and By_stagger by 1/sqrt(gamma(i,j+1/2,k)]) = 1/sqrt(1/2 [gamma + gamma_jp1]) = exp(-6 x 1/2 [phi + phi_jp1] )
     const int jmax_minus_j = (Nxx_plus_2NGHOSTS1-1)-j;
     const int indexijp1k = IDX3S(i,j + ( (jmax_minus_j > 0) - (0 > jmax_minus_j) ),k);
-    By_stagger[actual_index] *= Psim3/psi3_bxxn[index];
+    By_stagger[actual_index] *= Psim3/psi3_bssn[index];
 
     /**************/
     /* Bz_stagger */
@@ -100,7 +100,7 @@ extern "C" void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     // Now multiply Bz_stagger by 1/sqrt(gamma(i,j,k+1/2)]) = 1/sqrt(1/2 [gamma + gamma_kp1]) = exp(-6 x 1/2 [phi + phi_kp1] )
     const int kmax_minus_k = (Nxx_plus_2NGHOSTS2-1)-k;
     const int indexijkp1 = IDX3S(i,j,k + ( (kmax_minus_k > 0) - (0 > kmax_minus_k) ));
-    Bz_stagger[actual_index] *= Psim3/psi3_bxxn[index];
+    Bz_stagger[actual_index] *= Psim3/psi3_bssn[index];
 
   }
 

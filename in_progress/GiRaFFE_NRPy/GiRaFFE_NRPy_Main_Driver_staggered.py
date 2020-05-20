@@ -30,6 +30,8 @@ CoordSystem = "Cartesian"
 par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
 rfm.reference_metric() # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
 
+xi_damping = par.Cparameters("REAL",thismodule,"xi_damping",0.1)
+
 # Default Kreiss-Oliger dissipation strength
 default_KO_strength = 0.1
 diss_strength = par.Cparameters("REAL", thismodule, "diss_strength", default_KO_strength)
@@ -130,6 +132,8 @@ REAL Stilde_rhsD2;
     GRFFE.compute_TEM4UU(gammaDD,betaU,alpha, GRFFE.smallb4U, GRFFE.smallbsquared,GRHD.u4U_ito_ValenciavU)
     GRHD.compute_g4DD_zerotimederiv_dD(gammaDD,betaU,alpha, metricderivDDD,shiftderivUD,lapsederivD)
     GRHD.compute_S_tilde_source_termD(alpha, GRHD.sqrtgammaDET,GRHD.g4DD_zerotimederiv_dD, GRFFE.TEM4UU)
+    subdir = "RHSs"
+    cmd.mkdir(os.path.join(out_dir,subdir))
     for i in range(3):
         desc = "Adds the source term to StildeD"+str(i)+"."
         name = "calculate_StildeD"+str(i)+"_source_term"
@@ -165,14 +169,12 @@ REAL Stilde_rhsD2;
     Valenciav_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
     B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
     
-    Valenciav_rU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rU",DIM=3)
-    Valenciav_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
-    Valenciav_rrU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rU",DIM=3)
-    Valenciav_rlU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rU",DIM=3)
-    Valenciav_lrU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
-    Valenciav_llU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
-    Bstagger_rU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_rU",DIM=3)
-    Bstagger_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
+    Valenciav_rrU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rrU",DIM=3)
+    Valenciav_rlU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rlU",DIM=3)
+    Valenciav_lrU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lrU",DIM=3)
+    Valenciav_llU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_llU",DIM=3)
+    Bstagger_rU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Bstagger_rU",DIM=3)
+    Bstagger_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Bstagger_lU",DIM=3)
 
 
     Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
@@ -210,6 +212,7 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
     assignmentp1 = "-="
     invdx = ["invdx0","invdx1","invdx2"]
 
+    subdir = "RHSs"
     for flux_dirn in range(3):
         Sf.calculate_Stilde_flux(flux_dirn,True,alpha_face,gamma_faceDD,beta_faceU,\
                                  Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
