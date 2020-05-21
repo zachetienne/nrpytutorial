@@ -41,7 +41,7 @@ CoordSystem = "Cartesian"
 # remove the CSE_sorting=none option so that
 # the C code output is completely identical
 # every time the below Python function is run.
-outCparamsOptions = "outCverbose=False,CSE_sorting=none"
+outCparams = "outCverbose=False,CSE_sorting=none"
 
 par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
 rfm.reference_metric() # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
@@ -249,7 +249,7 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
             outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
             params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
             body     =  Memory_Read \
-                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params=outCparamsOptions).replace("IDX4","IDX4S")\
+                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params=outCparams).replace("IDX4","IDX4S")\
                        +Memory_Write.replace(invdx[0],invdx[flux_dirn]),
             loopopts ="InteriorPoints",
             rel_path_for_Cparams=os.path.join("../"))
@@ -260,7 +260,7 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
             outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
             params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
             body     =  Memory_Read.replace(indices[flux_dirn],indicesp1[flux_dirn]) \
-                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params=outCparamsOptions).replace("IDX4","IDX4S")\
+                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params=outCparams).replace("IDX4","IDX4S")\
                        +Memory_Write.replace(invdx[0],invdx[flux_dirn]).replace(assignment,assignmentp1),
             loopopts ="InteriorPoints",
             rel_path_for_Cparams=os.path.join("../"))
@@ -287,7 +287,7 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
     outCfunction(
         outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
         params   ="const paramstruct *params,REAL *xx[3],REAL *auxevol_gfs,REAL *in_gfs",
-        body     = fin.FD_outputC("returnstring",values_to_print,params=outCparamsOptions).replace("IDX4","IDX4S"),
+        body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints,Read_xxs",
         rel_path_for_Cparams=os.path.join("../"))
 
@@ -304,7 +304,7 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
     outCfunction(
         outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
         params   ="const paramstruct *params,REAL *auxevol_gfs,REAL *in_gfs",
-        body     = fin.FD_outputC("returnstring",values_to_print,params=outCparamsOptions).replace("IDX4","IDX4S"),
+        body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints",
         rel_path_for_Cparams=os.path.join("../"))
 
