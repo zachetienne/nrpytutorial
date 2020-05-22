@@ -3,7 +3,7 @@
  */
 static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf_and_gz_struct *out_prims_r,gf_and_gz_struct *out_prims_l,
                                    REAL *psi6_pointer,REAL *cmax_1,REAL *cmin_1,REAL *cmax_2,REAL *cmin_2, REAL *A3_rhs) {
-  #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
+  #include "../set_Cparameters.h"
 
   // If A_dirn=1, then v1_offset=1 (v1=VY) and v2_offset=2 (v2=VZ)
   // If A_dirn=2, then v1_offset=2 (v1=VZ) and v2_offset=0 (v2=VX)

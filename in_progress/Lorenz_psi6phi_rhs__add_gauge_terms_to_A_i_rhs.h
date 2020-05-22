@@ -23,7 +23,7 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
                                                            REAL *alpha_sqrtg_Ay_interp,REAL *alpha_sqrtg_Az_interp,
                                                            /* END TEMPS, 8 total! */
                                                            REAL *psi6phi_rhs,REAL *Ax_rhs,REAL *Ay_rhs,REAL *Az_rhs) {
-  #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
+  #include "../set_Cparameters.h"
   /* Compute 
    * \partial_t psi6phi = -\partial_j ( \alpha \sqrt{\gamma} A^j - \beta^j psi6phi)
    *    (Eq 13 of http://arxiv.org/pdf/1110.4633.pdf), using Lorenz gauge.
