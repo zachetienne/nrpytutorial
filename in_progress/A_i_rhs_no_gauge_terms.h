@@ -2,7 +2,7 @@
  *   A_i_rhs = \partial_t A_i = \psi^{6} (v^z B^x - v^x B^z)   here.
  */
 static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf_and_gz_struct *out_prims_r,gf_and_gz_struct *out_prims_l,
-                                   REAL *phi_interped,REAL *cmax_1,REAL *cmin_1,REAL *cmax_2,REAL *cmin_2, REAL *A3_rhs) {
+                                   REAL *psi6_pointer,REAL *cmax_1,REAL *cmin_1,REAL *cmax_2,REAL *cmin_2, REAL *A3_rhs) {
   #include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
 
   // If A_dirn=1, then v1_offset=1 (v1=VY) and v2_offset=2 (v2=VZ)
@@ -59,7 +59,7 @@ static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf
         const int index_B2=IDX3S(i+B2_ijk_offset[A_dirn][0],j+B2_ijk_offset[A_dirn][1],k+B2_ijk_offset[A_dirn][2]);
 
         // Stores 1/sqrt(gamma)==exp(6 phi) at (i+1/2,j+1/2,k) for Az, (i+1/2,j,k+1/2) for Ay, and (i,j+1/2,k+1/2) for Az.
-        const REAL psi6_interped=exp(6.0*(phi_interped[index]));
+        const REAL psi6_interped=psi6_pointer[index];
 
         const REAL B1lL = B1l[index_B1];
         const REAL B1rL = B1r[index_B1];

@@ -65,8 +65,14 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     psi6Phi = gri.register_gridfunctions("EVOL","psi6Phi")
     StildeD = ixp.register_gridfunctions_for_single_rank1("EVOL","StildeD")
 
-    PhievolParenU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","PhievolParenU",DIM=3)
-    AevolParen = gri.register_gridfunctions("AUXEVOL","AevolParen")
+    psi6_temp = gri.register_gridfunctions("AUXEVOL","psi6_temp")
+    psi6center = gri.register_gridfunctions("AUXEVOL","psi6center")
+    cmax_x = gri.register_gridfunctions("AUXEVOL","cmax_x")
+    cmin_x = gri.register_gridfunctions("AUXEVOL","cmin_x")
+    cmax_y = gri.register_gridfunctions("AUXEVOL","cmax_y")
+    cmin_y = gri.register_gridfunctions("AUXEVOL","cmin_y")
+    cmax_z = gri.register_gridfunctions("AUXEVOL","cmax_z")
+    cmin_z = gri.register_gridfunctions("AUXEVOL","cmin_z")
 
     GRHD.compute_sqrtgammaDET(gammaDD)
 
@@ -360,17 +366,38 @@ void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restr
     fclose(out2D);
 }
 
-void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
+void calculate_GRFFE_characteristic_speeds(const paramstruct *restrict params, 
+                                           const REAL *alpha, const REAL *betaU2,
+                                           const REAL *gammaDD00, const REAL *gammaDD01, const REAL *gammaDD02, 
+                                           const REAL *gammaDD11, const REAL *gammaDD12, const REAL *gammaDD22, 
+                                           REAL *cmax_z, REAL *cmin_z) {
+#include "set_Cparameters.h"
+    for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
+       const int index = IDX3S(i,j,k);
+       const double alpha_face = alpha[index];
+       const double beta_faceU2 = betaU2[index];
+       const double gamma_faceDD00 = gammaDD00[index];
+       const double gamma_faceDD01 = gammaDD01[index];
+       const double gamma_faceDD02 = gammaDD02[index];
+       const double gamma_faceDD11 = gammaDD11[index];
+       const double gamma_faceDD12 = gammaDD12[index];
+       const double gamma_faceDD22 = gammaDD22[index];
+       const double tmp_3 = ((beta_faceU2)*(beta_faceU2))/((alpha_face)*(alpha_face)*(alpha_face)*(alpha_face));
+       const double tmp_4 = (1.0/((alpha_face)*(alpha_face)));
+       const double tmp_7 = tmp_4*(((beta_faceU2)*(beta_faceU2))*tmp_4 - (gamma_faceDD00*gamma_faceDD11 - ((gamma_faceDD01)*(gamma_faceDD01)))/(gamma_faceDD00*gamma_faceDD11*gamma_faceDD22 - gamma_faceDD00*((gamma_faceDD12)*(gamma_faceDD12)) - ((gamma_faceDD01)*(gamma_faceDD01))*gamma_faceDD22 + 2*gamma_faceDD01*gamma_faceDD02*gamma_faceDD12 - ((gamma_faceDD02)*(gamma_faceDD02))*gamma_faceDD11));
+       const double tmp_8 = ((alpha_face)*(alpha_face))*sqrt(2*tmp_3 - 2*tmp_7 + (1.0/2.0)*fabs(4*tmp_3 - 4*tmp_7));
+       cmax_z[index] = -1.0/2.0*beta_faceU2 + (1.0/4.0)*tmp_8 + (1.0/2.0)*fabs(-beta_faceU2 + (1.0/2.0)*tmp_8);
+       cmin_z[index] = (1.0/2.0)*beta_faceU2 + (1.0/4.0)*tmp_8 + (1.0/2.0)*fabs(-beta_faceU2 - 1.0/2.0*tmp_8);
+    }
+}
+
+void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
     // First thing's first: initialize the RHSs to zero!
 #pragma omp parallel for
     for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
         rhs_gfs[ii] = 0.0;
     }
-    // Next calculate the easier source terms that don't require flux directions
-    // This will also reset the RHSs for each gf at each new timestep.
-    calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
-    calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
     
     // Now, we set up a bunch of structs of pointers to properly guide the PPM algorithm.
     // They also count the number of ghostzones available.
@@ -378,7 +405,8 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     int which_prims_to_reconstruct[NUM_RECONSTRUCT_GFS],num_prims_to_reconstruct;
     const int Nxxp2NG012 = Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;
     
-    REAL *temporary = auxevol_gfs + Nxxp2NG012*AEVOLPARENGF; //We're not using this anymore
+    REAL *temporary = auxevol_gfs + Nxxp2NG012*PSI6_TEMPGF; // Using dedicated temporary variables for the staggered grid
+    REAL *psi6center = auxevol_gfs + Nxxp2NG012*PSI6CENTERGF; // Because the prescription requires more acrobatics.
     // This sets pointers to the portion of auxevol_gfs containing the relevant gridfunction.
     int ww=0;
     in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU0GF; 
@@ -405,17 +433,17 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
       out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU2GF; 
       out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU2GF; 
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BstaggerU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*Bstagger_RU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*Bstagger_LU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU0GF; 
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU0GF; 
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU0GF; 
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BstaggerU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*Bstagger_RU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*Bstagger_LU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU1GF; 
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU1GF; 
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU1GF; 
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BstaggerU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*Bstagger_RU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*Bstagger_LU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU2GF; 
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU2GF; 
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU2GF; 
     ww++;
     in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF; 
       out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RRU0GF; 
@@ -489,7 +517,14 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   calculate_StildeD0_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D0_left(params,auxevol_gfs,rhs_gfs);
-
+  // Calculate the characteristic speeds for the upcoming vector potential evolution:
+  calculate_GRFFE_characteristic_speeds(params, 
+                                        auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD11GF, auxevol_gfs+Nxxp2NG012*GAMMADD12GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF, 
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF, 
+                                        auxevol_gfs+Nxxp2NG012*CMAX_XGF, auxevol_gfs+Nxxp2NG012*CMIN_XGF);
+  
   // Note that we have already reconstructed vx and vy along the x-direction, 
   //   at (i-1/2,j,k). That result is stored in v{x,y}{r,l}.  Bx_stagger data
   //   are defined at (i+1/2,j,k).
@@ -559,6 +594,13 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D1_right(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D1_left(params,auxevol_gfs,rhs_gfs);
+  // Calculate the characteristic speeds for the upcoming vector potential evolution:
+  calculate_GRFFE_characteristic_speeds(params, 
+                                        auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD22GF, auxevol_gfs+Nxxp2NG012*GAMMADD02GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF, 
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF, 
+                                        auxevol_gfs+Nxxp2NG012*CMAX_YGF, auxevol_gfs+Nxxp2NG012*CMIN_YGF);
 
   /*****************************************
    * COMPUTING RHS OF A_z, BOOKKEEPING NOTE:
@@ -575,18 +617,40 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
    ******************************************/
   // Interpolates to i+1/2
 #define IPH(METRICm1,METRICp0,METRICp1,METRICp2) (-0.0625*((METRICm1) + (METRICp2)) + 0.5625*((METRICp0) + (METRICp1)))
-  // Next compute phi at (i+1/2,j+1/2,k):
+  // Next compute sqrt(gamma)=psi^6 at (i+1/2,j+1/2,k):
+  // To do so, we first compute the sqrt of the metric determinant at all points:
+#pragma omp parallel for
+  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
+        const int index=IDX3S(i,j,k);
+        const REAL gxx = auxevol_gfs[IDX4ptS(GAMMADD00GF,index)];
+        const REAL gxy = auxevol_gfs[IDX4ptS(GAMMADD01GF,index)];
+        const REAL gxz = auxevol_gfs[IDX4ptS(GAMMADD02GF,index)];
+        const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
+        const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
+        const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
+        psi6center[index] = sqrt( gxx*gyy*gzz 
+                               -  gxx*gyz*gyz
+                               +2*gxy*gxz*gyz
+                               -  gyy*gxz*gxz
+                               -  gzz*gxy*gxy );
+
+      }
 #pragma omp parallel for
   for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
         temporary[IDX3S(i,j,k)]= 
-          IPH(IPH(phi_bssn[IDX3S(i-1,j-1,k)],phi_bssn[IDX3S(i,j-1,k)],phi_bssn[IDX3S(i+1,j-1,k)],phi_bssn[IDX3S(i+2,j-1,k)]),
-              IPH(phi_bssn[IDX3S(i-1,j  ,k)],phi_bssn[IDX3S(i,j  ,k)],phi_bssn[IDX3S(i+1,j  ,k)],phi_bssn[IDX3S(i+2,j  ,k)]),
-              IPH(phi_bssn[IDX3S(i-1,j+1,k)],phi_bssn[IDX3S(i,j+1,k)],phi_bssn[IDX3S(i+1,j+1,k)],phi_bssn[IDX3S(i+2,j+1,k)]),
-              IPH(phi_bssn[IDX3S(i-1,j+2,k)],phi_bssn[IDX3S(i,j+2,k)],phi_bssn[IDX3S(i+1,j+2,k)],phi_bssn[IDX3S(i+2,j+2,k)]));
+          IPH(IPH(psi6center[IDX3S(i-1,j-1,k)],psi6center[IDX3S(i,j-1,k)],psi6center[IDX3S(i+1,j-1,k)],psi6center[IDX3S(i+2,j-1,k)]),
+              IPH(psi6center[IDX3S(i-1,j  ,k)],psi6center[IDX3S(i,j  ,k)],psi6center[IDX3S(i+1,j  ,k)],psi6center[IDX3S(i+2,j  ,k)]),
+              IPH(psi6center[IDX3S(i-1,j+1,k)],psi6center[IDX3S(i,j+1,k)],psi6center[IDX3S(i+1,j+1,k)],psi6center[IDX3S(i+2,j+1,k)]),
+              IPH(psi6center[IDX3S(i-1,j+2,k)],psi6center[IDX3S(i,j+2,k)],psi6center[IDX3S(i+1,j+2,k)],psi6center[IDX3S(i+2,j+2,k)]));
       }
 
   int A_directionz=3;
-  A_i_rhs_no_gauge_terms(A_directionz,params,out_prims_r,out_prims_l,temporary,cmax_x,cmin_x,cmax_y,cmin_y, Az_rhs);
+  A_i_rhs_no_gauge_terms(A_directionz,params,out_prims_r,out_prims_l,temporary,
+                         auxevol_gfs+Nxxp2NG012*CMAX_XGF,
+                         auxevol_gfs+Nxxp2NG012*CMIN_XGF,
+                         auxevol_gfs+Nxxp2NG012*CMAX_YGF,
+                         auxevol_gfs+Nxxp2NG012*CMIN_YGF,
+                         rhs_gfs+Nxxp2NG012*AD2GF);
 
   // in_prims[{VYR,VYL,VZR,VZL}].gz_{lo,hi} ghostzones are not correct, so we fix 
   //    this below.
@@ -650,6 +714,12 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D2_right(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
+  calculate_GRFFE_characteristic_speeds(params, 
+                                        auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD00GF, auxevol_gfs+Nxxp2NG012*GAMMADD01GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF, 
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF, 
+                                        auxevol_gfs+Nxxp2NG012*CMAX_ZGF, auxevol_gfs+Nxxp2NG012*CMIN_ZGF);
 
   // in_prims[{VYR,VYL,VZR,VZL}].gz_{lo,hi} ghostzones are not set correcty.
   //    We fix this below.
@@ -677,17 +747,39 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
    * ==========================
    ******************************************/
   // Next compute phi at (i,j+1/2,k+1/2):
+  // To do so, we first compute the sqrt of the metric determinant at all points:
+#pragma omp parallel for
+  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
+        const int index=IDX3S(i,j,k);
+        const REAL gxx = auxevol_gfs[IDX4ptS(GAMMADD00GF,index)];
+        const REAL gxy = auxevol_gfs[IDX4ptS(GAMMADD01GF,index)];
+        const REAL gxz = auxevol_gfs[IDX4ptS(GAMMADD02GF,index)];
+        const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
+        const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
+        const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
+        psi6center[index] = sqrt( gxx*gyy*gzz 
+                               -  gxx*gyz*gyz
+                               +2*gxy*gxz*gyz
+                               -  gyy*gxz*gxz
+                               -  gzz*gxy*gxy );
+
+      }
 #pragma omp parallel for
   for(int k=1;k<Nxx_plus_2NGHOSTS2-2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=0;i<Nxx_plus_2NGHOSTS0;i++) {
         temporary[IDX3S(i,j,k)]= 
-          IPH(IPH(phi_bssn[IDX3S(i,j-1,k-1)],phi_bssn[IDX3S(i,j,k-1)],phi_bssn[IDX3S(i,j+1,k-1)],phi_bssn[IDX3S(i,j+2,k-1)]),
-              IPH(phi_bssn[IDX3S(i,j-1,k  )],phi_bssn[IDX3S(i,j,k  )],phi_bssn[IDX3S(i,j+1,k  )],phi_bssn[IDX3S(i,j+2,k  )]),
-              IPH(phi_bssn[IDX3S(i,j-1,k+1)],phi_bssn[IDX3S(i,j,k+1)],phi_bssn[IDX3S(i,j+1,k+1)],phi_bssn[IDX3S(i,j+2,k+1)]),
-              IPH(phi_bssn[IDX3S(i,j-1,k+2)],phi_bssn[IDX3S(i,j,k+2)],phi_bssn[IDX3S(i,j+1,k+2)],phi_bssn[IDX3S(i,j+2,k+2)]));
+          IPH(IPH(psi6center[IDX3S(i,j-1,k-1)],psi6center[IDX3S(i,j,k-1)],psi6center[IDX3S(i,j+1,k-1)],psi6center[IDX3S(i,j+2,k-1)]),
+              IPH(psi6center[IDX3S(i,j-1,k  )],psi6center[IDX3S(i,j,k  )],psi6center[IDX3S(i,j+1,k  )],psi6center[IDX3S(i,j+2,k  )]),
+              IPH(psi6center[IDX3S(i,j-1,k+1)],psi6center[IDX3S(i,j,k+1)],psi6center[IDX3S(i,j+1,k+1)],psi6center[IDX3S(i,j+2,k+1)]),
+              IPH(psi6center[IDX3S(i,j-1,k+2)],psi6center[IDX3S(i,j,k+2)],psi6center[IDX3S(i,j+1,k+2)],psi6center[IDX3S(i,j+2,k+2)]));
       }
 
   int A_directionx=1;
-  A_i_rhs_no_gauge_terms(A_directionx,params,out_prims_r,out_prims_l,temporary,cmax_y,cmin_y,cmax_z,cmin_z, Ax_rhs);
+  A_i_rhs_no_gauge_terms(A_directionx,params,out_prims_r,out_prims_l,temporary,
+                         auxevol_gfs+Nxxp2NG012*CMAX_YGF,
+                         auxevol_gfs+Nxxp2NG012*CMIN_YGF,
+                         auxevol_gfs+Nxxp2NG012*CMAX_ZGF,
+                         auxevol_gfs+Nxxp2NG012*CMIN_ZGF,
+                         rhs_gfs+Nxxp2NG012*AD0GF);
 
   // We reprise flux_dirn=1 to finish up computations of Ai_rhs's!
   flux_dirn=0;
@@ -720,17 +812,39 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
    * ==========================
    ******************************************/
   // Next compute phi at (i+1/2,j,k+1/2):
+  // To do so, we first compute the sqrt of the metric determinant at all points:
+#pragma omp parallel for
+  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
+        const int index=IDX3S(i,j,k);
+        const REAL gxx = auxevol_gfs[IDX4ptS(GAMMADD00GF,index)];
+        const REAL gxy = auxevol_gfs[IDX4ptS(GAMMADD01GF,index)];
+        const REAL gxz = auxevol_gfs[IDX4ptS(GAMMADD02GF,index)];
+        const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
+        const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
+        const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
+        psi6center[index] = sqrt( gxx*gyy*gzz 
+                               -  gxx*gyz*gyz
+                               +2*gxy*gxz*gyz
+                               -  gyy*gxz*gxz
+                               -  gzz*gxy*gxy );
+
+      }
 #pragma omp parallel for
   for(int k=1;k<Nxx_plus_2NGHOSTS2-2;k++) for(int j=0;j<Nxx_plus_2NGHOSTS1;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
         temporary[IDX3S(i,j,k)]= 
-          IPH(IPH(phi_bssn[IDX3S(i-1,j,k-1)],phi_bssn[IDX3S(i,j,k-1)],phi_bssn[IDX3S(i+1,j,k-1)],phi_bssn[IDX3S(i+2,j,k-1)]),
-              IPH(phi_bssn[IDX3S(i-1,j,k  )],phi_bssn[IDX3S(i,j,k  )],phi_bssn[IDX3S(i+1,j,k  )],phi_bssn[IDX3S(i+2,j,k  )]),
-              IPH(phi_bssn[IDX3S(i-1,j,k+1)],phi_bssn[IDX3S(i,j,k+1)],phi_bssn[IDX3S(i+1,j,k+1)],phi_bssn[IDX3S(i+2,j,k+1)]),
-              IPH(phi_bssn[IDX3S(i-1,j,k+2)],phi_bssn[IDX3S(i,j,k+2)],phi_bssn[IDX3S(i+1,j,k+2)],phi_bssn[IDX3S(i+2,j,k+2)]));
+          IPH(IPH(psi6center[IDX3S(i-1,j,k-1)],psi6center[IDX3S(i,j,k-1)],psi6center[IDX3S(i+1,j,k-1)],psi6center[IDX3S(i+2,j,k-1)]),
+              IPH(psi6center[IDX3S(i-1,j,k  )],psi6center[IDX3S(i,j,k  )],psi6center[IDX3S(i+1,j,k  )],psi6center[IDX3S(i+2,j,k  )]),
+              IPH(psi6center[IDX3S(i-1,j,k+1)],psi6center[IDX3S(i,j,k+1)],psi6center[IDX3S(i+1,j,k+1)],psi6center[IDX3S(i+2,j,k+1)]),
+              IPH(psi6center[IDX3S(i-1,j,k+2)],psi6center[IDX3S(i,j,k+2)],psi6center[IDX3S(i+1,j,k+2)],psi6center[IDX3S(i+2,j,k+2)]));
       }
   
   int A_directiony=2;
-  A_i_rhs_no_gauge_terms(A_directiony,params,out_prims_r,out_prims_l,temporary,cmax_z,cmin_z,cmax_x,cmin_x, Ay_rhs);
+  A_i_rhs_no_gauge_terms(A_directiony,params,out_prims_r,out_prims_l,temporary,
+                         auxevol_gfs+Nxxp2NG012*CMAX_ZGF,
+                         auxevol_gfs+Nxxp2NG012*CMIN_ZGF,
+                         auxevol_gfs+Nxxp2NG012*CMAX_XGF,
+                         auxevol_gfs+Nxxp2NG012*CMIN_XGF,
+                         rhs_gfs+Nxxp2NG012*AD1GF);
 
   // Next compute psi6phi_rhs, and add gauge terms to A_i_rhs terms!
   //   Note that in the following function, we don't bother with reconstruction, instead interpolating.
@@ -747,62 +861,67 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   interp_vars[ww]=auxevol_gfs+Nxxp2NG012*GAMMADD12GF;  ww++;
   interp_vars[ww]=auxevol_gfs+Nxxp2NG012*GAMMADD22GF;  ww++;
   interp_vars[ww]=temporary;ww++;
-  interp_vars[ww]=auxevol_gfs_Nxxp2NG012*ALPHAGF;   ww++;
-  interp_vars[ww]=evol_gfs+Nxxp2NG012*AD0GF;      ww++;
-  interp_vars[ww]=evol_gfs+Nxxp2NG012*AD1GF;      ww++;
-  interp_vars[ww]=evol_gfs+Nxxp2NG012*AD2GF;      ww++;
+  interp_vars[ww]=auxevol_gfs+Nxxp2NG012*ALPHAGF;   ww++;
+  interp_vars[ww]=in_gfs+Nxxp2NG012*AD0GF;      ww++;
+  interp_vars[ww]=in_gfs+Nxxp2NG012*AD1GF;      ww++;
+  interp_vars[ww]=in_gfs+Nxxp2NG012*AD2GF;      ww++;
   const int max_num_interp_variables=ww;
 //   if(max_num_interp_variables>MAXNUMINTERP) {CCTK_VError(VERR_DEF_PARAMS,"Error: Didn't allocate enough space for interp_vars[]."); }
   // We are FINISHED with v{x,y,z}{r,l} and P{r,l} so we use these 8 gridfunctions' worth of space as temp storage.
-  Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(params,interp_vars,psi6phi, 
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_R0GF,  // WARNING: 
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_R1GF,  // ALL VARIABLES
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_R2GF,  // ON THESE LINES
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_L0GF,  // ARE OVERWRITTEN
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_L1GF,  // FOR TEMP STORAGE
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_L2GF,  // .
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RR0GF, // .
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RL0GF, // .
+  Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(params,interp_vars,
+                                                 in_gfs+Nxxp2NG012*PSI6PHIGF, 
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,  // WARNING: 
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,  // ALL VARIABLES
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,  // ON THESE LINES
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,  // ARE OVERWRITTEN
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,  // FOR TEMP STORAGE
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,  // .
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RRU0GF, // .
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RLU0GF, // .
                                                  rhs_gfs+Nxxp2NG012*PSI6PHIGF,
                                                  rhs_gfs+Nxxp2NG012*AD0GF,
                                                  rhs_gfs+Nxxp2NG012*AD1GF,
                                                  rhs_gfs+Nxxp2NG012*AD2GF);
-#pragma omp parallel for
+/*#pragma omp parallel for
   for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=0;j<Nxx_plus_2NGHOSTS1;j++) for(int i=0;i<Nxx_plus_2NGHOSTS0;i++) {
-        const int index=IDX3S(i,j,k);
-        if(r[index]<min_radius_inside_of_which_conserv_to_prims_FFE_and_FFE_evolution_is_DISABLED) {
-          st_x_rhs[index]=0.0;
-          st_y_rhs[index]=0.0;
-          st_z_rhs[index]=0.0;
+        REAL x = xx[0][i];
+        REAL y = xx[1][j];
+        REAL z = xx[2][k];
+        if(sqrt(x*x+y*y+z*z)<min_radius_inside_of_which_conserv_to_prims_FFE_and_FFE_evolution_is_DISABLED) {
+          rhs_gfs[IDX4S(STILDED0GF,i,j,k)] = 0.0;
+          rhs_gfs[IDX4S(STILDED1GF,i,j,k)] = 0.0;
+          rhs_gfs[IDX4S(STILDED2GF,i,j,k)] = 0.0;
 
-          psi6phi_rhs[index] = 0.0;
-          Ax_rhs[index] = 0.0;
-          Ay_rhs[index] = 0.0;
-          Az_rhs[index] = 0.0;
+          rhs_gfs[IDX4S(PSI6PHIGF,i,j,k)] = 0.0;
+          rhs_gfs[IDX4S(AD0GF,i,j,k)] = 0.0;
+          rhs_gfs[IDX4S(AD1GF,i,j,k)] = 0.0;
+          rhs_gfs[IDX4S(AD2GF,i,j,k)] = 0.0;
         }
-      }
+      }*/
 }
 
 void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL *restrict auxevol_gfs,REAL *restrict evol_gfs,const int n) {
+#include "set_Cparameters.h"
     // First, apply BCs to AD and psi6Phi. Then calculate BU from AD
     apply_bcs_potential(params,evol_gfs);
-GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
-                                      auxevol_gfs+Nxxp2NG012*GAMMADD00GF,
-                                      auxevol_gfs+Nxxp2NG012*GAMMADD01GF,
-                                      auxevol_gfs+Nxxp2NG012*GAMMADD02GF,
-                                      auxevol_gfs+Nxxp2NG012*GAMMADD11GF,
-                                      auxevol_gfs+Nxxp2NG012*GAMMADD12GF,
-                                      auxevol_gfs+Nxxp2NG012*GAMMADD22GF,
-                                      auxevol_gfs + Nxxp2NG012*AEVOLPARENGF, /* Temporary storage */ 
-                                      evol_gfs+Nxxp2NG012*AD0GF,
-                                      evol_gfs+Nxxp2NG012*AD1GF,
-                                      evol_gfs+Nxxp2NG012*AD2GF,
-                                      auxevol_gfs+Nxxp2NG012*BU0GF,
-                                      auxevol_gfs+Nxxp2NG012*BU1GF,
-                                      auxevol_gfs+Nxxp2NG012*BU2GF,
-                                      auxevol_gfs+Nxxp2NG012*BSTAGGERU0GF,
-                                      auxevol_gfs+Nxxp2NG012*BSTAGGERU1GF,
-                                      auxevol_gfs+Nxxp2NG012*BSTAGGERU2GF);
+    const int Nxxp2NG012 = Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;
+    GiRaFFE_compute_B_and_Bstagger_from_A(params,
+                                          auxevol_gfs+Nxxp2NG012*GAMMADD00GF,
+                                          auxevol_gfs+Nxxp2NG012*GAMMADD01GF,
+                                          auxevol_gfs+Nxxp2NG012*GAMMADD02GF,
+                                          auxevol_gfs+Nxxp2NG012*GAMMADD11GF,
+                                          auxevol_gfs+Nxxp2NG012*GAMMADD12GF,
+                                          auxevol_gfs+Nxxp2NG012*GAMMADD22GF,
+                                          auxevol_gfs + Nxxp2NG012*PSI6_TEMPGF, /* Temporary storage */ 
+                                          evol_gfs+Nxxp2NG012*AD0GF,
+                                          evol_gfs+Nxxp2NG012*AD1GF,
+                                          evol_gfs+Nxxp2NG012*AD2GF,
+                                          auxevol_gfs+Nxxp2NG012*BU0GF,
+                                          auxevol_gfs+Nxxp2NG012*BU1GF,
+                                          auxevol_gfs+Nxxp2NG012*BU2GF,
+                                          auxevol_gfs+Nxxp2NG012*BSTAGGERU0GF,
+                                          auxevol_gfs+Nxxp2NG012*BSTAGGERU1GF,
+                                          auxevol_gfs+Nxxp2NG012*BSTAGGERU2GF);
     //override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
     // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
     // Apply the current sheet prescription to the velocities
