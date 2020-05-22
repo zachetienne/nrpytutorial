@@ -118,8 +118,9 @@ def GiRaFFEfood_NRPy_1D_tests():
     Ayright = sp.Rational(13,10)*gammamu*x_p_half - sp.Rational(15,1000)
 
     AD[0] = sp.sympify(0)
+#     AD[1] = Aycenter
     AD[1] = noif.coord_leq_bound(x_p_half,-bound)*Ayleft\
-           +noif.coord_greater_bound(x_p_half,-bound)*noif.coord_leq_bound(x,bound)*Aycenter\
+           +noif.coord_greater_bound(x_p_half,-bound)*noif.coord_leq_bound(x_p_half,bound)*Aycenter\
            +noif.coord_greater_bound(x_p_half,bound)*Ayright
     AD[2] = y_p_half-gammamu*(sp.sympify(1)-mu_AW)*x_p_half    # <a id='step2'></a>
     # ### Set the vectors $B^i$ and $E^i$ for the velocity

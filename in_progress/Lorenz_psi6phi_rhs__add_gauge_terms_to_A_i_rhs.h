@@ -95,10 +95,10 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
             INTERP_VARS[PSII][kk][jj][ii]   = pow(tmp_5,1.0/12.0);
 
             // Now, we read in the lapse function.
-            int whichvar=vars_to_interpolate[7];
+            int whichvar=vars_to_interpolate[6];
             INTERP_VARS[whichvar][kk][jj][ii] = in_vars[whichvar][index_arr_3DB[kk][jj][ii]]-1.0; // Input alpha, expect alpha-1
             // Finally, we read in the shift vector into the array.
-            for(int ww=9;ww<12;ww++) {
+            for(int ww=8;ww<num_vars_to_interp;ww++) {
                 int whichvar=vars_to_interpolate[ww];
                 INTERP_VARS[whichvar][kk][jj][ii] = in_vars[whichvar][index_arr_3DB[kk][jj][ii]];
             }
@@ -126,7 +126,7 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
 
         for(int kk=PLUS0;kk<=PLUS1;kk++) for(int jj=PLUS0;jj<=PLUS1;jj++) for(int ii=PLUS0;ii<=PLUS1;ii++) { 
               const REAL Psi2 = INTERP_VARS[PSII][kk][jj][ii]*INTERP_VARS[PSII][kk][jj][ii];
-              const REAL alpha = INTERP_VARS[LAPM1I][kk][jj][ii]-1.0;
+              const REAL alpha = INTERP_VARS[LAPM1I][kk][jj][ii]+1.0;
               INTERP_VARS[LAPSE_PSI2I][kk][jj][ii]=alpha*Psi2;
               INTERP_VARS[LAPSE_OVER_PSI6I][kk][jj][ii]=alpha/(Psi2*Psi2*Psi2);
             }

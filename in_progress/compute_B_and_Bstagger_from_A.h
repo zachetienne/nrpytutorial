@@ -44,7 +44,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
 
     const int actual_index = IDX3S(i,j,k);
 
-    const REAL Psim3 = 1.0/psi3_bssn[index];
+    const REAL Psim3 = 1.0/psi3_bssn[actual_index];
 
     // For the lower boundaries, the following applies a "copy" 
     //    boundary condition on Bi_stagger where needed.
