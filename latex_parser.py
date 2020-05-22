@@ -27,6 +27,7 @@ class Lexer:
 						 r'\]'			   : 'RIGHT_BRACKET',
 						 r'\\'	   		   : 'COMMAND',
 						 r'sqrt'           : 'CMD_SQRT',
+						 r'frac'		   : 'CMD_FRAC',
 						 r'[a-zA-Z]'       : 'SYMBOL' }
 		self.regex = re.compile('|'.join(['(?P<%s>%s)' % \
 			(self.grammar[pattern], pattern) for pattern in self.grammar]))
@@ -79,8 +80,9 @@ class Parser:
 		<OPERAND>	 -> <SYMBOL> | <NUMBER> | <COMMAND>
 		<SYMBOL>	 -> a | ... | z | A | ... | Z
 		<NUMBER>     -> <RATIONAL> | <DECIMAL> | <INTEGER>
-		<COMMAND>    -> \ ( <SQRT> | ... )
+		<COMMAND>    -> \ ( <SQRT> | <FRAC> | ... )
 		<SQRT>		 -> sqrt { [<INTEGER>] } \{<EXPRESSION>\}
+		<FRAC>		 -> frac \{<EXPRESSION>\} \{<EXPRESSION>\}
 	"""
 
 	def __init__(self):
@@ -153,6 +155,8 @@ class Parser:
 	def __command(self):
 		if self.__accept('CMD_SQRT'):
 			return self.__sqrt()
+		elif self.__accept('CMD_FRAC'):
+			return self.__frac()
 	
 	def __sqrt(self):
 		if self.__accept('LEFT_BRACKET'):
@@ -163,6 +167,15 @@ class Parser:
 		expr = self.__expression()
 		self.__expect('RIGHT_BRACE')
 		return 'Pow(%s, Rational(1, %s))' % (expr, root)
+	
+	def __frac(self):
+		self.__expect('LEFT_BRACE')
+		numerator = self.__expression()
+		self.__expect('RIGHT_BRACE')
+		self.__expect('LEFT_BRACE')
+		denominator = self.__expression()
+		self.__expect('RIGHT_BRACE')
+		return '(%s)/(%s)' % (numerator, denominator)
 	
 	def __peek(self, token_type):
 		return self.lexer.token == token_type
@@ -187,7 +200,6 @@ class ParsingError(Exception):
 	def __str__(self):
 		return self.message if self.message else ''
 
-
 def parse(sentence):
 	""" Convert LaTeX Sentence to SymPy Expression
 
@@ -195,8 +207,8 @@ def parse(sentence):
 		:return: SymPy Expression
 
 		>>> from latex_parser import parse
-		>>> parse(r'-a(b^{2a} - \\frac{2}{3}) + \\sqrt[5]{3}')
-		-a*(b**(2*a) - 2/3) + 3**(1/5)
+		>>> parse(r'-a(b^{2a} - \\frac{2}{3}) + \\sqrt[5]{a + 3}')
+		-a*(b**(2*a) - 2/3) + (a + 3)**(1/5)
 	"""
 	return Parser().parse(sentence)
 
