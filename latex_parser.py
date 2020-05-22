@@ -188,17 +188,17 @@ class ParsingError(Exception):
 		return self.message if self.message else ''
 
 
-def parse(expression):
-	""" Convert LaTeX Expression to SymPy Expression
+def parse(sentence):
+	""" Convert LaTeX Sentence to SymPy Expression
 
-		:arg:    LaTeX Expression
+		:arg:    LaTeX Sentence
 		:return: SymPy Expression
 
 		>>> from latex_parser import parse
 		>>> parse(r'-a(b^{2a} - \\frac{2}{3}) + \\sqrt[5]{3}')
 		-a*(b**(2*a) - 2/3) + 3**(1/5)
 	"""
-	return Parser().parse(expression)
+	return Parser().parse(sentence)
 
 if __name__ == "__main__":
     import doctest
