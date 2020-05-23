@@ -31,22 +31,16 @@
 # \partial_t v = \hat{g}^{i j} \partial_{i} \partial_{j} u - \hat{\Gamma}^i \partial_i u
 
 # Step P1: Import needed NRPy+ core modules:
-import NRPy_param_funcs as par
+import NRPy_param_funcs as par                # NRPy+: Parameter interface
+import grid as gri                            # NRPy+: Functionality for handling numerical grids
+import indexedexp as ixp                      # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm                # NRPy+: Reference metric support
+from ScalarWave.CommonParams import wavespeed # NRPy+: Common parameters for all ScalarWave modules (defines wavespeed)
 
-# Step P2: Define the C parameter wavespeed. The `wavespeed`
-#          variable is a proper SymPy variable, so it can be
-#          used in below expressions. In the C code, it acts
-#          just like a usual parameter, whose value is
-#          specified in the parameter file.
 # The name of this module ("ScalarWaveCurvilinear") is given by __name__:
 thismodule = __name__
-wavespeed = par.Cparameters("REAL", thismodule, "wavespeed", 1.0)
 
 def ScalarWaveCurvilinear_RHSs():
-    import indexedexp as ixp
-    import reference_metric as rfm
-    import grid as gri
-
     # Step 1: Get the spatial dimension, defined in the
     #         NRPy+ "grid" module. With reference metrics,
     #         this must be set to 3 or fewer.
