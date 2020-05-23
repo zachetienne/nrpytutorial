@@ -11,7 +11,7 @@ trusted_values_dict['ScalarWave_RHSs__ScalarWave_RHSs__globals'] = {'wavespeed':
 trusted_values_dict['ScalarWaveCurvilinear_RHSs__ScalarWaveCurvilinear_RHSs__globals'] = {'uu_rhs': mpf('0.65261108714780824424650518267299'), 'vv_rhs': mpf('7.91102076566947763349564936041703')}
 
 # Generated on: 2020-05-23
-trusted_values_dict['InitialData__InitialData__Type__PlaneWave___globals'] = {'uu_ID': mpf('2.44290944549411059614572536695102'), 'vv_ID': mpf('-0.896566351751000900198187141132437')}
+trusted_values_dict['InitialData__InitialData__Type__PlaneWave___globals'] = {'uu_ID': mpf('2.52358067004083477110217386122'), 'vv_ID': mpf('-0.569645247209539485189673979502')}
 
 # Generated on: 2020-05-23
-trusted_values_dict['InitialData__InitialData__Type__SphericalGaussian___globals'] = {'uu_ID': mpf('1.21418814194841348201957965579438'), 'vv_ID': mpf('0.15069530434307002581910064420334')}
+trusted_values_dict['InitialData__InitialData__Type__SphericalGaussian___globals'] = {'uu_ID': mpf('0.431216347297570477335512181955'), 'vv_ID': mpf('0.939491920766069097817778723671')}
