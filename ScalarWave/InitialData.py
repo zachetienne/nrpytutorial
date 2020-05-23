@@ -5,7 +5,7 @@
 #
 # Authors: Zachariah B. Etienne
 #          zachetie **at** gmail **dot* com
-#          Thiago Assumpção
+#          Thiago Assumpcao
 #          assumpcaothiago **at** gmail **dot* com
 #
 # License: BSD 2-Clause
