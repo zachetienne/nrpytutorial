@@ -25,7 +25,7 @@ from ScalarWave.CommonParams import wavespeed # NRPy+: Common parameters for all
 thismodule = __name__
 
 # Set up spherically-symmetric Gaussian initial data
-def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=1):
+def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=3):
     # Step 1: Set parameters for the wave
     DIM = par.parval_from_str("grid::DIM")
 
@@ -50,7 +50,9 @@ def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=1):
 
     # Step 5: Set initial data for uu and vv, where vv_ID = \partial_t uu_ID.
     global uu_ID, vv_ID
-    uu_ID = sp.exp(- (r - wavespeed*time)**2 / (2*sigma**2) ) / r
+    # uu_ID = (r - wavespeed*time)/r * sp.exp(- (r - wavespeed*time)**2 / (2*sigma**2) )
+    uu_ID = (+(r - wavespeed * time) / r * sp.exp(- (r - wavespeed * time) ** 2 / (2 * sigma ** 2))
+             +(r + wavespeed * time) / r * sp.exp(- (r + wavespeed * time) ** 2 / (2 * sigma ** 2)))
     vv_ID = sp.diff(uu_ID, time)
 
 # Set up monochromatic plane-wave initial data
@@ -89,7 +91,7 @@ def PlaneWave(CoordSystem="Cartesian",default_time=0,default_k0=1,default_k1=1,d
 def InitialData(Type="PlaneWave",CoordSystem="Cartesian",
                 default_time=0,
                 default_k0=1,default_k1=1,default_k2=1,
-                default_sigma=1):
+                default_sigma=3):
     if Type=="PlaneWave":
         PlaneWave(CoordSystem=CoordSystem, default_time=default_time,
                   default_k0=default_k0,default_k1=default_k1,default_k2=default_k2)
