@@ -1,4 +1,4 @@
-""" NRPy+ LaTeX to Sympy Parser """
+""" Convert LaTeX Sentence to SymPy Expression """
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
@@ -8,27 +8,32 @@ import re
 class Lexer:
 	""" LaTeX Lexer
 
-		The following class will tokenize an expression for usage in parsing.
+		The following class will tokenize a sentence for parsing.
 	"""
 
 	def __init__(self):
 		self.grammar = { r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})' : 'RATIONAL',
-						 r'[0-9]+\.[0-9]+' : 'DECIMAL',
-						 r'[1-9][0-9]*'    : 'INTEGER',
-						 r'\+'			   : 'PLUS',
-						 r'\-'			   : 'MINUS',
-						 r'\/'			   : 'DIVIDE',
-						 r'\^'			   : 'SUPERSCRIPT',
-						 r'\('			   : 'LEFT_PAREN',
-						 r'\)'			   : 'RIGHT_PAREN',
-						 r'\{'			   : 'LEFT_BRACE',
-						 r'\}'			   : 'RIGHT_BRACE',
-						 r'\['			   : 'LEFT_BRACKET',
-						 r'\]'			   : 'RIGHT_BRACKET',
-						 r'\\'	   		   : 'COMMAND',
-						 r'sqrt'           : 'CMD_SQRT',
-						 r'frac'		   : 'CMD_FRAC',
-						 r'[a-zA-Z]'       : 'SYMBOL' }
+						 r'[0-9]+\.[0-9]+'		: 'DECIMAL',
+						 r'[1-9][0-9]*'			: 'INTEGER',
+						 r'\+'					: 'PLUS',
+						 r'\-'					: 'MINUS',
+						 r'\/'					: 'DIVIDE',
+						 r'\^'					: 'SUPERSCRIPT',
+						 r'\('					: 'LEFT_PAREN',
+						 r'\)'					: 'RIGHT_PAREN',
+						 r'\{'					: 'LEFT_BRACE',
+						 r'\}'					: 'RIGHT_BRACE',
+						 r'\['					: 'LEFT_BRACKET',
+						 r'\]'					: 'RIGHT_BRACKET',
+						 r'\\[bB]igl'			: 'BIGL_DELIM',
+						 r'\\[bB]igr'			: 'BIGR_DELIM',
+						 r'\\left'				: 'LEFT_DELIM',
+						 r'\\right'				: 'RIGHT_DELIM',
+						 r'(?:\s+)|(?:\\,)+'	: 'SPACE_DELIM',
+						 r'\\'					: 'BACKSLASH',
+						 r'sqrt'				: 'SQRT_CMD',
+						 r'frac'				: 'FRAC_CMD',
+						 r'[a-zA-Z]'			: 'SYMBOL' }
 		self.regex = re.compile('|'.join(['(?P<%s>%s)' % \
 			(self.grammar[pattern], pattern) for pattern in self.grammar]))
 	
@@ -49,14 +54,16 @@ class Lexer:
 		"""
 		while self.index < len(self.sentence):
 			token = self.regex.match(self.sentence, self.index)
-			if self.sentence[self.index].isspace():
-				self.index += 1; continue
-			if not token:
-				raise ParsingError('unexpected token \'%s\' at position %d' % \
-					(self.sentence[self.index], self.index))
-			self.index = token.end()
-			self.word = token.group()
-			yield token.lastgroup
+			if token is None:
+				raise ParseError('%s\n%s^\n' % (self.sentence, (12 + self.index) * ' ') \
+					+ 'unexpected \'%s\' at position %d' % (self.sentence[self.index], self.index))
+			elif token.lastgroup in ('BIGL_DELIM', 'BIGR_DELIM', \
+					'LEFT_DELIM', 'RIGHT_DELIM', 'SPACE_DELIM'):
+				self.index = token.end()
+			else:
+				self.index = token.end()
+				self.word = token.group()
+				yield token.lastgroup
 	
 	def lex(self):
 		""" Retrieve Current Token
@@ -72,17 +79,17 @@ class Lexer:
 class Parser:
 	""" LaTeX Parser
 
-		The following class will parse an expression according to the defined grammar:
+		The following class will parse a tokenized sentence.
 	
-		<EXPRESSION> -> { - } <TERM> { ( + | - ) <TERM> }
-		<TERM>		 -> <FACTOR> { { ( / | ^ ) } <FACTOR> }
-		<FACTOR>	 -> <OPERAND> | \(<EXPRESSION>\) | \{<EXPRESSION>\}
-		<OPERAND>	 -> <SYMBOL> | <NUMBER> | <COMMAND>
-		<SYMBOL>	 -> a | ... | z | A | ... | Z
-		<NUMBER>     -> <RATIONAL> | <DECIMAL> | <INTEGER>
-		<COMMAND>    -> \ ( <SQRT> | <FRAC> | ... )
-		<SQRT>		 -> sqrt { [<INTEGER>] } \{<EXPRESSION>\}
-		<FRAC>		 -> frac \{<EXPRESSION>\} \{<EXPRESSION>\}
+		LaTeX Grammar:
+		<EXPRESSION>	-> [ - ] <TERM> { ( + | - ) <TERM> }
+		<TERM>			-> <FACTOR> { [ ( / | ^ ) ] <FACTOR> }
+		<FACTOR>		-> <OPERAND> | (<EXPRESSION>) | [<EXPRESSION>]
+		<OPERAND>		-> <SYMBOL> | <NUMBER> | <COMMAND>
+		<NUMBER>		-> <RATIONAL> | <DECIMAL> | <INTEGER>
+		<COMMAND>		-> \ ( <SQRT> | <FRAC> | ... )
+		<SQRT>			-> sqrt [ [<INTEGER>] ] {<EXPRESSION>}
+		<FRAC>			-> frac {<EXPRESSION>} {<EXPRESSION>}
 	"""
 
 	def __init__(self):
@@ -92,15 +99,11 @@ class Parser:
 		""" Parse Sentence
 
 			:arg:    sentence (raw string)
-			:return: parsed sentence
+			:return: symbolic expression
 		"""
 		self.lexer.initialize(sentence)
 		self.lexer.lex()
-		try:
-			return parse_expr(self.__expression())
-		except TypeError:
-			raise ParsingError('unexpected token \'%s\' at position %d' % \
-					(sentence[self.lexer.index], self.lexer.index))
+		return parse_expr(self.__expression())
 
 	def __expression(self):
 		sign = '-' if self.__accept('MINUS') else ''
@@ -113,8 +116,8 @@ class Parser:
 
 	def __term(self):
 		expr = self.__factor()
-		while any(self.__peek(i) for i in ('COMMAND', 'LEFT_PAREN', 'SYMBOL', \
-				'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE', 'SUPERSCRIPT')):
+		while any(self.__peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET', 'DIVIDE', 'SUPERSCRIPT', \
+				'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER', 'COMMAND')):
 			operator = self.lexer.word if self.__peek('DIVIDE') \
 				else '**' if self.__peek('SUPERSCRIPT') else '*'
 			if operator != '*': self.lexer.lex()
@@ -126,9 +129,9 @@ class Parser:
 			expr = '(' + self.__expression() + ')'
 			self.__expect('RIGHT_PAREN')
 			return expr
-		elif self.__accept('LEFT_BRACE'):
+		elif self.__accept('LEFT_BRACKET'):
 			expr = '(' + self.__expression() + ')'
-			self.__expect('RIGHT_BRACE')
+			self.__expect('RIGHT_BRACKET')
 			return expr
 		return self.__operand()
 	
@@ -136,7 +139,7 @@ class Parser:
 		operand = self.lexer.word
 		if self.__accept('SYMBOL'):
 			return operand
-		elif self.__accept('COMMAND'):
+		elif self.__accept('BACKSLASH'):
 			return self.__command()
 		return self.__number()
 	
@@ -148,19 +151,26 @@ class Parser:
 				rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
 			return 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
 		elif self.__accept('DECIMAL'):
-			return 'Float(%s)' % number
-		else: self.__expect('INTEGER')
-		return number
+			return 'Float(' + str(number) + ')'
+		elif self.__accept('INTEGER'):
+			return number
+		err_pos = self.lexer.index - len(self.lexer.word)
+		raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
+				+ 'unexpected \'%s\' at position %d' % (self.lexer.sentence[err_pos], err_pos))
 	
 	def __command(self):
-		if self.__accept('CMD_SQRT'):
+		if self.__accept('SQRT_CMD'):
 			return self.__sqrt()
-		elif self.__accept('CMD_FRAC'):
+		elif self.__accept('FRAC_CMD'):
 			return self.__frac()
+		err_pos = self.lexer.index - len(self.lexer.word)
+		raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
+				+ 'unsupported command at position %d' % err_pos)
 	
 	def __sqrt(self):
 		if self.__accept('LEFT_BRACKET'):
-			root = self.__number()
+			root = self.lexer.word
+			self.__expect('INTEGER')
 			self.__expect('RIGHT_BRACKET')
 		else: root = 2
 		self.__expect('LEFT_BRACE')
@@ -188,17 +198,11 @@ class Parser:
 	
 	def __expect(self, token_type):
 		if not self.__accept(token_type):
-			raise ParsingError('expected %s token at position %d' % \
-					(token_type, self.lexer.index))
-	
-class ParsingError(Exception):
-	""" LaTeX to SymPy Parsing Error """
+			err_pos = self.lexer.index - len(self.lexer.word)
+			raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
+					+ 'expected token %s at position %d' % (token_type, err_pos))
 
-	def __init__(self, message=None):
-		self.message = message
-	
-	def __str__(self):
-		return self.message if self.message else ''
+class ParseError(Exception): pass
 
 def parse(sentence):
 	""" Convert LaTeX Sentence to SymPy Expression
@@ -207,7 +211,7 @@ def parse(sentence):
 		:return: SymPy Expression
 
 		>>> from latex_parser import parse
-		>>> parse(r'-a(b^{2a} - \\frac{2}{3}) + \\sqrt[5]{a + 3}')
+		>>> parse(r'-a(b^(2a) - \\frac{2}{3}) + \\sqrt[5]{a + 3}')
 		-a*(b**(2*a) - 2/3) + (a + 3)**(1/5)
 	"""
 	return Parser().parse(sentence)
