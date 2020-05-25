@@ -333,9 +333,9 @@ const int NUM_RECONSTRUCT_GFS = 15;
 #include "RHSs/calculate_StildeD0_source_term.h"
 #include "RHSs/calculate_StildeD1_source_term.h"
 #include "RHSs/calculate_StildeD2_source_term.h"
-#include "../Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs.h"
-#include "../A_i_rhs_no_gauge_terms.h"
-#include "../compute_B_and_Bstagger_from_A.h"
+#include "RHSs/Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs.h"
+#include "RHSs/A_i_rhs_no_gauge_terms.h"
+#include "A2B/compute_B_and_Bstagger_from_A.h"
 #include "RHSs/calculate_Stilde_flux_D0_right.h"
 #include "RHSs/calculate_Stilde_flux_D0_left.h"
 #include "RHSs/calculate_Stilde_flux_D1_right.h"
@@ -478,6 +478,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 
   int flux_dirn;
   flux_dirn=0;
+  interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   /* There are two stories going on here:
@@ -530,6 +531,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   //   are defined at (i+1/2,j,k).
   // Next goal: reconstruct Bx, vx and vy at (i+1/2,j+1/2,k).
   flux_dirn=1;
+  interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   // in_prims[{VXR,VXL,VYR,VYL}].gz_{lo,hi} ghostzones are set to all zeros, which
@@ -633,7 +635,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
                                +2*gxy*gxz*gyz
                                -  gyy*gxz*gxz
                                -  gzz*gxy*gxy );
-
       }
 #pragma omp parallel for
   for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
@@ -661,6 +662,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   in_prims[VZL]=out_prims_l[VZ];
 
   flux_dirn=2;
+  interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   /* There are two stories going on here: 
@@ -783,6 +785,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 
   // We reprise flux_dirn=1 to finish up computations of Ai_rhs's!
   flux_dirn=0;
+  interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   ww=0;

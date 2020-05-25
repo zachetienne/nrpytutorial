@@ -14,7 +14,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
                                            const REAL *gxx, const REAL *gxy, const REAL *gxz, const REAL *gyy, const REAL *gyz,const REAL *gzz,
                                            REAL *psi3_bssn, const REAL *Ax, const REAL *Ay, const REAL *Az,
                                            REAL *Bx, REAL *By, REAL *Bz, REAL *Bx_stagger, REAL *By_stagger, REAL *Bz_stagger) {
-#include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
+#include "../set_Cparameters.h"
 
   const REAL dxi = invdx0;
   const REAL dyi = invdx1;
@@ -44,7 +44,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
 
     const int actual_index = IDX3S(i,j,k);
 
-    const REAL Psim3 = 1.0/psi3_bssn[index];
+    const REAL Psim3 = 1.0/psi3_bssn[actual_index];
 
     // For the lower boundaries, the following applies a "copy" 
     //    boundary condition on Bi_stagger where needed.
