@@ -2,7 +2,8 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-from sympy.parsing.sympy_parser import parse_expr
+from sympy import Symbol, Integer, Rational, Float, Pow
+from sympy import var, sqrt
 import re
 
 class Lexer:
@@ -12,6 +13,9 @@ class Lexer:
     """
 
     def __init__(self):
+        greek = '|'.join(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta',
+            'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omikron',
+            'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'])
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in 
             [ ('RATIONAL',       r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
@@ -34,6 +38,7 @@ class Lexer:
               ('BACKSLASH',      r'\\'),
               ('SQRT_CMD',       r'sqrt'),
               ('FRAC_CMD',       r'frac'),
+              ('GREEK_LETTER',   greek),
               ('SYMBOL',         r'[a-zA-Z]') ]]))
     
     def initialize(self, sentence):
@@ -86,7 +91,7 @@ class Parser:
         <FACTOR>        -> <OPERAND> | (<EXPRESSION>) | [<EXPRESSION>]
         <OPERAND>       -> <SYMBOL> | <NUMBER> | <COMMAND>
         <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER>
-        <COMMAND>       -> \ ( <SQRT> | <FRAC> | ... )
+        <COMMAND>       -> \ ( <GREEK_LETTER> | <SQRT> | <FRAC> )
         <SQRT>          -> sqrt [ [<INTEGER>] ] {<EXPRESSION>}
         <FRAC>          -> frac {<EXPRESSION>} {<EXPRESSION>}
     """
@@ -102,7 +107,7 @@ class Parser:
         """
         self.lexer.initialize(sentence)
         self.lexer.lex()
-        return parse_expr(self.__expression())
+        return eval(self.__expression())
 
     def __expression(self):
         sign = '-' if self.__accept('MINUS') else ''
@@ -116,7 +121,7 @@ class Parser:
     def __term(self):
         expr = self.__factor()
         while any(self.__peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET', 'DIVIDE', 'SUPERSCRIPT', \
-                'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER', 'COMMAND')):
+                'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER', 'BACKSLASH')):
             operator = self.lexer.word if self.__peek('DIVIDE') \
                 else '**' if self.__peek('SUPERSCRIPT') else '*'
             if operator != '*': self.lexer.lex()
@@ -137,7 +142,8 @@ class Parser:
     def __operand(self):
         operand = self.lexer.word
         if self.__accept('SYMBOL'):
-            return operand
+            var(operand)
+            return 'Symbol(\'' + operand + '\')'
         elif self.__accept('BACKSLASH'):
             return self.__command()
         return self.__number()
@@ -150,25 +156,29 @@ class Parser:
                 rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
             return 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
         elif self.__accept('DECIMAL'):
-            return 'Float(' + str(number) + ')'
+            return 'Float(' + number + ')'
         elif self.__accept('INTEGER'):
-            return number
+            return 'Integer(' + number + ')'
         err_pos = self.lexer.index - len(self.lexer.word)
         raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
                 + 'unexpected \'%s\' at position %d' % (self.lexer.sentence[err_pos], err_pos))
     
     def __command(self):
+        command = self.lexer.word
         if self.__accept('SQRT_CMD'):
             return self.__sqrt()
         elif self.__accept('FRAC_CMD'):
             return self.__frac()
+        elif self.__accept('GREEK_LETTER'):
+            var(command)
+            return 'Symbol(\'' + command + '\')'
         err_pos = self.lexer.index - len(self.lexer.word)
         raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
                 + 'unsupported command at position %d' % err_pos)
     
     def __sqrt(self):
         if self.__accept('LEFT_BRACKET'):
-            root = self.lexer.word
+            root = 'Integer(' + self.lexer.word + ')'
             self.__expect('INTEGER')
             self.__expect('RIGHT_BRACKET')
         else: root = 2
@@ -210,8 +220,8 @@ def parse(sentence):
         :return: SymPy Expression
 
         >>> from latex_parser import parse
-        >>> parse(r'-a(b^(2a) - \\frac{2}{3}) + \\sqrt[5]{a + 3}')
-        -a*(b**(2*a) - 2/3) + (a + 3)**(1/5)
+        >>> parse(r'-a(\delta^(2a) - \\frac{2}{3}) + \\sqrt[5]{a + 3}')
+        -a*(delta**(2*a) - 2/3) + (a + 3)**(1/5)
     """
     return Parser().parse(sentence)
 
