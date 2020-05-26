@@ -745,7 +745,7 @@ NRPyPlusTOVID::K_atmosphere = %.15e
 IllinoisGRMHD::rho_b_atm      = %.15e
 NRPyPlusTOVID::rho_atmosphere = %.15e
 
-# Set rho_ppoly_tab_in""" %(IDfilename,EOS_struct.neos,tau_atmosphere,EOS_struc.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
+# Set rho_ppoly_tab_in""" %(IDfilename,EOS_struct.neos,tau_atmosphere,EOS_struct.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
             for j in range(EOS_struct.neos-1):
                 file.write("""
 IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
@@ -775,16 +775,16 @@ EOS_omni::neos = %d
 # Set hybrid_k0 to K_ppoly_tab0
 EOS_omni::hybrid_k0 = %.15e
 
-# Set hybrid_rho to rho_ppoly_tab_in""" %(eos.neos,eos.K_poly_tab[0]))
-            for j in range(eos.neos-1):
+# Set hybrid_rho to rho_ppoly_tab_in""" %(Gamma_thermal,EOS_struct.neos,EOS_struct.K_poly_tab[0]))
+            for j in range(EOS_struct.neos-1):
                 file.write("""
-EOS_omni::hybrid_rho[%d] = %.15e""" %(j,eos.rho_poly_tab[j]))
+EOS_omni::hybrid_rho[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma to Gamma_ppoly_tab_in""")
-            for j in range(eos.neos):
+            for j in range(EOS_struct.neos):
                 file.write("""
-EOS_omni::hybrid_gamma[%d] = %.15e""" %(j,eos.Gamma_poly_tab[j]))
+EOS_omni::hybrid_gamma[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma_th to Gamma_th
@@ -809,8 +809,8 @@ EOS_omni::hybrid_gamma_th = %.15e
 
         eos        = set_up_EOS_parameters__Read_et_al_input_variables(EOSname)
         atm_index  = polytropic_index_from_rhob(eos,rho_atmosphere)
-        Gamma_atm  = eos.Gamma_poly_tab[atm_index]
-        Kpoly_atm  = eos.K_poly_tab[atm_index]
+        Gamma_atm  = EOS_struct.Gamma_poly_tab[atm_index]
+        Kpoly_atm  = EOS_struct.K_poly_tab[atm_index]
         IDfilename = "outputTOVpolytrope-"+EOSname+".txt"
 
         # This is done for cosmetic purposes, so that parameter files
@@ -867,16 +867,16 @@ IllinoisGRMHD::K_ppoly_tab0 = %.15e
 # Set atmospheric value of rho
 IllinoisGRMHD::rho_b_atm = %.15e
 
-# Set rho_ppoly_tab_in""" %(eos.neos,tau_atmosphere,eos.K_poly_tab[0],rho_atmosphere))
-            for j in range(eos.neos-1):
+# Set rho_ppoly_tab_in""" %(EOS_struct.neos,tau_atmosphere,EOS_struct.K_poly_tab[0],rho_atmosphere))
+            for j in range(EOS_struct.neos-1):
                 file.write("""
-IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,eos.rho_poly_tab[j]))
+IllinoisGRMHD::rho_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
             file.write("""
 
 # Set Gamma_ppoly_tab_in""")
-            for j in range(eos.neos):
+            for j in range(EOS_struct.neos):
                 file.write("""
-IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,eos.Gamma_poly_tab[j]))
+IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
             file.write("""
 
 # Set Gamma_th
@@ -915,16 +915,16 @@ EOS_omni::neos = %d
 # Set hybrid_k0 to K_ppoly_tab0
 EOS_omni::hybrid_k0 = %.15e
 
-# Set hybrid_rho to rho_ppoly_tab_in""" %(Gamma_thermal,IDfilename,rho_atmosphere,Gamma_atm,Kpoly_atm,eos.neos,eos.K_poly_tab[0]))
-            for j in range(eos.neos-1):
+# Set hybrid_rho to rho_ppoly_tab_in""" %(Gamma_thermal,IDfilename,rho_atmosphere,Gamma_atm,Kpoly_atm,EOS_struct.neos,EOS_struct.K_poly_tab[0]))
+            for j in range(EOS_struct.neos-1):
                 file.write("""
-EOS_omni::hybrid_rho[%d] = %.15e""" %(j,eos.rho_poly_tab[j]))
+EOS_omni::hybrid_rho[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma to Gamma_ppoly_tab_in""")
-            for j in range(eos.neos):
+            for j in range(EOS_struct.neos):
                 file.write("""
-EOS_omni::hybrid_gamma[%d] = %.15e""" %(j,eos.Gamma_poly_tab[j]))
+EOS_omni::hybrid_gamma[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma_th to Gamma_th
