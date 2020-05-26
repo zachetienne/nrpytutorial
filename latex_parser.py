@@ -12,30 +12,29 @@ class Lexer:
     """
 
     def __init__(self):
-        self.grammar = { r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})' : 'RATIONAL',
-                         r'[0-9]+\.[0-9]+'        : 'DECIMAL',
-                         r'[1-9][0-9]*'            : 'INTEGER',
-                         r'\+'                    : 'PLUS',
-                         r'\-'                    : 'MINUS',
-                         r'\/'                    : 'DIVIDE',
-                         r'\^'                    : 'SUPERSCRIPT',
-                         r'\('                    : 'LEFT_PAREN',
-                         r'\)'                    : 'RIGHT_PAREN',
-                         r'\{'                    : 'LEFT_BRACE',
-                         r'\}'                    : 'RIGHT_BRACE',
-                         r'\['                    : 'LEFT_BRACKET',
-                         r'\]'                    : 'RIGHT_BRACKET',
-                         r'\\[bB]igl'            : 'BIGL_DELIM',
-                         r'\\[bB]igr'            : 'BIGR_DELIM',
-                         r'\\left'                : 'LEFT_DELIM',
-                         r'\\right'                : 'RIGHT_DELIM',
-                         r'(?:\s+)|(?:\\,)+'    : 'SPACE_DELIM',
-                         r'\\'                    : 'BACKSLASH',
-                         r'sqrt'                : 'SQRT_CMD',
-                         r'frac'                : 'FRAC_CMD',
-                         r'[a-zA-Z]'            : 'SYMBOL' }
-        self.regex = re.compile('|'.join(['(?P<%s>%s)' % \
-            (self.grammar[pattern], pattern) for pattern in self.grammar]))
+        self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in 
+            [ ('RATIONAL',       r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})'),
+              ('DECIMAL',        r'[0-9]+\.[0-9]+'),
+              ('INTEGER',        r'[1-9][0-9]*'),
+              ('PLUS',           r'\+'),
+              ('MINUS',          r'\-'),
+              ('DIVIDE',         r'\/'),
+              ('SUPERSCRIPT',    r'\^'),
+              ('LEFT_PAREN',     r'\('),
+              ('RIGHT_PAREN',    r'\)'),
+              ('LEFT_BRACE',     r'\{'),
+              ('RIGHT_BRACE',    r'\}'),
+              ('LEFT_BRACKET',   r'\['),
+              ('RIGHT_BRACKET',  r'\]'),
+              ('BIGL_DELIM',     r'\\[bB]igl'),
+              ('BIGR_DELIM',     r'\\[bB]igr'),
+              ('LEFT_DELIM',     r'\\left'),
+              ('RIGHT_DELIM',    r'\\right'),
+              ('SPACE_DELIM',    r'(?:\s+)|(?:\\,)+'),
+              ('BACKSLASH',      r'\\'),
+              ('SQRT_CMD',       r'sqrt'),
+              ('FRAC_CMD',       r'frac'),
+              ('SYMBOL',         r'[a-zA-Z]') ]]))
     
     def initialize(self, sentence):
         """ Initialize Lexer
@@ -83,13 +82,13 @@ class Parser:
     
         LaTeX Grammar:
         <EXPRESSION>    -> [ - ] <TERM> { ( + | - ) <TERM> }
-        <TERM>            -> <FACTOR> { [ ( / | ^ ) ] <FACTOR> }
+        <TERM>          -> <FACTOR> { [ ( / | ^ ) ] <FACTOR> }
         <FACTOR>        -> <OPERAND> | (<EXPRESSION>) | [<EXPRESSION>]
-        <OPERAND>        -> <SYMBOL> | <NUMBER> | <COMMAND>
+        <OPERAND>       -> <SYMBOL> | <NUMBER> | <COMMAND>
         <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER>
-        <COMMAND>        -> \ ( <SQRT> | <FRAC> | ... )
-        <SQRT>            -> sqrt [ [<INTEGER>] ] {<EXPRESSION>}
-        <FRAC>            -> frac {<EXPRESSION>} {<EXPRESSION>}
+        <COMMAND>       -> \ ( <SQRT> | <FRAC> | ... )
+        <SQRT>          -> sqrt [ [<INTEGER>] ] {<EXPRESSION>}
+        <FRAC>          -> frac {<EXPRESSION>} {<EXPRESSION>}
     """
 
     def __init__(self):
