@@ -674,7 +674,10 @@ EOS_omni::hybrid_gamma_th = %.15e
      K_single_polytrope,      # sets NRPyPlusTOVID::K_atmosphere
      Gamma_single_polytrope,  # sets IllinoisGRMHD::Gamma_ppoly_tab_in[0]
      Gamma_single_polytrope,  # sets NRPyPlusTOVID::Gamma_atmosphere
-     Gamma_single_polytrope)) # sets IllinoisGRMHD::Gamma_th
+     Gamma_single_polytrope,  # sets IllinoisGRMHD::Gamma_th
+     K_single_polytrope,      # sets EOS_omni::hybrid_k0
+     Gamma_single_polytrope,  # sets EOS_omni::hybrid_gamma[0]
+     Gamma_single_polytrope)) # sets EOS_omni::hybrid_gamma_th
 
     elif EOSname == "piecewise":
         if EOS_struct == None:
@@ -772,7 +775,7 @@ EOS_omni::neos = %d
 # Set hybrid_k0 to K_ppoly_tab0
 EOS_omni::hybrid_k0 = %.15e
 
-# Set hybrid_rho to rho_ppoly_tab_in""" %(IDfilename,eos.neos,tau_atmosphere,eos.K_poly_tab[0],Kpoly_atm,rho_atmosphere,rho_atmosphere))
+# Set hybrid_rho to rho_ppoly_tab_in""" %(eos.neos,eos.K_poly_tab[0]))
             for j in range(eos.neos-1):
                 file.write("""
 EOS_omni::hybrid_rho[%d] = %.15e""" %(j,eos.rho_poly_tab[j]))
