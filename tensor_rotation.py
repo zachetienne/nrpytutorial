@@ -7,7 +7,6 @@ The following script will perform symbolic tensor rotation using quaternions.
 
 from sympy import Quaternion as quat
 from sympy import Matrix
-# from sympy.functions import transpose
 
 def rotate(tensor, axis, angle):
     """ Rotate symbolic vector or tensor about an arbitrary axis
