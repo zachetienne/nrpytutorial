@@ -52,14 +52,10 @@ def Psi4_tetrads():
     y = rfm.xxCart[1]
     z = rfm.xxCart[2]
 
-    # Step 2.b: Declare v_1^a, v_2^a, and v_3^a tetrads,
-    #           as well as detgamma and gammaUU from
-    #           BSSN.ADM_in_terms_of_BSSN
-    v1UCart = ixp.zerorank1()
-    v2UCart = ixp.zerorank1()
-
-    # Step 2.b.i: Simplify detgamma & gammaUU expressions,
-    #             which expedites Psi4 codegen.
+    # Step 2.b: Declare detgamma and gammaUU from
+    #           BSSN.ADM_in_terms_of_BSSN;
+    #           simplify detgamma & gammaUU expressions,
+    #           which expedites Psi4 codegen.
     detgamma = sp.simplify(AB.detgamma)
     gammaUU = ixp.zerorank2()
     for i in range(DIM):

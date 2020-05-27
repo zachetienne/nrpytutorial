@@ -47,18 +47,13 @@ def StaticTrumpet(ComputeADMGlobalsOnly = False):
     DIM = 3
     par.set_parval_from_str("grid::DIM",DIM)
 
-    # Step 1: Set psi, the conformal factor:
-
-    # Auxiliary variables:
-    psi0 = sp.symbols('psi0', real=True)
-    
-    # *** The StaticTrumpet conformal factor ***
+    # Step 1: Set psi, the StaticTrumpet conformal factor
     # Dennison and Baumgarte (2014) Eq. 13
     # https://arxiv.org/pdf/1403.5484.pdf
-    
+
     # psi = sqrt{1 + M/r }
     psi0 = sp.sqrt(1 + M/r)
-    
+
     # *** The physical spatial metric in spherical basis ***
     # Set the upper-triangle of the matrix...
     # Eq. 15
