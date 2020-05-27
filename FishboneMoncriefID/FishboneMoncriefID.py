@@ -1,14 +1,11 @@
 # This module builds the equations that describe the Fishbone-Moncrief initial data.
 # More thorough documentation can be found in Tutorial-FishboneMoncriefID.ipynb
 # Step 1a: Import needed NRPy+ core modules:
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-from outputC import *
-import loop
-
-import reference_metric as rfm
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri               # NRPy+: Functions having to do with numerical grids
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
+import reference_metric as rfm   # NRPy+: Reference metric support
 
 thismodule = __name__
 
@@ -146,8 +143,8 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     # Adopt the Kerr-Schild metric for Fishbone-Moncrief disks
     # http://gravity.psu.edu/numrel/jclub/jc/Cook___LivRev_2000-5.pdf
     # Alternatively, Appendix of https://arxiv.org/pdf/1704.00599.pdf
-    rhoKS2  = r**2 + a**2*sp.cos(th)**2 # Eq 79 of Cook's Living Review article
-    DeltaKS = r**2 - 2*M*r + a**2    # Eq 79 of Cook's Living Review article
+    rhoKS2  = r**2 + a**2*sp.cos(th)**2 # Eq 79 of Cook's Living Review article (note that definition above Eq A.1 in
+    #                                     https://arxiv.org/pdf/1704.00599.pdf should be rho^2, not rho)
     alphaKS = 1/sp.sqrt(1 + 2*M*r/rhoKS2)
     betaKSU = ixp.zerorank1()
     betaKSU[0] = alphaKS**2*2*M*r/rhoKS2
