@@ -680,12 +680,12 @@ EOS_omni::hybrid_gamma_th = %.15e
      Gamma_single_polytrope)) # sets EOS_omni::hybrid_gamma_th
 
     elif EOSname == "piecewise":
-        if EOS_struct == None:
+        if EOS_struct is None: # Use "is None" instead of "==None", as the former is more correct.
             print("Error: Please set the EOS named tuple. Usage:")
             print("generate_IllinoisGRMHD_EOS_parameter_file(\"piecewise\",outfilename,Gamma_thermal=Gamma_th,EOS_struct=eos_named_tuple)")
             sys.exit(1)
             
-        if Gamma_thermal == None:
+        if Gamma_thermal is None: # Use "is None" instead of "==None", as the former is more correct.
             print("Error: Please set Gamma_thermal. Usage:")
             print("generate_IllinoisGRMHD_EOS_parameter_file(\"piecewise\",outfilename,Gamma_thermal=Gamma_th,EOS_struct=eos_named_tuple)")
             sys.exit(1)
@@ -802,7 +802,7 @@ EOS_omni::hybrid_gamma_th = %.15e
             print("ERROR: Unknown EOS name "+EOSname)
             sys.exit(1)
 
-        if Gamma_thermal == None:
+        if Gamma_thermal is None: # Use "is None" instead of "==None", as the former is more correct.
             print("Error: Please set Gamma_thermal. Usage:")
             print("generate_IllinoisGRMHD_EOS_parameter_file(EOSname,outfilename,Gamma_thermal=None)")
             sys.exit(1)
