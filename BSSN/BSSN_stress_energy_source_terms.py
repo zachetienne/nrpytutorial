@@ -36,7 +36,7 @@ def stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(inputvars,cus
             gamma4DD[mu][nu] = AB4m.g4DD[mu][nu] + n4D[mu] * n4D[nu]
 
     # Step 2.b: If expression for components of T4UU not given, declare T4UU here
-    if custom_T4UU == None:
+    if custom_T4UU is None: # Use "is None" instead of "==None", as the former is more correct.
         T4UU = ixp.declarerank2("T4UU","sym01",DIM=4)
     else:
         T4UU = custom_T4UU
