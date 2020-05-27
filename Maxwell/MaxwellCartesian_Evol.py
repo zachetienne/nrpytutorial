@@ -11,7 +11,8 @@ def MaxwellCartesian_Evol():
     DIM = par.parval_from_str("grid::DIM")
 
     # Step 1: Set the finite differencing order to 4.
-    par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
+    # (not needed here)
+    # par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
 
     # Step 2: Register gridfunctions that are needed as input.
     psi = gri.register_gridfunctions("EVOL", ["psi"])
