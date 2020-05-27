@@ -110,7 +110,6 @@
 	Sdotn=S1*n1+S2*n2+S3*n3
 	Sdotv=S1*v1+S2*v2+S3*v3
 	Sdotxi=S1*xi1+S2*xi2+S3*xi3
-	SdotSkerr=S1*Skerr1+S2*Skerr2+S3*Skerr3
 	HdsumTerm2=3*Sstardotn*Sstardotn
 	HdsumTerm1=Sstar1*Sstar1+Sstar2*Sstar2+Sstar3*Sstar3
 	Hdsum=HdsumTerm1-HdsumTerm2
