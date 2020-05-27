@@ -80,5 +80,5 @@ def BrillLindquist(ComputeADMGlobalsOnly = False):
                                                                     gammaCartDD,KCartDD,alphaCart,betaCartU,BCartU)
 
     import BSSN.BSSN_ID_function_string as bIDf
-    global returnfunction
-    returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
+    # Generates initial_data() C function & stores to outC_function_dict["initial_data"]
+    bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
