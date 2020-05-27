@@ -34,8 +34,6 @@ def MaxwellCartesian_Evol():
     gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
     gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
 
-    gammaUU = ixp.declarerank3("gammaUU","sym01")
-    detgamma = gri.register_gridfunctions("AUX",["detgamma"])
     gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
     gammaUU_dD = ixp.declarerank3("gammaDD_dD","sym01")
 
