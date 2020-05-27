@@ -1,24 +1,24 @@
 """ SymPy (N-Ary) Expression Tree
 
-The following script will extend the expression tree from SymPy, 
-allowing direct node manipulation for subexpression replacement.
-The expression tree structure within SymPy expressions stores
-subexpressions inside immutable tuples, preventing the client from
-modifying the expression tree. Therefore, the client must depend on
-build-in functions, such as xreplace, for subexpression replacement,
-which might be suboptimal for their specific purpose. The ExprTree class
-is implemented as an n-ary tree data structure for SymPy expressions,
-equipped with a build method for constructing the expression tree, 
-a reconstruct method for reconstructing the root expression, a replace
-method for subexpression replacement, and preorder/postorder traversal
-iterators (or generators). The __repr__ representation of the expression
-tree will return a string of the expressions using the preorder traversal,
-while the __str__ representation will return a string of the class name 
-and root expression. The Node subclass has a field for an expression and
-a field for subexpression children (implemented as a mutable list).
+    The following script will extend the expression tree from SymPy, 
+    allowing direct node manipulation for subexpression replacement.
+    The expression tree structure within SymPy expressions stores
+    subexpressions inside immutable tuples, preventing the client from
+    modifying the expression tree. Therefore, the client must depend on
+    build-in functions, such as xreplace, for subexpression replacement,
+    which might be suboptimal for their specific purpose. The ExprTree class
+    is implemented as an n-ary tree data structure for SymPy expressions,
+    equipped with a build method for constructing the expression tree, 
+    a reconstruct method for reconstructing the root expression, a replace
+    method for subexpression replacement, and preorder/postorder traversal
+    iterators (or generators). The __repr__ representation of the expression
+    tree will return a string of the expressions using the preorder traversal,
+    while the __str__ representation will return a string of the class name 
+    and root expression. The Node subclass has a field for an expression and
+    a field for subexpression children (implemented as a mutable list).
 """
 # Author: Ken Sible
-# Email:  ksible **at** outlook **dot* com
+# Email:  ksible *at* outlook **dot* com
 
 __author__ = 'Ken Sible'
 
@@ -72,7 +72,7 @@ class ExprTree:
             ...         print((i, subtree.expr))
             (2, a*b)
         """
-        if node == None:
+        if node is None:
             node = self.root
         yield node
         for child in node.children:
@@ -93,7 +93,7 @@ class ExprTree:
             ...         print((i, subtree.expr))
             (2, a*b)
         """
-        if node == None:
+        if node is None:
             node = self.root
         for child in node.children:
             for subtree in self.postorder(child):
