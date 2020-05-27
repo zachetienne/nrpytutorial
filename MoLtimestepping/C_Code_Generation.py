@@ -125,8 +125,6 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
 ####### Step 3.b.ii: Implementing the Runge Kutta Scheme for Method of Lines Timestepping
     Butcher = Butcher_dict[RK_method][0] # Get the desired Butcher table from the dictionary
     num_steps = len(Butcher)-1 # Specify the number of required steps to update solution
-    indent = "  "
-    RK_str = "// Code snippet implementing "+RK_method+" algorithm for Method of Lines timestepping\n"
     # Diagonal RK3 only!!!
 
     def single_RK_substep(commentblock, RHS_str, RHS_input_str, RHS_output_str, RK_lhss_list, RK_rhss_list,

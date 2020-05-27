@@ -24,7 +24,6 @@ def SpinWeight_minus2_SphHarmonics(maximum_l=8,filename=os.path.join("SpinWeight
 
     # Step 2.a: Declare SymPy symbols:
     th, ph = sp.symbols('th ph',real=True)
-    m = sp.symbols('m', integer=True)
 
     # Step 2.b: Define the Goldberg formula for spin-weighted spherical harmonics
     #           (https://aip.scitation.org/doi/10.1063/1.1705135);
