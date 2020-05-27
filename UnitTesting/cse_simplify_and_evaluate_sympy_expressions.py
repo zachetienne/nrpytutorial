@@ -66,9 +66,8 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
             free_symbols_dict[var] = mpf(random.random())
             # Warning: might slow Travis CI too much: logging.debug(' ...Setting '+str(var)+' to the random value: '+str(free_symbols_dict[var]))
 
-    # Initialize calculated_dict and simplified_expression_dict
+    # Initialize calculated_dict
     calculated_dict = dict()
-    simplified_expression_dict = dict()
 
     logging.debug(' ...Calculating values for each variable based on free symbols...')
 

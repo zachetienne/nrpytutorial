@@ -12,14 +12,14 @@ import BSSN.ADMBSSN_tofrom_4metric as AB4m # NRPy+: ADM/BSSN <-> 4-metric conver
 
 def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,ValenciavU=None,BU=None):
 
-    if gammaDD==None:
+    if gammaDD is None: # use "is None" instead of "==None", as the former is more correct.
         # Declare these generically if uninitialized.
         gammaDD    = ixp.declarerank2("gammaDD","sym01")
         betaU      = ixp.declarerank1("betaU")
         alpha      = sp.sympify("alpha")
         ValenciavU = ixp.declarerank1("ValenciavU")
         BU         = ixp.declarerank1("BU")
-    
+
     # Set spatial dimension = 3
     DIM=3
 

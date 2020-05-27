@@ -10,7 +10,7 @@ if sys.version_info[0]==3:
     PYTHONVERSION3 = True
 
 # Step 1: Print logo.
-from NRPy_logo import *
+from NRPy_logo import print_logo
 #print_logo()
 
 # Step 2: Initialize core parameter NRPy::MainModule,

@@ -9,8 +9,7 @@
 import loop as lp                             # NRPy+: C code loop interface
 import NRPy_param_funcs as par                # NRPy+: parameter interface
 from SIMD import expr_convert_to_SIMD_intrins # NRPy+: SymPy expression => SIMD intrinsics interface
-from SIMDExprTree import ExprTree             # NRPy+: SymPy expression tree manipulation
-from cse_helpers import *                     # NRPy+: CSE preprocessing and postprocessing
+from cse_helpers import cse_preprocess,cse_postprocess  # NRPy+: CSE preprocessing and postprocessing
 import sympy as sp                            # Import SymPy
 import re, sys, os                            # Standard Python: regular expressions, system, and multiplatform OS funcs
 from collections import namedtuple            # Standard Python: Enable namedtuple data type
@@ -138,7 +137,7 @@ def parse_outCparams_string(params):
                     print(value[i]+" is not an integer.")
                     sys.exit(1)
                 preindent = ""
-                for i in range(int(value[i])):
+                for j in range(int(value[i])):
                     preindent += "   "
             elif parnm[i] == "includebraces":
                 includebraces = value[i]
@@ -412,7 +411,7 @@ outC_function_dict           = {}
 
 def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts="",
               rel_path_for_Cparams=os.path.join("./")):
-    if name == None or params == None or body == None:
+    if name is None or params is None or body is None: # use "is None" instead of "==None", as the former is more correct.
         print("Cfunction() error: strings must be provided for function name, parameters, and body")
         sys.exit(1)
     func_prototype = type+" "+name+"("+params+")"
