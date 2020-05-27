@@ -40,7 +40,7 @@ def g4DD_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None):
     global g4DD
 
     # Step 1: Set gammaDD, betaU, and alpha if not already input.
-    if gammaDD==None and betaU==None and alpha==None:
+    if gammaDD is None and betaU is None and alpha is None: # Use "is None" instead of "==None", as the former is more correct.
         gammaDD,betaU,alpha = setup_ADM_quantities(inputvars)
 
     # Step 2: Compute g4DD = g_{mu nu}:
@@ -72,7 +72,7 @@ def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None, gammaUU=N
     global g4UU
 
     # Step 1: Set gammaDD, betaU, and alpha if not already input.
-    if gammaDD==None and betaU==None and alpha==None:
+    if gammaDD is None and betaU is None and alpha is None:  # Use "is None" instead of "==None", as the former is more correct.
         gammaDD,betaU,alpha = setup_ADM_quantities(inputvars)
 
     # Step 2: Compute g4UU = g_{mu nu}:
@@ -81,7 +81,7 @@ def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None, gammaUU=N
 
     # Step 3: Construct g4UU = g^{mu nu}
     # Step 3.a: Compute gammaUU based on provided gammaDD:
-    if gammaUU==None:
+    if gammaUU is None: # Use "is None" instead of "==None", as the former is more correct.
         gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
 
     # Then evaluate g4UU:
