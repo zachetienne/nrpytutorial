@@ -107,7 +107,7 @@ def BSSN_or_ADM_ito_g4DD(inputvars,g4DD=None):
 
     # Step 1: declare g4DD as symmetric rank-4 tensor:
     g4DD_is_input_into_this_function = True
-    if g4DD == None:
+    if g4DD is None: # Use "is None" instead of "==None", as the former is more correct.
         g4DD = ixp.declarerank2("g4DD", "sym01", DIM=4)
         g4DD_is_input_into_this_function = False
 
