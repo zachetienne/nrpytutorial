@@ -72,7 +72,7 @@ class ExprTree:
             ...         print((i, subtree.expr))
             (2, a*b)
         """
-        if node == None:
+        if node is None:
             node = self.root
         yield node
         for child in node.children:
@@ -93,7 +93,7 @@ class ExprTree:
             ...         print((i, subtree.expr))
             (2, a*b)
         """
-        if node == None:
+        if node is None:
             node = self.root
         for child in node.children:
             for subtree in self.postorder(child):
