@@ -28,7 +28,7 @@ DIM=3
 def gammabarDD_hDD(gammaDD):
     global gammabarDD,hDD
 
-    if gammaDD == None:
+    if gammaDD is None:
         gammaDD = ixp.declarerank2("gammaDD","sym01")
 
     if rfm.have_already_called_reference_metric_function == False:
@@ -49,9 +49,9 @@ def gammabarDD_hDD(gammaDD):
 def trK_AbarDD_aDD(gammaDD,KDD):
     global trK,AbarDD,aDD
 
-    if gammaDD == None:
+    if gammaDD is None: # Use "is None" instead of "==None", as the former is more correct.
         gammaDD = ixp.declarerank2("gammaDD","sym01")
-    if KDD == None:
+    if KDD is None: # Use "is None" instead of "==None", as the former is more correct.
         KDD = ixp.declarerank2("KDD","sym01")
 
     if rfm.have_already_called_reference_metric_function == False:
@@ -78,7 +78,7 @@ def trK_AbarDD_aDD(gammaDD,KDD):
 def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
     global LambdabarU, lambdaU
 
-    if gammaDD == None:
+    if gammaDD is None: # Use "is None" instead of "==None", as the former is more correct.
         gammaDD = ixp.declarerank2("gammaDD","sym01")
 
     # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
@@ -120,7 +120,7 @@ def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
 def cf_from_gammaDD(gammaDD):
     global cf
 
-    if gammaDD == None:
+    if gammaDD is None: # Use "is None" instead of "==None", as the former is more correct.
         gammaDD = ixp.declarerank2("gammaDD","sym01")
 
     # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
@@ -156,9 +156,9 @@ def cf_from_gammaDD(gammaDD):
 def betU_vetU(betaU,BU):
     global vetU,betU
 
-    if betaU == None:
+    if betaU is None: # Use "is None" instead of "==None", as the former is more correct.
         betaU = ixp.declarerank1("betaU")
-    if BU == None:
+    if BU is None: # Use "is None" instead of "==None", as the former is more correct.
         BU = ixp.declarerank1("BU")
 
     if rfm.have_already_called_reference_metric_function == False:
