@@ -1,7 +1,7 @@
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-from outputC import *            # NRPy+: Core C code output module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 
 par.initialize_param(par.glb_param("char", __name__, "System_to_use", "System_II"))
 

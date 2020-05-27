@@ -2,10 +2,10 @@
 # including e.g., tensors and pseudotensors:
 
 # Step 1: Load needed modules
-import NRPy_param_funcs as par
-import grid as gri
-import sympy as sp
-import sys
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import grid as gri               # NRPy+: Functions having to do with numerical grids
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
+import sys                       # Standard Python module for multiplatform OS-level functions
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
