@@ -109,7 +109,6 @@ CCTK_INT FD_order "Finite-differencing order"
 
 # First construct lists of the basic gridfunctions used in NRPy+. 
 #    Each type will be its own group in BaikalETK.
-global evol_gfs_list, auxevol_gfs_list, aux_gfs_list, rhs_list
 evol_gfs_list    = []
 auxevol_gfs_list = []
 aux_gfs_list     = []

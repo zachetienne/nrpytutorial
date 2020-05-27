@@ -278,8 +278,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     for i in range(3):
         Valencia3velocityU[i] = uKS4U[i + 1] / (alpha * uKS4U[0]) + betaU[i] / alpha
 
-    sqrtgamma4DET = sp.symbols("sqrtgamma4DET")
-    sqrtgamma4DET = sp.sqrt(gammaDET)*alpha
+    # sqrtgamma4DET = sp.sqrt(gammaDET)*alpha
 
     alpha = alpha.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
     for i in range(DIM):

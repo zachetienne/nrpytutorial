@@ -92,7 +92,6 @@ void BaikalETK_Symmetry_registration(CCTK_ARGUMENTS)
             # If gridfunction name does not end in a digit, by NRPy+ syntax, it must be a scalar
             if gfname_without_GFsuffix[len(gfname_without_GFsuffix) - 1].isdigit() == False:
                 outstr += "      // (this gridfunction is a scalar -- no need to change default sym[]'s!)\n"
-                pass  # Scalar = default
             elif len(gfname_without_GFsuffix) > 2:
                 # Rank-1 indexed expression (e.g., vector)
                 if gfname_without_GFsuffix[len(gfname_without_GFsuffix) - 2].isdigit() == False:

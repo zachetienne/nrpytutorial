@@ -170,7 +170,6 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         for gf in gri.glb_gridfcs_list:
             if basegf == str(gf.name):
                 is_gf = True
-                pass
         if not is_gf:
             print("Error: Attempting to take the derivative of "+basegf+", which is not a registered gridfunction.")
             print("       Make sure your gridfunction name does not have any underscores in it!")

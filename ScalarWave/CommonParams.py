@@ -21,5 +21,4 @@ thismodule = __name__
 #          used in below expressions. In the C code, it acts
 #          just like a usual parameter, whose value is
 #          specified in the parameter file.
-global wavespeed
 wavespeed = par.Cparameters("REAL", thismodule, "wavespeed",1.0)
