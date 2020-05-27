@@ -174,7 +174,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
             subtree.expr = CosSIMD(args[0])
         elif func == sign:
             subtree.expr = SignSIMD(args[0])
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     def IntegerPowSIMD(a, n):
         # Recursive Helper Function: Construct Integer Powers
@@ -214,7 +214,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
                 tree.build(subtree, clear=True)
             else:
                 subtree.expr = PowSIMD(*args)
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 2: Replace subtraction expressions.
     #   Note: SymPy: srepr(a - b) = Add(a, Mul(-1, b))
@@ -241,7 +241,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
                 subtree.expr = subexpr
                 tree.build(subtree, clear=True)
             except StopIteration: pass
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 3: Replace addition and multiplication expressions.
     #   Note: SIMD addition and multiplication compiler intrinsics can read
@@ -264,7 +264,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
                     subexpr = func(args[i], subexpr, evaluate=False)
             subtree.expr = subexpr
             tree.build(subtree, clear=True)
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 4: Replace the pattern Mul(Div(1, b), a) or Mul(a, Div(1, b)) with Div(a, b).
     for subtree in tree.preorder():
@@ -280,7 +280,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
                 lookup_rational(args[1].args[0]) == 1:
             subtree.expr = DivSIMD(args[0], args[1].args[1])
             tree.build(subtree, clear=True)
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 5: Now that all multiplication and addition functions only take two
     #         arguments, we can define fused-multiply-add functions,
@@ -316,7 +316,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
                                                FusedMulAddSIMD(args[0].args[1].args[0], args[0].args[1].args[1],
                                                                args[1]))
                 tree.build(subtree, clear=True)
-        expr = tree.reconstruct()
+        tree.reconstruct()
 
     # Step 5.b: Find single FMA patterns.
     for subtree in tree.preorder():
@@ -344,7 +344,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
         if func == FusedMulSubSIMD and args[1].func == MulSIMD and lookup_rational(args[0]) == -1:
             subtree.expr = NegFusedMulSubSIMD(args[1].args[0], args[1].args[1], args[2])
             tree.build(subtree, clear=True)
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 5.c: Remaining double FMA patterns that previously in Step 5.a were difficult to find.
     #   Note: Double FMA simplifications do not guarantee a significant performance impact when solving BSSN equations
@@ -379,7 +379,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
                                                FusedMulAddSIMD(args[0].args[2].args[0], args[0].args[2].args[1],
                                                                args[1]))
                 tree.build(subtree, clear=True)
-        expr = tree.reconstruct()
+        tree.reconstruct()
 
     # Step 5.d: NegFusedMulAddSIMD(a,b,c) = -a*b + c:
     for subtree in tree.preorder():
@@ -405,7 +405,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
              lookup_rational(args[0].args[1]) == -1:
             subtree.expr = NegFusedMulAddSIMD(args[0].args[0],args[1],args[2])
             tree.build(subtree, clear=True)
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 5.e: Replace e.g., FMA(-1,b,c) with SubSIMD(c,b) and similar patterns
     for subtree in tree.preorder():
@@ -427,7 +427,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
         elif func == FusedMulSubSIMD and lookup_rational(args[0]) == -1:
             subtree.expr = MulSIMD(args[0], AddSIMD(args[1], args[2]))
             tree.build(subtree, clear=True)
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 5.f: NegFusedMulSubSIMD(a,b,c) = -a*b - c:
     for subtree in tree.preorder():
@@ -463,7 +463,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
              args[1].args[1].func == MulSIMD and lookup_rational(args[1].args[1].args[1]) == -1:
             subtree.expr = NegFusedMulSubSIMD(args[0], MulSIMD(args[1].args[0],args[1].args[1].args[0]), args[2])
             tree.build(subtree, clear=True)
-    expr = tree.reconstruct()
+    tree.reconstruct()
 
     # Step 5.g: Find single FMA patterns again, as some new ones might be found.
     for subtree in tree.preorder():

@@ -1,12 +1,13 @@
 """ Symbolic Tensor (Quaternion) Rotation
 
-The following script will perform symbolic tensor rotation using quaternions.
+    The following script will perform symbolic tensor rotation using quaternions.
 """
 # Author: Ken Sible
-# Email:  ksible **at** outlook **dot* com
+# Email:  ksible *at* outlook *dot* com
 
 from sympy import Quaternion as quat
 from sympy import Matrix
+from sympy.functions import transpose
 
 def rotate(tensor, axis, angle):
     """ Rotate symbolic vector or tensor about an arbitrary axis
@@ -43,7 +44,7 @@ def rotate(tensor, axis, angle):
         for i in range(tensor.shape[0]):
             tensor[i, :] = [[M[i].b, M[i].c, M[i].d]]
         return tensor.tolist()
-    else:
+    elif isinstance(tensor, list):
         if len(tensor) != 3:
             raise Exception('Invalid Vector Length')
         # Rotation Formula: v' = q.v.q*
