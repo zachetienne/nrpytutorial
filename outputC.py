@@ -5,14 +5,19 @@
 
 # Authors: Zachariah B. Etienne; zachetie **at** gmail **dot* com
 #          Ken Sible; ksible **at** outlook **dot* com
-
 import loop as lp                             # NRPy+: C code loop interface
 import NRPy_param_funcs as par                # NRPy+: parameter interface
 from SIMD import expr_convert_to_SIMD_intrins # NRPy+: SymPy expression => SIMD intrinsics interface
 from cse_helpers import cse_preprocess,cse_postprocess  # NRPy+: CSE preprocessing and postprocessing
-import sympy as sp                            # Import SymPy
+import sympy as sp                            # SymPy: The Python computer algebra package upon which NRPy+ depends
 import re, sys, os                            # Standard Python: regular expressions, system, and multiplatform OS funcs
 from collections import namedtuple            # Standard Python: Enable namedtuple data type
+
+# defines the names to import when 'from outputC import *' is used
+__all__ = ['lhrh', 'outCparams', 'nrpyAbs', 'superfast_uniq', 'check_if_string__error_if_not',
+           'outputC','parse_outCparams_string',
+           'outC_function_prototype_dict', 'outC_function_dict', 'Cfunction', 'add_to_Cfunction_dict', 'outCfunction']
+
 lhrh = namedtuple('lhrh', 'lhs rhs')
 outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix CSE_sorting CSE_preprocess SIMD_enable SIMD_find_more_subs SIMD_find_more_FMAsFMSs SIMD_debug enable_TYPE gridsuffix')
 

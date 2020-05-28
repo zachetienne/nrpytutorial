@@ -4,19 +4,20 @@
 #  This module generates C kernels for numerically
 #   solving PDEs with finite differences.
 #
-# Depends on: outputC.py and grid.py.
+# Depends primarily on: outputC.py and grid.py.
 
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
 from outputC import *            # NRPy+: Core C code output module
+import NRPy_param_funcs as par   # NRPy+: parameter interface
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import sys                       # Standard Python module for multiplatform OS-level functions
 
 from operator import itemgetter
 
 # Step 1: Initialize free parameters for this module:
-import NRPy_param_funcs as par
 modulename = __name__
 # Centered finite difference accuracy order
 par.initialize_param(par.glb_param("int", modulename, "FD_CENTDERIVS_ORDER",  4))

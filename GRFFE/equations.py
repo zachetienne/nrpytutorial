@@ -10,7 +10,7 @@
 #          Patrick Nelson
 
 # Step 1: Import needed core NRPy+ modules
-from outputC import *            # NRPy+: Core C code output module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 
 # Step 2: Define needed quantities for T_{EM}^{mu nu}, the EM part of the stress-energy tensor

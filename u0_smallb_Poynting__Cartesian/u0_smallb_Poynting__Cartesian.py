@@ -8,6 +8,8 @@
 # Step 1: Initialize needed Python/NRPy+ modules
 import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 from outputC import *                      # NRPy+: Basic C code output functionality
+import NRPy_param_funcs as par             # NRPy+: parameter interface
+import sympy as sp                         # SymPy: The Python computer algebra package upon which NRPy+ depends
 import BSSN.ADMBSSN_tofrom_4metric as AB4m # NRPy+: ADM/BSSN <-> 4-metric conversions
 
 def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,ValenciavU=None,BU=None):

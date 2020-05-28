@@ -7,7 +7,7 @@
 #         zachetie **at** gmail **dot* com
 
 # Step 1: Import needed core NRPy+ modules
-from outputC import *             # NRPy+: Core C code output module
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par    # NRPy+: Parameter interface
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
