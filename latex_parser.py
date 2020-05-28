@@ -13,20 +13,20 @@ class Lexer:
     """
 
     def __init__(self):
-        greek = '|'.join(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta',
-            'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omikron',
-            'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
-            'Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta',
-            'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omikron',
-            'Pi', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'])
+        greek = '|'.join([r'\\[aA]lpha', r'\\[bB]eta', r'\\[gG]amma', r'\\[dD]elta',
+            r'\\[eE]psilon', r'\\[zZ]eta', r'\\[eE]ta', r'\\[tT]heta', r'\\[iI]ota',
+            r'\\[kK]appa', r'\\[lL]ambda', r'\\[mM]u', r'\\[nN]u', r'\\[xX]i',
+            r'\\[oO]mikron', r'\\[pP]i', r'\\[Rr]ho', r'\\[sS]igma', r'\\[tT]au',
+            r'\\[uU]psilon', r'\\[pP]hi', r'\\[cC]hi', r'\\[pP]si', r'\\[oO]mega'])
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in 
             [ ('RATIONAL',       r'[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
-              ('INTEGER',        r'[1-9][0-9]*'),
+              ('INTEGER',        r'[0-9]+'),
               ('PLUS',           r'\+'),
               ('MINUS',          r'\-'),
               ('DIVIDE',         r'\/'),
-              ('SUPERSCRIPT',    r'\^'),
+              ('CARET',          r'\^'),
+              ('UNDERSCORE',     r'\_'),
               ('LEFT_PAREN',     r'\('),
               ('RIGHT_PAREN',    r'\)'),
               ('LEFT_BRACE',     r'\{'),
@@ -38,11 +38,9 @@ class Lexer:
               ('LEFT_DELIM',     r'\\left'),
               ('RIGHT_DELIM',    r'\\right'),
               ('SPACE_DELIM',    r'\s+|(?:\\,)+'),
-              ('BACKSLASH',      r'\\'),
-              ('GREEK_LETTER',   greek),
-              ('SQRT_CMD',       r'sqrt'),
-              ('FRAC_CMD',       r'frac'),
-              ('SYMBOL',         r'[a-zA-Z]') ]]))
+              ('SQRT_CMD',       r'\\sqrt'),
+              ('FRAC_CMD',       r'\\frac'),
+              ('SYMBOL',         greek + r'|[a-zA-Z]') ]]))
     
     def initialize(self, sentence):
         """ Initialize Lexer
@@ -92,9 +90,10 @@ class Parser:
         <EXPR>          -> [ - ] <TERM> { ( + | - ) <TERM> }
         <TERM>          -> <FACTOR> { [ ( / | ^ ) ] <FACTOR> }
         <FACTOR>        -> <OPERAND> | (<EXPR>) | [<EXPR>]
-        <OPERAND>       -> <SYMBOL> | <NUMBER> | <COMMAND>
+        <OPERAND>       -> <VARIABLE> | <NUMBER> | <COMMAND>
+        <VARIABLE>      -> <SYMBOL> [ _( <SYMBOL> | <INTEGER> ]
         <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER>
-        <COMMAND>       -> \ ( <GREEK> | <SQRT> | <FRAC> )
+        <COMMAND>       -> <SQRT> | <FRAC>
         <SQRT>          -> sqrt [ [<INTEGER>] ] {<EXPR>}
         <FRAC>          -> frac {<EXPR>} {<EXPR>}
     """
@@ -129,10 +128,11 @@ class Parser:
 
     def __term(self):
         expr = self.__factor()
-        while any(self.__peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET', 'BACKSLASH', \
-                'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE', 'SUPERSCRIPT')):
+        while any(self.__peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET', \
+                'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE', 'CARET',
+                'SQRT_CMD', 'FRAC_CMD')):
             operator = self.lexer.lexeme if self.__peek('DIVIDE') \
-                else '**' if self.__peek('SUPERSCRIPT') else '*'
+                else '**' if self.__peek('CARET') else '*'
             if operator != '*': self.lexer.lex()
             expr += operator + self.__factor()
         return expr
@@ -149,14 +149,32 @@ class Parser:
         return self.__operand()
     
     def __operand(self):
-        operand = self.lexer.lexeme
-        if self.__accept('SYMBOL'):
-            var(operand)
-            return 'Symbol(\'' + operand + '\')'
-        elif self.__accept('BACKSLASH'):
+        if self.__peek('SYMBOL'):
+            return self.__variable()
+        elif any(self.__peek(i) for i in ('SQRT_CMD', 'FRAC_CMD')):
             return self.__command()
         return self.__number()
     
+    def __variable(self):
+        variable = self.lexer.lexeme
+        if variable[0] == '\\':
+            variable = variable[1:]
+        self.__expect('SYMBOL')
+        if self.__accept('UNDERSCORE'):
+            if self.__peek('SYMBOL') or self.__peek('INTEGER'):
+                subscript = self.lexer.lexeme
+                if subscript[0] == '\\':
+                    subscript = subscript[1:]
+                variable += '_' + subscript
+                self.lexer.lex(); var(variable)
+                return 'Symbol(\'' + variable + '\')'
+            sentence = self.lexer.sentence
+            position = self.lexer.index - len(self.lexer.lexeme)
+            raise ParseError('unexpected \'%s\' at position %d' % \
+                (sentence[position], position), sentence, position)
+        var(variable)
+        return 'Symbol(\'' + variable + '\')'
+
     def __number(self):
         number = self.lexer.lexeme
         if self.__accept('RATIONAL'):
@@ -179,9 +197,6 @@ class Parser:
             return self.__sqrt()
         elif self.__accept('FRAC_CMD'):
             return self.__frac()
-        elif self.__accept('GREEK_LETTER'):
-            var(command)
-            return 'Symbol(\'' + command + '\')'
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unsupported command at position %d' % \
             position, self.lexer.sentence, position)
