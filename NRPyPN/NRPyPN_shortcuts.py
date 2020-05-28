@@ -22,6 +22,9 @@ if nrpy_dir_path not in sys.path:
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 
+__all__ = ['m1','m2','S1U','S2U','pU','nU','drdt','Pt','Pr','r','q','chi1U','chi2U','gamma_EulerMascheroni',
+           'n12U','n21U','p1U','p2U','define_LeviCivitaSymbol_rank3_dim3','dot','cross','div','num_eval']
+
 # Step 1: Declare several global variables used throughout
 #         NRPyPN
 m1,m2 = sp.symbols('m1 m2',real=True)
