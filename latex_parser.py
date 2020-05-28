@@ -25,6 +25,7 @@ class Lexer:
               ('PLUS',           r'\+'),
               ('MINUS',          r'\-'),
               ('DIVIDE',         r'\/'),
+              ('EQUAL',          r'\='),
               ('CARET',          r'\^'),
               ('UNDERSCORE',     r'\_'),
               ('LEFT_PAREN',     r'\('),
@@ -40,7 +41,8 @@ class Lexer:
               ('SPACE_DELIM',    r'\s+|(?:\\,)+'),
               ('SQRT_CMD',       r'\\sqrt'),
               ('FRAC_CMD',       r'\\frac'),
-              ('SYMBOL',         greek + r'|[a-zA-Z]') ]]))
+              ('SYMBOL',         greek + r'|[a-zA-Z]'),
+              ('COMMAND',        r'\\[a-z]+')]]))
     
     def initialize(self, sentence):
         """ Initialize Lexer
@@ -80,6 +82,12 @@ class Lexer:
         except StopIteration:
             self.token = None
         return self.token
+    
+    def reset(self):
+        """ Reset Token Iterator """
+        if not self.sentence:
+            raise RuntimeError('cannot reset uninitialized lexer')
+        self.initialize(self.sentence)
 
 class Parser:
     """ LaTeX Parser
@@ -87,6 +95,7 @@ class Parser:
         The following class will parse a tokenized sentence.
     
         LaTeX Grammar:
+        <ROOT>          -> <VARIABLE> = <EXPR> | <EXPR>
         <EXPR>          -> [ - ] <TERM> { ( + | - ) <TERM> }
         <TERM>          -> <FACTOR> { [ ( / | ^ ) ] <FACTOR> }
         <FACTOR>        -> <OPERAND> | (<EXPR>) | [<EXPR>]
@@ -94,8 +103,8 @@ class Parser:
         <VARIABLE>      -> <SYMBOL> [ _( <SYMBOL> | <INTEGER> ]
         <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER>
         <COMMAND>       -> <SQRT> | <FRAC>
-        <SQRT>          -> sqrt [ [<INTEGER>] ] {<EXPR>}
-        <FRAC>          -> frac {<EXPR>} {<EXPR>}
+        <SQRT>          -> \ sqrt [ [<INTEGER>] ] {<EXPR>}
+        <FRAC>          -> \ frac {<EXPR>} {<EXPR>}
     """
 
     def __init__(self):
@@ -109,13 +118,23 @@ class Parser:
         """
         self.lexer.initialize(sentence)
         self.lexer.lex()
-        expr = self.__expr()
+        root = self.__root()
         if self.lexer.token:
             sentence = self.lexer.sentence
             position = self.lexer.index - len(self.lexer.lexeme)
             raise ParseError('unexpected \'%s\' at position %d' % \
                 (sentence[position], position), sentence, position)
-        return eval(expr)
+        return root
+
+    def __root(self):
+        if self.__peek('SYMBOL'):
+            variable = eval(self.__variable())
+            if self.__accept('EQUAL'):
+                expr = eval(self.__expr())
+                return {variable: expr}
+            self.lexer.reset()
+            self.lexer.lex()
+        return eval(self.__expr())
 
     def __expr(self):
         sign = '-' if self.__accept('MINUS') else ''
@@ -151,7 +170,8 @@ class Parser:
     def __operand(self):
         if self.__peek('SYMBOL'):
             return self.__variable()
-        elif any(self.__peek(i) for i in ('SQRT_CMD', 'FRAC_CMD')):
+        elif any(self.__peek(i) for i in \
+            ('SQRT_CMD', 'FRAC_CMD', 'COMMAND')):
             return self.__command()
         return self.__number()
     
@@ -198,8 +218,8 @@ class Parser:
         elif self.__accept('FRAC_CMD'):
             return self.__frac()
         position = self.lexer.index - len(self.lexer.lexeme)
-        raise ParseError('unsupported command at position %d' % \
-            position, self.lexer.sentence, position)
+        raise ParseError('unsupported command \'%s\' at position %d' % \
+            (command, position), self.lexer.sentence, position)
     
     def __sqrt(self):
         if self.__accept('LEFT_BRACKET'):
@@ -249,8 +269,10 @@ def parse(sentence):
         :return: SymPy Expression
 
         >>> from latex_parser import parse
-        >>> parse(r'-a(\delta^(2a) - \\frac{2}{3}) + \\sqrt[5]{a + 3}')
-        -a*(delta**(2*a) - 2/3) + (a + 3)**(1/5)
+        >>> parse(r'-\delta(x^(2n) - \\frac{2}{3})')
+        -delta*(x**(2*n) - 2/3)
+        >>> parse(r'x_1 = \\sqrt[5]{x + 3}')
+        {x_1: (x + 3)**(1/5)}
     """
     return Parser().parse(sentence)
 
