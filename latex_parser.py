@@ -15,7 +15,10 @@ class Lexer:
     def __init__(self):
         greek = '|'.join(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta',
             'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omikron',
-            'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega'])
+            'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
+            'Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta',
+            'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omikron',
+            'Pi', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'])
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in 
             [ ('RATIONAL',       r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
