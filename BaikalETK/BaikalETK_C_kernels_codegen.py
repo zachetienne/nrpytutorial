@@ -48,8 +48,6 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         for i in range(len(parnm)):
             if parnm[i] == "WhichPart":
                 WhichPart = value[i]
-            elif parnm[i] == "WhichParamSet":
-                WhichParamSet = int(value[i])
             elif parnm[i] == "ThornName":
                 ThornName = value[i]
             elif parnm[i] == "FD_order":
@@ -85,9 +83,6 @@ def BaikalETK_C_kernels_codegen_onepart(params=
 
     par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
     rfm.reference_metric() # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
-
-    REAL      = "CCTK_REAL" # Set REAL to CCTK_REAL, the ETK data type for 
-                            # floating point precision (typically `double`)
 
     # Set the gridfunction memory access type to ETK-like, so that finite_difference
     #    knows how to read and write gridfunctions from/to memory.
@@ -268,6 +263,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
 
         print("Generating C code for BSSN RHSs (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
         start = time.time()
+
         # Store original finite-differencing order:
         FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
         # Set new finite-differencing order:
@@ -276,9 +272,6 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         BSSN_RHSs_string = fin.FD_outputC("returnstring",BSSN_RHSs_SymbExpressions,
                                           params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True",
                                           upwindcontrolvec=betaU)
-
-        # Restore original finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
 
         filename = "BSSN_RHSs_enable_Tmunu_"+str(enable_stress_energy_source_terms)+"_FD_order_"+str(FD_order)+".h"
         with open(os.path.join(outdir,filename), "w") as file:
@@ -293,6 +286,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
     #endif"""],"",
                     "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+BSSN_RHSs_string))
+
+        # Restore original finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
+
         end = time.time()
         print("(BENCH) Finished BSSN_RHS C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
 
@@ -301,6 +298,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
 
         print("Generating C code for Ricci tensor (FD_order="+str(FD_order)+") in "+par.parval_from_str("reference_metric::CoordSystem")+" coordinates.")
         start = time.time()
+
         # Store original finite-differencing order:
         FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
         # Set new finite-differencing order:
@@ -308,9 +306,6 @@ def BaikalETK_C_kernels_codegen_onepart(params=
 
         Ricci_string = fin.FD_outputC("returnstring", Ricci_SymbExpressions,
                                        params="outCverbose=False,SIMD_enable=True,GoldenKernelsEnable=True")
-
-        # Restore original finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
 
         filename = "BSSN_Ricci_FD_order_"+str(FD_order)+".h"
         with open(os.path.join(outdir, filename), "w") as file:
@@ -325,6 +320,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         #pragma vector always // Forces Intel compiler (if Intel compiler used) to vectorize
     #endif"""],"",
                     "#include \"rfm_files/rfm_struct__SIMD_inner_read0.h\"\n"+Ricci_string))
+
+        # Restore original finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
+
         end = time.time()
         print("(BENCH) Finished Ricci C codegen (FD_order="+str(FD_order)+") in " + str(end - start) + " seconds.")
 
@@ -348,13 +347,13 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             for i in range(3):
                 bssncon.MU[i] += Bsest.sourceterm_MU[i]
         # Restore original finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
         # END: GENERATE SYMBOLIC EXPRESSIONS
         ######################################
 
         start = time.time()
         print("Generating optimized C code for Ham. & mom. constraints. May take a while, depending on CoordSystem.")
-        Ham_mom_string = fin.FD_outputC("returnstring", 
+        Ham_mom_string = fin.FD_outputC("returnstring",
                                         [lhrh(lhs=gri.gfaccess("aux_gfs", "H"),   rhs=bssncon.H),
                                          lhrh(lhs=gri.gfaccess("aux_gfs", "MU0"), rhs=bssncon.MU[0]),
                                          lhrh(lhs=gri.gfaccess("aux_gfs", "MU1"), rhs=bssncon.MU[1]),
@@ -371,14 +370,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     def enforce_detgammabar_eq_detgammahat__generate_symbolic_expressions_and_C_code():
         ######################################
         # START: GENERATE SYMBOLIC EXPRESSIONS
-        # Store original finite-differencing order:
-        FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
-        # Set new finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
 
-        # Enable rfm_precompute infrastructure, which results in 
+        # Enable rfm_precompute infrastructure, which results in
         #   BSSN RHSs that are free of transcendental functions,
-        #   even in curvilinear coordinates, so long as 
+        #   even in curvilinear coordinates, so long as
         #   ConformalFactor is set to "W" (default).
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","True")
         par.set_parval_from_str("reference_metric::rfm_precompute_Ccode_outdir",os.path.join(outdir,"rfm_files/"))
@@ -392,19 +387,15 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         #           form expressions.
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","False") # Reset to False to disable rfm_precompute.
         rfm.ref_metric__hatted_quantities()
-
-        # Restore original finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
         # END: GENERATE SYMBOLIC EXPRESSIONS
         ######################################
-
 
         start = time.time()
         print("Generating optimized C code (FD_order="+str(FD_order)+") for gamma constraint. May take a while, depending on CoordSystem.")
         enforce_gammadet_string = fin.FD_outputC("returnstring", enforce_detg_constraint_symb_expressions,
                                                  params="outCverbose=False,preindent=0,includebraces=False")
 
-        with open(os.path.join(outdir,"enforcedetgammabar_constraint_FD_order_"+str(FD_order)+".h"), "w") as file:
+        with open(os.path.join(outdir,"enforcedetgammabar_constraint.h"), "w") as file:
             file.write(lp.loop(["i2","i1","i0"],["0", "0", "0"],
                                ["cctk_lsh[2]","cctk_lsh[1]","cctk_lsh[0]"],
                                ["1","1","1"],

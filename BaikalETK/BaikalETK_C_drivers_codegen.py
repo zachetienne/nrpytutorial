@@ -602,26 +602,17 @@ void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
                 Csrcdict[append_to_make_code_defn_list(file.replace(".h",".c"))] = outstr.replace("BaikalETK",ThornName)
 
     # Next, the driver for enforcing detgammabar = detgammahat constraint:
-    outstr = common_includes+"""
+    outstr = common_includes + """
 void BaikalETK_enforce_detgammabar_constraint(CCTK_ARGUMENTS) {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
-"""
-    
-    path = os.path.join(ThornName, "src")
-        
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if "enforcedetgammabar_constraint_FD_order" in file:
-                array = file.replace(".","_").split("_")
-                outstr += "    if(FD_order == "+str(array[-2])+") {\n"
-                outstr += "        #include \""+file+"\"\n"
-                outstr += "    }\n"
-    outstr += "}\n"
 
+    #include "enforcedetgammabar_constraint.h"
+}
+"""
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("driver_enforcedetgammabar_constraint.c")] = \
-        outstr.replace("BaikalETK",ThornName)
+        outstr.replace("BaikalETK", ThornName)
 
     # Next, the driver for computing the BSSN Hamiltonian & momentum constraints
     outstr = """

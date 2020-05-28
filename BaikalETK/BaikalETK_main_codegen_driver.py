@@ -59,14 +59,18 @@ for WhichPart in ["BSSN_RHSs","Ricci","BSSN_constraints","detgammabar_constraint
             if enable_stress_energy == False:
                 ThornName = "BaikalVacuum"
             paramstr = "WhichPart="+WhichPart+","
-            paramstr+= "WhichParamSet="+str(WhichParamSet)+","
             paramstr+= "ThornName="+ThornName+","
             paramstr+= "FD_order="+str(FD_order)+","
             paramstr+= "LapseCondition="+LapseCondition+","
             paramstr+= "ShiftCondition="+ShiftCondition+","
             paramstr+= "enable_stress_energy_source_terms="+str(enable_stress_energy)
-            paramslist.append(paramstr)
-            WhichParamSet = WhichParamSet + 1
+            if (WhichPart != "detgammabar_constraint") \
+               or (WhichPart == "detgammabar_constraint" and FD_order==FD_orders[0]):
+                # Do not output detgammabar_constraint code more than once for each thorn, as
+                #    it does not depend on FD_order
+                paramslist.append(paramstr)
+                WhichParamSet = WhichParamSet + 1
+
 
 paramslist.sort() # Sort the list alphabetically.
 ###############################
