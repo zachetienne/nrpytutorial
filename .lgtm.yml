@@ -1,0 +1,18 @@
+extraction:
+  python:
+    python_setup:
+      # requirements_files: false
+      # requirements:
+      #   - PyYAML
+      #   - python-dateutil
+      #   - Jinja2
+      #   - numpy
+      #   - pillow
+      #   - packaging
+      #   - tornado
+      #   - typing_extensions
+      setup_py: false
+      version: 3
+    # index:
+    #   filters:
+    #     - exclude: in_progress
