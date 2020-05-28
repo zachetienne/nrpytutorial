@@ -330,11 +330,6 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     def BSSN_constraints__generate_symbolic_expressions_and_C_code():
         ######################################
         # START: GENERATE SYMBOLIC EXPRESSIONS
-        # Store original finite-differencing order:
-        FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
-        # Set new finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
-
         # Define the Hamiltonian constraint and output the optimized C code.
         import BSSN.BSSN_constraints as bssncon
 
@@ -346,10 +341,13 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             bssncon.H += Bsest.sourceterm_H
             for i in range(3):
                 bssncon.MU[i] += Bsest.sourceterm_MU[i]
-        # Restore original finite-differencing order:
-        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
         # END: GENERATE SYMBOLIC EXPRESSIONS
         ######################################
+
+        # Store original finite-differencing order:
+        FD_order_orig = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
+        # Set new finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order)
 
         start = time.time()
         print("Generating optimized C code for Ham. & mom. constraints. May take a while, depending on CoordSystem.")
@@ -364,6 +362,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             file.write(lp.loop(["i2","i1","i0"],["cctk_nghostzones[2]","cctk_nghostzones[1]","cctk_nghostzones[0]"],
            ["cctk_lsh[2]-cctk_nghostzones[2]","cctk_lsh[1]-cctk_nghostzones[1]","cctk_lsh[0]-cctk_nghostzones[0]"],
                                ["1","1","1"],["#pragma omp parallel for","",""], "", Ham_mom_string))
+
+        # Restore original finite-differencing order:
+        par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", FD_order_orig)
+
         end = time.time()
         print("(BENCH) Finished Hamiltonian & momentum constraint C codegen (FD_order="+str(FD_order)+",Tmunu="+str(enable_stress_energy_source_terms)+") in " + str(end - start) + " seconds.")
 
