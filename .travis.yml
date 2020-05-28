@@ -3,10 +3,10 @@ language: python
 
 matrix:
   include:
-    - name: "JUPYTER NOTEBOOK TESTS SymPy-dev Ubuntu Linux Bionic Python 3.8"
+    - name: "JUPYTER NOTEBOOK TESTS SymPy-dev Ubuntu Linux Bionic Python 3.8.3"
       os: linux
       dist: bionic
-      python: 3.8.2
+      python: 3.8.3
       sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
