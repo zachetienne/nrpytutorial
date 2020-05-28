@@ -20,7 +20,7 @@ class Lexer:
             'Eta', 'Theta', 'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omikron',
             'Pi', 'Rho', 'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega'])
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in 
-            [ ('RATIONAL',       r'(?:[0-9]+\/[1-9]+)|(?:\\frac{[0-9]+}{[1-9]+})'),
+            [ ('RATIONAL',       r'[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
               ('INTEGER',        r'[1-9][0-9]*'),
               ('PLUS',           r'\+'),
@@ -37,11 +37,11 @@ class Lexer:
               ('BIGR_DELIM',     r'\\[bB]igr'),
               ('LEFT_DELIM',     r'\\left'),
               ('RIGHT_DELIM',    r'\\right'),
-              ('SPACE_DELIM',    r'(?:\s+)|(?:\\,)+'),
+              ('SPACE_DELIM',    r'\s+|(?:\\,)+'),
               ('BACKSLASH',      r'\\'),
+              ('GREEK_LETTER',   greek),
               ('SQRT_CMD',       r'sqrt'),
               ('FRAC_CMD',       r'frac'),
-              ('GREEK_LETTER',   greek),
               ('SYMBOL',         r'[a-zA-Z]') ]]))
     
     def initialize(self, sentence):
@@ -51,7 +51,7 @@ class Lexer:
         """
         self.sentence = sentence
         self.token    = None
-        self.word     = None
+        self.lexeme   = None
         self.index    = 0
 
     def tokenize(self):
@@ -62,18 +62,18 @@ class Lexer:
         while self.index < len(self.sentence):
             token = self.regex.match(self.sentence, self.index)
             if token is None:
-                raise ParseError('%s\n%s^\n' % (self.sentence, (12 + self.index) * ' ') \
-                    + 'unexpected \'%s\' at position %d' % (self.sentence[self.index], self.index))
+                raise ParseError('unexpected \'%s\' at position %d' % \
+                    (self.sentence[self.index], self.index), self.sentence, self.index)
             elif token.lastgroup in ('BIGL_DELIM', 'BIGR_DELIM', \
                     'LEFT_DELIM', 'RIGHT_DELIM', 'SPACE_DELIM'):
                 self.index = token.end()
             else:
-                self.index = token.end()
-                self.word = token.group()
+                self.index  = token.end()
+                self.lexeme = token.group()
                 yield token.lastgroup
     
     def lex(self):
-        """ Retrieve Current Token
+        """ Retrieve Next Token
 
             :return: next token in iterator
         """
@@ -89,14 +89,14 @@ class Parser:
         The following class will parse a tokenized sentence.
     
         LaTeX Grammar:
-        <EXPRESSION>    -> [ - ] <TERM> { ( + | - ) <TERM> }
+        <EXPR>          -> [ - ] <TERM> { ( + | - ) <TERM> }
         <TERM>          -> <FACTOR> { [ ( / | ^ ) ] <FACTOR> }
-        <FACTOR>        -> <OPERAND> | (<EXPRESSION>) | [<EXPRESSION>]
+        <FACTOR>        -> <OPERAND> | (<EXPR>) | [<EXPR>]
         <OPERAND>       -> <SYMBOL> | <NUMBER> | <COMMAND>
         <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER>
-        <COMMAND>       -> \ ( <GREEK_LETTER> | <SQRT> | <FRAC> )
-        <SQRT>          -> sqrt [ [<INTEGER>] ] {<EXPRESSION>}
-        <FRAC>          -> frac {<EXPRESSION>} {<EXPRESSION>}
+        <COMMAND>       -> \ ( <GREEK> | <SQRT> | <FRAC> )
+        <SQRT>          -> sqrt [ [<INTEGER>] ] {<EXPR>}
+        <FRAC>          -> frac {<EXPR>} {<EXPR>}
     """
 
     def __init__(self):
@@ -110,22 +110,28 @@ class Parser:
         """
         self.lexer.initialize(sentence)
         self.lexer.lex()
-        return eval(self.__expression())
+        expr = self.__expr()
+        if self.lexer.token:
+            sentence = self.lexer.sentence
+            position = self.lexer.index - len(self.lexer.lexeme)
+            raise ParseError('unexpected \'%s\' at position %d' % \
+                (sentence[position], position), sentence, position)
+        return eval(expr)
 
-    def __expression(self):
+    def __expr(self):
         sign = '-' if self.__accept('MINUS') else ''
         expr = sign + self.__term()
         while self.__peek('PLUS') or self.__peek('MINUS'):
-            operator = self.lexer.word
+            operator = self.lexer.lexeme
             self.lexer.lex()
             expr += operator + self.__term()
         return expr
 
     def __term(self):
         expr = self.__factor()
-        while any(self.__peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET', 'DIVIDE', 'SUPERSCRIPT', \
-                'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER', 'BACKSLASH')):
-            operator = self.lexer.word if self.__peek('DIVIDE') \
+        while any(self.__peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET', 'BACKSLASH', \
+                'SYMBOL', 'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE', 'SUPERSCRIPT')):
+            operator = self.lexer.lexeme if self.__peek('DIVIDE') \
                 else '**' if self.__peek('SUPERSCRIPT') else '*'
             if operator != '*': self.lexer.lex()
             expr += operator + self.__factor()
@@ -133,17 +139,17 @@ class Parser:
     
     def __factor(self):
         if self.__accept('LEFT_PAREN'):
-            expr = '(' + self.__expression() + ')'
+            expr = '(' + self.__expr() + ')'
             self.__expect('RIGHT_PAREN')
             return expr
         elif self.__accept('LEFT_BRACKET'):
-            expr = '(' + self.__expression() + ')'
+            expr = '(' + self.__expr() + ')'
             self.__expect('RIGHT_BRACKET')
             return expr
         return self.__operand()
     
     def __operand(self):
-        operand = self.lexer.word
+        operand = self.lexer.lexeme
         if self.__accept('SYMBOL'):
             var(operand)
             return 'Symbol(\'' + operand + '\')'
@@ -152,7 +158,7 @@ class Parser:
         return self.__number()
     
     def __number(self):
-        number = self.lexer.word
+        number = self.lexer.lexeme
         if self.__accept('RATIONAL'):
             rational = re.match(r'([1-9][0-9]*)\/([1-9][0-9]*)', number)
             if not rational:
@@ -162,12 +168,13 @@ class Parser:
             return 'Float(' + number + ')'
         elif self.__accept('INTEGER'):
             return 'Integer(' + number + ')'
-        err_pos = self.lexer.index - len(self.lexer.word)
-        raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
-                + 'unexpected \'%s\' at position %d' % (self.lexer.sentence[err_pos], err_pos))
+        sentence = self.lexer.sentence
+        position = self.lexer.index - len(self.lexer.lexeme)
+        raise ParseError('unexpected \'%s\' at position %d' % \
+            (sentence[position], position), sentence, position)
     
     def __command(self):
-        command = self.lexer.word
+        command = self.lexer.lexeme
         if self.__accept('SQRT_CMD'):
             return self.__sqrt()
         elif self.__accept('FRAC_CMD'):
@@ -175,27 +182,27 @@ class Parser:
         elif self.__accept('GREEK_LETTER'):
             var(command)
             return 'Symbol(\'' + command + '\')'
-        err_pos = self.lexer.index - len(self.lexer.word)
-        raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
-                + 'unsupported command at position %d' % err_pos)
+        position = self.lexer.index - len(self.lexer.lexeme)
+        raise ParseError('unsupported command at position %d' % \
+            position, self.lexer.sentence, position)
     
     def __sqrt(self):
         if self.__accept('LEFT_BRACKET'):
-            root = 'Integer(' + self.lexer.word + ')'
+            root = 'Integer(' + self.lexer.lexeme + ')'
             self.__expect('INTEGER')
             self.__expect('RIGHT_BRACKET')
         else: root = 2
         self.__expect('LEFT_BRACE')
-        expr = self.__expression()
+        expr = self.__expr()
         self.__expect('RIGHT_BRACE')
         return 'Pow(%s, Rational(1, %s))' % (expr, root)
     
     def __frac(self):
         self.__expect('LEFT_BRACE')
-        numerator = self.__expression()
+        numerator = self.__expr()
         self.__expect('RIGHT_BRACE')
         self.__expect('LEFT_BRACE')
-        denominator = self.__expression()
+        denominator = self.__expr()
         self.__expect('RIGHT_BRACE')
         return '(%s)/(%s)' % (numerator, denominator)
     
@@ -210,11 +217,15 @@ class Parser:
     
     def __expect(self, token_type):
         if not self.__accept(token_type):
-            err_pos = self.lexer.index - len(self.lexer.word)
-            raise ParseError('%s\n%s^\n' % (self.lexer.sentence, (12 + err_pos) * ' ') \
-                    + 'expected token %s at position %d' % (token_type, err_pos))
+            position = self.lexer.index - len(self.lexer.lexeme)
+            raise ParseError('expected token %s at position %d' % \
+                (token_type, position), self.lexer.sentence, position)
 
-class ParseError(Exception): pass
+class ParseError(Exception):
+    """ Invalid LaTeX Sentence """
+
+    def __init__(self, message, sentence, position):
+        super().__init__('%s\n%s^\n' % (sentence, (12 + position) * ' ') + message)
 
 def parse(sentence):
     """ Convert LaTeX Sentence to SymPy Expression
