@@ -105,7 +105,6 @@ def compute_AD_flux_term(sqrtgammaDET,driftvU,BU):
     # Levi-Civita tensor for cross products
     import WeylScal4NRPy.WeylScalars_Cartesian as weyl
     LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
-    LeviCivitaUUU = ixp.zerorank3()
     for i in range(3):
         for j in range(3):
             for k in range(3):
