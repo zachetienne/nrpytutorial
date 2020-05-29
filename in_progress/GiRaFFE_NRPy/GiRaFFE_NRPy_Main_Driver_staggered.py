@@ -622,7 +622,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // Next compute sqrt(gamma)=psi^6 at (i+1/2,j+1/2,k):
   // To do so, we first compute the sqrt of the metric determinant at all points:
 #pragma omp parallel for
-  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
+  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=0;j<Nxx_plus_2NGHOSTS1;j++) for(int i=0;i<Nxx_plus_2NGHOSTS0;i++) {
         const int index=IDX3S(i,j,k);
         const REAL gxx = auxevol_gfs[IDX4ptS(GAMMADD00GF,index)];
         const REAL gxy = auxevol_gfs[IDX4ptS(GAMMADD01GF,index)];
@@ -749,23 +749,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
    * ==========================
    ******************************************/
   // Next compute phi at (i,j+1/2,k+1/2):
-  // To do so, we first compute the sqrt of the metric determinant at all points:
-#pragma omp parallel for
-  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
-        const int index=IDX3S(i,j,k);
-        const REAL gxx = auxevol_gfs[IDX4ptS(GAMMADD00GF,index)];
-        const REAL gxy = auxevol_gfs[IDX4ptS(GAMMADD01GF,index)];
-        const REAL gxz = auxevol_gfs[IDX4ptS(GAMMADD02GF,index)];
-        const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
-        const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
-        const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
-        psi6center[index] = sqrt( gxx*gyy*gzz 
-                               -  gxx*gyz*gyz
-                               +2*gxy*gxz*gyz
-                               -  gyy*gxz*gxz
-                               -  gzz*gxy*gxy );
-
-      }
 #pragma omp parallel for
   for(int k=1;k<Nxx_plus_2NGHOSTS2-2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=0;i<Nxx_plus_2NGHOSTS0;i++) {
         temporary[IDX3S(i,j,k)]= 
@@ -815,23 +798,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
    * ==========================
    ******************************************/
   // Next compute phi at (i+1/2,j,k+1/2):
-  // To do so, we first compute the sqrt of the metric determinant at all points:
-#pragma omp parallel for
-  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
-        const int index=IDX3S(i,j,k);
-        const REAL gxx = auxevol_gfs[IDX4ptS(GAMMADD00GF,index)];
-        const REAL gxy = auxevol_gfs[IDX4ptS(GAMMADD01GF,index)];
-        const REAL gxz = auxevol_gfs[IDX4ptS(GAMMADD02GF,index)];
-        const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
-        const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
-        const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
-        psi6center[index] = sqrt( gxx*gyy*gzz 
-                               -  gxx*gyz*gyz
-                               +2*gxy*gxz*gyz
-                               -  gyy*gxz*gxz
-                               -  gzz*gxy*gxy );
-
-      }
 #pragma omp parallel for
   for(int k=1;k<Nxx_plus_2NGHOSTS2-2;k++) for(int j=0;j<Nxx_plus_2NGHOSTS1;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
         temporary[IDX3S(i,j,k)]= 
