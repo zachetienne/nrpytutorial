@@ -135,10 +135,11 @@ matrix:
     #   python: nightly
     #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Bionic Python 3.6.7"
+    - name: "SymPy1.2, Ubuntu Linux Bionic Python 3.6.7"
       os: linux
       dist: bionic
       python: 3.6.7
+      before_script: pip install sympy==1.2
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     - name: "Ubuntu Linux Bionic Python 3.7.1"
