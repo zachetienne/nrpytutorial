@@ -89,10 +89,10 @@ matrix:
       before_script: pip3 install mpmath sympy
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Trusty CPython 3.2 (earliest Python 3 version tested; only Ubuntu 14.04 test)"
+    - name: "Ubuntu Linux Trusty CPython 3.3 (earliest Python 3 version tested; only Ubuntu 14.04 test)"
       os: linux
       dist: trusty
-      python: 3.2
+      python: 3.3
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     # According to https://github.com/tornadoweb/tornado/blob/master/.travis.yml:
