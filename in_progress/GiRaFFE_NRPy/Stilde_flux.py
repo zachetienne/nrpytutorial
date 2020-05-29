@@ -98,7 +98,6 @@ def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul):
     # st_j_flux = (c_\min f_R + c_\max f_L - c_\min c_\max ( st_j_r - st_j_l )) / (c_\min + c_\max)
     return (cmin*Fr + cmax*Fl - cmin*cmax*(Ur-Ul) )/(cmax + cmin)
 
-global calculate_Stilde_flux
 def calculate_Stilde_flux(flux_dirn,inputs_provided=True,alpha_face=None,gamma_faceDD=None,beta_faceU=None,\
                           Valenciav_rU=None,B_rU=None,Valenciav_lU=None,B_lU=None,sqrt4pi=None):
     if not inputs_provided:
