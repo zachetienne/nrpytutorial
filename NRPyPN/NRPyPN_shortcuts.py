@@ -13,6 +13,13 @@
 # Author:  Zach Etienne
 #          zachetie **at** gmail **dot* com
 
+# Step 0.a: Define __all__, which is the complete
+#           list of symbols imported when
+#           "from NRPyPN_shortcuts import *" is
+#           called.
+__all__ = ['m1','m2','S1U','S2U','pU','nU','drdt','Pt','Pr','r','q','chi1U','chi2U','gamma_EulerMascheroni',
+           'n12U','n21U','p1U','p2U','define_LeviCivitaSymbol_rank3_dim3','dot','cross','div','num_eval']
+
 # Step 0: Add NRPy's directory to the path
 # https://stackoverflow.com/questions/16780014/import-file-from-parent-directory
 import os,sys                    # Standard Python modules for multiplatform OS-level functions
@@ -22,11 +29,8 @@ if nrpy_dir_path not in sys.path:
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 
-__all__ = ['m1','m2','S1U','S2U','pU','nU','drdt','Pt','Pr','r','q','chi1U','chi2U','gamma_EulerMascheroni',
-           'n12U','n21U','p1U','p2U','define_LeviCivitaSymbol_rank3_dim3','dot','cross','div','num_eval']
-
-# Step 1: Declare several global variables used throughout
-#         NRPyPN
+# Step 1: Declare several global variables used
+#         throughout NRPyPN
 m1,m2 = sp.symbols('m1 m2',real=True)
 S1U = ixp.declarerank1("S1U")
 S2U = ixp.declarerank1("S2U")
