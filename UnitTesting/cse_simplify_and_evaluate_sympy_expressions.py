@@ -2,7 +2,7 @@
 # This is because we need SymPy to evaluate that expression, not mpmath.
 from mpmath import mp, mpf, sqrt, pi, mpc, fabs
 import random
-from sympy import cse, N, Abs, Function. __version__
+from sympy import cse, N, Abs, Function, __version__
 import UnitTesting.standard_constants as standard_constants
 import logging
 import hashlib
