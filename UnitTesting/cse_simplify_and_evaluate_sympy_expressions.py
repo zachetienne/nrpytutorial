@@ -6,6 +6,7 @@ from sympy import cse, N, Abs, Function, __version__
 import UnitTesting.standard_constants as standard_constants
 import logging
 import hashlib
+import sys
 from outputC import cse_postprocess
 
 # Called by run_test
@@ -77,9 +78,9 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
         sympy_version = __version__.replace('rc', '...').replace('b', '...')
         sympy_major_version = int(sympy_version.split(".")[0])
         sympy_minor_version = int(sympy_version.split(".")[1])
-        if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 4):
-            print('Warning: SymPy version', sympy_version, 'does not support CSE postprocessing.')
-            replaced, reduced = cse(expression, order='none')
+        if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 3):
+            print('Error: UnitTesting does not support SymPy < 1.3; cse implementation was too primitive back then')
+            sys.exit(1)
         else:
             replaced, reduced = cse_postprocess(cse(expression, order='none'))
 
