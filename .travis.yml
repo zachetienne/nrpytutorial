@@ -142,10 +142,10 @@ matrix:
       before_script: pip install sympy==1.2 # NRPy+ UnitTesting requires at least sympy 1.3
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "JUPYTER NOTEBOOK TEST: SymPy-1.2 Ubuntu Linux Bionic Python 3.8.3"
+    - name: "JUPYTER NOTEBOOK TEST: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18"
       os: linux
       dist: bionic
-      python: 3.8.3
+      python: 2.7.18
       sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
