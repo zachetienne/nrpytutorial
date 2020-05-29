@@ -2,7 +2,7 @@
 # This is because we need SymPy to evaluate that expression, not mpmath.
 from mpmath import mp, mpf, sqrt, pi, mpc, fabs
 import random
-from sympy import cse, N, Abs, Function
+from sympy import cse, N, Abs, Function. __version__
 import UnitTesting.standard_constants as standard_constants
 import logging
 import hashlib
@@ -74,7 +74,7 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     # Evaluating each expression using the values in var_dict
     for var, expression in expanded_variable_dict.items():
         # Using SymPy's cse algorithm to optimize our value substitution
-        sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+        sympy_version = __version__.replace('rc', '...').replace('b', '...')
         sympy_major_version = int(sympy_version.split(".")[0])
         sympy_minor_version = int(sympy_version.split(".")[1])
         if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 4):
