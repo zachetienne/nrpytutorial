@@ -203,12 +203,6 @@ def cse_postprocess(cse_output):
         ([], [_NegativeOne_*x + exp(_NegativeOne_*x) + log(_NegativeOne_*x)])
     """
     replaced, reduced = cse_output
-    sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
-    sympy_major_version = int(sympy_version.split(".")[0])
-    sympy_minor_version = int(sympy_version.split(".")[1])
-    if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 4):
-        print('Warning: SymPy version', sympy_version, 'does not support CSE postprocessing.')
-        return replaced, reduced
     replaced, reduced = replaced[:], reduced[:]
     i = 0
     while i < len(replaced):

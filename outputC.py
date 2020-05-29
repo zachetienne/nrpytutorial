@@ -329,8 +329,16 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                     if q != 1: RATIONAL_decls += str(p) + '/' + str(q) + ';\n'
                     else:      RATIONAL_decls += str(p) + ';\n'
 
-        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
-            order=outCparams.CSE_sorting))
+        sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+        sympy_major_version = int(sympy_version.split(".")[0])
+        sympy_minor_version = int(sympy_version.split(".")[1])
+        if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 4):
+            print('Warning: SymPy version', sympy_version, 'does not support CSE postprocessing.')
+            CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
+                                 order=outCparams.CSE_sorting)
+        else:
+            CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
+                                                 order=outCparams.CSE_sorting))
 
         for commonsubexpression in CSE_results[0]:
             FULLTYPESTRING = "const " + TYPE + " "
