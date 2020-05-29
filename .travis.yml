@@ -132,8 +132,8 @@ matrix:
       python: 3.6.9
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Bionic Python 3.8 (Python3 in Ubuntu)"
+    - name: "Ubuntu Linux Bionic Python 3.8.3 (closest to NRPy+ core development infrastructure)"
       os: linux
       dist: bionic
-      python: 3.8
+      python: 3.8.3
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
