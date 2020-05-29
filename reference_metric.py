@@ -22,12 +22,12 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-import sympy as sp                         # Import SymPy
+import sympy as sp                  # SymPy: The Python computer algebra package upon which NRPy+ depends
 from outputC import outputC,superfast_uniq,outC_function_dict,add_to_Cfunction_dict # NRPy+: Core C code output module
-import NRPy_param_funcs as par             # NRPy+: Parameter interface
-import grid as gri                         # NRPy+: Functions having to do with numerical grids
-import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import os,sys                              # Standard Python modules for multiplatform OS-level functions
+import NRPy_param_funcs as par      # NRPy+: Parameter interface
+import grid as gri                  # NRPy+: Functions having to do with numerical grids
+import indexedexp as ixp            # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import os,sys                       # Standard Python modules for multiplatform OS-level functions
 
 # Step 0a: Initialize parameters
 thismodule = __name__
