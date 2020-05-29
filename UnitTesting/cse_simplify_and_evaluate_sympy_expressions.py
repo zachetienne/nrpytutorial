@@ -74,7 +74,14 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
     # Evaluating each expression using the values in var_dict
     for var, expression in expanded_variable_dict.items():
         # Using SymPy's cse algorithm to optimize our value substitution
-        replaced, reduced = cse_postprocess(cse(expression, order='none'))
+        sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+        sympy_major_version = int(sympy_version.split(".")[0])
+        sympy_minor_version = int(sympy_version.split(".")[1])
+        if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 4):
+            print('Warning: SymPy version', sympy_version, 'does not support CSE postprocessing.')
+            replaced, reduced = cse(expression, order='none')
+        else:
+            replaced, reduced = cse_postprocess(cse(expression, order='none'))
 
         # Warning: might slow Travis CI too much: logging.debug(' var = '+str(var)+' |||| replaced = '+str(replaced))
 
