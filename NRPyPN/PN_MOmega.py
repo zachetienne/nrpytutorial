@@ -25,7 +25,7 @@ if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
+from NRPyPN_shortcuts import div # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################

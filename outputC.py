@@ -6,7 +6,9 @@
 # Authors: Zachariah B. Etienne; zachetie **at** gmail **dot* com
 #          Ken Sible; ksible **at** outlook **dot* com
 
-# defines the names to import when 'from outputC import *' is used
+# Step 0.a: Define __all__, which is the complete
+#           list of symbols imported when
+#           "from outputC import *" is called.
 __all__ = ['lhrh', 'outCparams', 'nrpyAbs', 'superfast_uniq', 'check_if_string__error_if_not',
            'outputC','parse_outCparams_string',
            'outC_function_prototype_dict', 'outC_function_dict', 'Cfunction', 'add_to_Cfunction_dict', 'outCfunction']

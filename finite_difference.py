@@ -492,7 +492,6 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     if upwindcontrolvec != "" and len(upwind_directions) > 0:
         NRPy_FD__Number_of_Steps += 1
 
-    default_CSE_varprefix = outCparams.CSE_varprefix
     if len(read_from_memory_Ccode) > 0:
         Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
                                 + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps)+

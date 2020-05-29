@@ -24,8 +24,8 @@ import os,sys                    # Standard Python modules for multiplatform OS-
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
-import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
+import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+from NRPyPN_shortcuts import div,dot,cross # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################
