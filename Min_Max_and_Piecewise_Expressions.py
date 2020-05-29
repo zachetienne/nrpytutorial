@@ -1,4 +1,4 @@
-from outputC import *            # NRPy+: Core C code output module
+from outputC import nrpyAbs      # NRPy+: Core C code output module
 import NRPy_param_funcs as par   # NRPy+: parameter interface
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 
