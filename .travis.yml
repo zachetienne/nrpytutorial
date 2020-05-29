@@ -3,6 +3,13 @@ language: python
 
 matrix:
   include:
+    - name: "SymPy1.2, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported)"
+      os: linux
+      dist: bionic
+      python: 2.7.18
+      before_script: pip install sympy==1.2 mpmath # NRPy+ UnitTesting requires at least sympy 1.3
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
+
     - name: "JUPYTER NOTEBOOK TESTS SymPy-dev Ubuntu Linux Bionic Python 3.8.3"
       os: linux
       dist: bionic
@@ -135,12 +142,6 @@ matrix:
     #   python: nightly
     #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "SymPy1.2, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported)"
-      os: linux
-      dist: bionic
-      python: 2.7.18
-      before_script: pip install sympy==1.2 # NRPy+ UnitTesting requires at least sympy 1.3
-      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     - name: "JUPYTER NOTEBOOK TEST: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18"
       os: linux
