@@ -1,6 +1,6 @@
 
 # Step 1: Import needed core NRPy+ modules
-from outputC import *            # NRPy+: Core C code output module
+from outputC import lhrh         # NRPy+: Core C code output module
 import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids

@@ -8,7 +8,7 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 # Step P1: Initialize core Python/NRPy+ modules
-from outputC import *             # NRPy+: Core C code output module
+from outputC import lhrh,outCfunction,outputC  # NRPy+: Core C code output module
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 import finite_difference as fin   # NRPy+: Finite difference C code generation module
 import grid as gri                # NRPy+: Functions having to do with numerical grids
