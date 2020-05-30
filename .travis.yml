@@ -7,7 +7,6 @@ matrix:
       os: linux
       dist: bionic
       python: 3.8.3
-      sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install mpmath jupyter matplotlib scipy
@@ -19,7 +18,6 @@ matrix:
       dist: xenial
       python: 2.7
       before_script: pip install testfixtures
-      sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install sympy mpmath jupyter matplotlib scipy
@@ -29,7 +27,6 @@ matrix:
       os: linux
       dist: bionic
       python: 2.7.18
-      sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install mpmath jupyter matplotlib scipy
@@ -70,8 +67,9 @@ matrix:
         - python -m pip install --upgrade pip wheel
       install:
         - pip3 install mpmath sympy
-      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
-      env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+      env:
+        - PATH=/c/Python38:/c/Python38/Scripts:$PATH
+        - PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
       script: ./UnitTesting/run_NRPy_UnitTests.sh python
 
     - name: "OS X Python 3.7 (one of two OS X tests)"
