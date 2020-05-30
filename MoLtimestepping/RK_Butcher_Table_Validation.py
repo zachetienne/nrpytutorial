@@ -9,13 +9,8 @@
 
 
 # Step 1: Initialize needed Python/NRPy+ modules
-import sympy as sp
-import NRPy_param_funcs as par
-import numpy as np
-from MoLtimestepping.RK_Butcher_Table_Dictionary import Butcher_dict
-import os
-import sys
-from IPython.display import Image, display
+import sympy as sp              # SymPy: The Python computer algebra package upon which NRPy+ depends
+import numpy as np              # NumPy: A numerical methods module for Python
 
 # Step 2a:  Defining the right-hand side of the ODE
 rhs_dict = {}

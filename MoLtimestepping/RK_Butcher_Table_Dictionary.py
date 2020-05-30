@@ -9,8 +9,7 @@
 #          zachetie **at** gmail **dot* com
 
 # Step 1: Initialize needed Python/NRPy+ modules
-import sympy as sp
-import NRPy_param_funcs as par
+import sympy as sp  # Import SymPy, a computer algebra system written entirely in Python
 
 # Step 2a: Generating a Dictionary of Butcher Tables for Explicit Runge Kutta Techniques
 

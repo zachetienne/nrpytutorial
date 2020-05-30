@@ -29,7 +29,8 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
 
     kappa,gamma = par.Cparameters("REAL",thismodule,["kappa","gamma"], [1.0e-3, 4.0/3.0])
 
-    LorentzFactor = gri.register_gridfunctions("AUX","LorentzFactor")
+    # The return value from gri.register_gridfunctions("AUX","LorentzFactor") is unused, so we ignore it here:
+    gri.register_gridfunctions("AUX","LorentzFactor")
 
     def calculate_l_at_r(r):
         l  = sp.sqrt(M/r**3) * (r**4 + r**2*a**2 - 2*M*r*a**2 - a*sp.sqrt(M*r)*(r**2-a**2))
@@ -199,8 +200,10 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
 
     # Construct spacetime metric in 3+1 form:
     # See, e.g., Eq. 4.49 of https://arxiv.org/pdf/gr-qc/0703035.pdf , where N = alpha
-    alpha = gri.register_gridfunctions("EVOL",["alpha"])
-    betaU = ixp.register_gridfunctions_for_single_rank1("EVOL","betaU")
+    # The return values from gri.register_gridfunctions() & ixp.register_gridfunctions_for_single_rank1() are
+    #   unused, so we ignore them below:
+    gri.register_gridfunctions("EVOL",["alpha"])
+    ixp.register_gridfunctions_for_single_rank1("EVOL","betaU")
 
     alpha = sp.sqrt(1/(-gPhys4UU[0][0]))
     betaU = ixp.zerorank1()
@@ -211,7 +214,8 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
         for j in range(3):
             gammaUU[i][j] = gPhys4UU[i+1][j+1] + betaU[i]*betaU[j]/alpha**2
 
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD","sym01")
+    # The return value from ixp.register_gridfunctions_for_single_rank2() is unused so we ignore it below:
+    ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD","sym01")
     gammaDD,igammaDET = ixp.symm_matrix_inverter3x3(gammaUU)
     gammaDET = 1/igammaDET
 
@@ -288,8 +292,6 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     # Density and pressure:
     hm1           = hm1.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
     rho_initial          = rho_initial.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
-    Pressure_initial     = Pressure_initial.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
-    LorentzFactor = LorentzFactor.subs(r,rfm.xxSph[0]).subs(th,rfm.xxSph[1]).subs(ph,rfm.xxSph[2])
 
     # "Valencia" three-velocity
     for i in range(DIM):

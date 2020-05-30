@@ -165,7 +165,8 @@ def detgammabar_and_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global detgammabar,detgammabar_dD,detgammabar_dDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    # Ignore return values of declare_BSSN_gridfunctions_if_not_declared_already() here, as they are unused
+    declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     detgbarOverdetghat = sp.sympify(1)

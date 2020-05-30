@@ -134,9 +134,10 @@ def BSSN_source_terms_for_BSSN_constraints(custom_T4UU=None):
 
     # Step 4.a: Call BSSN_source_terms_ito_T4UU to get SDD, SD, S, & rho
     if custom_T4UU == "unrescaled BSSN source terms already given":
-        SDD = ixp.declarerank2("SDD", "sym01")
+        # SDD and S unused, so we ignore their return values from ixp.declarerankN() below
+        ixp.declarerank2("SDD", "sym01")
         SD = ixp.declarerank1("SD")
-        S = sp.symbols("S", real=True)
+        sp.symbols("S", real=True)
         rho = sp.symbols("rho", real=True)
     else:
         SDD,SD,S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU)

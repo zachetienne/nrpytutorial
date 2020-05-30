@@ -2,12 +2,10 @@
 # Baker, Campanelli, and Lousto. PRD 65, 044001 (2002), gr-qc/0104063 and the example set by the Kranc-
 # generated ETK thorn which can be found at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src
 # Step 1: import all needed modules from NRPy+:
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-from outputC import *
-import sympy as sp
+import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri                # NRPy+: Functions having to do with numerical grids
+import NRPy_param_funcs as par    # NRPy+: Parameter interface
 
 # Step 2: Initialize WeylScalars parameters
 thismodule = __name__
@@ -29,7 +27,7 @@ def define_LeviCivitaSymbol_rank3(DIM=-1):
         for j in range(DIM):
             for k in range(DIM):
                 # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
-                LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) / 2
+                LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
     return LeviCivitaSymbol
 
 # Step 1: Call BSSNs. This module computes many different quantities related to the metric,
@@ -42,19 +40,11 @@ def WeylScalars_Cartesian():
     kDD = ixp.register_gridfunctions_for_single_rank2("AUX","kDD", "sym01")
     gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
     
-    output_scalars = par.parval_from_str("output_scalars")
     global psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i
-#    if output_scalars is "all_psis_and_invariants":
-#        psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = sp.symbols("psi4r psi4i\
-#                                                                                  psi3r psi3i\
-#                                                                                  psi2r psi2i\
-#                                                                                  psi1r psi1i\
-#                                                                                  psi0r psi0i")
- #   elif output_scalars is "all_psis":
-    psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = gri.register_gridfunctions("AUX",["psi4r","psi4i",\
-                                                                                                    "psi3r","psi3i",\
-                                                                                                    "psi2r","psi2i",\
-                                                                                                    "psi1r","psi1i",\
+    psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = gri.register_gridfunctions("AUX",["psi4r","psi4i",
+                                                                                                    "psi3r","psi3i",
+                                                                                                    "psi2r","psi2i",
+                                                                                                    "psi1r","psi1i",
                                                                                                     "psi0r","psi0i"])
 
     # Step 2a: Set spatial dimension (must be 3 for BSSN)
@@ -187,9 +177,9 @@ def WeylScalars_Cartesian():
         for b in range(DIM):
             for c in range(DIM):
                 for d in range(DIM):
-                    RiemannDDDD[a][b][c][d] = (gammaDD_dDD[a][d][c][b] + \
-                                               gammaDD_dDD[b][c][d][a] - \
-                                               gammaDD_dDD[a][c][b][d] - \
+                    RiemannDDDD[a][b][c][d] = (gammaDD_dDD[a][d][c][b] +
+                                               gammaDD_dDD[b][c][d][a] -
+                                               gammaDD_dDD[a][c][b][d] -
                                                gammaDD_dDD[b][d][a][c]) / 2
                     for e in range(DIM):
                         for j in range(DIM):

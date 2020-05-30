@@ -59,18 +59,14 @@ def reference_metric(SymPySimplifyExpressions=True):
     f0_of_xx0, f1_of_xx1, f2_of_xx0_xx1, f3_of_xx0, f4_of_xx2 = par.Cparameters("REAL", thismodule,
                                   ["f0_of_xx0", "f1_of_xx1", "f2_of_xx0_xx1", "f3_of_xx0", "f4_of_xx2"], 1e300)
     # FIXME: Hack
-    f0_of_xx0__D0, f0_of_xx0__DD00, f0_of_xx0__DDD000 = par.Cparameters("REAL", thismodule,
-                                                                        ["f0_of_xx0__D0", "f0_of_xx0__DD00",
-                                                                         "f0_of_xx0__DDD000"], 1e300)
-    f1_of_xx1__D1, f1_of_xx1__DD11, f1_of_xx1__DDD111 = par.Cparameters("REAL", thismodule,
-                                                                        ["f1_of_xx1__D1", "f1_of_xx1__DD11",
-                                                                         "f1_of_xx1__DDD111"], 1e300)
-    f2_of_xx0_xx1__D0,f2_of_xx0_xx1__D1,f2_of_xx0_xx1__DD00,f2_of_xx0_xx1__DD11 = \
-        par.Cparameters("REAL", thismodule,
+    # return values of par.Cparameters() in the following code block are unused, so we ignore them.
+    par.Cparameters("REAL", thismodule,["f0_of_xx0__D0", "f0_of_xx0__DD00","f0_of_xx0__DDD000"], 1e300)
+    par.Cparameters("REAL", thismodule,["f1_of_xx1__D1", "f1_of_xx1__DD11","f1_of_xx1__DDD111"], 1e300)
+    par.Cparameters("REAL", thismodule,
                         ["f2_of_xx0_xx1__D0","f2_of_xx0_xx1__D1","f2_of_xx0_xx1__DD00","f2_of_xx0_xx1__DD11"],
                         1e300)
-    f3_of_xx0__D0,f3_of_xx0__DD00     = par.Cparameters("REAL", thismodule,["f3_of_xx0__D0","f3_of_xx0__DD00"], 1e300)
-    f4_of_xx2__D2,f4_of_xx2__DD22     = par.Cparameters("REAL", thismodule,["f4_of_xx2__D2","f4_of_xx2__DD22"], 1e300)
+    par.Cparameters("REAL", thismodule,["f3_of_xx0__D0","f3_of_xx0__DD00"], 1e300)
+    par.Cparameters("REAL", thismodule,["f4_of_xx2__D2","f4_of_xx2__DD22"], 1e300)
 
     global have_already_called_reference_metric_function # setting to global enables other modules to see updated value.
     have_already_called_reference_metric_function = True
@@ -388,9 +384,9 @@ def reference_metric(SymPySimplifyExpressions=True):
     # CARTESIAN-LIKE COORDINATE SYSTEMS #
     #####################################
     elif CoordSystem == "Cartesian":
-        xmin, xmax, ymin, ymax, zmin, zmax = par.Cparameters("REAL",thismodule,
-                                                             ["xmin","xmax","ymin","ymax","zmin","zmax"],
-                                                             [ -10.0,  10.0, -10.0,  10.0, -10.0,  10.0])
+        # return values of par.Cparameters() in the following line of code are unused, so we ignore them.
+        par.Cparameters("REAL",thismodule, ["xmin","xmax","ymin","ymax","zmin","zmax"],
+                                           [ -10.0,  10.0, -10.0,  10.0, -10.0,  10.0])
         xxmin = ["xmin", "ymin", "zmin"]
         xxmax = ["xmax", "ymax", "zmax"]
 
@@ -598,15 +594,9 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
     if enable_rfm_precompute == False:
         return
     else:
-        CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
-        # if not (("Spherical" in CoordSystem) or ("SymTP" in CoordSystem)):
-        # if not (( "Spherical" in CoordSystem)):
-        #     print("Error: CoordSystem == "+CoordSystem+" does not yet support rfm precompute infrastructure.")
-        #     sys.exit(1)
-
-        # enable_rfm_precompute: precompute and store in memory complicated
-        #     expressions related to the reference metric (a.k.a., "hatted
-        #     quantities")
+        # enable_rfm_precompute: precompute and store in memory possibly
+        #     complex expressions related to the reference metric (a.k.a.,
+        #      "hatted quantities")
 
         # The precomputed "hatted quantity" expressions will be stored in
         #    a C struct called rfmstruct. As these expressions generally
@@ -629,7 +619,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
             sympy_version = sp.__version__.replace("rc","...").replace("b","...") # Ignore the rc's and b's for release candidates & betas.
             sympy_major_version = int(sympy_version.split(".")[0])
             sympy_minor_version = int(sympy_version.split(".")[1])
-            is_old_sympy_version = sympy_major_version < 1 or (sympy_minor_version < 2 and sympy_major_version >= 1) # the second one is a bit backwards, but designed to prevent automated code analyses from thinking this is always true.
+            is_old_sympy_version = sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2)
             # The derivative representation changed with SymPy 1.2, forcing version-dependent behavior.
 
             # Example: Derivative(f0_of_xx0_funcform(xx0)(xx0), (xx0, 2)) >> f0_of_xx0__DD00
