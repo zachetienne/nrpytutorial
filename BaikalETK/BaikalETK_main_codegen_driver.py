@@ -83,16 +83,22 @@ if nrpy_dir_path not in sys.path:
 
 # Create all output directories if they do not yet exist
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
-import shutil                    # Standard Python module for multiplatform OS-level functions
 for ThornName in ["Baikal","BaikalVacuum"]:
     outrootdir = ThornName
     cmd.mkdir(os.path.join(outrootdir))
     outdir = os.path.join(outrootdir,"src") # Main C code output directory
 
-    # Copy SIMD/SIMD_intrinsics.h to $outdir/SIMD/SIMD_intrinsics.h
+    # Copy SIMD/SIMD_intrinsics.h to $outdir/SIMD/SIMD_intrinsics.h, replacing
+    #   the line "#define REAL_SIMD_ARRAY REAL" with "#define REAL_SIMD_ARRAY CCTK_REAL"
+    #   (since REAL is undefined in the ETK, but CCTK_REAL takes its place)
     cmd.mkdir(os.path.join(outdir,"SIMD"))
-    shutil.copy(os.path.join(nrpy_dir_path,"SIMD/")+"SIMD_intrinsics.h",os.path.join(outdir,"SIMD/"))
+    import fileinput
+    with fileinput.FileInput(os.path.join(nrpy_dir_path,"SIMD","SIMD_intrinsics.h")) as infile:
+        with open(os.path.join(outdir,"SIMD","SIMD_intrinsics.h"),"w") as outfile:
+            for line in infile:
+                outfile.write(line.replace("#define REAL_SIMD_ARRAY REAL", "#define REAL_SIMD_ARRAY CCTK_REAL"))
 
+    # Create directory for rfm_files output
     cmd.mkdir(os.path.join(outdir,"rfm_files"))
 
 # Start parallel C code generation (codegen)
