@@ -626,10 +626,10 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         we will now replace SymPy functions with simple variables using rigid NRPy+ syntax,
         #         and store these variables to globals defined above.
         def make_replacements(expr):
-            sympy_version = sp.__version__.replace("rc","...").replace("b","...")
+            sympy_version = sp.__version__.replace("rc","...").replace("b","...") # Ignore the rc's and b's for release candidates & betas.
             sympy_major_version = int(sympy_version.split(".")[0])
             sympy_minor_version = int(sympy_version.split(".")[1])
-            outdated_version = sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2)
+            is_old_sympy_version = sympy_major_version < 1 or (sympy_minor_version < 2 and sympy_major_version >= 1) # the second one is a bit backwards, but designed to prevent automated code analyses from thinking this is always true.
             # The derivative representation changed with SymPy 1.2, forcing version-dependent behavior.
 
             # Example: Derivative(f0_of_xx0_funcform(xx0)(xx0), (xx0, 2)) >> f0_of_xx0__DD00
@@ -638,7 +638,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
                 if item.func == sp.Derivative:
                     # extract function name before '_funcform'
                     strfunc = str(item.args[0]).split('_funcform(', 1)[0]
-                    if outdated_version:
+                    if is_old_sympy_version:
                         # extract differentiation variable and derivative order (SymPy <= 1.1)
                         var, order = str(item.args[1])[2:], len(item.args) - 1
                     else:
@@ -789,7 +789,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         # Step 7: Construct needed C code for declaring rfmstruct, allocating storage for
         #         rfmstruct arrays, defining each element in each array, reading the
         #         rfmstruct data from memory (both with and without SIMD enabled), and
-        #         freeing allocated memory for the rfmstrcut arrays.
+        #         freeing allocated memory for the rfmstruct arrays.
         # struct_str: String that declares the rfmstruct struct.
         struct_str = "typedef struct __rfmstruct__ {\n"
         define_str = ""

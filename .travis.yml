@@ -3,7 +3,7 @@ language: python
 
 matrix:
   include:
-    - name: "JUPYTER NOTEBOOK TESTS SymPy-dev Ubuntu Linux Bionic Python 3.8.3 (Python 3 + latest *development* SymPy)"
+    - name: "JUPYTER NOTEBOOK TESTS: SymPy-dev Ubuntu Linux Bionic Python 3.8.3 (Python 3 + latest *development* SymPy)"
       os: linux
       dist: bionic
       python: 3.8.3
@@ -14,7 +14,7 @@ matrix:
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
-    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7 (Python 2.7 + latest stable SymPy)"
+    - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Xenial CPython 2.7 (Python 2.7 + latest stable SymPy)"
       os: linux
       dist: xenial
       python: 2.7
@@ -25,7 +25,7 @@ matrix:
         - pip install sympy mpmath jupyter matplotlib scipy
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
-    - name: "JUPYTER NOTEBOOK TEST: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
+    - name: "JUPYTER NOTEBOOK TESTS: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
       os: linux
       dist: bionic
       python: 2.7.18
