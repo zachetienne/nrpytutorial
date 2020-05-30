@@ -1,10 +1,9 @@
 # NRPy+ code to generate first derivatives of the SEOBNRv3 Hamiltonian from a list of numerical expressions computing
 # said Hamiltonian. Originally written by Zach Etienne; edited and commented by Tyler Knowles.
 
-from outputC import *
-import sympy as sp
-import sys
-
+from outputC import outputC,lhrh,superfast_uniq  # NRPy+: Core C code output module
+import sympy as sp      # SymPy: The Python computer algebra package upon which NRPy+ depends
+import sys              # Python module for multiplatform OS-related functions
 
 # simplify_deriv() simplifies derivative expressions by removing terms equal to zero.
 def simplify_deriv(lhss_deriv, rhss_deriv):
