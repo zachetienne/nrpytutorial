@@ -617,9 +617,8 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #         and store these variables to globals defined above.
         def make_replacements(expr):
             sympy_version = sp.__version__.replace("rc","...").replace("b","...") # Ignore the rc's and b's for release candidates & betas.
-            sympy_major_version = int(sympy_version.split(".")[0])
-            sympy_minor_version = int(sympy_version.split(".")[1])
-            is_old_sympy_version = sympy_major_version < 1 or (sympy_major_version >= 1 and sympy_minor_version < 2)
+            sympy_version_decimal = float(int(sympy_version.split(".")[0]) + int(sympy_version.split(".")[1])/10.0)
+            is_old_sympy_version = sympy_version_decimal < 1.2
             # The derivative representation changed with SymPy 1.2, forcing version-dependent behavior.
 
             # Example: Derivative(f0_of_xx0_funcform(xx0)(xx0), (xx0, 2)) >> f0_of_xx0__DD00
