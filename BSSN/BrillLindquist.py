@@ -46,8 +46,6 @@ BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"], 1.0)
 # ComputeADMGlobalsOnly == True will only set up the ADM global quantities.
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def BrillLindquist(ComputeADMGlobalsOnly = False):
-    global Cartxyz,gammaCartDD, KCartDD, alphaCart, betaCartU, BCartU
-    
     # Step 2: Setting up Brill-Lindquist initial data
 
     # Step 2.a: Set spatial dimension (must be 3 for BSSN)
