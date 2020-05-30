@@ -48,11 +48,9 @@ def apply_symmetry_condition_to_derivatives(IDX_OBJ):
             sys.exit(1)
 
     def does_IDXOBJ_perform_derivative_across_symmetry_axis(idxobj_str):
-        returnval = False
         if "_d" in idxobj_str:
             # First we find the order of the derivative:
             deriv_order = 0
-            underscore_position = -1000
             for i in range(len(idxobj_str)-1):
                 if idxobj_str[i] == "_" and idxobj_str[i+1]=="d":
                     # The order of the derivative is given by the number of D's in a row after the _d:

@@ -49,15 +49,7 @@ def WeylScalars_Cartesian():
         for j in range(3):
             gammaUU[i][j] = sp.simplify(tmpgammaUU[i][j])
 
-    output_scalars = par.parval_from_str("output_scalars")
     global psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i
-#    if output_scalars is "all_psis_and_invariants":
-#        psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = sp.symbols("psi4r psi4i\
-#                                                                                  psi3r psi3i\
-#                                                                                  psi2r psi2i\
-#                                                                                  psi1r psi1i\
-#                                                                                  psi0r psi0i")
- #   elif output_scalars is "all_psis":
     psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = gri.register_gridfunctions("AUX",["psi4r","psi4i",\
                                                                                                     "psi3r","psi3i",\
                                                                                                     "psi2r","psi2i",\

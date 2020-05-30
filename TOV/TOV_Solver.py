@@ -51,13 +51,13 @@ def TOV_Solver(eos,
     #
         P    = y[0]
         m    = y[1]
-        nu   = y[2]
+        # nu   = y[2] # nu is not needed as input into TOV_rhs
         rbar = y[3]
 
         # Compute rho_b and eps_cold, to be used below
         # to compute rho_(total)
         rho_baryon, eps_cold = ppeos.Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P)
-        
+
 #         with open("rhob_P_cold_and_eps_cold.dat","a+") as file:
 #             file.write(str(r_Schw).format("%.15e")+"  "+str(rho_baryon).format("%.15e")+"  "+str(P).format("%.15e")+"  "+str(eps_cold).format("%.15e")+"\n")
 
@@ -127,9 +127,7 @@ def TOV_Solver(eos,
         nuArr     = []
         rbarArr   = []
 
-        nsteps = 0
-        
-        while integrator.successful() and P > 1e-19*y0[0] : 
+        while integrator.successful() and P > 1e-19*y0[0] :
             P, m, nu, rbar = integrator.integrate(r_Schw + dr_Schw)
             # Update the value of r_Schw to the latest integrated value
             r_Schw += dr_Schw

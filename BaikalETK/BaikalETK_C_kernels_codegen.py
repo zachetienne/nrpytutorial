@@ -108,8 +108,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         if gri.glb_gridfcs_list[i].name == "H":
             registered_already = True
     if not registered_already:
-        H  = gri.register_gridfunctions("AUX","H")
-        MU = ixp.register_gridfunctions_for_single_rank1("AUX", "MU")
+        # We ignore return values for register_gridfunctions...() calls below
+        #    as they are unused.
+        gri.register_gridfunctions("AUX","H")
+        ixp.register_gridfunctions_for_single_rank1("AUX", "MU")
 
     def BSSN_RHSs__generate_symbolic_expressions():
         ######################################
@@ -233,7 +235,9 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             if "RbarDD00" in gri.glb_gridfcs_list[i].name:
                 RbarDD_already_registered = True
         if not RbarDD_already_registered:
-            RbarDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","RbarDD","sym01")
+            # We ignore the return value of ixp.register_gridfunctions_for_single_rank2() below
+            #    as it is unused.
+            ixp.register_gridfunctions_for_single_rank2("AUXEVOL","RbarDD","sym01")
         rhs.BSSN_RHSs()
         Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
 

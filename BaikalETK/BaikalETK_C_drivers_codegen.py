@@ -316,12 +316,14 @@ void BaikalETK_NewRad(CCTK_ARGUMENTS) {
     orig_glb_gridfcs_list = []
     for gf in gri.glb_gridfcs_list:
         orig_glb_gridfcs_list.append(gf)
-        
-    alphaSphorCart   = gri.register_gridfunctions(                 "AUXEVOL", "alphaSphorCart")
-    betaSphorCartU   = ixp.register_gridfunctions_for_single_rank1("AUXEVOL", "betaSphorCartU")
-    BSphorCartU      = ixp.register_gridfunctions_for_single_rank1("AUXEVOL", "BSphorCartU")
-    gammaSphorCartDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "gammaSphorCartDD", "sym01")
-    KSphorCartDD     = ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "KSphorCartDD", "sym01")
+
+    # We ignore the return values for the following register_gridfunctions...() calls,
+    #   as they are unused.
+    gri.register_gridfunctions(                 "AUXEVOL", "alphaSphorCart")
+    ixp.register_gridfunctions_for_single_rank1("AUXEVOL", "betaSphorCartU")
+    ixp.register_gridfunctions_for_single_rank1("AUXEVOL", "BSphorCartU")
+    ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "gammaSphorCartDD", "sym01")
+    ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "KSphorCartDD", "sym01")
 
     # ADM to BSSN conversion, used for converting ADM initial data into a form readable by this thorn.
     # ADM to BSSN, Part 1: Set up function call and pointers to ADM gridfunctions

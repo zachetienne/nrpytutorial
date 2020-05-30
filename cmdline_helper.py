@@ -47,7 +47,6 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
     check_executable_exists("gcc")
 
     # Step 2: Delete existing version of executable
-    delete_string = ""
     if os.name == "nt":
         main_C_output_file += ".exe"
     delete_existing_files(main_C_output_file)
