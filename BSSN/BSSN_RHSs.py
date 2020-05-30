@@ -17,8 +17,7 @@ import NRPy_param_funcs as par    # NRPy+: Parameter interface
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
 import sys                        # Standard Python module for multiplatform OS-level functions
-import BSSN.BSSN_quantities as Bq # NRPy+: This module depends on the parameter EvolvedConformalFactor_cf,
-                                  #        which is defined in BSSN.BSSN_quantities
+import BSSN.BSSN_quantities as Bq # NRPy+: Basic BSSN quantities
 
 have_already_called_BSSN_RHSs_function = False
 
@@ -44,7 +43,6 @@ def BSSN_RHSs():
     DIM = 3
 
     # Step 1.e: Import all basic (unrescaled) BSSN scalars & tensors
-    import BSSN.BSSN_quantities as Bq
     Bq.BSSN_basic_tensors()
     gammabarDD = Bq.gammabarDD
     AbarDD     = Bq.AbarDD
@@ -53,8 +51,7 @@ def BSSN_RHSs():
     alpha = Bq.alpha
     betaU = Bq.betaU
 
-    # Step 1.f: Import all neeeded rescaled BSSN tensors:
-    aDD = Bq.aDD
+    # Step 1.f: Import all needed rescaled BSSN tensors:
     cf  = Bq.cf
     lambdaU = Bq.lambdaU
 
@@ -129,7 +126,6 @@ def BSSN_RHSs():
     Bq.phi_and_derivs()
     phi_dD = Bq.phi_dD
     phi_dupD = Bq.phi_dupD
-    phi_dDD = Bq.phi_dDD
     exp_m4phi = Bq.exp_m4phi
     phi_dBarD = Bq.phi_dBarD  # phi_dBarD = Dbar_i phi = phi_dD (since phi is a scalar)
     phi_dBarDD = Bq.phi_dBarDD  # phi_dBarDD = Dbar_i Dbar_j phi (covariant derivative)
