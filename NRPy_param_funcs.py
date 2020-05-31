@@ -49,11 +49,10 @@ def get_params_idx(input,Cparam=False):
         list = [i for i, v in enumerate(glb_Cparams_list) if input.parname == v[2]]
     if list == []:
         return -1 # No match found => error out!
-    else:
-        if len(list) > 1:
-            print("Error: Found multiple parameters matching "+str(input))
-            sys.exit(1)
-        return list.pop() # pop() returns the index
+    if len(list) > 1:
+        print("Error: Found multiple parameters matching "+str(input))
+        sys.exit(1)
+    return list.pop() # pop() returns the index
 
 def get_params_value(input):
     idx = get_params_idx(input)
@@ -156,9 +155,7 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     sys.exit(1)
             elif partype == "int":
                 glb_paramsvals_list[idx] = int(single_param_def[2])
-            elif partype == "REAL" or \
-                partype == "char" or \
-                partype == "char *":
+            elif partype in ('REAL', 'char', 'char *'):
                 glb_paramsvals_list[idx] = single_param_def[2]
             else:
                 print("Error: type \""+partype+"\" on variable \""+ glb_params_list[idx].parname +"\" is unsupported.")
@@ -208,11 +205,7 @@ def generate_Cparameters_Ccodes(directory="./"):
     # Step 1: Check that Cparams types are supported.
     for i in range(len(glb_Cparams_list)):
         partype = glb_Cparams_list[i].type
-        if partype != "bool" and \
-           partype != "#define" and \
-           partype != "char" and \
-           partype != "int" and \
-           partype != "REAL":
+        if partype not in ('bool', '#define', 'char', 'int', 'REAL'):
             print("Error: parameter "+glb_Cparams_list[i].module+"::"+glb_Cparams_list[i].parname+" has unsupported type: \""
                   + glb_Cparams_list[i].type + "\"")
             sys.exit(1)

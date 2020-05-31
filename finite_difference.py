@@ -334,7 +334,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                 idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
                 read_from_memory_index.append(unique_idx(idx4))
                 # https://stackoverflow.com/questions/13668393/python-sorting-two-lists
-                UNUSEDlist, sorted_list_of_points_read_from_memory[gfidx] = \
+                _UNUSEDlist, sorted_list_of_points_read_from_memory[gfidx] = \
                     [list(x) for x in zip(*sorted(zip(read_from_memory_index, list_of_points_read_from_memory[gfidx]),
                                                   key=itemgetter(0)))]
     # Step 4e: Create the full C code string
