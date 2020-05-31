@@ -509,7 +509,7 @@ def phi_and_derivs():
 
     # Step 9.a.v: Error out if unsupported EvolvedConformalFactor_cf choice is made:
     cf_choice = par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf")
-    if not (cf_choice == "phi" or cf_choice == "W" or cf_choice == "chi"):
+    if not cf_choice in ('phi', 'W', 'chi'):
         print("Error: EvolvedConformalFactor_cf == " + par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") + " unsupported!")
         sys.exit(1)
 
