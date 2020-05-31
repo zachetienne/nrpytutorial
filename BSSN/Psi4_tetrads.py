@@ -127,13 +127,12 @@ def Psi4_tetrads():
     def v_vectorDU(v1U,v2U,v3U,  i,a):
         if i==0:
             return v1U[a]
-        elif i==1:
+        if i==1:
             return v2U[a]
-        elif i==2:
+        if i==2:
             return v3U[a]
-        else:
-            print("ERROR: unknown vector!")
-            sys.exit(1)
+        print("ERROR: unknown vector!")
+        sys.exit(1)
 
     def update_omega(omegaDD, i,j, v1U,v2U,v3U,gammaDD):
         omegaDD[i][j] = sp.sympify(0)

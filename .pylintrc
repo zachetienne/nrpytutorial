@@ -63,6 +63,7 @@ confidence=
 # --disable=W".
 disable=too-many-arguments,redefined-outer-name,wrong-import-position,too-many-locals,too-many-branches,multiple-imports,too-many-statements,multiple-statements,too-many-lines, # ADDED
         consider-using-enumerate,singleton-comparison, # ADDED, with hesitation since some might be good suggestions, but far too many false positives
+        duplicate-code,             # ADDED
         import-outside-toplevel,    # ADDED
         wrong-import-order,         # ADDED
         undefined-variable,         # ADDED, hesitantly due to many false positives
