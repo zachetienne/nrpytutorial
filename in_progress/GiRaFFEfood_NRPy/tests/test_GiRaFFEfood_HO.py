@@ -50,7 +50,7 @@ if __name__ == '__main__':
             with open(os.path.join('UnitTesting', 'failed_tests.txt'), 'a') as file:
                 for function in failed_functions:
                     file.write(sys.argv[0] + ': ' + str(function) + '\n')
-            exit(1)
+            sys.exit(1)
 
     else:
         globals()[sys.argv[4]]()
