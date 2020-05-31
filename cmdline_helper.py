@@ -193,7 +193,7 @@ def output_Jupyter_notebook_to_LaTeXed_PDF(notebookname,location_of_template_fil
         Execute_input_string(r"jupyter nbconvert --to latex --template "
                              +os.path.join(location_of_template_file,"latex_nrpy_style.tplx")
                              +r" --log-level='WARN' "+notebookname+".ipynb",verbose=False)
-        for i in range(3):
+        for _i in range(3):  # _i is an unused variable.
             Execute_input_string(r"pdflatex -interaction=batchmode "+notebookname+".tex",verbose=False)
         delete_existing_files(notebookname+".out "+notebookname+".aux "+notebookname+".log")
         if verbose:

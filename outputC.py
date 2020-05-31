@@ -144,7 +144,7 @@ def parse_outCparams_string(params):
                     print(value[i]+" is not an integer.")
                     sys.exit(1)
                 preindent = ""
-                for j in range(int(value[i])):
+                for _j in range(int(value[i])): # _j is unused
                     preindent += "   "
             elif parname == "includebraces":
                 includebraces = value[i]
@@ -222,13 +222,11 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     #         within the C code. For example for AVX-256, the C code should have
     #         #define REAL_SIMD_ARRAY __m256d
     if outCparams.SIMD_enable == "True":
-        if not (TYPE == "double" or TYPE == ""):
+        if TYPE not in ('double', ''):
             print("SIMD output currently only supports double precision or typeless. Sorry!")
             sys.exit(1)
         if TYPE == "double":
             TYPE = "REAL_SIMD_ARRAY"
-        else:
-            TYPE = ""
 
     # Step 2a: Apply sanity checks when either sympyexpr or
     #          output_varname_str is a list.
@@ -432,7 +430,7 @@ def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loo
     func_prototype = type+" "+name+"("+params+")"
 
     include_Cparams_str = ""
-    if not "DisableCparameters" in opts:
+    if "DisableCparameters" not in opts:
         if "EnableSIMD" in loopopts:
             include_Cparams_str = "#include \"" + os.path.join(rel_path_for_Cparams, "set_Cparameters-SIMD.h") + "\"\n"
         else:
@@ -452,7 +450,7 @@ def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",b
 
 def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",
                  opts="",rel_path_for_Cparams=os.path.join("./")):
-    ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
+    _ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
     if outfile == "returnstring":
         return Cfunc
     with open(outfile,"w") as file:

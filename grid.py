@@ -158,7 +158,7 @@ def register_gridfunctions(gf_type,gf_names,rank=0,is_indexed=False,DIM=3):
             verify_gridfunction_basename_is_valid(gf_names[i])
 
     # Step 3: Verify that gridfunction type is valid.
-    if not (gf_type == "EVOL" or gf_type == "AUX" or gf_type == "AUXEVOL"):
+    if gf_type not in ('EVOL', 'AUX', 'AUXEVOL'):
         print("Error in registering gridfunction(s) with unsupported type "+gf_type+".")
         print("Supported types include \"EVOL\" for gridfunctions related to evolved quantities or \"AUX\" for all others.")
         sys.exit(1)
