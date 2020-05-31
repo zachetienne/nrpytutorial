@@ -49,11 +49,15 @@ def variable_type(var):
         return "Cparameter"
     if var_is_gf:
         return "gridfunction"
+    print("grid.py: Could not find variable_type.")
+    sys.exit(1)
 
 def find_gftype(varname):
     for gf in glb_gridfcs_list:
         if gf.name == varname:
             return gf.gftype
+    print("grid.py: Could not find gftype.")
+    sys.exit(1)
 
 def gfaccess(gfarrayname = "", varname = "", ijklstring = ""):
     found_registered_gf = False
