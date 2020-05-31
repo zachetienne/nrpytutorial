@@ -140,7 +140,7 @@ def BSSN_source_terms_for_BSSN_constraints(custom_T4UU=None):
         sp.symbols("S", real=True)
         rho = sp.symbols("rho", real=True)
     else:
-        _SDD,_SD,_S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU) #_SDD,_SD,_S unused.
+        _SDD,SD,_S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU) #_SDD,_S unused.
     PI = par.Cparameters("REAL", thismodule, ["PI"], "3.14159265358979323846264338327950288")
 
     # Step 4.b: Add source term to the Hamiltonian constraint H

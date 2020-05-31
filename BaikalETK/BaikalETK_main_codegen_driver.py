@@ -267,7 +267,7 @@ for enable_stress_energy_source_terms in [True,False]:
     ThornName="Baikal"
     if enable_stress_energy_source_terms==False:
         ThornName="BaikalVacuum"
-    cclgen.output_param_ccl(ThornName,enable_stress_energy_source_terms)
+    cclgen.output_param_ccl(ThornName)
     cclgen.output_interface_ccl(ThornName,enable_stress_energy_source_terms)
     cclgen.output_schedule_ccl(ThornName,enable_stress_energy_source_terms)
 ###############################

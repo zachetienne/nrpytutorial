@@ -395,14 +395,19 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
 """
 
     path = os.path.join(ThornName,"src")
+    BaikalETK_src_filelist = []
+    for _root, _dirs, files in os.walk(path):  # _root, _dirs unused.
+        for filename in files:
+            BaikalETK_src_filelist.append(filename)
+    BaikalETK_src_filelist.sort() # Sort the list in place.
+
     BSSN_FD_orders_output = []
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if "BSSN_RHSs_" in file:
-                array = file.replace(".","_").split("_")
-                FDorder =  int(array[-2])
-                if FDorder not in BSSN_FD_orders_output:
-                    BSSN_FD_orders_output.append(FDorder)
+    for filename in BaikalETK_src_filelist:
+        if "BSSN_RHSs_" in filename:
+            array = filename.replace(".","_").split("_")
+            FDorder =  int(array[-2])
+            if FDorder not in BSSN_FD_orders_output:
+                BSSN_FD_orders_output.append(FDorder)
     BSSN_FD_orders_output.sort()
 
     for current_FD_order in BSSN_FD_orders_output:
@@ -529,28 +534,24 @@ void BaikalETK_driver_pt1_BSSN_Ricci(CCTK_ARGUMENTS) {
 
     # Create functions for the largest C kernels (BSSN RHSs and Ricci) and output
     #    the .h files to .c files with function wrappers; delete original .h files
-    path = os.path.join(ThornName, "src")
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if ("BSSN_Ricci_FD_order_") in file and (".h" in file):
-                outstr = common_includes + "void BaikalETK_"+file.replace(".h","")+"(CCTK_ARGUMENTS) {\n"
-                outstr += common_preloop
-                with open(os.path.join(path,file), "r") as currfile:
-                    outstr += currfile.read()
-                # Now that we've inserted the contents of the kernel into this file,
-                #     we delete the file containing the kernel
-                os.remove(os.path.join(path,file))
-                outstr += "} // END FUNCTION\n"
-                # Add C code string to dictionary (Python dictionaries are immutable)
-                Csrcdict[append_to_make_code_defn_list(file.replace(".h",".c"))] = outstr.replace("BaikalETK",ThornName)
+    for filename in BaikalETK_src_filelist:
+        if ("BSSN_Ricci_FD_order_") in filename and (".h" in filename):
+            outstr = common_includes + "void BaikalETK_"+filename.replace(".h","")+"(CCTK_ARGUMENTS) {\n"
+            outstr += common_preloop
+            with open(os.path.join(path,filename), "r") as currfile:
+                outstr += currfile.read()
+            # Now that we've inserted the contents of the kernel into this file,
+            #     we delete the file containing the kernel
+            os.remove(os.path.join(path,filename))
+            outstr += "} // END FUNCTION\n"
+            # Add C code string to dictionary (Python dictionaries are immutable)
+            Csrcdict[append_to_make_code_defn_list(filename.replace(".h",".c"))] = outstr.replace("BaikalETK",ThornName)
     ###########################
     # Output BSSN RHSs driver function
-    path = os.path.join(ThornName, "src")
     outstr = common_includes
-    for root, dirs, files in os.walk(path):
-        for filename in files:
-            if ("BSSN_RHSs_" in filename) and (".h" in filename):
-                outstr += """extern void """ + ThornName+"_"+filename.replace(".h", "(CCTK_ARGUMENTS);") + "\n"
+    for filename in BaikalETK_src_filelist:
+        if ("BSSN_RHSs_" in filename) and (".h" in filename):
+            outstr += """extern void """ + ThornName+"_"+filename.replace(".h", "(CCTK_ARGUMENTS);") + "\n"
 
     outstr += """
 void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
@@ -559,14 +560,12 @@ void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
     const CCTK_INT *FD_order = CCTK_ParameterGet("FD_order","BaikalETK",NULL);
 
 """
-    path = os.path.join(ThornName, "src")
-    for root, dirs, files in os.walk(path):
-        for filename in files:
-            if ("BSSN_RHSs_" in filename) and (".h" in filename):
-                array = filename.replace(".", "_").split("_")
-                outstr += "    if(*FD_order == " + str(array[-2]) + ") {\n"
-                outstr += "        " + ThornName+"_"+filename.replace(".h", "(CCTK_PASS_CTOC);") + "\n"
-                outstr += "    }\n"
+    for filename in BaikalETK_src_filelist:
+        if ("BSSN_RHSs_" in filename) and (".h" in filename):
+            array = filename.replace(".", "_").split("_")
+            outstr += "    if(*FD_order == " + str(array[-2]) + ") {\n"
+            outstr += "        " + ThornName+"_"+filename.replace(".h", "(CCTK_PASS_CTOC);") + "\n"
+            outstr += "    }\n"
     outstr += "} // END FUNCTION\n"
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("driver_pt2_BSSN_RHSs.c")] = outstr.replace("BaikalETK", ThornName)
@@ -589,19 +588,18 @@ void BaikalETK_driver_pt2_BSSN_RHSs(CCTK_ARGUMENTS) {
     # Create functions for the largest C kernels (BSSN RHSs and Ricci) and output
     #    the .h files to .c files with function wrappers; delete original .h files
     path = os.path.join(ThornName, "src")
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if ("BSSN_RHSs_" in file) and (".h" in file):
-                outstr = common_includes + "void BaikalETK_"+file.replace(".h","")+"(CCTK_ARGUMENTS) {\n"
-                outstr += common_preloop+SIMD_declare_C_params()
-                with open(os.path.join(path,file), "r") as currfile:
-                    outstr += currfile.read()
-                # Now that we've inserted the contents of the kernel into this file,
-                #     we delete the file containing the kernel
-                os.remove(os.path.join(path,file))
-                outstr += "} // END FUNCTION\n"
-                # Add C code string to dictionary (Python dictionaries are immutable)
-                Csrcdict[append_to_make_code_defn_list(file.replace(".h",".c"))] = outstr.replace("BaikalETK",ThornName)
+    for filename in BaikalETK_src_filelist:
+        if ("BSSN_RHSs_" in filename) and (".h" in filename):
+            outstr = common_includes + "void BaikalETK_"+filename.replace(".h","")+"(CCTK_ARGUMENTS) {\n"
+            outstr += common_preloop+SIMD_declare_C_params()
+            with open(os.path.join(path,filename), "r") as currfile:
+                outstr += currfile.read()
+            # Now that we've inserted the contents of the kernel into this file,
+            #     we delete the file containing the kernel
+            os.remove(os.path.join(path,filename))
+            outstr += "} // END FUNCTION\n"
+            # Add C code string to dictionary (Python dictionaries are immutable)
+            Csrcdict[append_to_make_code_defn_list(filename.replace(".h",".c"))] = outstr.replace("BaikalETK",ThornName)
 
     # Next, the driver for enforcing detgammabar = detgammahat constraint:
     outstr = common_includes + """
@@ -632,14 +630,12 @@ void BaikalETK_BSSN_constraints(CCTK_ARGUMENTS) {
     const CCTK_REAL invdx1 = 1.0/CCTK_DELTA_SPACE(1);
     const CCTK_REAL invdx2 = 1.0/CCTK_DELTA_SPACE(2);
 """
-    path = os.path.join(ThornName,"src")
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if "BSSN_constraints_" in file:
-                array = file.replace(".","_").split("_")
-                outstr += "    if(FD_order == "+str(array[-2])+") {\n"
-                outstr += "        #include \""+file+"\"\n"
-                outstr += "    }\n"
+    for filename in BaikalETK_src_filelist:
+        if "BSSN_constraints_" in filename:
+            array = filename.replace(".","_").split("_")
+            outstr += "    if(FD_order == "+str(array[-2])+") {\n"
+            outstr += "        #include \""+filename+"\"\n"
+            outstr += "    }\n"
     outstr += "}\n"
 
     # Add C code string to dictionary (Python dictionaries are immutable)
