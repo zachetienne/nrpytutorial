@@ -941,7 +941,7 @@ def get_EigenCoord():
     sys.exit(1)
 
 def set_Nxx_dxx_invdx_params__and__xx_h(outdir=".",grid_centering="cell"):
-    if grid_centering != "cell" and grid_centering != "vertex":
+    if grid_centering not in ('cell', 'vertex'):
         print("rfm.set_Nxx_dxx_invdx_params__and__xx_h(): grid_centering = \""+grid_centering+"\" not supported!")
         sys.exit(1)
 

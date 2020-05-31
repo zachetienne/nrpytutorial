@@ -299,11 +299,10 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         sz = 100 # assumed size in each direction
         if par.parval_from_str("MemAllocStyle") == "210":
             return str(int(idx4[0])+os + sz*( (int(idx4[1])+os) + sz*( (int(idx4[2])+os) + sz*( int(idx4[3])+os ) ) ))
-        elif par.parval_from_str("MemAllocStyle") == "012":
+        if par.parval_from_str("MemAllocStyle") == "012":
             return str(int(idx4[3])+os + sz*( (int(idx4[2])+os) + sz*( (int(idx4[1])+os) + sz*( int(idx4[0])+os ) ) ))
-        else:
-            print("Error: MemAllocStyle = "+par.parval_from_str("MemAllocStyle")+" unsupported.")
-            sys.exit(1)
+        print("Error: MemAllocStyle = "+par.parval_from_str("MemAllocStyle")+" unsupported.")
+        sys.exit(1)
 
     # Step 4d.ii: For each gridfunction and
     #      point read from memory, call unique_idx,
@@ -381,9 +380,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                 varname = "UpwindAlgInput"+varname
         if outCparams.SIMD_enable == "True":
             return "const REAL_SIMD_ARRAY " + varname
-        else:
-            TYPE = par.parval_from_str("PRECISION")
-            return "const "+ TYPE + " " + varname
+        return "const "+ par.parval_from_str("PRECISION") + " " + varname
 
     def varsuffix(idx4):
         if idx4 == [0,0,0,0]:
@@ -459,8 +456,8 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         if (len(deriv__operator[i]) == 5 and "dKOD" in deriv__operator[i]) or \
            (len(deriv__operator[i]) == 3 and "dD" in deriv__operator[i]) or \
            (len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i] or "ddnD" in deriv__operator[i])):
-                dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
-                exprs[i] *= invdx[dirn]
+            dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
+            exprs[i] *= invdx[dirn]
         # Second-order derivs:
         elif len(deriv__operator[i]) == 5 and "dDD" in deriv__operator[i]:
             dirn1 = int(deriv__operator[i][len(deriv__operator[i]) - 2])

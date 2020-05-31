@@ -179,7 +179,7 @@ def declarerank3(objname, symmetry_option, DIM=-1):
                 if symmetry_option == "sym12":
                     if k < j:
                         IDX_OBJ_TMP[i][j][k] = IDX_OBJ_TMP[i][k][j]
-                if not (symmetry_option == "sym01" or symmetry_option == "sym12" or symmetry_option == "nosym"):
+                if symmetry_option not in ('sym01', 'sym12', 'nosym'):
                     print("Error: symmetry option " + symmetry_option + " unsupported.")
                     sys.exit(1)
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
@@ -193,16 +193,16 @@ def declarerank4(objname, symmetry_option, DIM=-1):
             for k in range(DIM):
                 for l in range(DIM):
                     IDX_OBJ_TMP[i][j][k][l] = sp.sympify(objname + str(i) + str(j) + str(k) + str(l))
-                    if symmetry_option == "sym01" or symmetry_option == "sym01_sym23":
+                    if symmetry_option in ('sym01', 'sym01_sym23'):
                         if(j < i):
                             IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[j][i][k][l]
                     if symmetry_option == "sym12":
                         if(k < j):
                             IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[i][k][j][l]
-                    if symmetry_option == "sym23" or symmetry_option == "sym01_sym23":
+                    if symmetry_option in ('sym23', 'sym01_sym23'):
                         if(l < k):
                             IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[i][j][l][k]
-                    if not (symmetry_option=="sym01" or symmetry_option=="sym23" or symmetry_option=="sym01_sym23" or symmetry_option=="none"):
+                    if symmetry_option not in ('sym01', 'sym23', 'sym01_sym23', 'nosym'):
                         print("Error: symmetry option "+symmetry_option+" unsupported.")
                         sys.exit(1)
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
