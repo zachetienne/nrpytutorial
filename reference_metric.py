@@ -709,8 +709,7 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
         #           evaluate each needed derivative and, in the case it is zero,
         #           set the corresponding "freevar" variable to zero.
         freevars_uniq_vals = []
-        for i in range(len(freevars_uniq)):
-            var = freevars_uniq[i]
+        for i, var in enumerate(freevars_uniq):
             basename = str(var).split("__")[0].replace("_funcform", "")
             derivatv = ""
             if "__" in str(var):
@@ -741,38 +740,38 @@ def ref_metric__hatted_quantities(SymPySimplifyExpressions=True):
             freevars_uniq_vals.append(diff_result)
 
             frees_uniq = superfast_uniq(diff_result.free_symbols)
-            xx_dep = False
+            has_xx_dependence = False
             for dirn in range(3):
                 if gri.xx[dirn] in frees_uniq:
-                    xx_dep = True
-            if xx_dep == False:
+                    has_xx_dependence = True
+            if not has_xx_dependence:
                 freevars_uniq_xx_indep[i] = diff_result
 
         # Step 6.c: Finally, substitute integers for all functions & derivatives that evaluate to integers
-        for varidx in range(len(freevars_uniq)):
-            detgammahat = detgammahat.subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+        for varidx, freevar in enumerate(freevars_uniq):
+            detgammahat = detgammahat.subs(freevar, freevars_uniq_xx_indep[varidx])
             for i in range(DIM):
-                ReU[i] = ReU[i].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                detgammahatdD[i] = detgammahatdD[i].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
+                ReU[i] = ReU[i].subs(freevar, freevars_uniq_xx_indep[varidx])
+                detgammahatdD[i] = detgammahatdD[i].subs(freevar, freevars_uniq_xx_indep[varidx])
                 for j in range(DIM):
-                    ReDD[i][j] = ReDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                    ReUdD[i][j] = ReUdD[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                    ghatDD[i][j] = ghatDD[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                    ghatUU[i][j] = ghatUU[i][j].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                    detgammahatdDD[i][j] = detgammahatdDD[i][j].subs(freevars_uniq[varidx],
+                    ReDD[i][j] = ReDD[i][j].subs(freevar, freevars_uniq_xx_indep[varidx])
+                    ReUdD[i][j] = ReUdD[i][j].subs(freevar, freevars_uniq_xx_indep[varidx])
+                    ghatDD[i][j] = ghatDD[i][j].subs(freevar, freevars_uniq_xx_indep[varidx])
+                    ghatUU[i][j] = ghatUU[i][j].subs(freevar, freevars_uniq_xx_indep[varidx])
+                    detgammahatdDD[i][j] = detgammahatdDD[i][j].subs(freevar,
                                                                      freevars_uniq_xx_indep[varidx])
                     for k in range(DIM):
-                        ReDDdD[i][j][k] = ReDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                        ReUdDD[i][j][k] = ReUdDD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                        ghatDDdD[i][j][k] = ghatDDdD[i][j][k].subs(freevars_uniq[varidx], freevars_uniq_xx_indep[varidx])
-                        GammahatUDD[i][j][k] = GammahatUDD[i][j][k].subs(freevars_uniq[varidx],
+                        ReDDdD[i][j][k] = ReDDdD[i][j][k].subs(freevar, freevars_uniq_xx_indep[varidx])
+                        ReUdDD[i][j][k] = ReUdDD[i][j][k].subs(freevar, freevars_uniq_xx_indep[varidx])
+                        ghatDDdD[i][j][k] = ghatDDdD[i][j][k].subs(freevar, freevars_uniq_xx_indep[varidx])
+                        GammahatUDD[i][j][k] = GammahatUDD[i][j][k].subs(freevar,
                                                                          freevars_uniq_xx_indep[varidx])
                         for l in range(DIM):
-                            ReDDdDD[i][j][k][l] = ReDDdDD[i][j][k][l].subs(freevars_uniq[varidx],
+                            ReDDdDD[i][j][k][l] = ReDDdDD[i][j][k][l].subs(freevar,
                                                                            freevars_uniq_xx_indep[varidx])
-                            ghatDDdDD[i][j][k][l] = ghatDDdDD[i][j][k][l].subs(freevars_uniq[varidx],
+                            ghatDDdDD[i][j][k][l] = ghatDDdDD[i][j][k][l].subs(freevar,
                                                                                freevars_uniq_xx_indep[varidx])
-                            GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevars_uniq[varidx],
+                            GammahatUDDdD[i][j][k][l] = GammahatUDDdD[i][j][k][l].subs(freevar,
                                                                                        freevars_uniq_xx_indep[varidx])
 
         # Step 7: Construct needed C code for declaring rfmstruct, allocating storage for
@@ -1009,11 +1008,10 @@ void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3],
 """)
 
 def xxCart_h(funcname,cparamsloc,outfile):
-    import outputC
     # Arbitrary-coordinate NRPy+ file output, Part 1: output the conversion from (x0,x1,x2) to Cartesian (x,y,z)
-    Cout = outputC.outputC([xxCart[0],xxCart[1],xxCart[2]],
-                           ["xCart[0]","xCart[1]","xCart[2]"],
-                           "returnstring",params="preindent=1")
+    Cout = outputC([xxCart[0],xxCart[1],xxCart[2]],
+                   ["xCart[0]","xCart[1]","xCart[2]"],
+                   "returnstring",params="preindent=1")
 
     with open(outfile, "w") as file:
         file.write("""

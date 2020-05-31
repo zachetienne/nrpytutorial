@@ -39,7 +39,7 @@ M = par.Cparameters("REAL", thismodule, ["M"], [1.0])
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def StaticTrumpet(ComputeADMGlobalsOnly = False):
     global Sph_r_th_ph,r,th,ph, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
-    
+
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
     r,th,ph = sp.symbols('r th ph', real=True)
 
