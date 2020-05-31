@@ -10,6 +10,7 @@ import sympy as sp                # SymPy: The Python computer algebra package u
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import grid as gri                # NRPy+: Functions having to do with numerical grids
 import NRPy_param_funcs as par    # NRPy+: Parameter interface
+import sys                        # Standard Python module for multiplatform OS-level operations
 
 # Step 2: Initialize WeylScalars parameters
 thismodule = __name__
@@ -165,7 +166,7 @@ def WeylScalars_Cartesian():
 
     else:
         print("Error: TetradChoice == "+par.parval_from_str("TetradChoice")+" unsupported!")
-        exit(1)
+        sys.exit(1)
 
     #Step 6: Declare and construct the second derivative of the metric.
     #gammabarDD_dDD = ixp.zerorank4()

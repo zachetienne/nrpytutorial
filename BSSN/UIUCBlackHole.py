@@ -25,8 +25,8 @@
 import sympy as sp             # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par # NRPy+: Parameter interface
 import indexedexp as ixp       # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import sys                     # Standard Python module for multiplatform OS-level functions
 import BSSN.ADM_Exact_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoB
-
 thismodule = __name__
 
 # The UIUC initial data represent a Kerr black hole with mass M
@@ -132,7 +132,7 @@ def UIUCBlackHole(ComputeADMGlobalsOnly = False):
         alpha = cf
     else:
         print("Error EvolvedConformalFactor_cf type = \""+par.parval_from_str("EvolvedConformalFactor_cf")+"\" unknown.")
-        exit(1)
+        sys.exit(1)
 
     import BSSN.BSSN_ID_function_string as bIDf
     # Generates initial_data() C function & stores to outC_function_dict["initial_data"]
