@@ -197,6 +197,8 @@ def output_Jupyter_notebook_to_LaTeXed_PDF(notebookname,location_of_template_fil
             Execute_input_string(r"pdflatex -interaction=batchmode "+notebookname+".tex",verbose=False)
         delete_existing_files(notebookname+".out "+notebookname+".aux "+notebookname+".log")
         if verbose:
-            print("Created "+notebookname+".tex, and compiled LaTeX file to PDF file "+notebookname+".pdf")
+            import textwrap
+            wrapper = textwrap.TextWrapper(initial_indent="",subsequent_indent="    ",width=75)
+            print(wrapper.fill("Created "+notebookname+".tex, and compiled LaTeX file to PDF file "+notebookname+".pdf"))
     else:
         print("Notebook output to PDF is only supported on Linux systems, with pdflatex installed.")
