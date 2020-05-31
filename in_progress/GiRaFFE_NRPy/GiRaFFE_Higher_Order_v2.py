@@ -2,44 +2,44 @@
 # coding: utf-8
 
 # <a id='top'></a>
-# 
-# 
+#
+#
 # # $\texttt{GiRaFFE}$: General Relativistic Force-Free Electrodynamics
 # $$\label{top}$$
-# 
+#
 # **Authors: Patrick Nelson, Zachariah Etienne, George Vopal, and Maria Babiuc-Hamilton**
-# 
+#
 # <font color='red'>**This module is under active development -- do *not* use the resulting C code output for doing science.**</font>
-# 
+#
 # <font color='red'>**GiRaFFE_HO_v2 is an experiment that omits the analytic derivatives of $\partial_j T^j_{{\rm EM} i}$**</font>
-# 
+#
 # ## A new version of $\texttt{GiRaFFE}$, using NRPy+
-# 
+#
 # The original $\texttt{GiRaFFE}$ code, as presented in [the original paper](https://arxiv.org/pdf/1704.00599.pdf), exists as a significant modification to $\texttt{IllinoisGRMHD}$. As such, it used a third-order reconstruction algorithm with a slope limiter (Colella et al's piecewise parabolic method, or PPM) to handle spatial derivatives in the general relativistic force-free electrodynamics (GRFFE) equations. However the GRFFE equations do not generally permit shocks, so a more optimal approach would involve finite differencing all derivatives in the GRFFE equations. As it happens, NRPy+ was designed to generate C codes involving complex tensorial expressions and finite difference spatial derivatives, with finite-differencing order a freely-specifiable parameter.
-# 
+#
 # The purpose of this notebook is to rewrite the equations of GRFFE as used in the original $\texttt{GiRaFFE}$ code so that all derivatives that appear are represented numerically as finite difference derivatives. As we will see, the largest complication stems from derivatives of magnetic fields--requiring judicious application of the chain and product rules.
-# 
+#
 # The GRFFE evolution equations (from eq. 13 of the [original paper](https://arxiv.org/pdf/1704.00599.pdf)) we wish to encode in the NRPy+ version of $\texttt{GiRaFFE}$ are as follows:
-# 
+#
 # * $\partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}$: [Link to Step 3.0](#step7)
 # * $\partial_t A_i = \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j)$: [Link to Step 4.0](#step8)
 # * $\partial_t [\sqrt{\gamma} \Phi] = -\partial_j (\alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]) - \xi \alpha [\sqrt{\gamma} \Phi]$: [Link to Step 4.0](#step8)
-# 
+#
 # Here, the densitized spatial Poynting flux one-form $\tilde{S}_i = \sqrt{\gamma} S_i$ (and $S_i$ comes from $S_{\mu} -n_{\nu} T^{\nu}_{{\rm EM} \mu}$), and $(\Phi, A_i)$ is the vector potential. We will solve these PDEs using the method of lines, where the right-hand sides of these equations (involving no explicit time derivatives) will be constructed using NRPy+.
-# 
+#
 # ### A Note on Notation
-# 
-# As is standard in NRPy+, 
-# 
+#
+# As is standard in NRPy+,
+#
 # * Greek indices refer to four-dimensional quantities where the zeroth component indicates temporal (time) component.
 # * Latin indices refer to three-dimensional quantities. This is somewhat counterintuitive since Python always indexes its lists starting from 0. As a result, the zeroth component of three-dimensional quantities will necessarily indicate the first *spatial* direction.
-# 
+#
 # As a corollary, any expressions involving mixed Greek and Latin indices will need to offset one set of indices by one: A Latin index in a four-vector will be incremented and a Greek index in a three-vector will be decremented (however, the latter case does not occur in this tutorial module).
-# 
+#
 # ### Table of Contents:
-# 
+#
 # 1. Preliminaries
-#     1. [Steps 1.0-1.2](#steps0to2): Set up the basic NRPy+ infrastructure we need 
+#     1. [Steps 1.0-1.2](#steps0to2): Set up the basic NRPy+ infrastructure we need
 #         * This part imports the core NRPy+ modules that we need, sets the dimensionality of the grid with parameter $\text{grid::DIM}$, and declares some of the basic gridfunctions
 #     1. [Step 1.3](#step3): Build the spatial derivatives of the four metric
 # 1. $T^{\mu\nu}_{\rm EM}$ and its derivatives
@@ -54,13 +54,13 @@
 #     1. [Step 5.0](#step9): NRPy+ Module Code Validation
 
 # # Preliminaries
-# 
-# First, we will import the core modules of NRPy that we will need and specify the main gridfunctions we will need. 
-# 
+#
+# First, we will import the core modules of NRPy that we will need and specify the main gridfunctions we will need.
+#
 # <a id='steps0to2'></a>
-# 
+#
 # ## Steps 1.0-1.1: Set up the needed NRPy+ infrastructure and declare core gridfunctions used by $\texttt{GiRaFFE}$ \[Back to [top](#top)\]
-# 
+#
 # 1. Set some basic NRPy+ parameters. E.g., set the spatial dimension parameter to 3 and the finite differencing order to 4.
 # 1. Next, declare some gridfunctions that are provided as input to the equations:
 #     1. $\alpha$, $\beta^i$, and $\gamma_{ij}$: These ADM 3+1 metric quantities are declared in the ADMBase Einstein Toolkit thorn, and are assumed to be made available to $\texttt{GiRaFFE}$ at this stage.
@@ -99,18 +99,18 @@ def GiRaFFE_Higher_Order_v2():
 
 
     # <a id='step3'></a>
-    # 
+    #
     # ## Step 1.2: Build the four metric $g_{\mu\nu}$, its inverse $g^{\mu\nu}$ and spatial derivatives $g_{\mu\nu,i}$ from ADM 3+1 quantities $\gamma_{ij}$, $\beta^i$, and $\alpha$ \[Back to [top](#top)\]
-    # 
+    #
     # Notice that the time evolution equation for $\tilde{S}_i$
     # $$
     # \partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}
     # $$
     # contains $\partial_i g_{\mu \nu} = g_{\mu\nu,i}$. We will now focus on evaluating this term.
-    # 
-    # The four-metric $g_{\mu\nu}$ is related to the three-metric $\gamma_{ij}$, index-lowered shift $\beta_i$, and lapse $\alpha$ by  
+    #
+    # The four-metric $g_{\mu\nu}$ is related to the three-metric $\gamma_{ij}$, index-lowered shift $\beta_i$, and lapse $\alpha$ by
     # $$
-    # g_{\mu\nu} = \begin{pmatrix} 
+    # g_{\mu\nu} = \begin{pmatrix}
     # -\alpha^2 + \beta^k \beta_k & \beta_j \\
     # \beta_i & \gamma_{ij}
     # \end{pmatrix}.
@@ -119,7 +119,7 @@ def GiRaFFE_Higher_Order_v2():
     # $$\label{step3}$$
 
 
-    # Step 1.2: import u0_smallb_Poynting__Cartesian.py to set 
+    # Step 1.2: import u0_smallb_Poynting__Cartesian.py to set
     #           the four metric and its inverse. This module also sets b^2 and u^0.
     import u0_smallb_Poynting__Cartesian.u0_smallb_Poynting__Cartesian as u0b
     u0b.compute_u0_smallb_Poynting__Cartesian(gammaDD,betaU,alpha,ValenciavU,BU)
@@ -140,12 +140,12 @@ def GiRaFFE_Higher_Order_v2():
 
     # Next we compute spatial derivatives of the metric, $\partial_i g_{\mu\nu} = g_{\mu\nu,i}$, written in terms of the three-metric, shift, and lapse. Simply taking the derivative of the expression for $g_{\mu\nu}$ above, we find
     # $$
-    # g_{\mu\nu,l} = \begin{pmatrix} 
+    # g_{\mu\nu,l} = \begin{pmatrix}
     # -2\alpha \alpha_{,l} + \beta^k_{\ ,l} \beta_k + \beta^k \beta_{k,l} & \beta_{j,l} \\
     # \beta_{i,l} & \gamma_{ij,l}
     # \end{pmatrix}.
     # $$
-    # 
+    #
     # Notice the derivatives of the shift vector with its indexed lowered, $\beta_{i,j} = \partial_j \beta_i$. This can be easily computed in terms of the given ADMBase quantities $\beta^i$ and $\gamma_{ij}$ via:
     # \begin{align}
     # \beta_{i,j} &= \partial_j \beta_i \\
@@ -153,10 +153,10 @@ def GiRaFFE_Higher_Order_v2():
     #             &= \gamma_{ik} \partial_j\beta^k + \beta^k \partial_j \gamma_{ik} \\
     # \beta_{i,j} &= \gamma_{ik} \beta^k_{\ ,j} + \beta^k \gamma_{ik,j}.
     # \end{align}
-    # 
+    #
     # Since this expression mixes Greek and Latin indices, we will declare this as a 4 dimensional quantity, but only set the three spatial components of its last index (that is, leaving $l=0$ unset).
-    # 
-    # So, we will first set 
+    #
+    # So, we will first set
     # $$ g_{00,l} = \underbrace{-2\alpha \alpha_{,l}}_{\rm Term\ 1} + \underbrace{\beta^k_{\ ,l} \beta_k}_{\rm Term\ 2} + \underbrace{\beta^k \beta_{k,l}}_{\rm Term\ 3} $$
 
 
@@ -193,7 +193,7 @@ def GiRaFFE_Higher_Order_v2():
             g4DDdD[0][0][l+1] += betaU[k] * betaDdD[k][l]
 
 
-    # Now we will contruct the other components of $g_{\mu\nu,l}$. We will first construct 
+    # Now we will contruct the other components of $g_{\mu\nu,l}$. We will first construct
     # $$ g_{i0,l} = g_{0i,l} = \beta_{i,l}, $$
     # then
     # $$ g_{ij,l} = \gamma_{ij,l} $$
@@ -214,25 +214,25 @@ def GiRaFFE_Higher_Order_v2():
 
 
     # <a id='step4'></a>
-    # 
+    #
     # # $T^{\mu\nu}_{\rm EM}$ and its derivatives
-    # 
+    #
     # Now that the metric and its derivatives are out of the way, let's return to the evolution equation for $\tilde{S}_i$,
     # $$
     # \partial_t \tilde{S}_i = - \partial_j \left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right) + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu}.
-    # $$ 
+    # $$
     # We turn our focus now to $T^j_{{\rm EM} i}$ and its derivatives. To this end, we start by computing $T^{\mu \nu}_{\rm EM}$ (from eq. 27 of [Paschalidis & Shapiro's paper on their GRFFE code](https://arxiv.org/pdf/1310.3274.pdf)):
-    # 
+    #
     # $$\boxed{T^{\mu \nu}_{\rm EM} = b^2 u^{\mu} u^{\nu} + \frac{b^2}{2} g^{\mu \nu} - b^{\mu} b^{\nu}.}$$
-    # 
+    #
     # Notice that $T^{\mu\nu}_{\rm EM}$ is written in terms of
-    # 
+    #
     # * $b^\mu$, the 4-component magnetic field vector, related to the comoving magnetic field vector $B^i_{(u)}$
     # * $u^\mu$, the 4-velocity
     # * $g^{\mu \nu}$, the inverse 4-metric
-    # 
+    #
     # However, $\texttt{GiRaFFE}$ has access to only the following quantities, requiring in the following sections that we write the above quantities in terms of the following ones:
-    # 
+    #
     # * $\gamma_{ij}$, the 3-metric
     # * $\alpha$, the lapse
     # * $\beta^i$, the shift
@@ -241,9 +241,9 @@ def GiRaFFE_Higher_Order_v2():
     # * $\left[\sqrt{\gamma}\Phi\right]$, the zero-component of the vector potential $A_\mu$, times the square root of the determinant of the 3-metric
     # * $v_{(n)}^i$, the Valencia 3-velocity
     # * $u^0$, the zero-component of the 4-velocity
-    # 
+    #
     # ## Step 2.0: $u^i$ and $b^i$ and related quantities \[Back to [top](#top)\]
-    # 
+    #
     # We begin by importing what we can from u0_smallb_Poynting__Cartesian.py. We will need the four-velocity $u^\mu$, which is related to the Valencia 3-velocity $v^i_{(n)}$ used directly by $\texttt{GiRaFFE}$ (see also [Duez, et al, eqs. 53 and 56](https://arxiv.org/pdf/astro-ph/0503420.pdf))
     # \begin{align}
     # u^i &= u^0 (\alpha v^i_{(n)} - \beta^i), \\
@@ -283,11 +283,11 @@ def GiRaFFE_Higher_Order_v2():
 
 
     # <a id='step5'></a>
-    # 
+    #
     # ## Step 2.1: Construct all components of the electromagnetic stress-energy tensor $T^{\mu \nu}_{\rm EM}$ \[Back to [top](#top)\]
-    # 
+    #
     # We now have all the pieces to calculate the stress-energy tensor,
-    # $$T^{\mu \nu}_{\rm EM} = \underbrace{b^2 u^{\mu} u^{\nu}}_{\rm Term\ 1} + 
+    # $$T^{\mu \nu}_{\rm EM} = \underbrace{b^2 u^{\mu} u^{\nu}}_{\rm Term\ 1} +
     # \underbrace{\frac{b^2}{2} g^{\mu \nu}}_{\rm Term\ 2}
     # - \underbrace{b^{\mu} b^{\nu}}_{\rm Term\ 3}.$$
     # Because $u^0$ is a separate variable, we could build the $00$ component separately, then the $\mu0$ and $0\nu$ components, and finally the $\mu\nu$ components. Alternatively, for clarity, we could create a temporary variable $u^\mu=\left( u^0, u^i \right)$
@@ -319,18 +319,18 @@ def GiRaFFE_Higher_Order_v2():
             T4EMUU[mu][nu] += -smallb4U[mu]*smallb4U[nu]
 
 
-    # 
+    #
     # # Evolution equation for $\tilde{S}_i$
     # <a id='step7'></a>
-    # 
+    #
     # ## Step 3.0: Construct the evolution equation for $\tilde{S}_i$ \[Back to [top](#top)\]
-    # 
+    #
     # Finally, we will return our attention to the time evolution equation (from eq. 13 of the [original paper](https://arxiv.org/pdf/1704.00599.pdf)),
     # \begin{align}
     # \partial_t \tilde{S}_i &= - \partial_j \underbrace{\left( \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \right)}_{\rm SevolParenUD} + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} \\
     #                        &= - \partial_j{\rm SevolParenUD[i][j]} + \frac{1}{2} \alpha \sqrt{\gamma} T^{\mu \nu}_{\rm EM} \partial_i g_{\mu \nu} .
     # \end{align}
-    # We will first take construct ${\rm SevolParenUD}$, then use its derivatives to construct the evolution equation. Note that 
+    # We will first take construct ${\rm SevolParenUD}$, then use its derivatives to construct the evolution equation. Note that
     # \begin{align}
     # {\rm SevolParenUD[i][j]} &= \alpha \sqrt{\gamma} T^j_{{\rm EM} i} \\
     #                              &= \alpha \sqrt{\gamma} g_{\mu i} T^{\mu j}_{\rm EM}.
@@ -374,18 +374,18 @@ def GiRaFFE_Higher_Order_v2():
 
     # # Evolution equations for $A_i$ and $\Phi$
     # <a id='step8'></a>
-    # 
+    #
     # ## Step 4.0: Construct the evolution equations for $A_i$ and $[\sqrt{\gamma}\Phi]$ \[Back to [top](#top)\]
-    # 
+    #
     # We will also need to evolve the vector potential $A_i$. This evolution is given as eq. 17 in the [$\texttt{GiRaFFE}$](https://arxiv.org/pdf/1704.00599.pdf) paper:
     # $$\boxed{\partial_t A_i = \epsilon_{ijk} v^j B^k - \partial_i (\underbrace{\alpha \Phi - \beta^j A_j}_{\rm AevolParen}),}$$
     # where $\epsilon_{ijk} = [ijk] \sqrt{\gamma}$ is the antisymmetric Levi-Civita tensor, the drift velocity $v^i = u^i/u^0$, $\gamma$ is the determinant of the three metric, $B^k$ is the magnetic field, $\alpha$ is the lapse, and $\beta$ is the shift.
     # The scalar electric potential $\Phi$ is also evolved by eq. 19:
     # $$\boxed{\partial_t [\sqrt{\gamma} \Phi] = -\partial_j (\underbrace{\alpha\sqrt{\gamma} \gamma^{ij} A_i - \beta^j [\sqrt{\gamma} \Phi]}_{\rm PevolParenU[j]}) - \xi \alpha [\sqrt{\gamma} \Phi],}$$
-    # with $\xi$ chosen as a damping factor. 
-    # 
+    # with $\xi$ chosen as a damping factor.
+    #
     # ### Step 4.0.a: Construct some useful auxiliary gridfunctions for the other evolution equations
-    # 
+    #
     # After declaring a  some needed quantities, we will also define the parenthetical terms (underbrace above) that we need to take derivatives of. That way, we can take finite-difference derivatives easily. Note that the above equations incorporate the fact that $\gamma^{ij}$ is the appropriate raising operator for $A_i$: $A^j = \gamma^{ij} A_i$. This is correct since $n_\mu A^\mu = 0$, where $n_\mu$ is a normal to the hypersurface, so $A^0=0$ (according to Sec. II, subsection C of [the "Improved EM gauge condition" paper of Etienne *et al*](https://arxiv.org/pdf/1110.4633.pdf)).
     # $$\label{step8}$$
 
@@ -419,7 +419,7 @@ def GiRaFFE_Higher_Order_v2():
 
 
     # ### Step 4.0.b: Complete the construction of the evolution equations for $A_i$ and $[\sqrt{\gamma}\Phi]$
-    # 
+    #
     # Now to set the evolution equations ([eqs. 17 and 19](https://arxiv.org/pdf/1704.00599.pdf)), recalling that the drift velocity $v^i = u^i/u^0$:
     # \begin{align}
     # \partial_t A_i &= \epsilon_{ijk} v^j B^k - \partial_i (\alpha \Phi - \beta^j A_j) \\

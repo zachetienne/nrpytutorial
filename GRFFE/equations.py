@@ -53,7 +53,7 @@ def compute_smallb4U_with_driftvU_for_FFE(gammaDD,betaU,alpha, u4U,B_notildeU, s
         for nu in range(4):
             u4D[mu] += AB4m.g4DD[mu][nu]*u4U[nu]
     smallb4_with_driftv_for_FFE_U = ixp.zerorank1(DIM=4)
-    
+
     # b^0 = 0
     smallb4_with_driftv_for_FFE_U[0] = 0
     # b^i = B^i / [alpha * u^0 * sqrt(4 pi)]
@@ -132,14 +132,14 @@ def compute_psi6Phi_rhs_parenthetical(gammaDD,sqrtgammaDET,betaU,alpha,AD,psi6Ph
     for i in range(3):
         for j in range(3):
             AU[i] += gammaUU[i][j] * AD[j]
-    
+
     global PhievolParenU
     PhievolParenU = ixp.zerorank1(DIM=3)
-    
+
     for j in range(3):
         # \alpha\sqrt{\gamma}A^j - \beta^j [\sqrt{\gamma} \Phi]
         PhievolParenU[j] += alpha*sqrtgammaDET*AU[j] - betaU[j]*psi6Phi
-    
+
 def compute_psi6Phi_rhs_damping_term(alpha,psi6Phi,xi_damping):
     # - \xi \alpha [\sqrt{\gamma} \Phi]
     # Combine the divergence and the damping term

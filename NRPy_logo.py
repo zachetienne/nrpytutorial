@@ -2,7 +2,7 @@ def print_logo(print_to_stdout=True):
 
     logo_str = """
 ooooo      ooo ooooooooo.   ooooooooo.                 88
-`888b.     `8' `888   `Y88. `888   `Y88.             888888  
+`888b.     `8' `888   `Y88. `888   `Y88.             888888
  8 `88b.    8   888   .d88'  888   .d88' oooo    ooo   88
  8   `88b.  8   888ooo88P'   888ooo88P'   `88.  .8'
  8     `88b.8   888`88b.     888           `88..8'

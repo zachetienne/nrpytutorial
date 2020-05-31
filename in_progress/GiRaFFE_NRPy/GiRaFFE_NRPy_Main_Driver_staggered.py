@@ -32,9 +32,9 @@ CoordSystem = "Cartesian"
 # time is spent sorting CSE expressions. Disabling
 # this sorting makes the C codegen 3-4x faster,
 # but the tradeoff is that every time this is
-# run, the CSE patterns will be different 
-# (though they should result in mathematically 
-# *identical* expressions). You can expect 
+# run, the CSE patterns will be different
+# (though they should result in mathematically
+# *identical* expressions). You can expect
 # roundoff-level differences as a result.
 
 # Once everything is debugged, we'll want to
@@ -54,7 +54,7 @@ diss_strength = par.Cparameters("REAL", thismodule, "diss_strength", default_KO_
 
 def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     cmd.mkdir(out_dir)
-    
+
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaDD","sym01",DIM=3)
     betaU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","betaU",DIM=3)
     alpha = gri.register_gridfunctions("AUXEVOL","alpha")
@@ -172,11 +172,11 @@ REAL Stilde_rhsD2;
     subdir = "FCVAL"
     cmd.mkdir(os.path.join(out_dir, subdir))
     FCVAL.GiRaFFE_NRPy_FCVAL(os.path.join(out_dir,subdir))
-    
+
     subdir = "PPM"
     cmd.mkdir(os.path.join(out_dir, subdir))
     PPM.GiRaFFE_NRPy_PPM(os.path.join(out_dir,subdir))
-    
+
 
     # We will pass values of the gridfunction on the cell faces into the function. This requires us
     # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
@@ -190,7 +190,7 @@ REAL Stilde_rhsD2;
     B_rU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_rU",DIM=3)
     Valenciav_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
     B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
-    
+
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rrU",DIM=3)
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rlU",DIM=3)
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lrU",DIM=3)
@@ -274,7 +274,7 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
     BC.GiRaFFE_NRPy_BCs(os.path.join(out_dir,subdir))
-    
+
     C2P_P2C.GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha)
 
     values_to_print = [\
@@ -366,10 +366,10 @@ void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restr
     fclose(out2D);
 }
 
-void calculate_GRFFE_characteristic_speeds(const paramstruct *restrict params, 
+void calculate_GRFFE_characteristic_speeds(const paramstruct *restrict params,
                                            const REAL *alpha, const REAL *betaU2,
-                                           const REAL *gammaDD00, const REAL *gammaDD01, const REAL *gammaDD02, 
-                                           const REAL *gammaDD11, const REAL *gammaDD12, const REAL *gammaDD22, 
+                                           const REAL *gammaDD00, const REAL *gammaDD01, const REAL *gammaDD02,
+                                           const REAL *gammaDD11, const REAL *gammaDD12, const REAL *gammaDD22,
                                            REAL *cmax_z, REAL *cmin_z) {
 #include "set_Cparameters.h"
     for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
@@ -398,76 +398,76 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
         rhs_gfs[ii] = 0.0;
     }
-    
+
     // Now, we set up a bunch of structs of pointers to properly guide the PPM algorithm.
     // They also count the number of ghostzones available.
     gf_and_gz_struct in_prims[NUM_RECONSTRUCT_GFS], out_prims_r[NUM_RECONSTRUCT_GFS], out_prims_l[NUM_RECONSTRUCT_GFS];
     int which_prims_to_reconstruct[NUM_RECONSTRUCT_GFS],num_prims_to_reconstruct;
     const int Nxxp2NG012 = Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;
-    
+
     REAL *temporary = auxevol_gfs + Nxxp2NG012*PSI6_TEMPGF; // Using dedicated temporary variables for the staggered grid
     REAL *psi6center = auxevol_gfs + Nxxp2NG012*PSI6CENTERGF; // Because the prescription requires more acrobatics.
     // This sets pointers to the portion of auxevol_gfs containing the relevant gridfunction.
     int ww=0;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU0GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU0GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU1GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU1GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU1GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU2GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU2GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU2GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU0GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU0GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU0GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU1GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU1GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU1GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU2GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU2GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU2GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU0GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU0GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU0GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU1GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU1GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU1GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BSTAGGERU2GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_RU2GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*BSTAGGER_LU2GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RRU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RLU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RRU0GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RLU0GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RRU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RLU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU1GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RRU1GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RLU1GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RRU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RLU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU2GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RRU2GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RLU2GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LRU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LLU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU0GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LRU0GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LLU0GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LRU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LLU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU1GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LRU1GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LLU1GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LRU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LLU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU2GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LRU2GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LLU2GF;
     ww++;
 
     // Prims are defined AT ALL GRIDPOINTS, so we set the # of ghostzones to zero:
@@ -482,8 +482,8 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   /* There are two stories going on here:
-   * 1) Computation of \partial_x on RHS of \partial_t {mhd_st_{x,y,z}}, 
-   *    via PPM reconstruction onto (i-1/2,j,k), so that 
+   * 1) Computation of \partial_x on RHS of \partial_t {mhd_st_{x,y,z}},
+   *    via PPM reconstruction onto (i-1/2,j,k), so that
    *    \partial_y F = [ F(i+1/2,j,k) - F(i-1/2,j,k) ] / dx
    * 2) Computation of \partial_t A_i, where A_i are *staggered* gridfunctions,
    *    where A_x is defined at (i,j+1/2,k+1/2), A_y at (i+1/2,j,k+1/2), etc.
@@ -505,7 +505,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BY_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
-  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^x face values to be consistent with BX_STAGGER.
@@ -519,14 +519,14 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D0_left(params,auxevol_gfs,rhs_gfs);
   // Calculate the characteristic speeds for the upcoming vector potential evolution:
-  calculate_GRFFE_characteristic_speeds(params, 
+  calculate_GRFFE_characteristic_speeds(params,
                                         auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
                                         auxevol_gfs+Nxxp2NG012*GAMMADD11GF, auxevol_gfs+Nxxp2NG012*GAMMADD12GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF, 
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF, 
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF,
                                         auxevol_gfs+Nxxp2NG012*CMAX_XGF, auxevol_gfs+Nxxp2NG012*CMIN_XGF);
-  
-  // Note that we have already reconstructed vx and vy along the x-direction, 
+
+  // Note that we have already reconstructed vx and vy along the x-direction,
   //   at (i-1/2,j,k). That result is stored in v{x,y}{r,l}.  Bx_stagger data
   //   are defined at (i+1/2,j,k).
   // Next goal: reconstruct Bx, vx and vy at (i+1/2,j+1/2,k).
@@ -542,9 +542,9 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   in_prims[VYR]=out_prims_r[VY];
   in_prims[VYL]=out_prims_l[VY];
 
-  /* There are two stories going on here: 
-   * 1) Computation of \partial_y on RHS of \partial_t {mhd_st_{x,y,z}}, 
-   *    via PPM reconstruction onto (i,j-1/2,k), so that 
+  /* There are two stories going on here:
+   * 1) Computation of \partial_y on RHS of \partial_t {mhd_st_{x,y,z}},
+   *    via PPM reconstruction onto (i,j-1/2,k), so that
    *    \partial_y F = [ F(i,j+1/2,k) - F(i,j-1/2,k) ] / dy
    * 2) Computation of \partial_t A_i, where A_i are *staggered* gridfunctions,
    *    where A_x is defined at (i,j+1/2,k+1/2), A_y at (i+1/2,j,k+1/2), etc.
@@ -569,7 +569,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=VYL;       ww++;
   num_prims_to_reconstruct=ww;
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
-  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
   ww=0;
   // Reconstruct other primitives last!
@@ -583,7 +583,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BZ_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
-  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^y face values to be consistent with BY_STAGGER.
@@ -597,16 +597,16 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   calculate_Stilde_flux_D1_right(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D1_left(params,auxevol_gfs,rhs_gfs);
   // Calculate the characteristic speeds for the upcoming vector potential evolution:
-  calculate_GRFFE_characteristic_speeds(params, 
+  calculate_GRFFE_characteristic_speeds(params,
                                         auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
                                         auxevol_gfs+Nxxp2NG012*GAMMADD22GF, auxevol_gfs+Nxxp2NG012*GAMMADD02GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF, 
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF, 
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF,
                                         auxevol_gfs+Nxxp2NG012*CMAX_YGF, auxevol_gfs+Nxxp2NG012*CMIN_YGF);
 
   /*****************************************
    * COMPUTING RHS OF A_z, BOOKKEEPING NOTE:
-   * We want to compute 
+   * We want to compute
    * \partial_t A_z - [gauge terms] = \psi^{6} (v^x B^y - v^y B^x).
    * A_z is defined at (i+1/2,j+1/2,k).
    * ==========================
@@ -630,7 +630,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
         const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
         const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
         const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
-        psi6center[index] = sqrt( gxx*gyy*gzz 
+        psi6center[index] = sqrt( gxx*gyy*gzz
                                -  gxx*gyz*gyz
                                +2*gxy*gxz*gyz
                                -  gyy*gxz*gxz
@@ -638,7 +638,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
       }
 #pragma omp parallel for
   for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
-        temporary[IDX3S(i,j,k)]= 
+        temporary[IDX3S(i,j,k)]=
           IPH(IPH(psi6center[IDX3S(i-1,j-1,k)],psi6center[IDX3S(i,j-1,k)],psi6center[IDX3S(i+1,j-1,k)],psi6center[IDX3S(i+2,j-1,k)]),
               IPH(psi6center[IDX3S(i-1,j  ,k)],psi6center[IDX3S(i,j  ,k)],psi6center[IDX3S(i+1,j  ,k)],psi6center[IDX3S(i+2,j  ,k)]),
               IPH(psi6center[IDX3S(i-1,j+1,k)],psi6center[IDX3S(i,j+1,k)],psi6center[IDX3S(i+1,j+1,k)],psi6center[IDX3S(i+2,j+1,k)]),
@@ -653,7 +653,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
                          auxevol_gfs+Nxxp2NG012*CMIN_YGF,
                          rhs_gfs+Nxxp2NG012*AD2GF);
 
-  // in_prims[{VYR,VYL,VZR,VZL}].gz_{lo,hi} ghostzones are not correct, so we fix 
+  // in_prims[{VYR,VYL,VZR,VZL}].gz_{lo,hi} ghostzones are not correct, so we fix
   //    this below.
   // [Note that this is a cheap operation, copying only 8 integers and a pointer.]
   in_prims[VYR]=out_prims_r[VY];
@@ -665,7 +665,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
   // ftilde = 0 in GRFFE, since P=rho=0.
 
-  /* There are two stories going on here: 
+  /* There are two stories going on here:
    * 1) Single reconstruction to (i,j,k-1/2) for {vx,vy,vz,Bx,By,Bz} to compute
    *    z-dir'n advection terms in \partial_t {mhd_st_{x,y,z}} at (i,j,k)
    * 2) Multiple reconstructions for *staggered* gridfunctions A_i:
@@ -689,7 +689,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=VZL;       ww++;
   num_prims_to_reconstruct=ww;
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
-  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
   // Reconstruct other primitives last!
   ww=0;
@@ -703,7 +703,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BY_STAGGER; ww++;
   num_prims_to_reconstruct=ww;
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
-  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^z face values to be consistent with BZ_STAGGER.
@@ -716,18 +716,18 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D2_right(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
-  calculate_GRFFE_characteristic_speeds(params, 
+  calculate_GRFFE_characteristic_speeds(params,
                                         auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
                                         auxevol_gfs+Nxxp2NG012*GAMMADD00GF, auxevol_gfs+Nxxp2NG012*GAMMADD01GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF, 
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF, 
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF,
+                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF,
                                         auxevol_gfs+Nxxp2NG012*CMAX_ZGF, auxevol_gfs+Nxxp2NG012*CMIN_ZGF);
 
   // in_prims[{VYR,VYL,VZR,VZL}].gz_{lo,hi} ghostzones are not set correcty.
   //    We fix this below.
   // [Note that this is a cheap operation, copying only 8 integers and a pointer.]
-  in_prims[VXR]=out_prims_r[VX]; 
-  in_prims[VZR]=out_prims_r[VZ]; 
+  in_prims[VXR]=out_prims_r[VX];
+  in_prims[VZR]=out_prims_r[VZ];
   in_prims[VXL]=out_prims_l[VX];
   in_prims[VZL]=out_prims_l[VZ];
   // FIXME: lines above seem to be inconsistent with lines below.... Possible bug, not major enough to affect evolutions though.
@@ -737,7 +737,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   in_prims[VXL].gz_lo[1]=in_prims[VXL].gz_hi[1]=0;
   /*****************************************
    * COMPUTING RHS OF A_x, BOOKKEEPING NOTE:
-   * We want to compute 
+   * We want to compute
    * \partial_t A_x - [gauge terms] = \psi^{6} (v^y B^z - v^z B^y).
    * A_x is defined at (i,j+1/2,k+1/2).
    * ==========================
@@ -751,7 +751,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // Next compute phi at (i,j+1/2,k+1/2):
 #pragma omp parallel for
   for(int k=1;k<Nxx_plus_2NGHOSTS2-2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=0;i<Nxx_plus_2NGHOSTS0;i++) {
-        temporary[IDX3S(i,j,k)]= 
+        temporary[IDX3S(i,j,k)]=
           IPH(IPH(psi6center[IDX3S(i,j-1,k-1)],psi6center[IDX3S(i,j,k-1)],psi6center[IDX3S(i,j+1,k-1)],psi6center[IDX3S(i,j+2,k-1)]),
               IPH(psi6center[IDX3S(i,j-1,k  )],psi6center[IDX3S(i,j,k  )],psi6center[IDX3S(i,j+1,k  )],psi6center[IDX3S(i,j+2,k  )]),
               IPH(psi6center[IDX3S(i,j-1,k+1)],psi6center[IDX3S(i,j,k+1)],psi6center[IDX3S(i,j+1,k+1)],psi6center[IDX3S(i,j+2,k+1)]),
@@ -781,12 +781,12 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BZ_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
-  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+  reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
 
   /*****************************************
    * COMPUTING RHS OF A_y, BOOKKEEPING NOTE:
-   * We want to compute 
+   * We want to compute
    * \partial_t A_y - [gauge terms] = \psi^{6} (v^z B^x - v^x B^z).
    * A_y is defined at (i+1/2,j,k+1/2).
    * ==========================
@@ -800,13 +800,13 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // Next compute phi at (i+1/2,j,k+1/2):
 #pragma omp parallel for
   for(int k=1;k<Nxx_plus_2NGHOSTS2-2;k++) for(int j=0;j<Nxx_plus_2NGHOSTS1;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
-        temporary[IDX3S(i,j,k)]= 
+        temporary[IDX3S(i,j,k)]=
           IPH(IPH(psi6center[IDX3S(i-1,j,k-1)],psi6center[IDX3S(i,j,k-1)],psi6center[IDX3S(i+1,j,k-1)],psi6center[IDX3S(i+2,j,k-1)]),
               IPH(psi6center[IDX3S(i-1,j,k  )],psi6center[IDX3S(i,j,k  )],psi6center[IDX3S(i+1,j,k  )],psi6center[IDX3S(i+2,j,k  )]),
               IPH(psi6center[IDX3S(i-1,j,k+1)],psi6center[IDX3S(i,j,k+1)],psi6center[IDX3S(i+1,j,k+1)],psi6center[IDX3S(i+2,j,k+1)]),
               IPH(psi6center[IDX3S(i-1,j,k+2)],psi6center[IDX3S(i,j,k+2)],psi6center[IDX3S(i+1,j,k+2)],psi6center[IDX3S(i+2,j,k+2)]));
       }
-  
+
   int A_directiony=2;
   A_i_rhs_no_gauge_terms(A_directiony,params,out_prims_r,out_prims_l,temporary,
                          auxevol_gfs+Nxxp2NG012*CMAX_ZGF,
@@ -838,8 +838,8 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 //   if(max_num_interp_variables>MAXNUMINTERP) {CCTK_VError(VERR_DEF_PARAMS,"Error: Didn't allocate enough space for interp_vars[]."); }
   // We are FINISHED with v{x,y,z}{r,l} and P{r,l} so we use these 8 gridfunctions' worth of space as temp storage.
   Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(params,interp_vars,
-                                                 in_gfs+Nxxp2NG012*PSI6PHIGF, 
-                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,  // WARNING: 
+                                                 in_gfs+Nxxp2NG012*PSI6PHIGF,
+                                                 auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,  // WARNING:
                                                  auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,  // ALL VARIABLES
                                                  auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,  // ON THESE LINES
                                                  auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,  // ARE OVERWRITTEN
@@ -881,7 +881,7 @@ void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL 
                                           auxevol_gfs+Nxxp2NG012*GAMMADD11GF,
                                           auxevol_gfs+Nxxp2NG012*GAMMADD12GF,
                                           auxevol_gfs+Nxxp2NG012*GAMMADD22GF,
-                                          auxevol_gfs + Nxxp2NG012*PSI6_TEMPGF, /* Temporary storage */ 
+                                          auxevol_gfs + Nxxp2NG012*PSI6_TEMPGF, /* Temporary storage */
                                           evol_gfs+Nxxp2NG012*AD0GF,
                                           evol_gfs+Nxxp2NG012*AD1GF,
                                           evol_gfs+Nxxp2NG012*AD2GF,
@@ -892,7 +892,7 @@ void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL 
                                           auxevol_gfs+Nxxp2NG012*BSTAGGERU1GF,
                                           auxevol_gfs+Nxxp2NG012*BSTAGGERU2GF);
     //override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
-    // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
+    // Apply fixes to StildeD, then recompute the velocity at the new timestep.
     // Apply the current sheet prescription to the velocities
     GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,evol_gfs);
     // Then, recompute StildeD to be consistent with the new velocities

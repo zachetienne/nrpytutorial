@@ -1,7 +1,7 @@
 # This code calculates the invariant scalars I, J, J1, J2, J3, and J4. It does so by following the papers
 # arXiv:gr-qc/0407013 and arXiv:0704.1756, and the example set by the Kranc-generated ETK thorn which
 # can be found at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src. While WeylScalarInvariants_Cartesian()
-# does not depend on WeylScalars_Cartesian(), when implementing C code generated from the outputs of these two 
+# does not depend on WeylScalars_Cartesian(), when implementing C code generated from the outputs of these two
 # functions, the psis from WeylScalars_Cartesian() must be calculated before the invariants generated here.
 
 # As documented in Step 6 of the NRPy+ tutorial module
@@ -54,7 +54,7 @@ def WeylScalarInvariants_Cartesian():
 
     # Next, the real scalars J_1, J_2, J_3, and J_4 from equations B5-B8 of arXiv:0704.1756.
     # These equations are based directly on those used in the Mathematica notebook that generates WeylScal4
-    # (available at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src), modified so that Python can 
+    # (available at https://bitbucket.org/einsteintoolkit/einsteinanalysis/src), modified so that Python can
     # interpret them. Those equations were generated in turn using xTensor from equations B5-B8.
     J1curv =-16*(3*psi2i**2-3*psi2r**2-4*psi1i*psi3i+4*psi1r*psi3r+psi0i*psi4i-psi0r*psi4r)
 

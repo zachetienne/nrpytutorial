@@ -70,8 +70,8 @@ def idx_from_str(varname,modname=""):
         splitstring = re.split('::', varname)
         modname=splitstring[0]
         varname=splitstring[1]
-        
-    # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:    
+
+    # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
     if modname == "":
         list = [i for i, v in enumerate(glb_params_list) if v[2] == varname]
     else:
@@ -217,7 +217,7 @@ def generate_Cparameters_Ccodes(directory="./"):
                   + glb_Cparams_list[i].type + "\"")
             sys.exit(1)
 
-    # Step 2: Generate C code to declare C paramstruct; 
+    # Step 2: Generate C code to declare C paramstruct;
     #         output to "declare_Cparameters_struct.h"
     with open(os.path.join(directory,"declare_Cparameters_struct.h"), "w") as file:
         file.write("typedef struct __paramstruct__ {\n")
@@ -230,8 +230,8 @@ def generate_Cparameters_Ccodes(directory="./"):
                 file.write(Ctype + " " + glb_Cparams_list[i].parname + ";\n")
         file.write("} paramstruct;\n")
 
-    # Step 3: Generate C code to set all elements in 
-    #         C paramstruct to default values; output to 
+    # Step 3: Generate C code to set all elements in
+    #         C paramstruct to default values; output to
     #         "set_Cparameters_default.h"
     with open(os.path.join(directory,"set_Cparameters_default.h"), "w") as file:
         for i in range(len(glb_Cparams_list)):
@@ -245,8 +245,8 @@ def generate_Cparameters_Ccodes(directory="./"):
                     Coutput += " = " + str(glb_Cparams_list[i].defaultval) + ";\n"
                 file.write(Coutput)
 
-    # Step 4: Generate C code to set C parameter constants 
-    #         (i.e., all ints != -12345678 and REALs != 1e300); 
+    # Step 4: Generate C code to set C parameter constants
+    #         (i.e., all ints != -12345678 and REALs != 1e300);
     #         output to filename "set_Cparameters.h" if SIMD_enable==False
     #         or "set_Cparameters-SIMD.h" if SIMD_enable==True
     # Step 4.a: Output non-SIMD version, set_Cparameters.h
@@ -257,16 +257,16 @@ def generate_Cparameters_Ccodes(directory="./"):
                 Ctype = "char *"
             else:
                 Ctype = glb_Cparams_list[i].type
-            
+
             pointer = "->"
             if pointerEnable==False:
                 pointer = "."
-                
+
             if not ((Ctype == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or Ctype == "#define"):
                 Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params"+pointer+glb_Cparams_list[i].parname + ";\n"
                 returnstring += Coutput
         return returnstring
-        
+
     with open(os.path.join(directory,"set_Cparameters.h"), "w") as file:
         file.write(gen_set_Cparameters(pointerEnable=True))
     with open(os.path.join(directory,"set_Cparameters-nopointer.h"), "w") as file:

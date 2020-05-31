@@ -1,4 +1,4 @@
-# indexedexp.py: functions related to indexed expressions, 
+# indexedexp.py: functions related to indexed expressions,
 # including e.g., tensors and pseudotensors:
 
 # Step 1: Load needed modules
@@ -103,8 +103,8 @@ def declarerank1(objname, DIM=-1):
 def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     # Step 0: Verify the gridfunction basename is valid:
     gri.verify_gridfunction_basename_is_valid(gf_basename)
-    
-    # Step 1: Declare a list of SymPy variables, 
+
+    # Step 1: Declare a list of SymPy variables,
     #         where IDX_OBJ_TMP[i] = gf_basename+str(i)
     IDX_OBJ_TMP = declarerank1(gf_basename, DIM)
 
@@ -142,7 +142,7 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
     # Step 0: Verify the gridfunction basename is valid:
     gri.verify_gridfunction_basename_is_valid(gf_basename)
 
-    # Step 1: Declare a list of lists of SymPy variables, 
+    # Step 1: Declare a list of lists of SymPy variables,
     #         where IDX_OBJ_TMP[i][j] = gf_basename+str(i)+str(j)
     IDX_OBJ_TMP = declarerank2(gf_basename,symmetry_option, DIM)
 
@@ -150,7 +150,7 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
     #         not to store duplicates due to rank-2 symmetries.
     if DIM==-1:
         DIM = par.parval_from_str("DIM")
-    # Register only unique gridfunctions. Otherwise 
+    # Register only unique gridfunctions. Otherwise
     # rank-2 symmetries might result in duplicates
     gf_list = []
     for i in range(DIM):

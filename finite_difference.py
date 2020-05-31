@@ -35,15 +35,15 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     # Step 0.b:
     # finite_difference.py takes control over outCparams.includebraces here,
     #     which is necessary because outputC() is called twice:
-    #     first for the reads from main memory and finite difference 
+    #     first for the reads from main memory and finite difference
     #     stencil expressions, and second for the SymPy expressions and
-    #     writes to main memory. 
-    # If outCparams.includebraces==True, then it will close off the braces 
+    #     writes to main memory.
+    # If outCparams.includebraces==True, then it will close off the braces
     #     after the finite difference stencil expressions and start new ones
     #     for the SymPy expressions and writes to main memory, resulting
-    #     in a non-functioning C code. 
+    #     in a non-functioning C code.
     # To get around this issue, we create braces around the entire
-    #     string of C output from this function, only if 
+    #     string of C output from this function, only if
     #     outCparams.includebraces==True.
     # See Step 6 for corresponding end brace.
     if outCparams.includebraces == "True":
@@ -52,7 +52,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     else:
         Coutput = ""
         indent = ""
-    
+
     # Step 1a:
     # Create a list of free symbols in the sympy expr list
     #     that are registered neither as gridfunctions nor
@@ -108,7 +108,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     #     tuned to reduce cache misses.
     #     Thanks to Aaron Meurer for this nice one-liner!
     list_of_deriv_vars = sorted(list_of_deriv_vars,key=sp.default_sort_key)
-    
+
     # Step 2:
     # Process list_of_deriv_vars into a list of base gridfunctions
     #    and a list of derivative operators.
@@ -422,7 +422,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         for i in range(len(Ccodesplit)):
             outstring += outCparams.preindent+indent+Ccodesplit[i]+'\n'
         return outstring
-    
+
     # Step 5a: Read gridfunctions from memory at needed pts.
     # *** No need to do anything here; already set in
     #     string "read_from_memory_Ccode". ***
@@ -556,8 +556,8 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
     Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",CSE_varprefix=FDPart3,includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
-    
-    # Step 6: Add consistent indentation to the output end brace. 
+
+    # Step 6: Add consistent indentation to the output end brace.
     #         See Step 0.b for corresponding start brace.
     if outCparams.includebraces == "True":
         Coutput += outCparams.preindent+"}\n"

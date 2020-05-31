@@ -24,7 +24,7 @@ def driver_C_codes(Csrcdict, ThornName,
     outstr = """
 #include <stdio.h>
 
-void BaikalETK_Banner() 
+void BaikalETK_Banner()
 {
     """
     logostr = logo.print_logo(print_to_stdout=False)
@@ -73,7 +73,7 @@ void BaikalETK_Symmetry_registration(CCTK_ARGUMENTS)
   // Stores gridfunction parity across x=0, y=0, and z=0 planes, respectively
   int sym[3];
 
-  // Next register parities for each gridfunction based on its name 
+  // Next register parities for each gridfunction based on its name
   //    (to ensure this algorithm is robust, gridfunctions with integers
   //     in their base names are forbidden in NRPy+).
 """
@@ -197,7 +197,7 @@ void BaikalETK_MoL_registration(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
-  
+
   CCTK_INT ierr = 0, group, rhs;
 
   // Register evolution & RHS gridfunction groups with MoL, so it knows
@@ -205,7 +205,7 @@ void BaikalETK_MoL_registration(CCTK_ARGUMENTS)
   group = CCTK_GroupIndex("BaikalETK::evol_variables");
   rhs = CCTK_GroupIndex("BaikalETK::evol_variables_rhs");
   ierr += MoLRegisterEvolvedGroup(group, rhs);
-  
+
   if (ierr) CCTK_ERROR("Problems registering with MoL");
 }
 """
@@ -214,7 +214,7 @@ void BaikalETK_MoL_registration(CCTK_ARGUMENTS)
 
     # Next register with the boundary conditions thorns.
     # PART 1: Set BC type to "none" for all variables
-    # Since we choose NewRad boundary conditions, we must register all 
+    # Since we choose NewRad boundary conditions, we must register all
     #   gridfunctions to have boundary type "none". This is because
     #   NewRad is seen by the rest of the Toolkit as a modification to the
     #   RHSs.
@@ -233,7 +233,7 @@ void BaikalETK_BoundaryConditions_evolved_gfs(CCTK_ARGUMENTS)
 {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
-  
+
   CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
 """
     for gf in evol_gfs_list:
@@ -248,7 +248,7 @@ void BaikalETK_BoundaryConditions_evolved_gfs(CCTK_ARGUMENTS)
 void BaikalETK_BoundaryConditions_aux_gfs(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
-  
+
   CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
 
 """
@@ -270,7 +270,7 @@ void BaikalETK_BoundaryConditions_aux_gfs(CCTK_ARGUMENTS) {
     #       var  =  var_at_infinite_r + u(r-var_char_speed*t)/r^var_radpower
     #  Obviously for var_radpower>0, var_at_infinite_r is the value of
     #    the variable at r->infinity. var_char_speed is the propagation
-    #    speed at the outer boundary, and var_radpower is the radial 
+    #    speed at the outer boundary, and var_radpower is the radial
     #    falloff rate.
 
     outstr = """
@@ -283,7 +283,7 @@ void BaikalETK_BoundaryConditions_aux_gfs(CCTK_ARGUMENTS) {
 void BaikalETK_NewRad(CCTK_ARGUMENTS) {
   DECLARE_CCTK_ARGUMENTS;
   DECLARE_CCTK_PARAMETERS;
-  
+
 """
     for gf in evol_gfs_list:
         var_at_infinite_r = "0.0"
@@ -305,12 +305,12 @@ void BaikalETK_NewRad(CCTK_ARGUMENTS) {
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("BoundaryCondition_NewRad.c")] = outstr.replace("BaikalETK",ThornName)
 
-    # First we convert from ADM to BSSN, as is required to convert initial data 
+    # First we convert from ADM to BSSN, as is required to convert initial data
     #    (given using) ADM quantities, to the BSSN evolved variables
     import BSSN.ADM_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as atob
     IDhDD,IDaDD,IDtrK,IDvetU,IDbetU,IDalpha,IDcf,IDlambdaU = \
         atob.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian","DoNotOutputADMInputFunction",os.path.join(ThornName,"src"))
-    
+
     # Store the original list of registered gridfunctions; we'll want to unregister
     #   all the *SphorCart* gridfunctions after we're finished with them below.
     orig_glb_gridfcs_list = []
@@ -337,7 +337,7 @@ void BaikalETK_NewRad(CCTK_ARGUMENTS) {
 void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
     DECLARE_CCTK_ARGUMENTS;
     DECLARE_CCTK_PARAMETERS;
-    
+
     CCTK_REAL *alphaSphorCartGF = alp;
 """
     # It's ugly if we output code in the following ordering, so we'll first
@@ -354,7 +354,7 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
         outstr += line
 
     # ADM to BSSN, Part 2: Set up ADM to BSSN conversions for BSSN gridfunctions that do not require
-    #                      finite-difference derivatives (i.e., all gridfunctions except lambda^i (=Gamma^i 
+    #                      finite-difference derivatives (i.e., all gridfunctions except lambda^i (=Gamma^i
     #                      in non-covariant BSSN)):
     #                      h_{ij}, a_{ij}, trK, vet^i=beta^i,bet^i=B^i, cf (conformal factor), and alpha
     all_but_lambdaU_expressions = [
@@ -385,7 +385,7 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
     outstr += lp.loop(["i2","i1","i0"],["0","0","0"],["cctk_lsh[2]","cctk_lsh[1]","cctk_lsh[0]"],
                        ["1","1","1"],["#pragma omp parallel for","",""],"    ",all_but_lambdaU_outC)
 
-    
+
     # ADM to BSSN, Part 3: Set up ADM to BSSN conversions for BSSN gridfunctions defined from
     #                      finite-difference derivatives: lambda^i, which is Gamma^i in non-covariant BSSN):
     outstr += """
@@ -435,7 +435,7 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
     ExtrapolateGammas(cctkGH,lambdaU2GF);
 }
 """
-    
+
     # Unregister the *SphorCartGF's.
     gri.glb_gridfcs_list = orig_glb_gridfcs_list
 
@@ -485,7 +485,7 @@ void BaikalETK_BSSN_to_ADM(CCTK_ARGUMENTS) {
                        ["1","1","1"],["#pragma omp parallel for","",""],"",bssn_to_adm_Ccode)
 
     outstr += "}\n"
-    
+
     # Add C code string to dictionary (Python dictionaries are immutable)
     Csrcdict[append_to_make_code_defn_list("BSSN_to_ADM.c")] = outstr.replace("BaikalETK",ThornName)
 
@@ -646,8 +646,8 @@ void BaikalETK_BSSN_constraints(CCTK_ARGUMENTS) {
     Csrcdict[append_to_make_code_defn_list("driver_BSSN_constraints.c")] = outstr.replace("BaikalETK",ThornName)
 
     if enable_stress_energy_source_terms == True:
-        # Declare T4DD as a set of gridfunctions. These won't 
-        #    actually appear in interface.ccl, as interface.ccl 
+        # Declare T4DD as a set of gridfunctions. These won't
+        #    actually appear in interface.ccl, as interface.ccl
         #    was set above. Thus before calling the code output
         #    by FD_outputC(), we'll have to set pointers
         #    to the actual gridfunctions they reference.

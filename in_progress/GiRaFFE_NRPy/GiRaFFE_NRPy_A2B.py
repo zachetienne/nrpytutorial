@@ -40,7 +40,7 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
                 LeviCivitaUUU[i][j][k] = LCijk / gh.sqrtgammaDET
 
     AD_dD = ixp.declarerank2("AD_dD","nosym")
-    BU = ixp.zerorank1() 
+    BU = ixp.zerorank1()
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
@@ -49,8 +49,8 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     # Write the code to compute derivatives with shifted stencils as needed.
     with open(os.path.join(outdir,"driver_AtoB.h"),"w") as file:
         file.write("""void compute_A2B_in_ghostzones(const paramstruct *restrict params,REAL *restrict in_gfs,REAL *restrict auxevol_gfs,
-                                      const int i0min,const int i0max, 
-                                      const int i1min,const int i1max, 
+                                      const int i0min,const int i0max,
+                                      const int i1min,const int i1max,
                                       const int i2min,const int i2max) {
 #include "../set_Cparameters.h"
     for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
@@ -102,10 +102,10 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
         const double gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF, i0,i1,i2)];
         const double gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF, i0,i1,i2)];
         const double gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF, i0,i1,i2)];
-        /* 
+        /*
         * NRPy+ Finite Difference Code Generation, Step 2 of 1: Evaluate SymPy expressions and write to main memory:
         */
-        const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22 
+        const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22
                                        - gammaDD00*gammaDD12*gammaDD12
                                        + 2*gammaDD01*gammaDD02*gammaDD12
                                        - gammaDD11*gammaDD02*gammaDD02
@@ -116,7 +116,7 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     }
 }
 """)
-        
+
     # Now, we'll also write some more auxiliary functions to handle the order-lowering method for A2B
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
         file.write("""REAL relative_error(REAL a, REAL b) {
@@ -144,23 +144,23 @@ void compute_Bx_pointwise(REAL *Bx, const REAL invdy, const REAL *Ay, const REAL
     dz_Ay = invdz*((Ay[P1]-Ay[M1])*2.0/3.0 - (Ay[P2]-Ay[M2])/12.0);
     dy_Az = invdy*((Az[P1]-Az[M1])*2.0/3.0 - (Az[P2]-Az[M2])/12.0);
     Bx[CN4] = dy_Az - dz_Ay;
-    
+
     dz_Ay = invdz*(Ay[P1]-Ay[M1])/2.0;
     dy_Az = invdy*(Az[P1]-Az[M1])/2.0;
     Bx[CN2] = dy_Az - dz_Ay;
-    
+
     dz_Ay = invdz*(-1.5*Ay[P0]+2.0*Ay[P1]-0.5*Ay[P2]);
     dy_Az = invdy*(-1.5*Az[P0]+2.0*Az[P1]-0.5*Az[P2]);
     Bx[UP2] = dy_Az - dz_Ay;
-    
+
     dz_Ay = invdz*(1.5*Ay[P0]-2.0*Ay[M1]+0.5*Ay[M2]);
     dy_Az = invdy*(1.5*Az[P0]-2.0*Az[M1]+0.5*Az[M2]);
     Bx[DN2] = dy_Az - dz_Ay;
-    
+
     dz_Ay = invdz*(Ay[P1]-Ay[P0]);
     dy_Az = invdy*(Az[P1]-Az[P0]);
     Bx[UP1] = dy_Az - dz_Ay;
-    
+
     dz_Ay = invdz*(Ay[P0]-Ay[M1]);
     dy_Az = invdy*(Az[P0]-Az[M1]);
     Bx[DN1] = dy_Az - dz_Ay;
@@ -172,7 +172,7 @@ REAL find_accepted_Bx_order(REAL *Bx) {
     REAL Rel_error_o2_vs_o4 = relative_error(Bx[CN2],Bx[CN4]);
     REAL Rel_error_oCN2_vs_oDN2 = relative_error(Bx[CN2],Bx[DN2]);
     REAL Rel_error_oCN2_vs_oUP2 = relative_error(Bx[CN2],Bx[UP2]);
-    
+
     if(Rel_error_o2_vs_o4 > TOLERANCE_A2B) {
         accepted_val = Bx[CN2];
         if(Rel_error_o2_vs_o4 > Rel_error_oCN2_vs_oDN2 || Rel_error_o2_vs_o4 > Rel_error_oCN2_vs_oUP2) {
@@ -223,7 +223,7 @@ AD2_0[P1] = in_gfs[IDX4S(AD2GF, i0+1,i1,i2)];
 AD2_0[P2] = in_gfs[IDX4S(AD2GF, i0+2,i1,i2)];
 AD2_1[P1] = in_gfs[IDX4S(AD2GF, i0,i1+1,i2)];
 AD2_1[P2] = in_gfs[IDX4S(AD2GF, i0,i1+2,i2)];
-const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22 
+const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22
                                - gammaDD00*gammaDD12*gammaDD12
                                + 2*gammaDD01*gammaDD02*gammaDD12
                                - gammaDD11*gammaDD02*gammaDD02
@@ -238,9 +238,9 @@ auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = find_accepted_Bx_order(BU0)*invsqrtg;
 auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = find_accepted_Bx_order(BU1)*invsqrtg;
 auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
 """
-    
+
     # Here, we'll use the outCfunction() function to output a function that will compute the magnetic field
-    # on the interior. Then, we'll add postloop code to handle the ghostzones.    
+    # on the interior. Then, we'll add postloop code to handle the ghostzones.
     desc="Compute the magnetic field from the vector potential everywhere, including ghostzones"
     name="driver_A_to_B"
     driver_Ccode = outCfunction(
@@ -253,9 +253,9 @@ auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
         postloop = """
     int imin[3] = { NGHOSTS_A2B, NGHOSTS_A2B, NGHOSTS_A2B };
     int imax[3] = { NGHOSTS+Nxx0, NGHOSTS+Nxx1, NGHOSTS+Nxx2 };
-    // Now, we loop over the ghostzones to calculate the magnetic field there. 
+    // Now, we loop over the ghostzones to calculate the magnetic field there.
     for(int which_gz = 0; which_gz < NGHOSTS_A2B; which_gz++) {
-        // After updating each face, adjust imin[] and imax[] 
+        // After updating each face, adjust imin[] and imax[]
         //   to reflect the newly-updated face extents.
         compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2]); imin[0]--;
         compute_A2B_in_ghostzones(params,in_gfs,auxevol_gfs,imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2]); imax[0]++;

@@ -142,7 +142,7 @@ def Psi4_tetrads():
                 omegaDD[i][j] += v_vectorDU(v1U,v2U,v3U, i,a)*v_vectorDU(v1U,v2U,v3U, j,b)*gammaDD[a][b]
 
     # Step 2.j: Define e^a_i. Note that:
-    #           omegaDD[0][0] = \omega_{11} above; 
+    #           omegaDD[0][0] = \omega_{11} above;
     #           omegaDD[1][1] = \omega_{22} above, etc.
     # First e_1^a: Orthogonalize & normalize:
     e1U = ixp.zerorank1()

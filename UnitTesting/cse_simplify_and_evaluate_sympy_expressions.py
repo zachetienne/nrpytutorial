@@ -127,7 +127,7 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
             old = upd
         # Warning: might slow Travis CI too much: logging.debug(' dict '+ str(new)+ ' updated with = '+str(old))
         free_symbols_dict[new] = old
-    
+
     # Warning: might slow Travis CI too much: logging.debug(' free symbols_dict: '+str(free_symbols_dict))
     # Warning: might slow Travis CI too much: logging.debug(' replaced: '+str(replaced))
     # Evaluating expression after cse optimization substitution

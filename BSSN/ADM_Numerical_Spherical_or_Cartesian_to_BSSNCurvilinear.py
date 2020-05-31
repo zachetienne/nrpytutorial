@@ -17,7 +17,7 @@ import reference_metric as rfm    # NRPy+: Reference metric support
 import BSSN.BSSN_quantities as Bq # NRPy+: Computes useful BSSN quantities; e.g., gammabarUU & GammabarUDD needed below
 import os, sys                    # Standard Python modules for multiplatform OS-level functions
 
-def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name, 
+def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_input_function_name,
                                                           Ccodesdir = "BSSN", pointer_to_ID_inputs=False,loopopts=",oldloops"):
     # The ADM & BSSN formalisms only work in 3D; they are 3+1 decompositions of Einstein's equations.
     #    To implement axisymmetry or spherical symmetry, simply set all spatial derivatives in
@@ -72,7 +72,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, ADM_inp
             Jac_dUSphorCart_dDrfmUD[i][j] = sp.diff(r_th_ph_or_Cart_xyz_oID_xx[i], rfm.xx[j])
 
     Jac_dUrfm_dDSphorCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUSphorCart_dDrfmUD)
-    
+
     betaU = ixp.zerorank1()
     BU = ixp.zerorank1()
     gammaDD = ixp.zerorank2()
@@ -195,7 +195,7 @@ const REAL invdx2 = 1.0/dxx[2];
     params += "const REAL xx0xx1xx2[3]," + ID_inputs_param + """
                     REAL *hDD00,REAL *hDD01,REAL *hDD02,REAL *hDD11,REAL *hDD12,REAL *hDD22,
                     REAL *aDD00,REAL *aDD01,REAL *aDD02,REAL *aDD11,REAL *aDD12,REAL *aDD22,
-                    REAL *trK, 
+                    REAL *trK,
                     REAL *vetU0,REAL *vetU1,REAL *vetU2,
                     REAL *betU0,REAL *betU1,REAL *betU2,
                     REAL *alpha,  REAL *cf"""
@@ -236,7 +236,7 @@ const REAL invdx2 = 1.0/dxx[2];
     # Step 5.a: Output the driver function for the above
     #           function ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs()
     # Next write the driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs():
-    desc = """Driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(), 
+    desc = """Driver function for ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(),
 which writes BSSN variables in terms of ADM variables at a given point xx0,xx1,xx2"""
     name = "ID_BSSN__ALL_BUT_LAMBDAs"
     params = "const paramstruct *restrict params,REAL *restrict xx[3]," + ID_inputs_param + "REAL *in_gfs"

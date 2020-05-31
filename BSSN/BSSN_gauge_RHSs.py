@@ -86,7 +86,7 @@ def BSSN_gauge_RHSs():
     #    \partial_t \alpha = 0
     elif LapseEvolOption == "Frozen":
         alpha_rhs = sp.sympify(0)
-        
+
     else:
         print("Error: "+thismodule + "::LapseEvolutionOption == "+LapseEvolOption+" not supported!")
         sys.exit(1)

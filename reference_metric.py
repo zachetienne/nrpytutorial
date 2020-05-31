@@ -947,7 +947,7 @@ def set_Nxx_dxx_invdx_params__and__xx_h(outdir=".",grid_centering="cell"):
 
     with open(os.path.join(outdir,"set_Nxx_dxx_invdx_params__and__xx.h"),"w") as file:
         file.write(r"""
-void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3], 
+void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3],
                                        paramstruct *restrict params, REAL *restrict xx[3]) {
     // Override parameter defaults with values based on command line arguments and NGHOSTS.
     params->Nxx0 = Nxx[0];
@@ -995,13 +995,13 @@ void set_Nxx_dxx_invdx_params__and__xx(const int EigenCoord, const int Nxx[3],
     // Now that params.dxx{0,1,2} and params.invdxx{0,1,2} have been set,
     // Step 0d.iii: Set up uniform coordinate grids
     xx[0] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS0);
-    for(int j=0;j<Nxx_plus_2NGHOSTS0;j++) 
+    for(int j=0;j<Nxx_plus_2NGHOSTS0;j++)
         xx[0][j] = xxmin[0] + ((REAL)(j-NGHOSTS) + """+cell_offset+""")*params->dxx0; // """+cell_comment+"""
     xx[1] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS1);
-    for(int j=0;j<Nxx_plus_2NGHOSTS1;j++) 
+    for(int j=0;j<Nxx_plus_2NGHOSTS1;j++)
         xx[1][j] = xxmin[1] + ((REAL)(j-NGHOSTS) + """+cell_offset+""")*params->dxx1; // """+cell_comment+"""
     xx[2] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS2);
-    for(int j=0;j<Nxx_plus_2NGHOSTS2;j++) 
+    for(int j=0;j<Nxx_plus_2NGHOSTS2;j++)
         xx[2][j] = xxmin[2] + ((REAL)(j-NGHOSTS) + """+cell_offset+""")*params->dxx2; // """+cell_comment+"""
     //fprintf(stderr,"hey inside setxx: %e %e %e | %e %e\\n",xxmin[0],xxmin[1],xxmin[2],xx[0][0],params->dxx0);
 }

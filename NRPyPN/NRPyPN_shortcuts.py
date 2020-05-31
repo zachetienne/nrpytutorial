@@ -1,5 +1,5 @@
 # As documented in the NRPyPN notebook
-# NRPyPN_shortcuts.ipynb, this Python script 
+# NRPyPN_shortcuts.ipynb, this Python script
 # provides useful shortcuts for inputting
 # post-Newtonian expressions into SymPy/NRPy+
 
@@ -32,7 +32,7 @@ nU = ixp.declarerank1("nU")
 
 drdt = sp.symbols('drdt', real=True)
 Pt, Pr = sp.symbols('Pt Pr', real=True)
-# Some references use r, others use q to represent the 
+# Some references use r, others use q to represent the
 #   distance between the two point masses. This is rather
 #   confusing since q is also used to represent the
 #   mass ratio m2/m1. However, q is the canonical position
@@ -58,7 +58,7 @@ for i in range(3):
     p2U[i]     = -pU[i]
 
 # Step 2.a: Define the rank-3 version of the Levi-Civita symbol. Amongst
-#         other uses, this is needed for the construction of the approximate 
+#         other uses, this is needed for the construction of the approximate
 #         quasi-Kinnersley tetrad.
 def define_LeviCivitaSymbol_rank3_dim3():
     LeviCivitaSymbol = ixp.zerorank3()

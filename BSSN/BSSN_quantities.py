@@ -15,7 +15,7 @@ import sys                        # Standard Python modules for multiplatform OS
 #  DO NOT SET IN STANDALONE PYTHON MODULE
 # par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
 
-# Step 1.b: Given the chosen coordinate system, set up 
+# Step 1.b: Given the chosen coordinate system, set up
 #           corresponding reference metric and needed
 #           reference metric quantities
 # The following function call sets up the reference metric
@@ -24,8 +24,8 @@ import sys                        # Standard Python modules for multiplatform OS
 #  DO NOT CALL IN STANDALONE PYTHON MODULE
 # rfm.reference_metric()
 
-# Step 1.c: Set spatial dimension (must be 3 for BSSN, as BSSN is 
-#           a 3+1-dimensional decomposition of the general 
+# Step 1.c: Set spatial dimension (must be 3 for BSSN, as BSSN is
+#           a 3+1-dimensional decomposition of the general
 #           relativistic field equations)
 #  DO NOT CALL IN STANDALONE PYTHON MODULE
 # DIM = 3
@@ -237,7 +237,7 @@ def AbarUU_AbarUD_trAbar_AbarDD_dD():
         for j in range(DIM):
             # Abar^k_k = gammabar^{kj} Abar_{jk}
             trAbar += gammabarUU[k][j] * AbarDD[j][k]
-            
+
     # Step 6.a.iv: Compute Abar_{ij,k}
     AbarDD_dD = ixp.zerorank3()
     AbarDD_dupD = ixp.zerorank3()
@@ -343,9 +343,9 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
             LambarU_dHatD[k][j] = lambdaU_dD[k][j] * rfm.ReU[k] + lambdaU[k] * rfm.ReUdD[k][j]
             for m in range(DIM):
                 LambarU_dHatD[k][j] += rfm.GammahatUDD[k][m][j] * lambdaU[m] * rfm.ReU[m]
-                
-    # Step 7.c: Conformal Ricci tensor, part 3: The \Delta^{k} \Delta_{(i j) k}  
-    #           + \bar{\gamma}^{k l}*(2 \Delta_{k(i}^{m} \Delta_{j) m l} 
+
+    # Step 7.c: Conformal Ricci tensor, part 3: The \Delta^{k} \Delta_{(i j) k}
+    #           + \bar{\gamma}^{k l}*(2 \Delta_{k(i}^{m} \Delta_{j) m l}
     #           + \Delta_{i k}^{m} \Delta_{m j l}) terms
 
     # Step 7.c.i: Define \Delta^i_{jk} = \bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk} = DGammaUDD[i][j][k]

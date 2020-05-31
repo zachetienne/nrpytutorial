@@ -74,10 +74,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
 
     # Step 2: Set some core parameters, including CoordSystem MoL timestepping algorithm,
     #                                 FD order, floating point precision, and CFL factor:
-    # Choices are: Spherical, SinhSpherical, SinhSphericalv2, Cylindrical, SinhCylindrical, 
+    # Choices are: Spherical, SinhSpherical, SinhSphericalv2, Cylindrical, SinhCylindrical,
     #              SymTP, SinhSymTP
-    # NOTE: Only CoordSystem == Cartesian makes sense here; new 
-    #       boundary conditions are needed within the ETK for 
+    # NOTE: Only CoordSystem == Cartesian makes sense here; new
+    #       boundary conditions are needed within the ETK for
     #       Spherical, etc. coordinates.
     CoordSystem     = "Cartesian"
 
@@ -87,7 +87,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     # Set the gridfunction memory access type to ETK-like, so that finite_difference
     #    knows how to read and write gridfunctions from/to memory.
     par.set_parval_from_str("grid::GridFuncMemAccess","ETK")
-    
+
     par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::ShiftEvolutionOption", ShiftCondition)
     par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::LapseEvolutionOption", LapseCondition)
 
@@ -101,7 +101,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             T4UU = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","T4UU","sym01",DIM=4)
         else:
             T4UU = ixp.declarerank2("T4UU","sym01",DIM=4)
-    
+
     # Register the BSSN constraints (Hamiltonian & momentum constraints) as gridfunctions.
     registered_already = False
     for i in range(len(gri.glb_gridfcs_list)):
@@ -118,9 +118,9 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         # START: GENERATE SYMBOLIC EXPRESSIONS
         print("Generating symbolic expressions for BSSN RHSs...")
         start = time.time()
-        # Enable rfm_precompute infrastructure, which results in 
+        # Enable rfm_precompute infrastructure, which results in
         #   BSSN RHSs that are free of transcendental functions,
-        #   even in curvilinear coordinates, so long as 
+        #   even in curvilinear coordinates, so long as
         #   ConformalFactor is set to "W" (default).
         par.set_parval_from_str("reference_metric::enable_rfm_precompute","True")
         par.set_parval_from_str("reference_metric::rfm_precompute_Ccode_outdir",os.path.join(outdir,"rfm_files/"))

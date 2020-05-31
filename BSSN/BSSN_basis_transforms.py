@@ -117,8 +117,8 @@ def BSSN_basis_transform(src_basis,src_xx, dst_basis,dst_xx,
         dst_vetU[i]    =      dst_betaU[i] / rfm.ReU[i]
         dst_betU[i]    =         dst_BU[i] / rfm.ReU[i]
 
-    # Step 4.c: All BSSN tensor/vector quantities are written in terms of 
-    #           rescaled quantities and (xx0,xx1,xx2) on the DESTINATION grid. 
+    # Step 4.c: All BSSN tensor/vector quantities are written in terms of
+    #           rescaled quantities and (xx0,xx1,xx2) on the DESTINATION grid.
     #           To avoid confusion with (xx0,xx1,xx2) on the SOURCE grid,
     #           we replace (xx0,xx1,xx2) with (dst_xx0,dst_xx1,dst_xx2) here:
     for i in range(3):

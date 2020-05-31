@@ -19,7 +19,7 @@ par.initialize_param(par.glb_param("char *", thismodule, "TetradChoice", "Approx
 par.initialize_param(par.glb_param("char *", thismodule, "output_scalars", "all_psis_and_invariants"))
 
 # Step 3: Define the rank-3 version of the Levi-Civita symbol. Amongst
-#         other possible uses, this is needed for the construction of the approximate 
+#         other possible uses, this is needed for the construction of the approximate
 #         quasi-Kinnersley tetrad.
 def define_LeviCivitaSymbol_rank3(DIM=-1):
     if DIM == -1:
@@ -65,8 +65,8 @@ def WeylScalars_Cartesian():
 
     # Step 5: Set which tetrad is used; at the moment, only one supported option
     if par.parval_from_str("WeylScal4NRPy.WeylScalars_Cartesian::TetradChoice") == "Approx_QuasiKinnersley":
-        # Step 5.a: Choose 3 orthogonal vectors. Here, we choose one in the azimuthal 
-        #          direction, one in the radial direction, and the cross product of the two. 
+        # Step 5.a: Choose 3 orthogonal vectors. Here, we choose one in the azimuthal
+        #          direction, one in the radial direction, and the cross product of the two.
         # Eqs 5.6, 5.7 in https://arxiv.org/pdf/gr-qc/0104063.pdf:
         # v_1^a &= [-y,x,0] \\
         # v_2^a &= [x,y,z] \\
@@ -94,7 +94,7 @@ def WeylScalars_Cartesian():
         # e_1^a &= \frac{v_1^a}{\omega_{11}} \\
         # e_2^a &= \frac{v_2^a - \omega_{12} e_1^a}{\omega_{22}} \\
         # e_3^a &= \frac{v_3^a - \omega_{13} e_1^a - \omega_{23} e_2^a}{\omega_{33}}, \\
-        
+
         # Normalize the first vector
         w1U = ixp.zerorank1()
         for a in range(DIM):
@@ -191,7 +191,7 @@ def WeylScalars_Cartesian():
 
 
     # Step 6.a: Declare and construct the Riemann curvature tensor:
-    # R_{abcd} = \frac{1}{2} (\gamma_{ad,cb}+\gamma_{bc,da}-\gamma_{ac,bd}-\gamma_{bd,ac}) 
+    # R_{abcd} = \frac{1}{2} (\gamma_{ad,cb}+\gamma_{bc,da}-\gamma_{ac,bd}-\gamma_{bd,ac})
     #            + \gamma_{je} \Gamma^{j}_{bc}\Gamma^{e}_{ad} - \gamma_{je} \Gamma^{j}_{bd} \Gamma^{e}_{ac}
     gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
     RiemannDDDD = ixp.zerorank4()
@@ -209,7 +209,7 @@ def WeylScalars_Cartesian():
                                                         gammaDD[j][e] * GammaUDD[j][b][d] * GammaUDD[e][a][c]
 
 
-    # Step 6.b: We also need the extrinsic curvature tensor $K_{ij}$. 
+    # Step 6.b: We also need the extrinsic curvature tensor $K_{ij}$.
     # In Cartesian coordinates, we already made the components gridfunctions.
     # We will, however, need to calculate the trace of K seperately:
     trK = sp.sympify(0)
@@ -227,7 +227,7 @@ def WeylScalars_Cartesian():
                 for l in range(DIM):
                     GaussDDDD[i][j][k][l] = RiemannDDDD[i][j][k][l] + kDD[i][k]*kDD[l][j] - kDD[i][l]*kDD[k][j]
 
-    # Codazzi equation: involving partial derivatives of the extrinsic curvature. 
+    # Codazzi equation: involving partial derivatives of the extrinsic curvature.
     # We will first need to declare derivatives of kDD
     # CodazziDDD[j][k][l] =& -2 (K_{j[k,l]} + \Gamma^p_{j[k} K_{l]p})
     kDD_dD = ixp.declarerank3("kDD_dD","sym01")
@@ -251,7 +251,7 @@ def WeylScalars_Cartesian():
                 for d in range(DIM):
                     RojoDD[j][l] += gammaUU[p][d]*RiemannDDDD[j][p][l][d] - kDD[j][p]*gammaUU[p][d]*kDD[d][l]
 
-    # Now we can calculate $\psi_4$ itself! We assume l^0 = n^0 = \frac{1}{\sqrt{2}} 
+    # Now we can calculate $\psi_4$ itself! We assume l^0 = n^0 = \frac{1}{\sqrt{2}}
     # and m^0 = \overset{*}{m}{}^0 = 0 to simplify these equations.
     # We calculate the Weyl scalars as defined in https://arxiv.org/abs/gr-qc/0104063
     # In terms of the above-defined quantites, the psis are defined as:

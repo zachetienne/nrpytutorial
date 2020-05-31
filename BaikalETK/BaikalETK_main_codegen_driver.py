@@ -126,7 +126,7 @@ if __name__ == "__main__":
         def master_func(i):
             import BaikalETK.BaikalETK_C_kernels_codegen as BCk
             return BCk.BaikalETK_C_kernels_codegen_onepart(params=paramslist[i])
-        
+
         # Step 3.d.iv: Evaluate list of functions in parallel if possible;
         #           otherwise fallback to serial evaluation:
         pool = multiprocessing.Pool() #processes=len(paramslist))

@@ -23,15 +23,15 @@ import GRFFE.equations as GRFFE
 # We'll write this as a function so that we can calculate the expressions on-demand for any choice of i
 def find_cp_cm(lapse,shifti,gammaUUii):
     # Inputs:  u0,vi,lapse,shift,gammadet,gupii
-    # Outputs: cplus,cminus 
-    
+    # Outputs: cplus,cminus
+
     # a = 1/(alpha^2)
     a = sp.sympify(1)/(lapse*lapse)
     # b = 2 beta^i / alpha^2
     b = sp.sympify(2) * shifti /(lapse*lapse)
     # c = -g^{ii} + (beta^i)^2 / alpha^2
     c = - gammaUUii + shifti*shifti/(lapse*lapse)
-    
+
     # Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
     # negative value to the sqrt function.
     detm = b*b - sp.sympify(4)*a*c
@@ -52,15 +52,15 @@ def find_cmax_cmin(field_comp,gamma_faceDD,beta_faceU,alpha_face):
     find_cp_cm(alpha_face,beta_faceU[field_comp],gamma_faceUU[field_comp][field_comp])
     cp = cplus
     cm = cminus
-    
+
     # The following algorithms have been verified with random floats:
-    
+
     global cmax,cmin
     # Now, we need to set cmax to the larger of cpr,cpl, and 0
-    
+
     import Min_Max_and_Piecewise_Expressions as noif
     cmax = noif.max_noif(cp,sp.sympify(0))
-    
+
     # And then, set cmin to the smaller of cmr,cml, and 0
     cmin = -noif.min_noif(cm,sp.sympify(0))
 
@@ -94,10 +94,10 @@ def calculate_flux_and_state_for_Induction(field_comp,flux_dirn, gammaDD,betaU,a
             F += LeviCivitaDDD[field_comp][j][k] * (alpha*ValenciavU[j]-betaU[j]) * BU[k]
     # U = B^i
     U = BU[flux_dirn]
-    
-def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul): 
+
+def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul):
     # This solves the Riemann problem for the flux of E_i in one direction
-    
+
     # F^HLL = (c_\min f_R + c_\max f_L - c_\min c_\max ( st_j_r - st_j_l )) / (c_\min + c_\max)
 #     return (- cmin*cmax*(Ur-Ul) )/(cmax + cmin)
     return (cmin*Fr + cmax*Fl - cmin*cmax*(Ur-Ul) )/(cmax + cmin)
@@ -117,7 +117,7 @@ def calculate_E_i_flux(flux_dirn,alpha_face=None,gamma_faceDD=None,beta_faceU=No
         Fl = F
         Ul = U
         E_fluxD[field_comp] += HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul)
-        
+
 def generate_Afield_flux_function_files(out_dir,subdir,alpha_face,gamma_faceDD,beta_faceU,\
                                         Valenciav_rU,B_rU,Valenciav_lU,B_lU,inputs_provided=True):
     if not inputs_provided:
@@ -129,7 +129,7 @@ def generate_Afield_flux_function_files(out_dir,subdir,alpha_face,gamma_faceDD,b
         B_rU = ixp.declarerank1("B_rU")
         Valenciav_lU = ixp.declarerank1("Valenciav_lU")
         B_lU = ixp.declarerank1("B_lU")
-        
+
     Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
     const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
     const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];

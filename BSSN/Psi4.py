@@ -107,7 +107,7 @@ def Psi4(specify_tetrad=True):
             for l in range(DIM):
                 rank3term2DDD[j][k][l] *= sp.sympify(-8)
 
-    # Step 5: Construct the (rank-2) tensor in term 3 of psi_4 (referring to Eq 5.1 in 
+    # Step 5: Construct the (rank-2) tensor in term 3 of psi_4 (referring to Eq 5.1 in
     #   Baker, Campanelli, Lousto (2001); https://arxiv.org/pdf/gr-qc/0104063.pdf
 
     # Step 5.1: Construct 3-Ricci tensor R_{ij} = gamma^{im} R_{ijml}

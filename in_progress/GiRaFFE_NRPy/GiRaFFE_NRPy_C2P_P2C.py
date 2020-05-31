@@ -39,7 +39,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
     Btilde2 = sp.sympify(0)
     for i in range(3):
         Btilde2 += BtildeU[i]*BtildeD[i]
-        
+
     global outStildeD
     outStildeD = StildeD
     # Then, enforce the orthogonality:
@@ -58,7 +58,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
         for j in range(3):
             Stilde2 += gammaUU[i][j]*outStildeD[i]*outStildeD[j]
 
-    # First we need to compute the factor f: 
+    # First we need to compute the factor f:
     # f = \sqrt{(1-\Gamma_{\max}^{-2}){\tilde B}^4/(16 \pi^2 \gamma {\tilde S}^2)}
     speed_limit_factor = sp.sqrt((sp.sympify(1)-GAMMA_SPEED_LIMIT**(-2.0))*Btilde2*Btilde2*sp.Rational(1,16)/\
                                  (M_PI*M_PI*GRHD.sqrtgammaDET*GRHD.sqrtgammaDET*Stilde2))
@@ -94,7 +94,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
             driftvU[i] = alpha*ValenciavU[i] - betaU[i]
 
         # The direct approach, used by the original GiRaFFE:
-        # v^z = -(\gamma_{xz} v^x + \gamma_{yz} v^y) / \gamma_{zz} 
+        # v^z = -(\gamma_{xz} v^x + \gamma_{yz} v^y) / \gamma_{zz}
         newdriftvU2 = -(gammaDD[0][2]*driftvU[0] + gammaDD[1][2]*driftvU[1])/gammaDD[2][2]
         # Now that we have the z component, it's time to substitute its Valencia form in.
         # Remember, we only do this if abs(z) < (k+0.01)*dz. Note that we add 0.01; this helps
@@ -112,7 +112,7 @@ def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     # We'll reset the Valencia velocity, since this will be part of a second call to outCfunction.
 
     # First compute stress-energy tensor T4UU and T4UD:
-    
+
     GRHD.compute_sqrtgammaDET(gammaDD)
     GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
     GRFFE.compute_smallb4U_with_driftvU_for_FFE(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
@@ -123,6 +123,6 @@ def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
 
     # Compute conservative variables in terms of primitive variables
     GRHD.compute_S_tildeD(alpha, GRHD.sqrtgammaDET, GRFFE.TEM4UD)
-    
+
     global StildeD
     StildeD = GRHD.S_tildeD

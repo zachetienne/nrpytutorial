@@ -1,7 +1,7 @@
 # As documented in the NRPy+ tutorial module
 #   Tutorial-RK_Butcher_Table_Generating_C_Code.ipynb,
 #   this module will produce the required C codes for
-#   allocating required memory Method of Lines (MoL) timestepping, 
+#   allocating required memory Method of Lines (MoL) timestepping,
 #   implementing MoL timestepping, and deallocating memory
 
 # Authors: Brandon Clark
@@ -22,7 +22,7 @@ def diagonal(key):
     row_idx = 0 # Initialize the Butcher table row index
     for i in range(L): # Check all the desired rows
         for j in range(1,row_idx): # Check each element before the diagonal element in a row
-            if Butcher[i][j] != sp.sympify(0): # If any non-diagonal coeffcient is non-zero, 
+            if Butcher[i][j] != sp.sympify(0): # If any non-diagonal coeffcient is non-zero,
                                                # then the table is not diagonal
                 diagonal = False
                 return diagonal
@@ -171,7 +171,7 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
 // ***k1 substep:***
 //  1. We will store k1_or_y_nplus_a21_k1_or_y_nplus1_running_total_gfs now as
 //     ...  the update for the next rhs evaluation y_n + a21*k1*dt
-// Post-RHS evaluation: 
+// Post-RHS evaluation:
 //  1. Apply post-RHS to y_n + a21*k1*dt""",
             RHS_str = RHS_string,
             RHS_input_str = "y_n_gfs", RHS_output_str = "k1_or_y_nplus_a21_k1_or_y_nplus1_running_total_gfs",
@@ -182,11 +182,11 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
         # k_2
         RK_str += single_RK_substep(
             commentblock="""
-// ***k2 substep:*** 
+// ***k2 substep:***
 //    1. Reassign k1_or_y_nplus_a21_k1_or_y_nplus1_running_total_gfs to be the running total y_{n+1}; a32*k2*dt to the running total
 //    2. Store k2_or_y_nplus_a32_k2_gfs now as y_n + a32*k2*dt
 
-// Post-RHS evaluation: 
+// Post-RHS evaluation:
 //    1. Apply post-RHS to both y_n + a32*k2 (stored in k2_or_y_nplus_a32_k2_gfs)
 //       ... and the y_{n+1} running total, as they have not been applied yet to k2-related gridfunctions""",
             RHS_str=RHS_string,
@@ -200,10 +200,10 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
         # k_3
         RK_str += single_RK_substep(
             commentblock="""
-// ***k3 substep:*** 
+// ***k3 substep:***
 //    1. Add k3 to the running total and save to y_n
 
-// Post-RHS evaluation: 
+// Post-RHS evaluation:
 //    1. Apply post-RHS to y_n""",
             RHS_str=RHS_string,
             RHS_input_str="k2_or_y_nplus_a32_k2_gfs", RHS_output_str="y_n_gfs",

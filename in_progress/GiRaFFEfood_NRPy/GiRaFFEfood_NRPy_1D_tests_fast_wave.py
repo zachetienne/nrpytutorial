@@ -32,8 +32,8 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
 
     # A_x = 0, A_y = 0
     # A_z = y+ (-x-0.0075) if x <= -0.1
-    #          (0.75x^2 - 0.85x) if -0.1 < x <= 0.1 
-    #          (-0.7x-0.0075) if x > 0.1 
+    #          (0.75x^2 - 0.85x) if -0.1 < x <= 0.1
+    #          (-0.7x-0.0075) if x > 0.1
 
     Azleft = y - x - sp.Rational(75,10000)
     Azcenter = y + sp.Rational(75,100)*x*x - sp.Rational(85,100)*x
@@ -44,7 +44,7 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
     AD[2] = noif.coord_leq_bound(x,-bound)*Azleft\
            +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Azcenter\
            +noif.coord_greater_bound(x,bound)*Azright
-    
+
     # B^x(0,x) = 1.0
     # B^y(0,x) = 1.0 if x <= -0.1
     #            1.0-1.5(x+0.1) if -0.1 < x <= 0.1
@@ -61,13 +61,13 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
             +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Bycenter\
             +noif.coord_greater_bound(x,bound)*Byright
     BU[2] = 0
-    
+
     # E^x(0,x) = 0.0 , E^y(x) = 0.0 , E^z(x) = -B^y(0,x)
     EU = ixp.zerorank1()
     EU[0] = sp.sympify(0)
     EU[1] = sp.sympify(0)
     EU[2] = -BU[1]
-    
+
     # Define Levi-Civita symbol
     def define_LeviCivitaSymbol_rank3(DIM=-1):
         if DIM == -1:
@@ -95,6 +95,5 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * EU[j] * BU[k] / B2   
+                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * EU[j] * BU[k] / B2
 
-    

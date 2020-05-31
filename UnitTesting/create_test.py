@@ -46,7 +46,7 @@ import logging
 from UnitTesting.setup_trusted_values_dict import setup_trusted_values_dict
 from UnitTesting.RepeatedTimer import RepeatedTimer
 
-logging.basicConfig(level=logging.{})  
+logging.basicConfig(level=logging.{})
 
 def timer_output():
     logging.info(' Printing every 5 minutes to prevent Travis CI timeout.')
@@ -61,11 +61,11 @@ class TestGlobals(unittest.TestCase):
         setup_trusted_values_dict(self.path)
         logging.debug(' ...Success: setup_trusted_values_dict ran without errors.\\n')
         self.timer = RepeatedTimer(300, timer_output)
-    
-    
+
+
     def tearDown(self):
         self.timer.stop()
-        
+
 
     def test_globals(self):
 
@@ -74,15 +74,15 @@ class TestGlobals(unittest.TestCase):
         self.module_name = '{}'
 
         self.function = '{}'
-        
+
         self.global_list = {}
-        
+
         self.initialization_string = """{}"""
-        
+
         self.trusted_values_dict_name = '{}globals'
-        
+
         try:
-        
+
 {}
 {}
         # Something failed
@@ -93,8 +93,8 @@ class TestGlobals(unittest.TestCase):
             import os
             file = open(os.path.join(self.path, 'success.txt'), 'w')
             file.close()
-                
-                
+
+
 if __name__ == '__main__':
     unittest.main()
 '''

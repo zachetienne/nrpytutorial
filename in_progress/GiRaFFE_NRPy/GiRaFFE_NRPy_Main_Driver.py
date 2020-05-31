@@ -38,7 +38,7 @@ diss_strength = par.Cparameters("REAL", thismodule, "diss_strength", default_KO_
 
 def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     cmd.mkdir(out_dir)
-    
+
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaDD","sym01",DIM=3)
     betaU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","betaU",DIM=3)
     alpha = gri.register_gridfunctions("AUXEVOL","alpha")
@@ -109,11 +109,11 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         body     = fin.FD_outputC("returnstring",RHSs_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="InteriorPoints",
         rel_path_for_Cparams=os.path.join("../")).replace("= NGHOSTS","= NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
-    # Note the above .replace() functions. These serve to expand the loop range into the ghostzones, since 
-    # the second-order FD needs fewer than some other algorithms we use do. 
+    # Note the above .replace() functions. These serve to expand the loop range into the ghostzones, since
+    # the second-order FD needs fewer than some other algorithms we use do.
     with open(os.path.join(out_dir,subdir,name+".h"),"w") as file:
         file.write(source_Ccode)
-    
+
     # Declare all the Cparameters we will need
     metricderivDDD = ixp.declarerank3("metricderivDDD","sym01",DIM=3)
     shiftderivUD = ixp.declarerank2("shiftderivUD","nosym",DIM=3)
@@ -208,11 +208,11 @@ REAL Stilde_rhsD2;
     subdir = "FCVAL"
     cmd.mkdir(os.path.join(out_dir, subdir))
     FCVAL.GiRaFFE_NRPy_FCVAL(os.path.join(out_dir,subdir))
-    
+
     subdir = "PPM"
     cmd.mkdir(os.path.join(out_dir, subdir))
     PPM.GiRaFFE_NRPy_PPM(os.path.join(out_dir,subdir))
-    
+
 
     # We will pass values of the gridfunction on the cell faces into the function. This requires us
     # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
@@ -305,11 +305,11 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
     BC.GiRaFFE_NRPy_BCs(os.path.join(out_dir,subdir))
-    
+
     subdir = "A2B"
     cmd.mkdir(os.path.join(out_dir,subdir))
     A2B.GiRaFFE_NRPy_A2B(os.path.join(out_dir,subdir),gammaDD,AD,BU)
-    
+
     C2P_P2C.GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha)
 
     values_to_print = [\
@@ -417,39 +417,39 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     // This will also reset the RHSs for each gf at each new timestep.
     calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
     calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
-    
+
     // Now, we set up a bunch of structs of pointers to properly guide the PPM algorithm.
     // They also count the number of ghostzones available.
     gf_and_gz_struct in_prims[NUM_RECONSTRUCT_GFS], out_prims_r[NUM_RECONSTRUCT_GFS], out_prims_l[NUM_RECONSTRUCT_GFS];
     int which_prims_to_reconstruct[NUM_RECONSTRUCT_GFS],num_prims_to_reconstruct;
     const int Nxxp2NG012 = Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;
-    
+
     REAL *temporary = auxevol_gfs + Nxxp2NG012*AEVOLPARENGF; //We're not using this anymore
     // This sets pointers to the portion of auxevol_gfs containing the relevant gridfunction.
     int ww=0;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU0GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU0GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU0GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU1GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU1GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU1GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*VALENCIAVU2GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_RU2GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LU2GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU0GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU0GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU0GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU0GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU0GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU0GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU1GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU1GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU1GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU1GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU1GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU1GF;
     ww++;
-    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU2GF; 
-      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU2GF; 
-      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU2GF; 
+    in_prims[ww].gf      = auxevol_gfs + Nxxp2NG012*BU2GF;
+      out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*B_RU2GF;
+      out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*B_LU2GF;
     ww++;
 
     // Prims are defined AT ALL GRIDPOINTS, so we set the # of ghostzones to zero:
@@ -475,12 +475,12 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
         interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
         // Then, reconstruct the primitive variables on the cell faces.
         // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
-        reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,                                                          
+        reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                                 which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
         // For example, if flux_dirn==0, then at gamma_faceDD00(i,j,k) represents gamma_{xx}
         // at (i-1/2,j,k), Valenciav_lU0(i,j,k) is the x-component of the velocity at (i-1/2-epsilon,j,k),
         // and Valenciav_rU0(i,j,k) is the x-component of the velocity at (i-1/2+epsilon,j,k).
-        
+
         if(flux_dirn==0) {
             // Next, we calculate the source term for StildeD. Again, this also resets the rhs_gfs array at
             // each new timestep.
@@ -488,7 +488,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             // Now, compute the electric field on each face of a cell and add it to the RHSs as appropriate
             //calculate_E_field_D0_right(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D0_left(params,auxevol_gfs,rhs_gfs);
-            // Finally, we calculate the flux of StildeD and add the appropriate finite-differences 
+            // Finally, we calculate the flux of StildeD and add the appropriate finite-differences
             // to the RHSs.
             calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
             calculate_Stilde_flux_D0_left(params,auxevol_gfs,rhs_gfs);
@@ -509,13 +509,13 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
         }
         for(int count=0;count<=1;count++) {
             // This function is written to be general, using notation that matches the forward permutation added to AD2,
-            // i.e., [F_HLL^x(B^y)]_z corresponding to flux_dirn=0, count=1. 
-            // The SIGN parameter is necessary because 
+            // i.e., [F_HLL^x(B^y)]_z corresponding to flux_dirn=0, count=1.
+            // The SIGN parameter is necessary because
             // -E_z(x_i,y_j,z_k) = 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
             //                           -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
             // Note the negative signs on the reversed permutation terms!
 
-            // By cyclically permuting with flux_dirn, we 
+            // By cyclically permuting with flux_dirn, we
             // get contributions to the other components, and by incrementing count, we get the backward permutations:
             // Let's suppose flux_dirn = 0. Then we will need to update Ay (count=0) and Az (count=1):
             //     flux_dirn=count=0 -> AD0GF+(flux_dirn+1+count)%3 = AD0GF + (0+1+0)%3=AD1GF <- Updating Ay!
@@ -556,7 +556,7 @@ void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL 
     apply_bcs_potential(params,evol_gfs);
     driver_A_to_B(params,evol_gfs,auxevol_gfs);
     //override_BU_with_old_GiRaFFE(params,auxevol_gfs,n);
-    // Apply fixes to StildeD, then recompute the velocity at the new timestep. 
+    // Apply fixes to StildeD, then recompute the velocity at the new timestep.
     // Apply the current sheet prescription to the velocities
     GiRaFFE_NRPy_cons_to_prims(params,xx,auxevol_gfs,evol_gfs);
     // Then, recompute StildeD to be consistent with the new velocities

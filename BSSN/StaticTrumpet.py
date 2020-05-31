@@ -6,21 +6,21 @@
 #          Ian Ruchlin
 
 # ## This module sets up initial data for a static trumpet geometry in spherical coordinates. We can convert from spherical to any coordinate system defined in [reference_metric.py](../edit/reference_metric.py) (e.g., SinhSpherical, Cylindrical, Cartesian, etc.) using the [Exact ADM Spherical-to-BSSNCurvilinear converter module](Tutorial-ADM_Initial_Data-Converting_Exact_ADM_Spherical_or_Cartesian_to_BSSNCurvilinear.ipynb)
-# 
+#
 # ### NRPy+ Source Code for this module: [BSSN/BrillLindquist.py](../edit/BSSN/BrillLindquist.py)
-# 
+#
 # <font color='green'>**All quantities have been validated against the [original SENR code](https://bitbucket.org/zach_etienne/nrpy).**</font>
 
 # ### Here we set up Static Trumpet initial data ([Dennison and Baumgarte, 2014](https://arxiv.org/abs/1403.5484)):
-# 
-# Description of Static Trumpet geometry. 
-# 
+#
+# Description of Static Trumpet geometry.
+#
 # **Inputs for initial data**:
-# 
+#
 # * The black hole mass $M$.
-# 
+#
 # **Additional variables needed for spacetime evolution**:
-# 
+#
 # * Desired coordinate system
 # * Desired initial lapse $\alpha$ and shift $\beta^i$. We will choose our gauge conditions as $\alpha=1$ and $\beta^i=B^i=0$. $\alpha = \psi^{-2}$ will yield much better behavior, but the conformal factor $\psi$ depends on the desired *destination* coordinate system (which may not be spherical coordinates).
 
@@ -58,13 +58,13 @@ def StaticTrumpet(ComputeADMGlobalsOnly = False):
     # Set the upper-triangle of the matrix...
     # Eq. 15
     # gamma_{ij} = psi^4 * eta_{ij}
-    # eta_00 = 1, eta_11 = r^2, eta_22 = r^2 * sin^2 (theta) 
+    # eta_00 = 1, eta_11 = r^2, eta_22 = r^2 * sin^2 (theta)
     gammaSphDD = ixp.zerorank2()
     gammaSphDD[0][0] = psi0**4
     gammaSphDD[1][1] = psi0**4 * r**2
     gammaSphDD[2][2] = psi0**4 * r**2*sp.sin(th)**2
     # ... then apply symmetries to get the other components
-    
+
     # *** The physical trace-free extrinsic curvature in spherical basis ***
     # Set the upper-triangle of the matrix...
 
@@ -79,27 +79,27 @@ def StaticTrumpet(ComputeADMGlobalsOnly = False):
 
     KSphDD[2][2] = M * sp.sin(th)**2
     # ... then apply symmetries to get the other components
-    
+
     # Lapse function and shift vector
     # Eq. 15
     # alpha = r / (r+M)
     alphaSph = r / (r + M)
 
-    betaSphU = ixp.zerorank1() 
+    betaSphU = ixp.zerorank1()
     # beta^r = Mr / (r + M)^2
     betaSphU[0] = M*r / (r + M)**2
-    
+
     BSphU    = ixp.zerorank1()
 
     if ComputeADMGlobalsOnly == True:
         return
-    
-    # Validated against original SENR: 
+
+    # Validated against original SENR:
     #print(sp.mathematica_code(gammaSphDD[1][1]))
 
     Sph_r_th_ph = [r,th,ph]
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
+        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph,
                                                                     gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
     import BSSN.BSSN_ID_function_string as bIDf

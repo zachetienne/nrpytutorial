@@ -27,7 +27,7 @@ def MaxwellCartesian_ID():
         EU_phi = 8*amp*radial*sp.sin(polar)*lam*lam*sp.exp(-lam*radial*radial)
         EidU[0] = -(y * EU_phi)/sp.sqrt(x*x + y*y)
         EidU[1] = (x * EU_phi)/sp.sqrt(x*x + y*y)
-        # The z component (2)is zero. 
+        # The z component (2)is zero.
         for i in range(DIM):
             for j in range(DIM):
                 EidD[i] += gammaDD[i][j] * EidU[j]

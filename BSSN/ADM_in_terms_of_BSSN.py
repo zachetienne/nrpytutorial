@@ -120,7 +120,7 @@ def ADM_in_terms_of_BSSN():
                 for l in range(DIM):
                     GammaUDD[i][j][k] += sp.Rational(1,2)*gammaUU[i][l]* \
                                     (gammaDDdD[l][j][k] + gammaDDdD[l][k][j] - gammaDDdD[j][k][l])
-                    
+
     # Step 3: Define ADM extrinsic curvature KDD and
     #         its first spatial derivatives KDDdD
     #         in terms of BSSN quantities
