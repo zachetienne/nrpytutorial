@@ -50,10 +50,10 @@ def dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
         chi_a[i] = div(1,2) * (chi1U[i] - chi2U[i])
     # define scalars that depend on vectors
     s_l = dot(Stot,l)   /m**2
-    s_n = dot(Stot,n12U)/m**2
+    # s_n = dot(Stot,n12U)/m**2
     sigma_l = dot(Sigma,l)/m**2
-    sigma_n = dot(Sigma,n12U)/m**2
-    return nu,delta,  l,chi_a,chi_s,  s_l,s_n,sigma_l,sigma_n
+    # sigma_n = dot(Sigma,n12U)/m**2
+    return nu,delta,  l,chi_a,chi_s,  s_l,sigma_l
 
 #################################
 #################################
@@ -64,13 +64,11 @@ def dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
 #  https://link.springer.com/content/pdf/10.12942/lrr-2014-2.pdf
 def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U):
     def f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, which_quantity):
-        if not (which_quantity == "dM_dt" or
-                which_quantity == "dE_GW_dt" or
-                which_quantity == "dE_GW_dt_plus_dM_dt"):
+        if not which_quantity in ('dM_dt', 'dE_GW_dt', 'dE_GW_dt_plus_dM_dt'):
             print("which_quantity == "+str(which_quantity)+" not supported!")
             sys.exit(1)
 
-        nu,delta,  l,chi_a,chi_s,  s_l,s_n,sigma_l,sigma_n = dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U)
+        nu,delta,  l,chi_a,chi_s,  s_l,sigma_l = dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U)
         x = (mOmega)**div(2,3)
 
         # Compute b_5_Mdot:
