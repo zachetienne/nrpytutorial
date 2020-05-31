@@ -329,5 +329,3 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
                 for l in range(3):
                     IDgammaDD[i][j] += drrefmetric__dx_0UDmatrix[(k,i)]*drrefmetric__dx_0UDmatrix[(l,j)]*gammaDD[k][l]
                     IDKDD[i][j]     += drrefmetric__dx_0UDmatrix[(k,i)]*drrefmetric__dx_0UDmatrix[(l,j)]*    KDD[k][l]
-
-

@@ -266,4 +266,3 @@ ID_ADM_xx0xx1xx2_to_BSSN_xx0xx1xx2__ALL_BUT_LAMBDAs(""".replace("IDX3",idx3repla
                     &in_gfs[IDX4pt(ALPHAGF,idx)],&in_gfs[IDX4pt(CFGF,idx)]);
 """.replace("IDX4pt",idx4ptreplace),
         loopopts="AllPoints,Read_xxs"+loopopts, opts=opts)
-
