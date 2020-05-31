@@ -60,7 +60,7 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
-disable=too-many-arguments,redefined-outer-name,wrong-import-position,too-many-locals,too-many-branches,multiple-imports,too-many-statements,multiple-statements, # ADDED
+disable=too-many-arguments,redefined-outer-name,wrong-import-position,too-many-locals,too-many-branches,multiple-imports,too-many-statements,multiple-statements,too-many-lines, # ADDED
         consider-using-enumerate,singleton-comparison, # ADDED, with hesitation since some might be good suggestions, but far too many false positives
         import-outside-toplevel,    # ADDED
         wrong-import-order,         # ADDED
