@@ -35,7 +35,7 @@ def gammabarDD_hDD(gammaDD):
         print("BSSN.BSSN_in_terms_of_ADM.hDD_given_ADM(): Must call reference_metric() first!")
         sys.exit(1)
     # \bar{gamma}_{ij} = (\frac{\bar{gamma}}{gamma})^{1/3}*gamma_{ij}.
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    _gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaUU unused.
     gammabarDD = ixp.zerorank2()
     hDD        = ixp.zerorank2()
     for i in range(DIM):
@@ -83,7 +83,7 @@ def LambdabarU_lambdaU__exact_gammaDD(gammaDD):
 
     # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
     gammabarDD_hDD(gammaDD)
-    gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
+    gammabarUU, _gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD) # _gammabarDET unused.
 
     # First compute Christoffel symbols \bar{Gamma}^i_{jk}, with respect to barred metric:
     GammabarUDD = ixp.zerorank3()
@@ -125,8 +125,8 @@ def cf_from_gammaDD(gammaDD):
 
     # \bar{Lambda}^i = \bar{gamma}^{jk}(\bar{Gamma}^i_{jk} - \hat{Gamma}^i_{jk}).
     gammabarDD_hDD(gammaDD)
-    gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD)
-    gammaUU, gammaDET       = ixp.symm_matrix_inverter3x3(gammaDD)
+    _gammabarUU, gammabarDET = ixp.symm_matrix_inverter3x3(gammabarDD) # _gammabarUU unused.
+    _gammaUU, gammaDET       = ixp.symm_matrix_inverter3x3(gammaDD)    # _gammaUU unused.
 
     cf = sp.sympify(0)
 

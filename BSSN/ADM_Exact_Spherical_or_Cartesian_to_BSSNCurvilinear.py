@@ -63,10 +63,9 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
         if isinstance(obj, int):
             return sp.sympify(obj)
-        else:
-            return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
-                subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
-                subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+        return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
+            subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
+            subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
 
     r_th_ph_or_Cart_xyz_of_xx = []
     if CoordType_in == "Spherical":

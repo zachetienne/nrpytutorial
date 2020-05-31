@@ -77,7 +77,7 @@ def BSSN_basic_tensors():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global gammabarDD,AbarDD,LambdabarU,betaU,BU
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, aDD, lambdaU, vetU, betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already() # _trK,_cf,_alpha unused.
     DIM = 3
 
     # Step 3.a.i: gammabarDD and AbarDD:
@@ -106,7 +106,7 @@ def gammabar__inverse_and_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global gammabarUU, gammabarDD_dD, gammabarDD_dupD, gammabarDD_dDD, GammabarUDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already() # _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
     # This function needs gammabarDD, defined in BSSN_basic_tensors()
     BSSN_basic_tensors()
@@ -205,7 +205,7 @@ def AbarUU_AbarUD_trAbar_AbarDD_dD():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global AbarUU,AbarUD,trAbar,AbarDD_dD,AbarDD_dupD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    _hDD, aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already() # _hDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
 
     # Define AbarDD and gammabarDD in terms of BSSN gridfunctions
@@ -256,7 +256,7 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global RbarDD,DGammaUDD,gammabarDD_dHatD,DGammaU
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already() # _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
     # GammabarUDD is used below, defined in
     #    gammabar__inverse_and_derivs()
@@ -426,7 +426,7 @@ def betaU_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global betaU_dD,betaU_dupD,betaU_dDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    _hDD, _aDD, _lambdaU, vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already() # _hDD, _aDD, _lambdaU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
 
     # Step 8.ii: Compute the unrescaled shift vector beta^i = ReU[i]*vet^i
@@ -453,7 +453,7 @@ def phi_and_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global phi_dD,phi_dupD,phi_dDD,exp_m4phi,phi_dBarD,phi_dBarDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    _hDD, _aDD, _lambdaU, _vetU, _betU, _trK, cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already() # hDD, _aDD, _lambdaU, _vetU, _betU, _trK, _alpha unused.
     DIM = 3
 
     # GammabarUDD is used below, defined in

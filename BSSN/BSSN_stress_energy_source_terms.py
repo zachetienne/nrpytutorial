@@ -27,7 +27,7 @@ def stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(inputvars,cus
     # Step 2.a: Define gamma4DD[mu][nu] = g_{mu nu} + n_{mu} n_{nu}
     alpha = sp.symbols("alpha", real=True)
     zero = sp.sympify(0)
-    n4D = [-alpha, zero, zero, zero]
+    n4D = [sp.sympify(-1)*alpha, zero, zero, zero]
     AB4m.g4DD_ito_BSSN_or_ADM(inputvars)
 
     gamma4DD = ixp.zerorank2(DIM=4)
@@ -140,7 +140,7 @@ def BSSN_source_terms_for_BSSN_constraints(custom_T4UU=None):
         sp.symbols("S", real=True)
         rho = sp.symbols("rho", real=True)
     else:
-        SDD,SD,S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU)
+        _SDD,_SD,_S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU) #_SDD,_SD,_S unused.
     PI = par.Cparameters("REAL", thismodule, ["PI"], "3.14159265358979323846264338327950288")
 
     # Step 4.b: Add source term to the Hamiltonian constraint H

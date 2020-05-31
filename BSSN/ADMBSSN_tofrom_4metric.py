@@ -82,7 +82,7 @@ def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None, gammaUU=N
     # Step 3: Construct g4UU = g^{mu nu}
     # Step 3.a: Compute gammaUU based on provided gammaDD:
     if gammaUU is None: # Use "is None" instead of "==None", as the former is more correct.
-        gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+        gammaUU, _gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaDET is unused.
 
     # Then evaluate g4UU:
     g4UU = ixp.zerorank2(DIM=4)
@@ -121,7 +121,7 @@ def BSSN_or_ADM_ito_g4DD(inputvars,g4DD=None):
 
     # Step 3: Compute betaU
     # Step 3.a: Compute gammaUU based on provided gammaDD
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    gammaUU, _gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaDET is unused.
 
     # Step 3.b: Use gammaUU to raise betaU
     betaU = ixp.zerorank1()

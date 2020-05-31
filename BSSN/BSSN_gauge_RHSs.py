@@ -88,18 +88,15 @@ def BSSN_gauge_RHSs():
         alpha_rhs = sp.sympify(0)
 
     else:
-        print("Error: "+thismodule + "::LapseEvolutionOption == "+LapseEvolOption+" not supported!")
+        print("Error: LapseEvolutionOption == "+LapseEvolOption+" not supported!")
         sys.exit(1)
 
     # Step 3.a: Set \partial_t \beta^i
     # First check that ShiftEvolutionOption parameter choice is supported.
     ShiftEvolOption = par.parval_from_str(thismodule + "::ShiftEvolutionOption")
-    if ShiftEvolOption != "Frozen" and \
-        ShiftEvolOption != "GammaDriving2ndOrder_NoCovariant" and \
-        ShiftEvolOption != "GammaDriving2ndOrder_Covariant"  and \
-        ShiftEvolOption != "GammaDriving2ndOrder_Covariant__Hatted" and \
-        ShiftEvolOption != "GammaDriving1stOrder_Covariant" and \
-        ShiftEvolOption != "GammaDriving1stOrder_Covariant__Hatted":
+    if ShiftEvolOption not in ('Frozen', 'GammaDriving2ndOrder_NoCovariant', 'GammaDriving2ndOrder_Covariant',
+                               'GammaDriving2ndOrder_Covariant__Hatted', 'GammaDriving1stOrder_Covariant',
+                               'GammaDriving1stOrder_Covariant__Hatted'):
         print("Error: ShiftEvolutionOption == " + ShiftEvolOption + " unsupported!")
         sys.exit(1)
 
