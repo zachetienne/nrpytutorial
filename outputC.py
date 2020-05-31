@@ -60,7 +60,6 @@ def superfast_uniq(seq): # Author: Dave Kirby
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 def check_if_string__error_if_not(allegedstring,stringdesc):
-    import sys
     if sys.version_info[0] == 3:
         string_types = str
     else:
@@ -133,13 +132,13 @@ def parse_outCparams_string(params):
             parnm.append(splitstring[2*i])
             value.append(splitstring[2*i+1])
 
-        for i in range(len(parnm)):
+        for i, parname in enumerate(parnm):
             # Clean the string
             if value[i] == "true":
                 value[i] = "True"
             if value[i] == "false":
                 value[i] = "False"
-            if parnm[i] == "preindent":
+            if parname == "preindent":
                 if not value[i].isdigit():
                     print("Error: preindent must be set to an integer (corresponding to the number of tab stops). ")
                     print(value[i]+" is not an integer.")
@@ -147,44 +146,44 @@ def parse_outCparams_string(params):
                 preindent = ""
                 for j in range(int(value[i])):
                     preindent += "   "
-            elif parnm[i] == "includebraces":
+            elif parname == "includebraces":
                 includebraces = value[i]
-            elif parnm[i] == "declareoutputvars":
+            elif parname == "declareoutputvars":
                 declareoutputvars = value[i]
-            elif parnm[i] == "outCfileaccess":
+            elif parname == "outCfileaccess":
                 outCfileaccess = value[i]
-            elif parnm[i] == "outCverbose":
+            elif parname == "outCverbose":
                 outCverbose = value[i]
-            elif parnm[i] == "CSE_enable":
+            elif parname == "CSE_enable":
                 CSE_enable = value[i]
-            elif parnm[i] == "CSE_varprefix":
+            elif parname == "CSE_varprefix":
                 CSE_varprefix = value[i]
-            elif parnm[i] == "CSE_sorting":
+            elif parname == "CSE_sorting":
                 CSE_sorting = value[i]
-            elif parnm[i] == "CSE_preprocess":
+            elif parname == "CSE_preprocess":
                 CSE_preprocess = value[i]
-            elif parnm[i] == "SIMD_enable":
+            elif parname == "SIMD_enable":
                 SIMD_enable = value[i]
-            elif parnm[i] == "SIMD_find_more_subs":
+            elif parname == "SIMD_find_more_subs":
                 SIMD_find_more_subs = value[i]
-            elif parnm[i] == "SIMD_find_more_FMAsFMSs":
+            elif parname == "SIMD_find_more_FMAsFMSs":
                 SIMD_find_more_FMAsFMSs = value[i]
-            elif parnm[i] == "SIMD_debug":
+            elif parname == "SIMD_debug":
                 SIMD_debug = value[i]
-            elif parnm[i] == "enable_TYPE":
+            elif parname == "enable_TYPE":
                 enable_TYPE = value[i]
-            elif parnm[i] == "GoldenKernelsEnable" and value[i] == "True":
+            elif parname == "GoldenKernelsEnable" and value[i] == "True":
                 # GoldenKernelsEnable==True enables the most optimized kernels,
                 #   at the expense of ~3x longer codegen runtimes.
                 CSE_preprocess          = "True"
                 SIMD_find_more_subs     = "True"
                 SIMD_find_more_FMAsFMSs = "True"
-            elif parnm[i] == "GoldenKernelsEnable" and value[i] == "False":
+            elif parname == "GoldenKernelsEnable" and value[i] == "False":
                 pass # Do nothing; just allow user to set GoldenKernelsEnable="False".
-            elif parnm[i] == "gridsuffix":
+            elif parname == "gridsuffix":
                 gridsuffix = value[i]
             else:
-                print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
+                print("Error: outputC parameter name \""+parname+"\" unrecognized.")
                 sys.exit(1)
 
     sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
