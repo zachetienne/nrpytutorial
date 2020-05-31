@@ -43,7 +43,7 @@ def rotate(tensor, axis, angle):
         for i in range(tensor.shape[0]):
             tensor[i, :] = [[M[i].b, M[i].c, M[i].d]]
         return tensor.tolist()
-    elif isinstance(tensor, list):
+    if isinstance(tensor, list):
         if len(tensor) != 3:
             raise Exception('Invalid Vector Length')
         # Rotation Formula: v' = q.v.q*
