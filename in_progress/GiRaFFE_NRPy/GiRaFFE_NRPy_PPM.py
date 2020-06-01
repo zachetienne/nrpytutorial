@@ -1,6 +1,6 @@
 # Step 0: Add NRPy's directory to the path
 # https://stackoverflow.com/questions/16780014/import-file-from-parent-directory
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
+import os, sys           # Standard Python modules for multiplatform OS-level functions
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:

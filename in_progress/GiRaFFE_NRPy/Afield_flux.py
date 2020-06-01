@@ -1,24 +1,19 @@
 # Step 0: Add NRPy's directory to the path
 # https://stackoverflow.com/questions/16780014/import-file-from-parent-directory
-import os,sys
+import os, sys                   # Standard Python modules for multiplatform OS-level functions
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-from outputC import *            # NRPy+: Core C code output module
-import finite_difference as fin  # NRPy+: Finite difference C code generation module
+from outputC import outCfunction, outputC # NRPy+: Core C code output module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
-import grid as gri               # NRPy+: Functions having to do with numerical grids
-import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import reference_metric as rfm   # NRPy+: Reference metric support
-import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
 
 thismodule = "GiRaFFE_NRPy-Induction_Equation"
 
 import GRHD.equations as GRHD
-import GRFFE.equations as GRFFE
+# import GRFFE.equations as GRFFE
 
 # We'll write this as a function so that we can calculate the expressions on-demand for any choice of i
 def find_cp_cm(lapse,shifti,gammaUUii):

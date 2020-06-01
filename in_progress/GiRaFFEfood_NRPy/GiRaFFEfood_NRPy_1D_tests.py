@@ -65,11 +65,7 @@
 # Step 0: Import the NRPy+ core modules and set the reference metric to Cartesian
 import NRPy_param_funcs as par
 import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-from outputC import *
-import loop
-
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import reference_metric as rfm
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()

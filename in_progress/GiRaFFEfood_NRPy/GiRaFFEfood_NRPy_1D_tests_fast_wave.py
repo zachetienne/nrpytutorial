@@ -6,12 +6,9 @@ if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
 # Step 0.a: Import the NRPy+ core modules and set the reference metric to Cartesian
-from outputC import *            # NRPy+: Core C code output module
-import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
-import grid as gri               # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import reference_metric as rfm   # NRPy+: Reference metric support
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()

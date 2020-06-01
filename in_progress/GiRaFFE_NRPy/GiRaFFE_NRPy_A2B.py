@@ -1,5 +1,5 @@
 # The A-to-B driver
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
+import os, sys           # Standard Python modules for multiplatform OS-level functions
 # First, we'll add the parent directory to the list of directories Python will check for modules.
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
@@ -8,13 +8,11 @@ if nrpy_dir_path not in sys.path:
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 
 # Step 1: The A-to-B driver
-from outputC import *            # NRPy+: Core C code output module
+from outputC import outCfunction, lhrh # NRPy+: Core C code output module
 import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import reference_metric as rfm   # NRPy+: Reference metric support
 
 thismodule = __name__
 

@@ -1,11 +1,9 @@
-from outputC import *            # NRPy+: Core C code output module
-import finite_difference as fin  # NRPy+: Finite difference C code generation module
+from outputC import nrpyAbs      # NRPy+: Core C code output module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
-import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
 import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
 
@@ -103,9 +101,6 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
         bound =(grid_points_from_z_plane+sp.Rational(1,100))*gri.dxx[2]
         ValenciavU[2] = noif.coord_leq_bound(coord,bound)*(newdriftvU2+betaU[2])/alpha \
                       + noif.coord_greater_bound(coord,bound)*ValenciavU[2]
-
-import GRFFE.equations as GRFFE
-import GRHD.equations as GRHD
 
 def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     # After recalculating the 3-velocity, we need to update the poynting flux:

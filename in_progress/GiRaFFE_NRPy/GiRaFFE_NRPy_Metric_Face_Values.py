@@ -5,7 +5,7 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-from outputC import *            # NRPy+: Core C code output module
+from outputC import outCfunction # NRPy+: Core C code output module
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 
 def GiRaFFE_NRPy_FCVAL(Ccodesdir):

@@ -1,12 +1,8 @@
-from outputC import *            # NRPy+: Core C code output module
-import finite_difference as fin  # NRPy+: Finite difference C code generation module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import reference_metric as rfm   # NRPy+: Reference metric support
-import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
+import os, sys           # Standard Python modules for multiplatform OS-level functions
 
 par.set_parval_from_str("grid::DIM", 3)
 DIM = par.parval_from_str("grid::DIM")
@@ -59,7 +55,6 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face):
 # We'll rewrite this assuming that we've passed the entire reconstructed
 # gridfunctions. You could also do this with only one point, but then you'd
 # need to declare everything as a Cparam in NRPy+
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)

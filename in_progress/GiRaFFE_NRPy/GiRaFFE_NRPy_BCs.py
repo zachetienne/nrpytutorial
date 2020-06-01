@@ -1,6 +1,6 @@
 # Step 0: Add NRPy's directory to the path
 # https://stackoverflow.com/questions/16780014/import-file-from-parent-directory
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
+import os, sys           # Standard Python modules for multiplatform OS-level functions
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
@@ -22,7 +22,6 @@ def GiRaFFE_NRPy_BCs(Ccodesdir):
           -1.0*gfs[IDX4S(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]; \\
       }
 //          +1.0*gfs[IDX4S(which_gf,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)]; \\
-
 // Basic Copy boundary conditions
 #define  FACE_UPDATE_COPY(which_gf, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \\
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) { \\
