@@ -126,7 +126,7 @@ def compute_AD_source_term_parenthetical_for_FD(sqrtgammaDET,betaU,alpha,psi6Phi
         AevolParen += -betaU[j] * AD[j]
 
 def compute_psi6Phi_rhs_parenthetical(gammaDD,sqrtgammaDET,betaU,alpha,AD,psi6Phi):
-    gammaUU,unusedgammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    gammaUU,_gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaDET unused.
     AU = ixp.zerorank1()
     # Raise the index on A in the usual way:
     for i in range(3):

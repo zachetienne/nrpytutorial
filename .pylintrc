@@ -63,6 +63,7 @@ confidence=
 # --disable=W".
 disable=too-many-arguments,redefined-outer-name,wrong-import-position,too-many-locals,too-many-branches,multiple-imports,too-many-statements,multiple-statements,too-many-lines,too-many-nested-blocks, # ADDED
         consider-using-enumerate,singleton-comparison, # ADDED, with hesitation since some might be good suggestions, but far too many false positives
+        invalid-unary-operand-type, # ADDED; many incorrect interpretations of SymPy expressions. Pure false positives.
         eval-used,                  # ADDED
         duplicate-code,             # ADDED
         import-outside-toplevel,    # ADDED

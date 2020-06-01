@@ -52,7 +52,7 @@ def compute_T4UD(gammaDD,betaU,alpha, T4UU):
 # Step 3: Writing the conservative variables in terms of the primitive variables
 def compute_sqrtgammaDET(gammaDD):
     global sqrtgammaDET
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    _gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaUU unused.
     sqrtgammaDET = sp.sqrt(gammaDET)
 
 def compute_rho_star(alpha, sqrtgammaDET, rho_b,u4U):
