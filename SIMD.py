@@ -495,8 +495,8 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
         for subtree in tree_diff.preorder():
             subexpr = subtree.expr
             if subexpr.func == Float:
-                if abs(subexpr - Integer(subexpr)) < 1.0e-14:
-                    subtree.expr = Integer(item)
+                if abs(subexpr - Integer(subexpr)) < 1.0e-14*subexpr:
+                    subtree.expr = Integer(subexpr)
         expr_diff = tree_diff.reconstruct()
 
         if expr_diff != 0:
