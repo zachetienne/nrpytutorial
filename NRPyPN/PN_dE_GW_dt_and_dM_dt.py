@@ -27,7 +27,7 @@ from NRPyPN_shortcuts import div,dot,gamma_EulerMascheroni  # NRPyPN: shortcuts 
 #################################
 
 # Constants given in Eqs A1-13 of https://arxiv.org/abs/1502.01747
-def dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
+def dE_GW_dt_OBKPSS2015_consts(m1,m2, _n12U, S1U,S2U): # _n12U unused.
     # define scalars:
     m  = (m1+m2)
     nu = m1*m2/m**2
