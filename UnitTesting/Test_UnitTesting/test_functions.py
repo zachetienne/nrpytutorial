@@ -11,7 +11,20 @@ mp.dps = precision
 
 class TestFunctions(unittest.TestCase):
 
+    # The following extends the __init__() function in Python's
+    #   unittest. For more, read this:
+    # https://techoverflow.net/2020/04/21/how-to-fix-python-unittest-__init__-takes-1-positional-argument-but-2-were-given/
     def setUp(self):
+        self.calculated_dict = {}
+        self.function = ''
+        self.global_list = []
+        self.initialization_string = ''
+        self.module = ''
+        self.module_name = ''
+        self.path = ''
+        self.trusted_values_dict_entry = {}
+        self.trusted_values_dict_name = ''
+        self.variable_dict = {}
         print('')
 
     def test_calc_error(self):
