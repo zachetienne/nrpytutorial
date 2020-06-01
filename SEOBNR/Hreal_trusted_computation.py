@@ -1,5 +1,5 @@
 import numpy as np
-def compute_Hreal(m1=23., m2=10., EMgamma=0.577215664901532860606512090082402431, tortoise=1, dSO=-7.966696593617955e+01, dSS=1.261873764525631e+01, x=2.129681018601393e+01, y=0.000000000000000e+00, z=0.000000000000000e+00, p1=0.000000000000000e+00, p2=2.335391115580442e-01, p3=-4.235164736271502e-22, S1x=4.857667584940312e-03, S1y=9.715161660389764e-03, S1z=-1.457311842632286e-02, S2x=3.673094582185491e-03, S2y=-4.591302628615413e-03, S2z=5.509696538546906e-03):
+def compute_Hreal(m1=23., m2=10., EMgamma=0.577215664901532860606512090082402431, tortoise=1, x=2.129681018601393e+01, y=0.000000000000000e+00, z=0.000000000000000e+00, p1=0.000000000000000e+00, p2=2.335391115580442e-01, p3=-4.235164736271502e-22, S1x=4.857667584940312e-03, S1y=9.715161660389764e-03, S1z=-1.457311842632286e-02, S2x=3.673094582185491e-03, S2y=-4.591302628615413e-03, S2z=5.509696538546906e-03):
     M = m1 + m2
     mu=m1*m2/M
     eta=mu/M
@@ -38,11 +38,7 @@ def compute_Hreal(m1=23., m2=10., EMgamma=0.577215664901532860606512090082402431
     Sigma=r*r+a*a*costheta*costheta
     Dinv=1+np.log(1+6*eta*u*u+2*(26-3*eta)*eta*u*u*u)
     omegatilde=2*a*r
-    c23=103.16588921239249
-    c22  = -39.77229225266885
-    c21  = -1.803949138004582
-    c20  = 1.712
-    K = c20 + c21*eta + c22*(eta*eta) + c23*(eta*eta)*eta
+    K=1.712-1.803949138004582*eta-39.77229225266885*eta*eta+103.16588921239249*eta*eta*eta
     etaKminus1 = eta*K - 1
     Delta0=K*(eta*K-2)
     Delta1 = -2*etaKminus1*(K + Delta0)
@@ -94,14 +90,14 @@ def compute_Hreal(m1=23., m2=10., EMgamma=0.577215664901532860606512090082402431
     mur=r/Sigma-1/np.sqrt(Deltar)
     nur=r/Sigma+w2*(w2*Deltatprm-4*r*Deltat)/(2*Lambdat*Deltat)
     omegar=(Lambdat*omegatildeprm-Lambdatprm*omegatilde)/(Lambdat*Lambdat)
-    sigmacoeffTerm3=eta*dSO*u*u*u
+    dSO=-74.71-156.*eta+627.5*eta*eta
+    sigmacoeffTerm3 = eta*dSO*u*u*u
     sigmacoeffTerm2=eta/(144*r*r)*(-896+r*(-436*Qminus1-96*DrSipn2+r*(-45*Qminus1*Qminus1+36*Qminus1*DrSipn2))+eta*(-336+r*(204*Qminus1-882*DrSipn2+r*(810*DrSipn2*DrSipn2-234*Qminus1*DrSipn2))))
     sigmacoeffTerm1=eta/12*(-8/r+3*Qminus1-36*DrSipn2)
     sigmacoeff=sigmacoeffTerm1+sigmacoeffTerm2+sigmacoeffTerm3
-    sigmastarcoeffTerm3=0
     sigmastarcoeffTerm2=eta/(72*r*r)*(706+r*(-206*Qminus1+282*DrSipn2+r*Qminus1*(96*DrSipn2-23*Qminus1))+eta*(-54+r*(120*Qminus1-324*DrSipn2+r*(360*DrSipn2*DrSipn2+Qminus1*(-126*DrSipn2-3*Qminus1)))))
     sigmastarcoeffTerm1=eta/12*(14/r+4*Qminus1-30*DrSipn2)
-    sigmastarcoeff=sigmastarcoeffTerm1+sigmastarcoeffTerm2+sigmastarcoeffTerm3
+    sigmastarcoeff=sigmastarcoeffTerm1+sigmastarcoeffTerm2
     Deltasigmastar3=sigmastar3*sigmastarcoeff+sigma3*sigmacoeff
     Deltasigmastar2 = sigmastar2*sigmastarcoeff + sigma2*sigmacoeff
     Deltasigmastar1 = sigmastar1*sigmastarcoeff + sigma1*sigmacoeff
@@ -116,7 +112,6 @@ def compute_Hreal(m1=23., m2=10., EMgamma=0.577215664901532860606512090082402431
     Sdotn=S1*n1+S2*n2+S3*n3
     Sdotv=S1*v1+S2*v2+S3*v3
     Sdotxi=S1*xi1+S2*xi2+S3*xi3
-    SdotSkerr=S1*Skerr1+S2*Skerr2+S3*Skerr3
     HdsumTerm2=3*Sstardotn*Sstardotn
     HdsumTerm1=Sstar1*Sstar1+Sstar2*Sstar2+Sstar3*Sstar3
     Hdsum=HdsumTerm1-HdsumTerm2
@@ -142,6 +137,7 @@ def compute_Hreal(m1=23., m2=10., EMgamma=0.577215664901532860606512090082402431
     Hd=Hdcoeff*Hdsum
     Hns=betapsum+alpha*np.sqrt(Hnsradicand)
     Hs=Hso+Hss
-    Heff=Hs+Hns-Hd+dSS*eta*u*u*u*u*(S1x*S1x+S1y*S1y+S1z*S1z+S2x*S2x+S2y*S2y+S2z*S2z)
+    dSS=8.127-154.2*eta+830.8*eta*eta
+    Heff = Hs + Hns - Hd + dSS*eta*u*u*u*u*(S1x*S1x + S1y*S1y + S1z*S1z + S2x*S2x + S2y*S2y + S2z*S2z)
     Hreal=np.sqrt(1+2*eta*(Heff-1))
     return Hreal
