@@ -5,11 +5,10 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-from outputC import *            # NRPy+: Core C code output module
+from outputC import outCfunction, lhrh, outputC # NRPy+: Core C code output module
 import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
@@ -316,7 +315,7 @@ rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
 
     # Write out the main driver itself:
     with open(os.path.join(out_dir,"GiRaFFE_NRPy_Main_Driver.h"),"w") as file:
-        file.write("""// Structure to track ghostzones for PPM:
+        file.write(r"""// Structure to track ghostzones for PPM:
 typedef struct __gf_and_gz_struct__ {
   REAL *gf;
   int gz_lo[4],gz_hi[4];

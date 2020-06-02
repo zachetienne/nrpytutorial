@@ -64,6 +64,7 @@
 
 # Step 0: Import the NRPy+ core modules and set the reference metric to Cartesian
 import NRPy_param_funcs as par
+import grid as gri               # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import reference_metric as rfm
@@ -90,14 +91,20 @@ thismodule = __name__
 mu_AW = par.Cparameters("REAL",thismodule,["mu_AW"], -0.5) # The wave speed
 M_PI  = par.Cparameters("#define",thismodule,["M_PI"], "")
 
-def GiRaFFEfood_NRPy_1D_tests():
+def GiRaFFEfood_NRPy_1D_tests(stagger = False):
     gammamu = sp.sympify(1)/sp.sqrt(sp.sympify(1)-mu_AW**2)
 
     # We'll use reference_metric.py to define x and y
     x = rfm.xxCart[0]
     y = rfm.xxCart[1]
+    if stagger:
+        x_p_half = x + sp.Rational(1,2)*gri.dxx[0]
+        y_p_half = y + sp.Rational(1,2)*gri.dxx[1]
 
-    g_AW = sp.cos(sp.sympify(5)*M_PI*gammamu*x)/M_PI
+    if stagger:
+        g_AW = sp.cos(sp.sympify(5)*M_PI*gammamu*x_p_half)/M_PI
+    else:
+        g_AW = sp.cos(sp.sympify(5)*M_PI*gammamu*x)/M_PI
 
     # Now, we can define the vector potential. We will create three copies of this variable, because the potential is uniquely defined in three zones. Data for $x \leq -0.1/\gamma_\mu$ shall be referred to as "left", data for $-0.1/\gamma_\mu \leq x \leq 0.1/\gamma_\mu$ as "center", and data for $x \geq 0.1/\gamma_\mu$ as "right".
 
@@ -107,15 +114,23 @@ def GiRaFFEfood_NRPy_1D_tests():
     import Min_Max_and_Piecewise_Expressions as noif
     bound = sp.Rational(1,10)/gammamu
 
-    Ayleft = gammamu*x - sp.Rational(15,1000)
-    Aycenter = sp.Rational(115,100)*gammamu*x - sp.Rational(3,100)*g_AW
-    Ayright = sp.Rational(13,10)*gammamu*x - sp.Rational(15,1000)
+    if stagger:
+        Ayleft = gammamu*x_p_half - sp.Rational(15,1000)
+        Aycenter = sp.Rational(115,100)*gammamu*x_p_half - sp.Rational(3,100)*g_AW
+        Ayright = sp.Rational(13,10)*gammamu*x_p_half - sp.Rational(15,1000)
+    else:
+        Ayleft = gammamu*x - sp.Rational(15,1000)
+        Aycenter = sp.Rational(115,100)*gammamu*x - sp.Rational(3,100)*g_AW
+        Ayright = sp.Rational(13,10)*gammamu*x - sp.Rational(15,1000)
 
     AD[0] = sp.sympify(0)
     AD[1] = noif.coord_leq_bound(x,-bound)*Ayleft\
            +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Aycenter\
            +noif.coord_greater_bound(x,bound)*Ayright
-    AD[2] = y-gammamu*(sp.sympify(1)-mu_AW)*x    # <a id='step2'></a>
+    if stagger:
+        AD[2] = y_p_half-gammamu*(sp.sympify(1)-mu_AW)*x_p_half    # <a id='step2'></a>
+    else:
+        AD[2] = y-gammamu*(sp.sympify(1)-mu_AW)*x    # <a id='step2'></a>
     # ### Set the vectors $B^i$ and $E^i$ for the velocity
     #
     # Now, we will set the magnetic and electric fields that we will need to define the initial velocities. First, we need to define $$f(x)=1+\sin (5\pi x);$$ note that in the definition of $B^i$, we need $f(x')$ where $x'=\gamma_\mu x$.
