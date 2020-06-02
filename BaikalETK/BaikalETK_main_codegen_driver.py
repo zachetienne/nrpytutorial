@@ -45,7 +45,7 @@ ShiftCondition = "GammaDriving2ndOrder_NoCovariant"
 #         Baikal:       FD_orders = [2,4]  ; Gamma-driving eta parameter; Kreiss-Oliger dissipation strength
 #         BaikalVacuum: FD_orders = [4,6,8]; Gamma-driving eta parameter; Kreiss-Oliger dissipation strength
 paramslist = []
-FD_orders = [4]
+FD_orders = [2,4,6,8]
 WhichParamSet = 0
 for WhichPart in ["BSSN_RHSs","Ricci","BSSN_constraints","detgammabar_constraint"]:
     for FD_order in FD_orders:
@@ -110,42 +110,42 @@ import time   # Standard Python module for benchmarking
 import logging
 start = time.time()
 if __name__ == "__main__":
-    # try:
-    #     if os.name == 'nt':
-    #         # Windows & Jupyter multiprocessing do not mix, so we run in serial on Windows.
-    #         #  Here's why: https://stackoverflow.com/questions/45719956/python-multiprocessing-in-jupyter-on-windows-attributeerror-cant-get-attribut
-    #         raise Exception("Parallel codegen currently not available in Windows")
-    #     # Step 3.d.ii: Import the multiprocessing module.
-    #     import multiprocessing
-    #     print("***************************************")
-    #     print("Starting parallel C kernel codegen...")
-    #     print("***************************************")
+    try:
+        if os.name == 'nt':
+            # Windows & Jupyter multiprocessing do not mix, so we run in serial on Windows.
+            #  Here's why: https://stackoverflow.com/questions/45719956/python-multiprocessing-in-jupyter-on-windows-attributeerror-cant-get-attribut
+            raise Exception("Parallel codegen currently not available in Windows")
+        # Step 3.d.ii: Import the multiprocessing module.
+        import multiprocessing
+        print("***************************************")
+        print("Starting parallel C kernel codegen...")
+        print("***************************************")
 
-    #     # Step 3.d.iii: Define master function for parallelization.
-    #     #           Note that lambdifying this doesn't work in Python 3
-    #     def master_func(i):
-    #         import BaikalETK.BaikalETK_C_kernels_codegen as BCk
-    #         return BCk.BaikalETK_C_kernels_codegen_onepart(params=paramslist[i])
+        # Step 3.d.iii: Define master function for parallelization.
+        #           Note that lambdifying this doesn't work in Python 3
+        def master_func(i):
+            import BaikalETK.BaikalETK_C_kernels_codegen as BCk
+            return BCk.BaikalETK_C_kernels_codegen_onepart(params=paramslist[i])
 
-    #     # Step 3.d.iv: Evaluate list of functions in parallel if possible;
-    #     #           otherwise fallback to serial evaluation:
-    #     pool = multiprocessing.Pool() #processes=len(paramslist))
-    #     NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
-    #     pool.terminate()
-    #     pool.join()
-    # except:
-    #logging.exception("Ignore this warning/backtrace if on a system in which serial codegen is necessary:")
-    print("***************************************")
-    print("Starting serial C kernel codegen...")
-    print("(If you were running in parallel before,")
-    print(" this means parallel codegen failed)")
-    print("***************************************")
-    NRPyEnvVars = [] # Reset NRPyEnvVars in case multiprocessing wrote to it and failed.
-    # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
-    #       This will happen on Android and Windows systems
-    import BaikalETK.BaikalETK_C_kernels_codegen as BCk
-    for param in paramslist:
-        NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(params=param))
+        # Step 3.d.iv: Evaluate list of functions in parallel if possible;
+        #           otherwise fallback to serial evaluation:
+        pool = multiprocessing.Pool() #processes=len(paramslist))
+        NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
+        pool.terminate()
+        pool.join()
+    except:
+        logging.exception("Ignore this warning/backtrace if on a system in which serial codegen is necessary:")
+        print("***************************************")
+        print("Starting serial C kernel codegen...")
+        print("(If you were running in parallel before,")
+        print(" this means parallel codegen failed)")
+        print("***************************************")
+        NRPyEnvVars = [] # Reset NRPyEnvVars in case multiprocessing wrote to it and failed.
+        # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
+        #       This will happen on Android and Windows systems
+        import BaikalETK.BaikalETK_C_kernels_codegen as BCk
+        for param in paramslist:
+            NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(params=param))
 
 print("Finished C kernel codegen for Baikal and BaikalVacuum in "+str(time.time()-start)+" seconds.")
 ###############################
