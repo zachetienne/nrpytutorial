@@ -13,4 +13,4 @@ if [ ! -f $1 ]; then
 fi
 
 jupyter nbconvert --to python $1 --stdout |grep -v "^\#" > $1.py # ignore lines that start with #.
-pylint $1.py
+pylint --disable=trailing-newlines $1.py
