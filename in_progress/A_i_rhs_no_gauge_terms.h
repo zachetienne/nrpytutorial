@@ -19,20 +19,20 @@ static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf
   const REAL *B2r=out_prims_r[BX_STAGGER+v2_offset].gf, *B2l=out_prims_l[BX_STAGGER+v2_offset].gf;
 
   /**** V DEPENDENCIES ****/
-  /* In the case of Ax_rhs, we need v{y,z}{r,l} at (i,j+1/2,k+1/2). 
+  /* In the case of Ax_rhs, we need v{y,z}{r,l} at (i,j+1/2,k+1/2).
    *    However, v{y,z}{r,l}{r,l} are defined at (i,j-1/2,k-1/2), so
    *    v{y,z}{r,l} at (i,j+1/2,k+1/2) is stored at v{y,z}{r,l}{r,l}(i,j+1,k+1).
-   * In the case of Ay_rhs, we need v{x,z}{r,l} at (i+1/2,j,k+1/2). 
+   * In the case of Ay_rhs, we need v{x,z}{r,l} at (i+1/2,j,k+1/2).
    *    However, v{x,z}{r,l}{r,l} are defined at (i-1/2,j,k-1/2), so
    *    v{x,z}{r,l} at (i+1/2,j,k+1/2) is stored at v{x,z}{r,l}{r,l}(i+1,j,k+1).
-   * In the case of Az_rhs, we need v{x,y}{r,l} at (i+1/2,j+1/2,k). 
+   * In the case of Az_rhs, we need v{x,y}{r,l} at (i+1/2,j+1/2,k).
    *    However, v{x,y}{r,l}{r,l} are defined at (i-1/2,j-1/2,k), so
    *    v{x,y}{r,l} at (i+1/2,j+1/2,k) is stored at v{x,y}{r,l}{r,l}(i+1,j+1,k). */
   static const int vs_ijk_offset[4][3] = { {0,0,0} , {0,1,1} , {1,0,1} , {1,1,0} }; // Note that vs_ijk_offset[0] is UNUSED; we choose a 1-offset for convenience.
 
   /**** B DEPENDENCIES ****/
   /* In the case of Ax_rhs, we need B{y,z}{r,l} at (i,j+1/2,k+1/2).
-   *    However, By_stagger{r,l} is defined at (i,j+1/2,k-1/2), and 
+   *    However, By_stagger{r,l} is defined at (i,j+1/2,k-1/2), and
    *             Bz_stagger{r,l} is defined at (i,j-1/2,k+1/2), so
    *             By_stagger{r,l} at (i,j+1/2,k+1/2) is stored at By_stagger{r,l}(i,j,k+1), and
    *             Bz_stagger{r,l} at (i,j+1/2,k+1/2) is stored at Bz_stagger{r,l}(i,j+1,k).
@@ -42,7 +42,7 @@ static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf
    *             Bz_stagger{r,l} at (i+1/2,j,k+1/2) is stored at Bz_stagger{r,l}(i+1,j,k), and
    *             Bx_stagger{r,l} at (i+1/2,j,k+1/2) is stored at Bx_stagger{r,l}(i,j,k+1).
    * In the case of Az_rhs, we need B{x,y}_stagger{r,l} at (i+1/2,j+1/2,k).
-   *    However, Bx_stagger{r,l} is defined at (i+1/2,j-1/2,k), and 
+   *    However, Bx_stagger{r,l} is defined at (i+1/2,j-1/2,k), and
    *             By_stagger{r,l} is defined at (i-1/2,j+1/2,k), so
    *             Bx_stagger{r,l} at (i+1/2,j+1/2,k) is stored at Bx_stagger{r,l}(i,j+1,k), and
    *             By_stagger{r,l} at (i+1/2,j+1/2,k) is stored at By_stagger{r,l}(i+1,j,k).
@@ -85,18 +85,18 @@ static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf
         const REAL B2tilder_minus_B2tildel = psi6_interped*( B2rL - B2lL );
 
         /*---------------------------
-         * Implement 2D HLL flux 
+         * Implement 2D HLL flux
          * [see Del Zanna, Bucciantini & Londrillo A&A 400, 397 (2003), Eq. (44)]
          *
-         * Note that cmax/cmin (\alpha^{\pm}  as defined in that paper) is at a slightly DIFFERENT 
+         * Note that cmax/cmin (\alpha^{\pm}  as defined in that paper) is at a slightly DIFFERENT
          * point than that described in the Del Zanna et al paper (e.g., (i+1/2,j,k) instead of
          * (i+1/2,j+1/2,k) for F3).  Yuk Tung Liu discussed this point with M. Shibata,
          * who found that the effect is negligible.
          ---------------------------*/
         A3_rhs[index] = (cmax_1L*cmax_2L*A3_rhs_ll + cmax_1L*cmin_2L*A3_rhs_lr +
                          cmin_1L*cmax_2L*A3_rhs_rl + cmin_1L*cmin_2L*A3_rhs_rr)
-          /( (cmax_1L+cmin_1L)*(cmax_2L+cmin_2L) ) 
-          - cmax_1L*cmin_1L*(B2tilder_minus_B2tildel)/(cmax_1L+cmin_1L) 
+          /( (cmax_1L+cmin_1L)*(cmax_2L+cmin_2L) )
+          - cmax_1L*cmin_1L*(B2tilder_minus_B2tildel)/(cmax_1L+cmin_1L)
           + cmax_2L*cmin_2L*(B1tilder_minus_B1tildel)/(cmax_2L+cmin_2L);
       }
 }

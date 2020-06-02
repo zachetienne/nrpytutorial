@@ -105,7 +105,7 @@ void TOV_interpolate_1D(REAL rrbar,const REAL Rbar,const int Rbar_idx,const int 
   // First find the central interpolation stencil index:
   int idx = bisection_idx_finder(rrbar,numlines_in_file,rbar_arr);
 
-  
+
 #ifdef MAX
 #undef MAX
 #endif
@@ -221,7 +221,7 @@ int main() {
     fprintf(stderr,"Error: could not find r=R from data file.\n");
     exit(1);
   }
-      
+
   // Next, interpolate!
   // Create trial radius array:
   int num_r_pts = 100000;
@@ -248,7 +248,7 @@ int main() {
   free(expnu_arr);
   free(exp4phi_arr);
   free(rbar_arr);
-  
+
   return 0;
 }
 #endif

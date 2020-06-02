@@ -22,7 +22,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
 
   LOOP_DEFINE_SIMPLE {
     const int index=IDX3S(i,j,k);
-    psi3_bssn[index] = sqrt(sqrt( gxx[index]*gyy[index]*gzz[index] 
+    psi3_bssn[index] = sqrt(sqrt( gxx[index]*gyy[index]*gzz[index]
                                -  gxx[index]*gyz[index]*gyz[index]
                                +2*gxy[index]*gxz[index]*gyz[index]
                                -  gyy[index]*gxz[index]*gxz[index]
@@ -46,7 +46,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
 
     const REAL Psim3 = 1.0/psi3_bssn[actual_index];
 
-    // For the lower boundaries, the following applies a "copy" 
+    // For the lower boundaries, the following applies a "copy"
     //    boundary condition on Bi_stagger where needed.
     //    E.g., Bx_stagger(i,jmin,k) = Bx_stagger(i,jmin+1,k)
     //    We find the copy BC works better than extrapolation.
@@ -119,7 +119,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
 
     const int actual_index = IDX3S(i,j,k);
 
-    // For the lower boundaries, the following applies a "copy" 
+    // For the lower boundaries, the following applies a "copy"
     //    boundary condition on Bi and Bi_stagger where needed.
     //    E.g., Bx(imin,j,k) = Bx(imin+1,j,k)
     //    We find the copy BC works better than extrapolation.

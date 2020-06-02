@@ -8,7 +8,7 @@ REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l) {
 /*
 Calculate the electric flux on both faces in the input direction.
 The input count is an integer that is either 0 or 1. If it is 0, this implies
-that the components are input in order of a backwards permutation  and the final 
+that the components are input in order of a backwards permutation  and the final
 results will need to be multiplied by -1.0. If it is 1, then the permutation is fowards.
  */
 void calculate_E_field_flat_all_in_one(const paramstruct *params,
@@ -33,10 +33,10 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
         for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++) {
             for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++) {
                 // First, we set the index from which we will read memory. indexp1 is incremented by
-                // one point in the direction of reconstruction. These correspond to the faces at at 
+                // one point in the direction of reconstruction. These correspond to the faces at at
                 // i-1/2 and i+1/2, respectively.
 
-                // Now, we read in memory. We need the x and y components of velocity and magnetic field on both 
+                // Now, we read in memory. We need the x and y components of velocity and magnetic field on both
                 // the left and right sides of the interface at *both* faces.
                 // Here, the point (i0,i1,i2) corresponds to the point (i-1/2,j,k)
                 const int index            = IDX3S(i0,i1,i2);
@@ -78,7 +78,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // Since we are computing A_z, the relevant equation here is:
                 // -E_z(x_i,y_j,z_k) = 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
                 //                           -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
-                // We will construct the above sum one half at a time, first with SIGN=+1, which 
+                // We will construct the above sum one half at a time, first with SIGN=+1, which
                 // corresponds to flux_dirn = 0, count=1, and
                 //  takes care of the terms:
                 //  [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
@@ -87,9 +87,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 //   AND with the input components switched (x->y,y->x) so that we get the term
                 // -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k)
                 // thus completing the above sum. )
-                
+
                 // Here, [F_HLL^i(B^j)]_k = (v^i B^j - v^j B^i) in general.
-                
+
                 // Calculate the flux vector on each face for each component of the E-field:
                 // The F(B) terms are as Eq. 6 in Giacomazzo: https://arxiv.org/pdf/1009.2468.pdf
                 // [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
@@ -102,12 +102,12 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // Compute the state vector for this flux direction
                 // We must also multiply by sign so that we use the positive for the forward permutation
                 // and negative for the backwards permutation. For Az, that means that we add +By and -Bx,
-                // exactly as is done in the original GiRaFFE's A_i_rhs_no_gauge_terms.C, in line with 
+                // exactly as is done in the original GiRaFFE's A_i_rhs_no_gauge_terms.C, in line with
                 // Del Zanna, 2003 [https://arxiv.org/pdf/astro-ph/0210618.pdf], Eq. 44
                 const REAL U_r = B_rflux_dirn; //B_rU0;
-                const REAL U_l = B_lflux_dirn; 
+                const REAL U_l = B_lflux_dirn;
 
-                // Basic HLLE solver: 
+                // Basic HLLE solver:
                 const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
 
                 // ************************************
@@ -116,25 +116,25 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // Calculate the flux vector on each face for each component of the E-field:
                 const REAL F0B1_r_p1 = (Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
-                
+
                 // Compute the state vector for this flux direction
                 const REAL U_r_p1 = B_rflux_dirn_p1;
                 const REAL U_l_p1 = B_lflux_dirn_p1;
                 //const REAL U_r_p1 = B_rU1_p1;
                 //const REAL U_l_p1 = B_lU1_p1;
-                // Basic HLLE solver, but at the next point: 
+                // Basic HLLE solver, but at the next point:
                 const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1);
                 // ************************************
                 // ************************************
 
-                
+
                 // With the Riemann problem solved, we add the contributions to the RHSs:
                 // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
                 //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
                 // (Eq. 11 in https://arxiv.org/pdf/1009.2468.pdf)
                 // This code, as written, solves the first two terms for flux_dirn=0. Calling this function for count=1
                 // flips x for y to solve the latter two, switching to SIGN=-1 as well.
-                
+
                 // Here, we finally add together the output of the HLLE solver at i-1/2 and i+1/2
                 // We also multiply by the SIGN dictated by the order of the input vectors and divide by 4.
                 A2_rhs[index] += SIGN*0.25*(FHLL_0B1 + FHLL_0B1p1);
@@ -143,9 +143,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 //               -FxBy(avg over i-1/2 and i+1/2) + FyBx(avg over j-1/2 and j+1/2)
                 //               Eq 6 in Giacomazzo:
                 //               FxBy = vxBy - vyBx
-                //             -> 
+                //             ->
                 //               FHLL_0B1 = vyBx - vxBy
-                
+
             } // END LOOP: for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++)
         } // END LOOP: for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++)
     } // END LOOP: for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++)
