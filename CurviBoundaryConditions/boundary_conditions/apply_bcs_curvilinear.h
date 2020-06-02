@@ -1,6 +1,6 @@
 
 // Declare boundary condition BC_UPDATE_OUTER macro,
-//          which updates a single outer boundary face 
+//          which updates a single outer boundary face
 //          of the 3D grid cube using quadratic polynomial
 //          extrapolation.
 
@@ -13,7 +13,7 @@
     }
 
 // Curvilinear boundary condition driver routine: Apply BCs to all six
-//          boundary faces of the 3D numerical domain, filling in the 
+//          boundary faces of the 3D numerical domain, filling in the
 //          innermost ghost zone layer first, and moving outward.
 
 void apply_bcs_curvilinear_single_gf(const paramstruct *restrict params, const bc_struct *restrict bcstruct, const int8_t *restrict gfs_parity, const int which_gf, REAL *restrict gfs) {
@@ -25,7 +25,7 @@ void apply_bcs_curvilinear_single_gf(const paramstruct *restrict params, const b
     // First apply OUTER boundary conditions,
     //   in case an INNER (parity) boundary point
     //   needs data at the outer boundary:
-    // After updating each face, adjust imin[] and imax[] 
+    // After updating each face, adjust imin[] and imax[]
     //   to reflect the newly-updated face extents.
     for(int pt=0;pt<bcstruct->num_ob_gz_pts[which_gz];pt++) {
       BC_UPDATE_OUTER(which_gf,
@@ -53,12 +53,12 @@ void apply_bcs_curvilinear_single_gf(const paramstruct *restrict params, const b
   } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
 } // END function
 
-void apply_bcs_curvilinear(const paramstruct *restrict params, const bc_struct *restrict bcstruct, 
+void apply_bcs_curvilinear(const paramstruct *restrict params, const bc_struct *restrict bcstruct,
                            const int NUM_GFS, const int8_t *restrict gfs_parity, REAL *restrict gfs) {
 #pragma omp parallel for
     for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
 
         apply_bcs_curvilinear_single_gf(params, bcstruct, gfs_parity, which_gf, gfs);
-        
+
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
 } // END function

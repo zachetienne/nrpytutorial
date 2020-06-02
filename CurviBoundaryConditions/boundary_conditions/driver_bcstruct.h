@@ -8,7 +8,7 @@
 gz_map *bc_gz_map = (gz_map *)malloc(sizeof(gz_map)*Nxx_plus_2NGHOSTS_tot);
 
 // Step 2: Allocate memory storage for bc_parity_conditions,
-//         which store parity conditions for all 10 
+//         which store parity conditions for all 10
 //         gridfunction types at all grid points.
 parity_condition *bc_parity_conditions = (parity_condition *)malloc(sizeof(parity_condition)*Nxx_plus_2NGHOSTS_tot);
 
@@ -28,16 +28,16 @@ bcstruct.num_ib_gz_pts = (    int *)malloc(sizeof(int)*NGHOSTS);
 
 // Step 4: Store all information needed to quickly and
 //         efficiently apply boundary conditions. This
-//         function transfers all information from 
-//         bc_gz_map (defined at *all gridpoints*) into 
+//         function transfers all information from
+//         bc_gz_map (defined at *all gridpoints*) into
 //         bcstruct (defined only at boundary points).
-//         Thus when this function has finished, 
+//         Thus when this function has finished,
 //         bc_gz_map is no longer needed.
 set_bcstruct(&params,bc_gz_map,
              bc_parity_conditions,
              &bcstruct);
 
-// Step 5: As described in Step 4, bc_gz_map is no 
+// Step 5: As described in Step 4, bc_gz_map is no
 //         longer needed at this point, so we free its
 //         memory. Farewell, friend!
 free(bc_gz_map);
