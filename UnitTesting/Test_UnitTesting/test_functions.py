@@ -4,7 +4,7 @@ from sys import version_info
 
 logging.basicConfig(level='INFO')
 
-from mpmath import mp
+from mpmath import mpf, mpc, mp, pi, sqrt
 from UnitTesting.standard_constants import precision
 mp.dps = precision
 
@@ -30,9 +30,7 @@ class TestFunctions(unittest.TestCase):
     def test_calc_error(self):
 
         from UnitTesting.calc_error import calc_error
-        from mpmath import mpf, mp
         from datetime import date
-        from UnitTesting.standard_constants import precision
 
         mp.dps = precision
 
@@ -362,7 +360,6 @@ trusted_values_dict['TestModule__globals'] = {}
 
     def test_create_dict_string(self):
         from UnitTesting.create_dict_string import create_dict_string
-        from mpmath import mpf, mpc
 
         calculated_dict = {}
         self.assertEqual("{}", create_dict_string(calculated_dict))
@@ -545,7 +542,6 @@ trusted_values_dict['TestModule__globals'] = {}
 
     def test_first_time_print(self):
         from datetime import date
-        from mpmath import mpf
 
         self.module_name = 'TestModule'
         self.trusted_values_dict_name = 'TestModule__globals'
@@ -745,7 +741,6 @@ trusted_values_dict = {}
 
     def test_cse_simplify_and_evaluate_sympy_expressions(self):
         from UnitTesting.cse_simplify_and_evaluate_sympy_expressions import cse_simplify_and_evaluate_sympy_expressions
-        from mpmath import mpf, mp, pi, sqrt
         import random
         from sympy import symbols
         import hashlib
