@@ -819,7 +819,7 @@ EOS_omni::hybrid_gamma_th = %.15e
         if len(EOSname)==largest_name_in_EOS_table:
             pass
         else:
-            for k in range(largest_name_in_EOS_table - len(EOSname)):
+            for _k in range(largest_name_in_EOS_table - len(EOSname)): # _k is unused.
                 EOSname += " "
 
         with open(outfilename,"a") as file:
