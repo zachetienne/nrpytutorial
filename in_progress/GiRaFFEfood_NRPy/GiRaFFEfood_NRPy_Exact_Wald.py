@@ -125,8 +125,22 @@ def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,M,KerrSchild_radial_shift):
     # Step 4a: Calculate the magnetic field B^i
     # Here, we build the Levi-Civita tensor from the Levi-Civita symbol.
     # Here, we build the Levi-Civita tensor from the Levi-Civita symbol.
-    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
+    # Define Levi-Civita symbol
+    def define_LeviCivitaSymbol_rank3(DIM=-1):
+        if DIM == -1:
+            DIM = par.parval_from_str("DIM")
+
+        LeviCivitaSymbol = ixp.zerorank3()
+
+        for i in range(DIM):
+            for j in range(DIM):
+                for k in range(DIM):
+                    # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
+                    LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
+        return LeviCivitaSymbol
+    GRHD.compute_sqrtgammaDET(gammaDD)
+    # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
+    LeviCivitaSymbolDDD = define_LeviCivitaSymbol_rank3()
     LeviCivitaTensorUUU = ixp.zerorank3()
     for i in range(3):
         for j in range(3):
