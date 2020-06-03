@@ -72,8 +72,7 @@
 import NRPy_param_funcs as par
 import indexedexp as ixp
 import grid as gri
-import finite_difference as fin
-from outputC import *
+import sympy as sp
 
 def GiRaFFE_Higher_Order_v2():
     #Step 1.0: Set the spatial dimension parameter to 3.
@@ -86,7 +85,7 @@ def GiRaFFE_Higher_Order_v2():
     thismodule = "GiRaFFE_NRPy"
 
     # M_PI will allow the C code to substitute the correct value
-    M_PI = par.Cparameters("#define",thismodule,"M_PI","")
+    # M_PI = par.Cparameters("#define",thismodule,"M_PI","")
     # ADMBase defines the 4-metric in terms of the 3+1 spacetime metric quantities gamma_{ij}, beta^i, and alpha
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01",DIM=3)
     betaU   = ixp.register_gridfunctions_for_single_rank1("AUX","betaU",DIM=3)
@@ -456,4 +455,3 @@ def GiRaFFE_Higher_Order_v2():
     psi6Phi_rhs = -xi*alpha*psi6Phi
     for j in range(DIM):
         psi6Phi_rhs += -PevolParenU_dD[j][j]
-

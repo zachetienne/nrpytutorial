@@ -73,8 +73,7 @@
 import NRPy_param_funcs as par
 import indexedexp as ixp
 import grid as gri
-import finite_difference as fin
-from outputC import *
+import sympy as sp
 
 def GiRaFFE_Higher_Order():
     #Step 1.0: Set the spatial dimension parameter to 3.
@@ -438,7 +437,7 @@ def GiRaFFE_Higher_Order():
                 LeviCivitaTensorDDD[i][j][k] = LeviCivitaSymbolDDD[i][j][k] * sp.sqrt(gammadet)
                 LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
 
-    AD_dD = ixp.declarerank2("AD_dD","nosym")
+    # AD_dD = ixp.declarerank2("AD_dD","nosym")
 
     # Step 2.2.a: Construct the derivatives of the magnetic field.
     gammadet_dD = ixp.declarerank1("gammadet_dD")
@@ -890,4 +889,3 @@ def GiRaFFE_Higher_Order():
     psi6Phi_rhs = -xi*alpha*psi6Phi
     for j in range(DIM):
         psi6Phi_rhs += -PevolParenU_dD[j][j]
-
