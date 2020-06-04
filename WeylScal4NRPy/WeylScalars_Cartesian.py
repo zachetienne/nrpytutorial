@@ -37,12 +37,6 @@ def WeylScalars_Cartesian():
     kDD = ixp.register_gridfunctions_for_single_rank2("AUX", "kDD", "sym01")
     x, y, z = gri.register_gridfunctions("AUX", ["x", "y", "z"])
     global psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i
-    curvIr, curvIi, curvJr, curvJi, J1curv, J2curv, J3curv, J4curv = gri.register_gridfunctions("AUX",
-                                                                                                ["curvIr", "curvIi",
-                                                                                                 "curvJr", "curvJi",
-                                                                                                 "J1curv", "J2curv",
-                                                                                                 "J3curv", "J4curv"])
-
     psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = gri.register_gridfunctions("AUX",["psi4r","psi4i",
                                                                                                     "psi3r","psi3i",
                                                                                                     "psi2r","psi2i",
