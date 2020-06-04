@@ -19,30 +19,41 @@ par.initialize_param(par.glb_param("char *", thismodule, "TetradChoice", "Approx
 # This controls what gets output. Acceptable values are "psi4_only", "all_psis", and "all_psis_and_invariants"
 par.initialize_param(par.glb_param("char *", thismodule, "output_scalars", "all_psis_and_invariants"))
 
-# Step 3: Define the rank-3 version of the Levi-Civita symbol. Amongst
-#         other possible uses, this is needed for the construction of the approximate
-#         quasi-Kinnersley tetrad.
-def define_LeviCivitaSymbol_rank3(DIM=-1):
-    if DIM == -1:
-        DIM = par.parval_from_str("DIM")
-
-    LeviCivitaSymbol = ixp.zerorank3()
-
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
-                LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
-    return LeviCivitaSymbol
-
-# Step 4: Call BSSNs. This module computes many different quantities related to the metric,
-#         many of which will be essential here. We must first change to our desired coordinate
-#         system, however.
 def WeylScalars_Cartesian():
-    # We do not need the barred or hatted quantities calculated when using Cartesian coordinates.
-    # Instead, we declare the PHYSICAL metric and extrinsic curvature as grid functions.
-    gammaDD = ixp.register_gridfunctions_for_single_rank2("EVOL","gammaDD", "sym01")
-    kDD = ixp.register_gridfunctions_for_single_rank2("EVOL","kDD", "sym01")
+    # Step 3.a: Set spatial dimension (must be 3 for BSSN)
+    DIM = 3
+    par.set_parval_from_str("grid::DIM", DIM)
+
+    # Step 3.b: declare the additional gridfunctions (i.e., functions whose values are declared
+    #          at every grid point, either inside or outside of our SymPy expressions) needed
+    #         for this thorn:
+    #           * the physical metric $\gamma_{ij}$,
+    #           * the extrinsic curvature $K_{ij}$,
+    #           * the real and imaginary components of $\psi_4$, and
+    #           * the Weyl curvature invariants:
+    gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX", "gammaDD",
+                                                          "sym01")  # The AUX or EVOL designation is *not*
+    # used in diagnostic modules.
+    kDD = ixp.register_gridfunctions_for_single_rank2("AUX", "kDD", "sym01")
+    x, y, z = gri.register_gridfunctions("AUX", ["x", "y", "z"])
+    global psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i
+    curvIr, curvIi, curvJr, curvJi, J1curv, J2curv, J3curv, J4curv = gri.register_gridfunctions("AUX",
+                                                                                                ["curvIr", "curvIi",
+                                                                                                 "curvJr", "curvJi",
+                                                                                                 "J1curv", "J2curv",
+                                                                                                 "J3curv", "J4curv"])
+
+    psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = gri.register_gridfunctions("AUX",["psi4r","psi4i",
+                                                                                                    "psi3r","psi3i",
+                                                                                                    "psi2r","psi2i",
+                                                                                                    "psi1r","psi1i",
+                                                                                                    "psi0r","psi0i"])
+
+    # Step 4: Set which tetrad is used; at the moment, only one supported option
+
+    # The tetrad depends in general on the inverse 3-metric gammaUU[i][j]=\gamma^{ij}
+    #          and the determinant of the 3-metric (detgamma), which are defined in
+    #          the following line of code from gammaDD[i][j]=\gamma_{ij}.
     tmpgammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
     detgamma = sp.simplify(detgamma)
     gammaUU = ixp.zerorank2()
@@ -50,51 +61,40 @@ def WeylScalars_Cartesian():
         for j in range(3):
             gammaUU[i][j] = sp.simplify(tmpgammaUU[i][j])
 
-    global psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i
-    psi4r,psi4i,psi3r,psi3i,psi2r,psi2i,psi1r,psi1i,psi0r,psi0i = gri.register_gridfunctions("AUX",["psi4r","psi4i",\
-                                                                                                    "psi3r","psi3i",\
-                                                                                                    "psi2r","psi2i",\
-                                                                                                    "psi1r","psi1i",\
-                                                                                                    "psi0r","psi0i"])
-
-    # Step 4.a: Set spatial dimension (must be 3 for BSSN)
-    DIM = 3
-    par.set_parval_from_str("grid::DIM",DIM)
-
-    # Step 4.b: Set the coordinate system to Cartesian
-    x,y,z = gri.register_gridfunctions("AUX",["x","y","z"])
-
-    # Step 5: Set which tetrad is used; at the moment, only one supported option
     if par.parval_from_str("WeylScal4NRPy.WeylScalars_Cartesian::TetradChoice") == "Approx_QuasiKinnersley":
+        # Eqs 5.6 in https://arxiv.org/pdf/gr-qc/0104063.pdf
+        xmoved = x  # - xorig
+        ymoved = y  # - yorig
+        zmoved = z  # - zorig
+
         # Step 5.a: Choose 3 orthogonal vectors. Here, we choose one in the azimuthal
         #          direction, one in the radial direction, and the cross product of the two.
-        # Eqs 5.6, 5.7 in https://arxiv.org/pdf/gr-qc/0104063.pdf:
-        # v_1^a &= [-y,x,0] \\
-        # v_2^a &= [x,y,z] \\
-        # v_3^a &= {\rm det}(g)^{1/2} g^{ad} \epsilon_{dbc} v_1^b v_2^c,
+        # Eqs 5.7
         v1U = ixp.zerorank1()
         v2U = ixp.zerorank1()
         v3U = ixp.zerorank1()
-        v1U[0] = -y
-        v1U[1] = x
+        v1U[0] = -ymoved
+        v1U[1] = xmoved  # + offset
         v1U[2] = sp.sympify(0)
-        v2U[0] = x
-        v2U[1] = y
-        v2U[2] = z
-        LeviCivitaSymbol_rank3 = define_LeviCivitaSymbol_rank3()
+        v2U[0] = xmoved  # + offset
+        v2U[1] = ymoved
+        v2U[2] = zmoved
+        LeviCivitaSymbol_rank3 = ixp.LeviCivitaSymbol_dim3_rank3()
         for a in range(DIM):
             for b in range(DIM):
                 for c in range(DIM):
                     for d in range(DIM):
-                        v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbol_rank3[d][b][c] * v1U[b] *v2U[c]
+                        v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbol_rank3[d][b][c] * v1U[b] * v2U[c]
+
         for a in range(DIM):
             v3U[a] = sp.simplify(v3U[a])
 
         # Step 5.b: Gram-Schmidt orthonormalization of the vectors.
         # The w_i^a vectors here are used to temporarily hold values on the way to the final vectors e_i^a
-        # e_1^a &= \frac{v_1^a}{\omega_{11}} \\
-        # e_2^a &= \frac{v_2^a - \omega_{12} e_1^a}{\omega_{22}} \\
-        # e_3^a &= \frac{v_3^a - \omega_{13} e_1^a - \omega_{23} e_2^a}{\omega_{33}}, \\
+
+        # e_1^a &= \frac{v_1^a}{\omega_{11}}
+        # e_2^a &= \frac{v_2^a - \omega_{12} e_1^a}{\omega_{22}}
+        # e_3^a &= \frac{v_3^a - \omega_{13} e_1^a - \omega_{23} e_2^a}{\omega_{33}},
 
         # Normalize the first vector
         w1U = ixp.zerorank1()
@@ -115,11 +115,11 @@ def WeylScalars_Cartesian():
                 omega12 += e1U[a] * v2U[b] * gammaDD[a][b]
         w2U = ixp.zerorank1()
         for a in range(DIM):
-            w2U[a] = v2U[a] - omega12*e1U[a]
+            w2U[a] = v2U[a] - omega12 * e1U[a]
         omega22 = sp.sympify(0)
         for a in range(DIM):
             for b in range(DIM):
-                omega22 += w2U[a] * w2U[b] *gammaDD[a][b]
+                omega22 += w2U[a] * w2U[b] * gammaDD[a][b]
         e2U = ixp.zerorank1()
         for a in range(DIM):
             e2U[a] = w2U[a] / sp.sqrt(omega22)
@@ -135,7 +135,7 @@ def WeylScalars_Cartesian():
                 omega23 += e2U[a] * v3U[b] * gammaDD[a][b]
         w3U = ixp.zerorank1()
         for a in range(DIM):
-            w3U[a] = v3U[a] - omega13*e1U[a] - omega23*e2U[a]
+            w3U[a] = v3U[a] - omega13 * e1U[a] - omega23 * e2U[a]
         omega33 = sp.sympify(0)
         for a in range(DIM):
             for b in range(DIM):
@@ -150,13 +150,13 @@ def WeylScalars_Cartesian():
         # n^a &= -\frac{1}{\sqrt{2}} e_2^a \\
         # m^a &= \frac{1}{\sqrt{2}} (e_3^a + i e_1^a) \\
         # \overset{*}{m}{}^a &= \frac{1}{\sqrt{2}} (e_3^a - i e_1^a)
-        isqrt2 = 1/sp.sqrt(2)
+        isqrt2 = 1 / sp.sqrt(2)
         ltetU = ixp.zerorank1()
         ntetU = ixp.zerorank1()
-        #mtetU = ixp.zerorank1()
-        #mtetccU = ixp.zerorank1()
-        remtetU = ixp.zerorank1() # SymPy does not like trying to take the real/imaginary parts of such a
-        immtetU = ixp.zerorank1() # complicated expression as the Weyl scalars, so we will do it ourselves.
+        # mtetU = ixp.zerorank1()
+        # mtetccU = ixp.zerorank1()
+        remtetU = ixp.zerorank1()  # SymPy did not like trying to take the real/imaginary parts of such a
+        immtetU = ixp.zerorank1()  # complicated expression, so we do it ourselves.
         for i in range(DIM):
             ltetU[i] = isqrt2 * e2U[i]
             ntetU[i] = -isqrt2 * e2U[i]
@@ -165,21 +165,11 @@ def WeylScalars_Cartesian():
         nn = isqrt2
 
     else:
-        print("Error: TetradChoice == "+par.parval_from_str("TetradChoice")+" unsupported!")
+        print("Error: TetradChoice == " + par.parval_from_str("TetradChoice") + " unsupported!")
         sys.exit(1)
 
-    #Step 6: Declare and construct the second derivative of the metric.
-    #gammabarDD_dDD = ixp.zerorank4()
-    #for i in range(DIM):
-    #    for j in range(DIM):
-    #        for k in range(DIM):
-    #            for l in range(DIM):
-    #                gammabarDD_dDD[i][j][k][l] = bssn.hDD_dDD[i][j][k][l]*rfm.ReDD[i][j] + \
-    #                                             bssn.hDD_dD[i][j][k]*rfm.ReDDdD[i][j][l] + \
-    #                                             bssn.hDD_dD[i][j][l]*rfm.ReDDdD[i][j][k] + \
-    #                                             bssn.hDD[i][j]*rfm.ReDDdDD[i][j][k][l] + \
-    #                                             rfm.ghatDDdDD[i][j][k][l]
-    gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
+    # Step 5: Declare and construct the second derivative of the metric.
+    gammaDD_dD = ixp.declarerank3("gammaDD_dD", "sym01")
 
     # Define the Christoffel symbols
     GammaUDD = ixp.zerorank3(DIM)
@@ -187,9 +177,8 @@ def WeylScalars_Cartesian():
         for k in range(DIM):
             for l in range(DIM):
                 for m in range(DIM):
-                    GammaUDD[i][k][l] += (sp.Rational(1,2))*gammaUU[i][m]*\
+                    GammaUDD[i][k][l] += (sp.Rational(1, 2)) * gammaUU[i][m] * \
                                          (gammaDD_dD[m][k][l] + gammaDD_dD[m][l][k] - gammaDD_dD[k][l][m])
-
 
     # Step 6.a: Declare and construct the Riemann curvature tensor:
     # R_{abcd} = \frac{1}{2} (\gamma_{ad,cb}+\gamma_{bc,da}-\gamma_{ac,bd}-\gamma_{bd,ac})

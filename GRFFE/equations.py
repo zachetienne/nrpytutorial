@@ -103,12 +103,7 @@ def compute_TEM4UD(gammaDD,betaU,alpha, TEM4UU):
 
 def compute_AD_flux_term(sqrtgammaDET,driftvU,BU):
     # Levi-Civita tensor for cross products
-    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
-                LeviCivitaDDD[i][j][k] *= sqrtgammaDET
+    LeviCivitaDDD = ixp.LeviCivitaTensorDDD_dim3_rank3(sqrtgammaDET)
     global A_fluxD
     A_fluxD = ixp.zerorank1()
     for i in range(3):

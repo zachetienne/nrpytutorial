@@ -336,7 +336,7 @@ def generic_matrix_inverter4x4(a):
 
 # Define the rank-3 version of the Levi-Civita symbol.
 def LeviCivitaSymbol_dim3_rank3():
-    LeviCivitaSymbol = ixp.zerorank3(DIM=3)
+    LeviCivitaSymbol = zerorank3(DIM=3)
 
     for i in range(3):
         for j in range(3):
@@ -345,22 +345,22 @@ def LeviCivitaSymbol_dim3_rank3():
                 LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
     return LeviCivitaSymbol
 
-# Define the rank-3 version of the Levi-Civita *tensor*; UUU divides by sqrtgammaDET
+# Define the UUU rank-3 version of the Levi-Civita *tensor*; UUU divides by sqrtgammaDET
 def LeviCivitaTensorUUU_dim3_rank3(sqrtgammaDET):
     # Here, we import the Levi-Civita tensor and compute the tensor with upper indices
-    LeviCivitaSymbolDDD = define_LeviCivitaSymbol_rank3()
-    LeviCivitaTensorUUU = ixp.zerorank3(DIM=3)
+    LeviCivitaSymbolDDD = LeviCivitaSymbol_dim3_rank3()
+    LeviCivitaTensorUUU = zerorank3(DIM=3)
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sqrtgammaDET
     return LeviCivitaTensorUUU
 
-# Define the rank-3 version of the Levi-Civita *tensor*; DDD multiplies by sqrtgammaDET
+# Define the DDD rank-3 version of the Levi-Civita *tensor*; DDD multiplies by sqrtgammaDET
 def LeviCivitaTensorDDD_dim3_rank3(sqrtgammaDET):
     # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
-    LeviCivitaSymbolDDD = define_LeviCivitaSymbol_rank3()
-    LeviCivitaTensorDDD = ixp.zerorank3(DIM=3)
+    LeviCivitaSymbolDDD = LeviCivitaSymbol_dim3_rank3()
+    LeviCivitaTensorDDD = zerorank3(DIM=3)
     for i in range(3):
         for j in range(3):
             for k in range(3):
