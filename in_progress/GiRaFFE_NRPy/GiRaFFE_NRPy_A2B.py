@@ -26,16 +26,8 @@ def GiRaFFE_NRPy_A2B(outdir,gammaDD,AD,BU):
     gh.compute_sqrtgammaDET(gammaDD)
 
     # Import the Levi-Civita symbol and build the corresponding tensor.
-    # We already have a handy function to define the Levi-Civita symbol in WeylScalars
-    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    LeviCivitaDDD = weyl.define_LeviCivitaSymbol_rank3()
-    LeviCivitaUUU = ixp.zerorank3()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                LCijk = LeviCivitaDDD[i][j][k]
-                #LeviCivitaDDD[i][j][k] = LCijk * sp.sqrt(gho.gammadet)
-                LeviCivitaUUU[i][j][k] = LCijk / gh.sqrtgammaDET
+    # We already have a handy function to define the Levi-Civita symbol in indexedexp.py
+    LeviCivitaUUU = ixp.LeviCivitaTensorUUU_dim3_rank3(gh.sqrtgammaDET)
 
     AD_dD = ixp.declarerank2("AD_dD","nosym")
     BU = ixp.zerorank1()
