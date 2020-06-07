@@ -101,7 +101,9 @@ void set_up__bc_gz_map_and_parity_condns(const paramstruct *restrict params,
           // Perform sanity check on parity array output: should be +1 or -1 to within 8 significant digits:
           if( (REAL_parity_array[whichparity]  > 0 && fabs(REAL_parity_array[whichparity] - (+1)) > 1e-8) ||
               (REAL_parity_array[whichparity] <= 0 && fabs(REAL_parity_array[whichparity] - (-1)) > 1e-8) ) {
-              fprintf(stderr,"Error. Parity evaluated to %e , which is not within 8 significant digits of +1 or -1.",
+              fprintf(stderr,"Error at point (%d %d %d); (%e %e %e); maps to (%e %e %e).\n",
+                      i0,i1,i2, xx0,xx1,xx2, xx0_inbounds,xx1_inbounds,xx2_inbounds);
+              fprintf(stderr,"Parity evaluated to %e , which is not within 8 significant digits of +1 or -1.\n",
                       REAL_parity_array[whichparity]);
               exit(1);
           }
