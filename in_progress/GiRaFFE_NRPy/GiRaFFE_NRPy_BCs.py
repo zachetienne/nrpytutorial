@@ -1,6 +1,6 @@
 # Step 0: Add NRPy's directory to the path
 # https://stackoverflow.com/questions/16780014/import-file-from-parent-directory
-import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
+import os, sys           # Standard Python modules for multiplatform OS-level functions
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
@@ -22,7 +22,6 @@ def GiRaFFE_NRPy_BCs(Ccodesdir):
           -1.0*gfs[IDX4S(which_gf,i0+2*FACEX0,i1+2*FACEX1,i2+2*FACEX2)]; \\
       }
 //          +1.0*gfs[IDX4S(which_gf,i0+3*FACEX0,i1+3*FACEX1,i2+3*FACEX2)]; \\
-    
 // Basic Copy boundary conditions
 #define  FACE_UPDATE_COPY(which_gf, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \\
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) { \\
@@ -36,7 +35,7 @@ const int MAXFACE = -1;
 const int NUL     = +0;
 const int MINFACE = +1;
 // This macro acts differently in that it acts on an entire 3-vector of gfs, instead of 1.
-// which_gf_0 corresponds to the zeroth component of that vector. The if statements only 
+// which_gf_0 corresponds to the zeroth component of that vector. The if statements only
 // evaluate true if the velocity is directed inwards on the face in consideration.
 #define  FACE_UPDATE_OUTFLOW(which_gf, i0min,i0max, i1min,i1max, i2min,i2max, FACEX0,FACEX1,FACEX2) \\
   for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) { \\
@@ -67,7 +66,7 @@ void apply_bcs_potential(const paramstruct *restrict params,REAL *gfs) {
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      // After updating each face, adjust imin[] and imax[] 
+      // After updating each face, adjust imin[] and imax[]
       //   to reflect the newly-updated face extents.
       FACE_UPDATE(which_gf, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
       FACE_UPDATE(which_gf, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
@@ -75,9 +74,9 @@ void apply_bcs_potential(const paramstruct *restrict params,REAL *gfs) {
       FACE_UPDATE(which_gf, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
       FACE_UPDATE(which_gf, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
 
-      FACE_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
+      FACE_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE);
         imin[2]--;
-      FACE_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
+      FACE_UPDATE(which_gf, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE);
         imax[2]++;
     }
     }
@@ -88,7 +87,7 @@ void apply_bcs_potential(const paramstruct *restrict params,REAL *gfs) {
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      // After updating each face, adjust imin[] and imax[] 
+      // After updating each face, adjust imin[] and imax[]
       //   to reflect the newly-updated face extents.
       FACE_UPDATE_COPY(which_gf, imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); imin[0]--;
       FACE_UPDATE_COPY(which_gf, imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); imax[0]++;
@@ -115,9 +114,9 @@ void apply_bcs_velocity(const paramstruct *restrict params,REAL *aux_gfs) {
       FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); imin[1]--;
       FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); imax[1]++;
 
-      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
+      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE);
         imin[2]--;
-      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
+      FACE_UPDATE_OUTFLOW(which_gf_0, imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE);
         imax[2]++;
     }
 //     }
@@ -151,22 +150,22 @@ void apply_bcs_EXACT(const paramstruct *restrict params,REAL *restrict xx[3],
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      // After updating each face, adjust imin[] and imax[] 
+      // After updating each face, adjust imin[] and imax[]
       //   to reflect the newly-updated face extents.
       // Right now, we only want to update the xmin and xmax faces with the exact data.
-      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); 
+      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL);
       imin[0]--;
-      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); 
+      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL);
       imax[0]++;
 
-      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); 
+      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL);
       imin[1]--;
-      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); 
+      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL);
       imax[1]++;
 
-      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
+      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE);
       imin[2]--;
-      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
+      FACE_UPDATE_EXACT(Nxx,Nxx_plus_2NGHOSTS,xx,n,dt,out_gfs,aux_gfs,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE);
       imax[2]++;
     }
 }
@@ -178,7 +177,7 @@ void FACE_UPDATE_EXACT_StildeD(const paramstruct *restrict params,REAL *restrict
 #include "../set_Cparameters.h"
     // This is currently modified to calculate more exact boundary conditions for StildeD. Rename if it works.
     for(int i2=i2min;i2<i2max;i2++) for(int i1=i1min;i1<i1max;i1++) for(int i0=i0min;i0<i0max;i0++) {
-#include "../GiRaFFEfood_NRPy_Stilde.h" 
+#include "../GiRaFFEfood_NRPy_Stilde.h"
     }
       idx = IDX3(i0,i1,i2);
       out_gfs[IDX4ptS(STILDED0GF,idx)] = out_gfs_exact[IDX4ptS(STILDED0GF,idx)];
@@ -191,22 +190,22 @@ void apply_bcs_EXACT_StildeD(const paramstruct *restrict params,REAL *restrict x
     int imin[3] = { NGHOSTS, NGHOSTS, NGHOSTS };
     int imax[3] = { Nxx_plus_2NGHOSTS0-NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS };
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-      // After updating each face, adjust imin[] and imax[] 
+      // After updating each face, adjust imin[] and imax[]
       //   to reflect the newly-updated face extents.
       // Right now, we only want to update the xmin and xmax faces with the exact data.
-      FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL); 
+      FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0]-1,imin[0], imin[1],imax[1], imin[2],imax[2], MINFACE,NUL,NUL);
       imin[0]--;
-      FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL); 
+      FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imax[0],imax[0]+1, imin[1],imax[1], imin[2],imax[2], MAXFACE,NUL,NUL);
       imax[0]++;
 
-      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL); 
+      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imin[1]-1,imin[1], imin[2],imax[2], NUL,MINFACE,NUL);
       imin[1]--;
-      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL); 
+      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imax[1],imax[1]+1, imin[2],imax[2], NUL,MAXFACE,NUL);
       imax[1]++;
 
-      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE); 
+      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2], NUL,NUL,MINFACE);
       imin[2]--;
-      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE); 
+      //FACE_UPDATE_EXACT_StildeD(Nxx,Nxx_plus_2NGHOSTS,xx,out_gfs,out_gfs_exact,imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1, NUL,NUL,MAXFACE);
       imax[2]++;
     }
 }*/

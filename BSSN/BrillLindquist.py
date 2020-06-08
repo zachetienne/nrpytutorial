@@ -5,23 +5,23 @@
 #         zachetie **at** gmail **dot* com
 
 # # Setting up Two Black Hole Initial Data, in Curvilinear Coordinates
-# 
+#
 # ## This module sets up initial data for two black holes at rest in spherical coordinates, converts the initial data/basis to the desired CoordSystem, and then rescales all quantities according to the BSSNCurvilinear prescription.
-# 
+#
 # ### Brill-Lindquist initial data ([Brill & Lindquist, Phys. Rev. 131, 471, 1963](https://journals.aps.org/pr/abstract/10.1103/PhysRev.131.471); see also Eq. 1 of [Brandt & Br\"ugmann, arXiv:gr-qc/9711015v1](https://arxiv.org/pdf/gr-qc/9711015v1.pdf)) may be written in terms of the BSSN conformal factor and ADM extrinsic curvature as
-# 
+#
 # $$\psi = e^{\phi} = 1 + \sum_{i=1}^N \frac{m_{(i)}}{2 \left|\vec{r}_{(i)} - \vec{r}\right|};\quad K_{ij}=0.$$
-# 
+#
 # These data consist of $N$ nonspinning black holes initially at rest. This module restricts to the case of two such black holes, positioned along either the $x$ or $z$ axis. Here, we implement $N=2$.
-# 
+#
 # **Inputs for $\psi$**:
 # * The position and (bare) mass of black hole 1: $\left(x_{(1)},y_{(1)},z_{(1)}\right)$ and $m_{(1)}$, respectively
 # * The position and (bare) mass of black hole 2: $\left(x_{(2)},y_{(2)},z_{(2)}\right)$ and $m_{(2)}$, respectively
-# 
+#
 # **Additional variables needed for spacetime evolution**:
 # * Desired coordinate system
 # * Desired initial lapse $\alpha$ and shift $\beta^i$
-# 
+#
 # **Transformation to curvilinear coordinates**:
 # * Once the above variables have been set in Cartesian coordinates, we will apply the appropriate coordinate transformations and tensor rescalings ([described in the BSSN NRPy+ tutorial module](Tutorial-BSSNCurvilinear.ipynb))
 
@@ -46,8 +46,6 @@ BH2_mass = par.Cparameters("REAL", thismodule, ["BH2_mass"], 1.0)
 # ComputeADMGlobalsOnly == True will only set up the ADM global quantities.
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def BrillLindquist(ComputeADMGlobalsOnly = False):
-    global Cartxyz,gammaCartDD, KCartDD, alphaCart, betaCartU, BCartU
-    
     # Step 2: Setting up Brill-Lindquist initial data
 
     # Step 2.a: Set spatial dimension (must be 3 for BSSN)
@@ -74,11 +72,11 @@ def BrillLindquist(ComputeADMGlobalsOnly = False):
 
     if ComputeADMGlobalsOnly == True:
         return
-    
+
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian",Cartxyz, 
+        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Cartesian",Cartxyz,
                                                                     gammaCartDD,KCartDD,alphaCart,betaCartU,BCartU)
 
     import BSSN.BSSN_ID_function_string as bIDf
-    global returnfunction
-    returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
+    # Generates initial_data() C function & stores to outC_function_dict["initial_data"]
+    bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)

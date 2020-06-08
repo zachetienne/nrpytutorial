@@ -3,29 +3,37 @@ language: python
 
 matrix:
   include:
-    - name: "JUPYTER NOTEBOOK TESTS SymPy-dev Ubuntu Linux Bionic Python 3.8"
+    - name: "JUPYTER NOTEBOOK TESTS: SymPy-dev Ubuntu Linux Bionic Python 3.8.3 (Python 3 + latest *development* SymPy)"
       os: linux
       dist: bionic
-      python: 3.8.2
-      sudo: true
+      python: 3.8.3
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install mpmath jupyter matplotlib scipy
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
-    - name: "JUPYTER NOTEBOOK TESTS Ubuntu Linux Xenial CPython 2.7"
+    - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Xenial CPython 2.7 (Python 2.7 + latest stable SymPy)"
       os: linux
       dist: xenial
       python: 2.7
       before_script: pip install testfixtures
-      sudo: true
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install sympy mpmath jupyter matplotlib scipy
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
-    - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0"
+    - name: "JUPYTER NOTEBOOK TESTS: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
+      os: linux
+      dist: bionic
+      python: 2.7.18
+      install:
+        - sudo apt-get -y install texlive-latex-base pandoc colordiff
+        - pip install mpmath jupyter matplotlib scipy
+        - pip install sympy==1.2
+      script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
+    - name: "SymPy-dev Ubuntu Linux Xenial pypy3.5-6.0 (only NRPy+ UnitTesting tests with sympy-dev)"
       os: linux
       dist: xenial
       python: pypy3.5-6.0
@@ -34,7 +42,7 @@ matrix:
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
-    - name: "Ubuntu Linux Xenial pypy2.7-6.0"
+    - name: "Ubuntu Linux Xenial pypy2.7-6.0 (only pypy2.7 test)"
       os: linux
       dist: xenial
       python: pypy2.7-6.0
@@ -42,19 +50,13 @@ matrix:
         - pip install mpmath sympy testfixtures
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
-    - name: "Ubuntu Linux Xenial pypy3.5-6.0"
+    - name: "Ubuntu Linux Xenial pypy3.5-6.0 (only pypy3.5 test with latest stable SymPy)"
       os: linux
       dist: xenial
       python: pypy3.5-6.0
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
 
-    - name: "Ubuntu Linux Trusty pypy3.5"
-      os: linux
-      dist: trusty
-      python: pypy3.5
-      script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
-
-    - name: "Windows Python 3.8.2"
+    - name: "Windows Python 3.8.2 (only Windows test; note Travis considers Windows unsupported/experimental)"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: sh          # 'language: python' is an error on Travis CI Windows
       before_install:
@@ -65,11 +67,12 @@ matrix:
         - python -m pip install --upgrade pip wheel
       install:
         - pip3 install mpmath sympy
-      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
-      env: PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
+      env:
+        - PATH=/c/Python38:/c/Python38/Scripts:$PATH
+        - PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
       script: ./UnitTesting/run_NRPy_UnitTests.sh python
 
-    - name: "OS X Python 3.7"
+    - name: "OS X Python 3.7 (one of two OS X tests)"
       os: osx
       language: sh
       python: 3.7
@@ -77,78 +80,58 @@ matrix:
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     # https://docs.travis-ci.com/user/languages/python/
-    - name: "OS X, xcode 10.2 Python 3.7"
+    - name: "OS X, xcode 10.2 Python 3.7 (one of two OS X tests)"
       os: osx
       osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
       language: shell       # 'language: python' is an error on Travis CI macOS
       before_script: pip3 install mpmath sympy
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Xenial CPython 2.7"
+    - name: "Ubuntu Linux Xenial CPython 3.4.5 (earliest Python 3 version tested)"
       os: linux
-      dist: xenial
-      python: 2.7
-      before_script: pip install testfixtures
-      script: ./UnitTesting/run_NRPy_UnitTests.sh python
-
-    - name: "Ubuntu Linux Xenial CPython 3.4"
-      os: linux
-      dist: xenial
-      python: 3.4
+      dist: trusty
+      python: 3.4.5
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     # According to https://github.com/tornadoweb/tornado/blob/master/.travis.yml:
     #  3.5.2 is interesting because it's the version in ubuntu 16.04, and due to python's
     # "provisional feature" rules there are significant differences between patch
     # versions for asyncio and typing.
-    - name: "Ubuntu Linux Xenial CPython 3.5.2"
+    - name: "Ubuntu Linux Xenial CPython 3.5.2 (default Python3 version in ubuntu xenial)"
       os: linux
       dist: xenial
       python: 3.5.2
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Xenial CPython 3.7"
-      os: linux
-      dist: xenial
-      python: 3.7
-      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # Unstable at times (pip broken):
-    # - name: "Ubuntu Linux Xenial CPython 3.8-dev"
-    #   os: linux
-    #   dist: xenial
-    #   before_script: python3 -m pip install --upgrade pip mpmath sympy
-    #   python: 3.8-dev
-    #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    # Unstable at times (pip broken):
+    # Unstable at times (pip / matplotlib broken):
     # - name: "Ubuntu Linux Bionic CPython 3.9-dev"
     #   os: linux
     #   dist: bionic
     #   python: 3.9-dev
     #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    # Unstable at times (pip broken):
+    # Unstable at times (pip / matplotlib broken):
     # - name: "Ubuntu Linux Xenial CPython NIGHTLY"
     #   os: linux
     #   dist: xenial
     #   python: nightly
     #   script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Bionic Python 3.6.7"
+    - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
       os: linux
       dist: bionic
-      python: 3.6.7
+      python: 2.7.18
+      before_script: pip install sympy==1.3 mpmath testfixtures
+      script: ./UnitTesting/run_NRPy_UnitTests.sh python2
+
+    - name: "Ubuntu Linux Bionic Python 3.6.9 (default Python3 in Ubuntu 18.04)"
+      os: linux
+      dist: bionic
+      python: 3.6.9
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-    - name: "Ubuntu Linux Bionic Python 3.7.1"
+    - name: "Ubuntu Linux Bionic Python 3.8.3 (closest to NRPy+ core development infrastructure)"
       os: linux
       dist: bionic
-      python: 3.7.1
-      script: ./UnitTesting/run_NRPy_UnitTests.sh python3
-
-    - name: "Ubuntu Linux Bionic Python 3.8"
-      os: linux
-      dist: bionic
-      python: 3.8
+      python: 3.8.3
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3

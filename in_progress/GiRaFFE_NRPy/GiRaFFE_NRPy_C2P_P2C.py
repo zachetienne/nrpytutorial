@@ -1,11 +1,9 @@
-from outputC import *            # NRPy+: Core C code output module
-import finite_difference as fin  # NRPy+: Finite difference C code generation module
+from outputC import nrpyAbs      # NRPy+: Core C code output module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-import loop as lp                # NRPy+: Generate C code loops
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
-import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
 import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
 import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
 
@@ -39,7 +37,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
     Btilde2 = sp.sympify(0)
     for i in range(3):
         Btilde2 += BtildeU[i]*BtildeD[i]
-        
+
     global outStildeD
     outStildeD = StildeD
     # Then, enforce the orthogonality:
@@ -58,7 +56,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
         for j in range(3):
             Stilde2 += gammaUU[i][j]*outStildeD[i]*outStildeD[j]
 
-    # First we need to compute the factor f: 
+    # First we need to compute the factor f:
     # f = \sqrt{(1-\Gamma_{\max}^{-2}){\tilde B}^4/(16 \pi^2 \gamma {\tilde S}^2)}
     speed_limit_factor = sp.sqrt((sp.sympify(1)-GAMMA_SPEED_LIMIT**(-2.0))*Btilde2*Btilde2*sp.Rational(1,16)/\
                                  (M_PI*M_PI*GRHD.sqrtgammaDET*GRHD.sqrtgammaDET*Stilde2))
@@ -94,7 +92,7 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
             driftvU[i] = alpha*ValenciavU[i] - betaU[i]
 
         # The direct approach, used by the original GiRaFFE:
-        # v^z = -(\gamma_{xz} v^x + \gamma_{yz} v^y) / \gamma_{zz} 
+        # v^z = -(\gamma_{xz} v^x + \gamma_{yz} v^y) / \gamma_{zz}
         newdriftvU2 = -(gammaDD[0][2]*driftvU[0] + gammaDD[1][2]*driftvU[1])/gammaDD[2][2]
         # Now that we have the z component, it's time to substitute its Valencia form in.
         # Remember, we only do this if abs(z) < (k+0.01)*dz. Note that we add 0.01; this helps
@@ -104,15 +102,12 @@ def GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha):
         ValenciavU[2] = noif.coord_leq_bound(coord,bound)*(newdriftvU2+betaU[2])/alpha \
                       + noif.coord_greater_bound(coord,bound)*ValenciavU[2]
 
-import GRFFE.equations as GRFFE
-import GRHD.equations as GRHD
-
 def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     # After recalculating the 3-velocity, we need to update the poynting flux:
     # We'll reset the Valencia velocity, since this will be part of a second call to outCfunction.
 
     # First compute stress-energy tensor T4UU and T4UD:
-    
+
     GRHD.compute_sqrtgammaDET(gammaDD)
     GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
     GRFFE.compute_smallb4U_with_driftvU_for_FFE(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
@@ -123,6 +118,6 @@ def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
 
     # Compute conservative variables in terms of primitive variables
     GRHD.compute_S_tildeD(alpha, GRHD.sqrtgammaDET, GRFFE.TEM4UD)
-    
+
     global StildeD
     StildeD = GRHD.S_tildeD

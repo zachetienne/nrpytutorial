@@ -1,8 +1,7 @@
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-from outputC import *
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri               # NRPy+: Functions having to do with numerical grids
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 
 par.initialize_param(par.glb_param("char", __name__, "System_to_use", "System_II"))
 
@@ -12,7 +11,8 @@ def MaxwellCartesian_Evol():
     DIM = par.parval_from_str("grid::DIM")
 
     # Step 1: Set the finite differencing order to 4.
-    par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
+    # (not needed here)
+    # par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
 
     # Step 2: Register gridfunctions that are needed as input.
     psi = gri.register_gridfunctions("EVOL", ["psi"])
@@ -26,7 +26,7 @@ def MaxwellCartesian_Evol():
     psi_dD = ixp.declarerank1("psi_dD")
     x,y,z = gri.register_gridfunctions("AUX",["x","y","z"])
 
-    ## Step 3b: Declare the conformal metric tensor and its first 
+    ## Step 3b: Declare the conformal metric tensor and its first
     #           derivative. These are needed to find the Christoffel
     #           symbols, which we need for covariant derivatives.
     gammaDD = ixp.register_gridfunctions_for_single_rank2("AUX","gammaDD", "sym01") # The AUX or EVOL designation is *not*
@@ -34,8 +34,6 @@ def MaxwellCartesian_Evol():
     gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
     gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
 
-    gammaUU = ixp.declarerank3("gammaUU","sym01")
-    detgamma = gri.register_gridfunctions("AUX",["detgamma"])
     gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
     gammaUU_dD = ixp.declarerank3("gammaDD_dD","sym01")
 
@@ -119,7 +117,7 @@ def MaxwellCartesian_Evol():
             for k in range(DIM):
                 DivA_dD[i] += gammaUU[j][k] * AD_dcovDD[k][j][i]
                 LapAD[i]   += gammaUU[j][k] * AD_dcovDD[i][j][k]
-    
+
     global ArhsD, ErhsD, psi_rhs
     system = par.parval_from_str("System_to_use")
     if system == "System_I":
@@ -171,13 +169,13 @@ def MaxwellCartesian_Evol():
 
     else:
         print("Invalid choice of system: System_to_use must be either System_I or System_II")
-    
+
     ED_dD = ixp.declarerank2("ED_dD","nosym")
     global Cviolation
     Cviolation = gri.register_gridfunctions("AUX", ["Cviolation"])
     Cviolation = sp.sympify(0)
     for i in range(DIM):
         for j in range(DIM):
-            Cviolation += gammaUU[i][j] * ED_dD[j][i] 
+            Cviolation += gammaUU[i][j] * ED_dD[j][i]
             for b in range(DIM):
                 Cviolation -= gammaUU[i][j] * GammaUDD[b][i][j] * ED[b]

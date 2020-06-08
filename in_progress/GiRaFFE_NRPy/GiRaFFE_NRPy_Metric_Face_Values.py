@@ -5,20 +5,19 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-from outputC import *            # NRPy+: Core C code output module
+from outputC import outCfunction # NRPy+: Core C code output module
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
-global GiRaFFE_NRPy_FCVAL
 
 def GiRaFFE_NRPy_FCVAL(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
     with open(os.path.join(Ccodesdir,"interpolate_metric_gfs_to_cell_faces.h"),"w") as file:
-        file.write("""// Side note: the following values could be used for cell averaged gfs: 
+        file.write("""// Side note: the following values could be used for cell averaged gfs:
 //     am2=-1.0/12.0, am1=7.0/12.0, a0=7.0/12.0, a1=-1.0/12.0
-// However, since the metric gfs store the grid point values instead of the cell average, 
-//     the following coefficients should be used: 
+// However, since the metric gfs store the grid point values instead of the cell average,
+//     the following coefficients should be used:
 //     am2 = -1/16, am1 = 9/16, a0 = 9/16, a1 = -1/16
-// This will yield the third-order-accurate face values at m-1/2, 
+// This will yield the third-order-accurate face values at m-1/2,
 //      using values specified at {m-2,m-1,m,m+1}
 #define AM2 -0.0625
 #define AM1  0.5625
@@ -50,7 +49,7 @@ const int metric_gfs_face_list[10] = {GAMMA_FACEDD00GF,
 
 const int num_metric_gfs = 10;
 """)
-        
+
     desc = "Interpolate metric gridfunctions to cell faces"
     name = "interpolate_metric_gfs_to_cell_faces"
     interp_Cfunc = outCfunction(

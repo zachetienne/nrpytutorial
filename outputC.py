@@ -6,14 +6,21 @@
 # Authors: Zachariah B. Etienne; zachetie **at** gmail **dot* com
 #          Ken Sible; ksible **at** outlook **dot* com
 
+# Step 0.a: Define __all__, which is the complete
+#           list of symbols imported when
+#           "from outputC import *" is called.
+__all__ = ['lhrh', 'outCparams', 'nrpyAbs', 'superfast_uniq', 'check_if_string__error_if_not',
+           'outputC','parse_outCparams_string',
+           'outC_function_prototype_dict', 'outC_function_dict', 'Cfunction', 'add_to_Cfunction_dict', 'outCfunction']
+
 import loop as lp                             # NRPy+: C code loop interface
 import NRPy_param_funcs as par                # NRPy+: parameter interface
 from SIMD import expr_convert_to_SIMD_intrins # NRPy+: SymPy expression => SIMD intrinsics interface
-from SIMDExprTree import ExprTree             # NRPy+: SymPy expression tree manipulation
-from cse_helpers import *                     # NRPy+: CSE preprocessing and postprocessing
-import sympy as sp                            # Import SymPy
+from cse_helpers import cse_preprocess,cse_postprocess  # NRPy+: CSE preprocessing and postprocessing
+import sympy as sp                            # SymPy: The Python computer algebra package upon which NRPy+ depends
 import re, sys, os                            # Standard Python: regular expressions, system, and multiplatform OS funcs
 from collections import namedtuple            # Standard Python: Enable namedtuple data type
+
 lhrh = namedtuple('lhrh', 'lhs rhs')
 outCparams = namedtuple('outCparams', 'preindent includebraces declareoutputvars outCfileaccess outCverbose CSE_enable CSE_varprefix CSE_sorting CSE_preprocess SIMD_enable SIMD_find_more_subs SIMD_find_more_FMAsFMSs SIMD_debug enable_TYPE gridsuffix')
 
@@ -53,7 +60,6 @@ def superfast_uniq(seq): # Author: Dave Kirby
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 def check_if_string__error_if_not(allegedstring,stringdesc):
-    import sys
     if sys.version_info[0] == 3:
         string_types = str
     else:
@@ -126,64 +132,64 @@ def parse_outCparams_string(params):
             parnm.append(splitstring[2*i])
             value.append(splitstring[2*i+1])
 
-        for i in range(len(parnm)):
+        for i, parname in enumerate(parnm):
             # Clean the string
             if value[i] == "true":
                 value[i] = "True"
             if value[i] == "false":
                 value[i] = "False"
-            if parnm[i] == "preindent":
+            if parname == "preindent":
                 if not value[i].isdigit():
                     print("Error: preindent must be set to an integer (corresponding to the number of tab stops). ")
                     print(value[i]+" is not an integer.")
                     sys.exit(1)
                 preindent = ""
-                for i in range(int(value[i])):
+                for _j in range(int(value[i])): # _j is unused
                     preindent += "   "
-            elif parnm[i] == "includebraces":
+            elif parname == "includebraces":
                 includebraces = value[i]
-            elif parnm[i] == "declareoutputvars":
+            elif parname == "declareoutputvars":
                 declareoutputvars = value[i]
-            elif parnm[i] == "outCfileaccess":
+            elif parname == "outCfileaccess":
                 outCfileaccess = value[i]
-            elif parnm[i] == "outCverbose":
+            elif parname == "outCverbose":
                 outCverbose = value[i]
-            elif parnm[i] == "CSE_enable":
+            elif parname == "CSE_enable":
                 CSE_enable = value[i]
-            elif parnm[i] == "CSE_varprefix":
+            elif parname == "CSE_varprefix":
                 CSE_varprefix = value[i]
-            elif parnm[i] == "CSE_sorting":
+            elif parname == "CSE_sorting":
                 CSE_sorting = value[i]
-            elif parnm[i] == "CSE_preprocess":
+            elif parname == "CSE_preprocess":
                 CSE_preprocess = value[i]
-            elif parnm[i] == "SIMD_enable":
+            elif parname == "SIMD_enable":
                 SIMD_enable = value[i]
-            elif parnm[i] == "SIMD_find_more_subs":
+            elif parname == "SIMD_find_more_subs":
                 SIMD_find_more_subs = value[i]
-            elif parnm[i] == "SIMD_find_more_FMAsFMSs":
+            elif parname == "SIMD_find_more_FMAsFMSs":
                 SIMD_find_more_FMAsFMSs = value[i]
-            elif parnm[i] == "SIMD_debug":
+            elif parname == "SIMD_debug":
                 SIMD_debug = value[i]
-            elif parnm[i] == "enable_TYPE":
+            elif parname == "enable_TYPE":
                 enable_TYPE = value[i]
-            elif parnm[i] == "GoldenKernelsEnable" and value[i] == "True":
+            elif parname == "GoldenKernelsEnable" and value[i] == "True":
                 # GoldenKernelsEnable==True enables the most optimized kernels,
                 #   at the expense of ~3x longer codegen runtimes.
                 CSE_preprocess          = "True"
                 SIMD_find_more_subs     = "True"
                 SIMD_find_more_FMAsFMSs = "True"
-            elif parnm[i] == "GoldenKernelsEnable" and value[i] == "False":
+            elif parname == "GoldenKernelsEnable" and value[i] == "False":
                 pass # Do nothing; just allow user to set GoldenKernelsEnable="False".
-            elif parnm[i] == "gridsuffix":
+            elif parname == "gridsuffix":
                 gridsuffix = value[i]
             else:
-                print("Error: outputC parameter name \""+parnm[i]+"\" unrecognized.")
+                print("Error: outputC parameter name \""+parname+"\" unrecognized.")
                 sys.exit(1)
 
     sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
     sympy_major_version = int(sympy_version.split(".")[0])
     sympy_minor_version = int(sympy_version.split(".")[1])
-    if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 4):
+    if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 3):
         print('Warning: SymPy version', sympy_version, 'does not support CSE preprocessing.')
         CSE_preprocess = "False"
 
@@ -216,13 +222,11 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
     #         within the C code. For example for AVX-256, the C code should have
     #         #define REAL_SIMD_ARRAY __m256d
     if outCparams.SIMD_enable == "True":
-        if not (TYPE == "double" or TYPE == ""):
+        if TYPE not in ('double', ''):
             print("SIMD output currently only supports double precision or typeless. Sorry!")
             sys.exit(1)
         if TYPE == "double":
             TYPE = "REAL_SIMD_ARRAY"
-        else:
-            TYPE = ""
 
     # Step 2a: Apply sanity checks when either sympyexpr or
     #          output_varname_str is a list.
@@ -322,8 +326,16 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                     if q != 1: RATIONAL_decls += str(p) + '/' + str(q) + ';\n'
                     else:      RATIONAL_decls += str(p) + ';\n'
 
-        CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
-            order=outCparams.CSE_sorting))
+        sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+        sympy_major_version = int(sympy_version.split(".")[0])
+        sympy_minor_version = int(sympy_version.split(".")[1])
+        if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 3):
+            print('Warning: SymPy version', sympy_version, 'does not support CSE postprocessing.')
+            CSE_results = sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
+                                 order=outCparams.CSE_sorting)
+        else:
+            CSE_results = cse_postprocess(sp.cse(sympyexpr, sp.numbered_symbols(outCparams.CSE_varprefix + '_'), \
+                                                 order=outCparams.CSE_sorting))
 
         for commonsubexpression in CSE_results[0]:
             FULLTYPESTRING = "const " + TYPE + " "
@@ -412,13 +424,13 @@ outC_function_dict           = {}
 
 def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts="",
               rel_path_for_Cparams=os.path.join("./")):
-    if name == None or params == None or body == None:
+    if name is None or params is None or body is None: # use "is None" instead of "==None", as the former is more correct.
         print("Cfunction() error: strings must be provided for function name, parameters, and body")
         sys.exit(1)
     func_prototype = type+" "+name+"("+params+")"
 
     include_Cparams_str = ""
-    if not "DisableCparameters" in opts:
+    if "DisableCparameters" not in opts:
         if "EnableSIMD" in loopopts:
             include_Cparams_str = "#include \"" + os.path.join(rel_path_for_Cparams, "set_Cparameters-SIMD.h") + "\"\n"
         else:
@@ -438,7 +450,7 @@ def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",b
 
 def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",
                  opts="",rel_path_for_Cparams=os.path.join("./")):
-    ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
+    _ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
     if outfile == "returnstring":
         return Cfunc
     with open(outfile,"w") as file:

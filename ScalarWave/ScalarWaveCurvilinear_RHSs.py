@@ -1,11 +1,11 @@
-# Generating C code for the right-hand-side 
-#  of the scalar wave equation, in 
-#  ***curvilinear*** coordinates, using a 
+# Generating C code for the right-hand-side
+#  of the scalar wave equation, in
+#  ***curvilinear*** coordinates, using a
 #  reference-metric formalism
 #
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
-# 
+#
 # License: BSD 2-Clause
 
 # COMPLETE DOCUMENTATION (JUPYTER NOTEBOOKS):

@@ -5,7 +5,6 @@
 #         zachetie **at** gmail **dot* com
 
 # Step P1: Import needed NRPy+ core modules:
-import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
 import NRPy_param_funcs as par    # NRPy+: Parameter interface
@@ -118,8 +117,8 @@ def BSSN_basis_transform(src_basis,src_xx, dst_basis,dst_xx,
         dst_vetU[i]    =      dst_betaU[i] / rfm.ReU[i]
         dst_betU[i]    =         dst_BU[i] / rfm.ReU[i]
 
-    # Step 4.c: All BSSN tensor/vector quantities are written in terms of 
-    #           rescaled quantities and (xx0,xx1,xx2) on the DESTINATION grid. 
+    # Step 4.c: All BSSN tensor/vector quantities are written in terms of
+    #           rescaled quantities and (xx0,xx1,xx2) on the DESTINATION grid.
     #           To avoid confusion with (xx0,xx1,xx2) on the SOURCE grid,
     #           we replace (xx0,xx1,xx2) with (dst_xx0,dst_xx1,dst_xx2) here:
     for i in range(3):

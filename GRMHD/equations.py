@@ -8,7 +8,7 @@
 #         zachetie **at** gmail **dot* com
 
 # Step 1: import all needed modules from NRPy+/Python:
-from outputC import *            # NRPy+: Core C code output module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import GRHD.equations as GRHD    # NRPy+: Useful functions for general relativistic hydrodynamics
 import GRFFE.equations as GRFFE  # NRPy+: Useful functions for general relativistic force-free electrodynamics

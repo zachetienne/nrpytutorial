@@ -4,22 +4,33 @@ from sys import version_info
 
 logging.basicConfig(level='INFO')
 
-from mpmath import mp
+from mpmath import mpf, mpc, mp, pi, sqrt
 from UnitTesting.standard_constants import precision
 mp.dps = precision
 
 
 class TestFunctions(unittest.TestCase):
 
+    # The following extends the __init__() function in Python's
+    #   unittest. For more, read this:
+    # https://techoverflow.net/2020/04/21/how-to-fix-python-unittest-__init__-takes-1-positional-argument-but-2-were-given/
     def setUp(self):
+        self.calculated_dict = {}
+        self.function = ''
+        self.global_list = []
+        self.initialization_string = ''
+        self.module = ''
+        self.module_name = ''
+        self.path = ''
+        self.trusted_values_dict_entry = {}
+        self.trusted_values_dict_name = ''
+        self.variable_dict = {}
         print('')
 
     def test_calc_error(self):
 
         from UnitTesting.calc_error import calc_error
-        from mpmath import mpf, mp
         from datetime import date
-        from UnitTesting.standard_constants import precision
 
         mp.dps = precision
 
@@ -140,8 +151,8 @@ class TestFunctions(unittest.TestCase):
                    'ERROR:root:' +
                    '''
 \nVariable(s) {} in module TestModule failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####
@@ -155,7 +166,7 @@ trusted_values_dict['TestModule__globals'] = {}
                    ]
         calc_error_helper(self, message, False)
 
-        ## Broken test: FAILS WITH precision > 30 
+        ## Broken test: FAILS WITH precision > 30
         # self.calculated_dict = {'a': mpf('1.0')}
         # self.trusted_values_dict_entry = {'a': mpf('1.00000000000000010000000000000')}
         # message = ['DEBUG:root: Checking that calculated and trusted dicts contain the same variables...',
@@ -166,7 +177,7 @@ trusted_values_dict['TestModule__globals'] = {}
         #            ]
         # calc_error_helper(self, message, True)
 
-        ## Broken test: FAILS WITH precision > 30 
+        ## Broken test: FAILS WITH precision > 30
         # self.calculated_dict = {'a': mpf('0.0')}
         # self.trusted_values_dict_entry = {'a': mpf('0.0000000000000001')}
         # message = ['DEBUG:root: Checking that calculated and trusted dicts contain the same variables...',
@@ -186,8 +197,8 @@ trusted_values_dict['TestModule__globals'] = {}
                     'ERROR:root:' +
                    '''
 \nVariable(s) {} in module TestModule failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####
@@ -201,7 +212,7 @@ trusted_values_dict['TestModule__globals'] = {}
                    ]
         calc_error_helper(self, message, False)
 
-        ## Broken test: FAILS WITH precision > 30 
+        ## Broken test: FAILS WITH precision > 30
         # self.calculated_dict = {'a': mpf('0.0000000000000001')}
         # self.trusted_values_dict_entry = {'a': mpf('0.0')}
         # message = ['DEBUG:root: Checking that calculated and trusted dicts contain the same variables...',
@@ -221,8 +232,8 @@ trusted_values_dict['TestModule__globals'] = {}
                    'ERROR:root:' +
                    '''
 \nVariable(s) {} in module TestModule failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####
@@ -255,8 +266,8 @@ trusted_values_dict['TestModule__globals'] = {}
                    'ERROR:root:' +
                    '''
 \nVariable(s) {} in module TestModule failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####
@@ -280,8 +291,8 @@ trusted_values_dict['TestModule__globals'] = {}
                    'ERROR:root:' +
                    '''
 \nVariable(s) {} in module TestModule failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####
@@ -305,8 +316,8 @@ trusted_values_dict['TestModule__globals'] = {}
                    'ERROR:root:' +
                    '''
 \nVariable(s) {} in module TestModule failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####
@@ -330,8 +341,8 @@ trusted_values_dict['TestModule__globals'] = {}
                    'ERROR:root:' +
                    '''
 \nVariable(s) {} in module TestModule failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+TestModule__globals in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####
@@ -349,7 +360,6 @@ trusted_values_dict['TestModule__globals'] = {}
 
     def test_create_dict_string(self):
         from UnitTesting.create_dict_string import create_dict_string
-        from mpmath import mpf, mpc
 
         calculated_dict = {}
         self.assertEqual("{}", create_dict_string(calculated_dict))
@@ -532,7 +542,6 @@ trusted_values_dict['TestModule__globals'] = {}
 
     def test_first_time_print(self):
         from datetime import date
-        from mpmath import mpf
 
         self.module_name = 'TestModule'
         self.trusted_values_dict_name = 'TestModule__globals'
@@ -732,7 +741,6 @@ trusted_values_dict = {}
 
     def test_cse_simplify_and_evaluate_sympy_expressions(self):
         from UnitTesting.cse_simplify_and_evaluate_sympy_expressions import cse_simplify_and_evaluate_sympy_expressions
-        from mpmath import mpf, mp, pi, sqrt
         import random
         from sympy import symbols
         import hashlib

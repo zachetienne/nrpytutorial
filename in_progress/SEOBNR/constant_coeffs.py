@@ -21,7 +21,7 @@ def compute_const_coeffs(eta, gamma, a):
     # See https://arxiv.org/abs/0912.3517 Equation (5.67) and the discussion following Equation 6.9
     # as well as https://arxiv.org/pdf/1311.2544.pdf
     K = K0 + K1*eta + K2*eta*eta + K3*eta*eta*eta
-    
+
     # Define more frequently-used constants
     EtaKm1 = eta*K - 1.
     EtaKm1sq = EtaKm1*EtaKm1
@@ -37,7 +37,7 @@ def compute_const_coeffs(eta, gamma, a):
     Delta1ft = Delta1cu*Delta1
 
     Delta2 = 0.5*Delta1*(Delta1 - 4.*EtaKm1) - asq*EtaKm1sq*Delta0
-    
+
     Delta2sq = Delta2*Delta2
 
     Delta3 = -Delta1cu/3. + Delta1*Delta2 + Delta1sq*EtaKm1 - 2.*(Delta2 - EtaKm1)*EtaKm1 - asq*Delta1*EtaKm1sq

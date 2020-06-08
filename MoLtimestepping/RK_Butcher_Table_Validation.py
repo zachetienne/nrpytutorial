@@ -1,7 +1,7 @@
 # As documented in the NRPy+ tutorial module
 #   Tutorial-RK_Butcher_Table_Validation.ipynb ,
-#   this module will validate the Python dictionary 
-#   of Butcher tables. 
+#   this module will validate the Python dictionary
+#   of Butcher tables.
 
 # Authors: Brandon Clark
 #          Zachariah B. Etienne
@@ -9,13 +9,8 @@
 
 
 # Step 1: Initialize needed Python/NRPy+ modules
-import sympy as sp
-import NRPy_param_funcs as par
-import numpy as np
-from MoLtimestepping.RK_Butcher_Table_Dictionary import Butcher_dict
-import os
-import sys
-from IPython.display import Image, display
+import sympy as sp              # SymPy: The Python computer algebra package upon which NRPy+ depends
+import numpy as np              # NumPy: A numerical methods module for Python
 
 # Step 2a:  Defining the right-hand side of the ODE
 rhs_dict = {}
@@ -59,13 +54,13 @@ rhs_dict['ypsint'] = fypsint
 def Validate(Butcher_dict, Butcher_key, yn, tn, rhs_key):
     # Set needed symbolic expressions
     t, dt = sp.symbols('t dt')
-    
+
     # 1. First we solve the ODE exactly
     y = sp.Function('y')
     sol = sp.dsolve(sp.Eq(y(t).diff(t), rhs_dict[rhs_key](y(t), t)), y(t)).rhs
     constants = sp.solve([sol.subs(t,tn)-yn])
     exact = sol.subs(constants)
-    
+
     # 2. Now we solve the ODE numerically using specified Butcher table
 
     # Access the requested Butcher table
@@ -73,7 +68,7 @@ def Validate(Butcher_dict, Butcher_key, yn, tn, rhs_key):
     # Determine number of predictor-corrector steps
     L = len(Butcher)-1
     # Set a temporary array for update values
-    k = np.zeros(L, dtype=object) 
+    k = np.zeros(L, dtype=object)
     # Initialize intermediate variable
     yhat = 0
     # Initialize the updated solution
@@ -86,13 +81,13 @@ def Validate(Butcher_dict, Butcher_key, yn, tn, rhs_key):
             yhat += Butcher[i][j+1]*k[j]
             if Butcher_key == "DP8" or Butcher_key == "L6":
                 yhat = 1.0*sp.N(yhat,20) # Otherwise the adding of fractions kills performance.
-        # Determine the next corrector variable k_i using c_i Butcher table coefficients   
-        k[i] = dt*rhs_dict[rhs_key](yhat, tn + Butcher[i][0]*dt) 
+        # Determine the next corrector variable k_i using c_i Butcher table coefficients
+        k[i] = dt*rhs_dict[rhs_key](yhat, tn + Butcher[i][0]*dt)
         # Update the solution at the next iteration ynp1 using Butcher table coefficients
         ynp1 += Butcher[L][i+1]*k[i]
     # Finish determining the solution for the next iteration
     ynp1 += yn
-    
+
     # Determine the order of the RK method
     order = Butcher_dict[Butcher_key][1]+2
     # Produces Taylor series of exact solution at t=tn about t = 0 with the specified order

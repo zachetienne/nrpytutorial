@@ -40,7 +40,7 @@ def g4DD_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None):
     global g4DD
 
     # Step 1: Set gammaDD, betaU, and alpha if not already input.
-    if gammaDD==None and betaU==None and alpha==None:
+    if gammaDD is None and betaU is None and alpha is None: # Use "is None" instead of "==None", as the former is more correct.
         gammaDD,betaU,alpha = setup_ADM_quantities(inputvars)
 
     # Step 2: Compute g4DD = g_{mu nu}:
@@ -72,7 +72,7 @@ def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None, gammaUU=N
     global g4UU
 
     # Step 1: Set gammaDD, betaU, and alpha if not already input.
-    if gammaDD==None and betaU==None and alpha==None:
+    if gammaDD is None and betaU is None and alpha is None:  # Use "is None" instead of "==None", as the former is more correct.
         gammaDD,betaU,alpha = setup_ADM_quantities(inputvars)
 
     # Step 2: Compute g4UU = g_{mu nu}:
@@ -81,8 +81,8 @@ def g4UU_ito_BSSN_or_ADM(inputvars,gammaDD=None,betaU=None,alpha=None, gammaUU=N
 
     # Step 3: Construct g4UU = g^{mu nu}
     # Step 3.a: Compute gammaUU based on provided gammaDD:
-    if gammaUU==None:
-        gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    if gammaUU is None: # Use "is None" instead of "==None", as the former is more correct.
+        gammaUU, _gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaDET is unused.
 
     # Then evaluate g4UU:
     g4UU = ixp.zerorank2(DIM=4)
@@ -107,7 +107,7 @@ def BSSN_or_ADM_ito_g4DD(inputvars,g4DD=None):
 
     # Step 1: declare g4DD as symmetric rank-4 tensor:
     g4DD_is_input_into_this_function = True
-    if g4DD == None:
+    if g4DD is None: # Use "is None" instead of "==None", as the former is more correct.
         g4DD = ixp.declarerank2("g4DD", "sym01", DIM=4)
         g4DD_is_input_into_this_function = False
 
@@ -121,7 +121,7 @@ def BSSN_or_ADM_ito_g4DD(inputvars,g4DD=None):
 
     # Step 3: Compute betaU
     # Step 3.a: Compute gammaUU based on provided gammaDD
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    gammaUU, _gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaDET is unused.
 
     # Step 3.b: Use gammaUU to raise betaU
     betaU = ixp.zerorank1()

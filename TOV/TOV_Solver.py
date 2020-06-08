@@ -45,19 +45,19 @@ def TOV_Solver(eos,
                accuracy = "medium",
                integrator_type = "default",
                no_output_File = False):
-    
-    def TOV_rhs(r_Schw, y) : 
+
+    def TOV_rhs(r_Schw, y) :
     # In \tilde units
     #
         P    = y[0]
         m    = y[1]
-        nu   = y[2]
+        # nu   = y[2] # nu is not needed as input into TOV_rhs
         rbar = y[3]
 
         # Compute rho_b and eps_cold, to be used below
         # to compute rho_(total)
         rho_baryon, eps_cold = ppeos.Polytrope_EOS__compute_rhob_and_eps_cold_from_P_cold(eos,P)
-        
+
 #         with open("rhob_P_cold_and_eps_cold.dat","a+") as file:
 #             file.write(str(r_Schw).format("%.15e")+"  "+str(rho_baryon).format("%.15e")+"  "+str(P).format("%.15e")+"  "+str(eps_cold).format("%.15e")+"\n")
 
@@ -67,9 +67,9 @@ def TOV_Solver(eos,
         # .------------------------------.
         # with eps = eps_cold, for the initial data.
         rho = (1.0 + eps_cold)*rho_baryon
-        
+
 #         m = 4*math.pi/3. * rho*r_Schw**3
-        if( r_Schw < 1e-4 or m <= 0.): 
+        if( r_Schw < 1e-4 or m <= 0.):
             # From https://github.com/natj/tov/blob/master/tov.py#L33:
             # dPdr = -cgs.G*(eden + P/cgs.c**2)*(m + 4.0*pi*r**3*P/cgs.c**2)
             # dPdr = dPdr/(r*(r - 2.0*cgs.G*m/cgs.c**2))
@@ -84,7 +84,7 @@ def TOV_Solver(eos,
         return [dPdrSchw, dmdrSchw, dnudrSchw, drbardrSchw]
 
     def integrateStar( eos, P, dumpData = False ):
-        
+
         if accuracy == "medium":
             min_step_size = 1e-5
             max_step_size = 1e-2
@@ -107,12 +107,12 @@ def TOV_Solver(eos,
             integrator    = 'dop853'
         else:
             print("Unknown accuracy option: "+str(accuracy))
-            
+
         if integrator_type == "default":
             pass
         else:
             integrator = integrator_type
-        
+
         integrator = si.ode(TOV_rhs).set_integrator(integrator)#,rtol=1e-4,atol=1e-4)
 #         integrator = si.ode(TOV_rhs).set_integrator('dopri5',rtol=1e-4)
         y0 = [P, 0., 0., 0.]
@@ -127,9 +127,7 @@ def TOV_Solver(eos,
         nuArr     = []
         rbarArr   = []
 
-        nsteps = 0
-        
-        while integrator.successful() and P > 1e-19*y0[0] : 
+        while integrator.successful() and P > 1e-19*y0[0] :
             P, m, nu, rbar = integrator.integrate(r_Schw + dr_Schw)
             # Update the value of r_Schw to the latest integrated value
             r_Schw += dr_Schw
@@ -147,14 +145,14 @@ def TOV_Solver(eos,
         R_Schw = r_SchwArr[-1]
         # Must multiply integration constant to get R_iso to ensure rbar(==R_iso) continuous across TOV surface
         R_iso = rbarArr[-1]*0.5*(np.sqrt(R_Schw*(R_Schw - 2.0*M)) + R_Schw - M) / rbarArr[-1]
-            
+
         # Apply integration constant to ensure rbar is continuous across TOV surface
         for ii in range(len(rbarArr)):
             rbarArr[ii] *= 0.5*(np.sqrt(R_Schw*(R_Schw - 2.0*M)) + R_Schw - M) / rbarArr[-1]
 
         if no_output_File == True:
             return M, R_Schw, R_iso
-    
+
         nuArr_np = np.array(nuArr)
         # Rescale solution to nu so that it satisfies BC: exp(nu(R))=exp(nutilde-nu(r=R)) * (1 - 2m(R)/R)
         #   Thus, nu(R) = (nutilde - nu(r=R)) + log(1 - 2*m(R)/R)
@@ -192,28 +190,28 @@ def TOV_Solver(eos,
 
         if verbose:
             print(len(r_SchwArr_np),len(rhoArr_np),len(rho_baryonArr_np),len(PArr_np),len(mArr_np),len(exp2phiArr_np))
-            
+
         # Special thanks to Leonardo Werneck for pointing out this issue with zip()
         if sys.version_info[0] < 3:
-            np.savetxt(outfile, zip(r_SchwArr_np,rhoArr_np,rho_baryonArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np), 
+            np.savetxt(outfile, zip(r_SchwArr_np,rhoArr_np,rho_baryonArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np),
                        fmt="%.15e")
         else:
-            np.savetxt(outfile, list(zip(r_SchwArr_np,rhoArr_np,rho_baryonArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)), 
+            np.savetxt(outfile, list(zip(r_SchwArr_np,rhoArr_np,rho_baryonArr_np,PArr_np,mArr_np,exp2phiArr_np,confFactor_exp4phi_np,rbarArr_np)),
                        fmt="%.15e")
 
         return M, R_Schw, R_iso
-    
+
     # Set initial condition from rho_baryon_central
     P_initial_condition = ppeos.Polytrope_EOS__compute_P_cold_from_rhob(eos, rho_baryon_central)
-    
+
     # Integrate the initial condition
     M_TOV, R_Schw_TOV, R_iso_TOV = integrateStar(eos, P_initial_condition, True)
     if verbose:
-        print("""Just generated a TOV star with 
+        print("""Just generated a TOV star with
 * M        = %.15e ,
-* R_Schw   = %.15e , 
-* R_iso    = %.15e , 
+* R_Schw   = %.15e ,
+* R_iso    = %.15e ,
 * M/R_Schw = %.15e \n""" %(M_TOV,R_Schw_TOV,R_iso_TOV,(M_TOV / R_Schw_TOV)))
-        
+
     if return_M_RSchw_and_Riso:
         return M_TOV, R_Schw_TOV, R_iso_TOV

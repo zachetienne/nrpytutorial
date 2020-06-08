@@ -27,7 +27,7 @@ def stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(inputvars,cus
     # Step 2.a: Define gamma4DD[mu][nu] = g_{mu nu} + n_{mu} n_{nu}
     alpha = sp.symbols("alpha", real=True)
     zero = sp.sympify(0)
-    n4D = [-alpha, zero, zero, zero]
+    n4D = [sp.sympify(-1)*alpha, zero, zero, zero]
     AB4m.g4DD_ito_BSSN_or_ADM(inputvars)
 
     gamma4DD = ixp.zerorank2(DIM=4)
@@ -36,7 +36,7 @@ def stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars(inputvars,cus
             gamma4DD[mu][nu] = AB4m.g4DD[mu][nu] + n4D[mu] * n4D[nu]
 
     # Step 2.b: If expression for components of T4UU not given, declare T4UU here
-    if custom_T4UU == None:
+    if custom_T4UU is None: # Use "is None" instead of "==None", as the former is more correct.
         T4UU = ixp.declarerank2("T4UU","sym01",DIM=4)
     else:
         T4UU = custom_T4UU
@@ -134,12 +134,13 @@ def BSSN_source_terms_for_BSSN_constraints(custom_T4UU=None):
 
     # Step 4.a: Call BSSN_source_terms_ito_T4UU to get SDD, SD, S, & rho
     if custom_T4UU == "unrescaled BSSN source terms already given":
-        SDD = ixp.declarerank2("SDD", "sym01")
+        # SDD and S unused, so we ignore their return values from ixp.declarerankN() below
+        ixp.declarerank2("SDD", "sym01")
         SD = ixp.declarerank1("SD")
-        S = sp.symbols("S", real=True)
+        sp.symbols("S", real=True)
         rho = sp.symbols("rho", real=True)
     else:
-        SDD,SD,S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU)
+        _SDD,SD,_S,rho = stress_energy_source_terms_ito_T4UU_and_ADM_or_BSSN_metricvars("BSSN", custom_T4UU) #_SDD,_S unused.
     PI = par.Cparameters("REAL", thismodule, ["PI"], "3.14159265358979323846264338327950288")
 
     # Step 4.b: Add source term to the Hamiltonian constraint H

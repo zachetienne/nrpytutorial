@@ -1,28 +1,28 @@
 
-// set_bcstruct() loops from the innermost boundary 
-//      ghostzones on the cube ("which_gz==0", 
+// set_bcstruct() loops from the innermost boundary
+//      ghostzones on the cube ("which_gz==0",
 //      corresponding to the single layer of ghostzones
-//      closest to the interior data), and at each 
-//      ghostzone layer, we apply the following 5-step 
+//      closest to the interior data), and at each
+//      ghostzone layer, we apply the following 5-step
 //      algorithm:
 // Step 1: Count the number of outer and inner
-//         boundary points, store to 
+//         boundary points, store to
 //         num_ob_pts and num_ib_pts, respectively.
-// Step 2: Now that we know the number of outer 
-//         boundary points on this ghostzone layer, 
-//         allocate memory needed for storing the 
+// Step 2: Now that we know the number of outer
+//         boundary points on this ghostzone layer,
+//         allocate memory needed for storing the
 //         outer and inner boundary condition data.
-// Step 2.a: At all outer boundary ghost zones, allocate 
+// Step 2.a: At all outer boundary ghost zones, allocate
 //           memory for a single member of the outer_bc
 //           data type.
-// Step 2.b: At all inner boundary ghost zones, allocate 
+// Step 2.b: At all inner boundary ghost zones, allocate
 //           memory for a single member of the inner_bc
 //           data type.
-// Step 3: Store the number of outer and inner boundary 
+// Step 3: Store the number of outer and inner boundary
 //         points on each ghostzone layer, where e.g.,
-//         which_gz==0 corresponds to the innermost 
+//         which_gz==0 corresponds to the innermost
 //         ghostzones on the numerical domain.
-// Step 4: Store information needed for outer boundary 
+// Step 4: Store information needed for outer boundary
 //         conditions, to outer_bc_dest_pt and
 //         outer_bc_face arrays.
 // Step 5: Store information needed for inner boundary
@@ -30,7 +30,7 @@
 //         inner ghost zone maps, and parity conditions
 //         for all 10 gridfunction types.
 void set_bcstruct(const paramstruct *restrict params,
-                  gz_map *restrict bc_gz_map, 
+                  gz_map *restrict bc_gz_map,
                   parity_condition *bc_parity_conditions,
                   bc_struct *restrict bcstruct) {
 #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
@@ -44,7 +44,7 @@ void set_bcstruct(const paramstruct *restrict params,
     for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
 
     // Step 1: Count the number of outer and inner
-    //         boundary points, store to 
+    //         boundary points, store to
     //         num_ob_pts and num_ib_pts, respectively.
 #define COUNT_INNER_OR_OUTER if(bc_gz_map[IDX3S(i0,i1,i2)].i0==-1) { num_ob_pts++;} else { num_ib_pts++; }
         int num_ob_pts = 0;
@@ -56,7 +56,7 @@ void set_bcstruct(const paramstruct *restrict params,
         LOOP_REGION(imin[0],imax[0], imin[1],imax[1], imin[2]-1,imin[2]) { COUNT_INNER_OR_OUTER } imin[2]--;
         LOOP_REGION(imin[0],imax[0], imin[1],imax[1], imax[2],imax[2]+1) { COUNT_INNER_OR_OUTER } imax[2]++;
 
-        // Step 2: Now that we know the number of outer boundary points on this ghostzone 
+        // Step 2: Now that we know the number of outer boundary points on this ghostzone
         //    layer, we allocate memory needed for storing the outer and inner boundary
         //     condition data.
 
@@ -75,7 +75,7 @@ void set_bcstruct(const paramstruct *restrict params,
         // Reset imin[] and imax[], to prepare for the next step.
         for(int ii=0;ii<3;ii++) {imin[ii]++; imax[ii]--;}
 
-        // Step 4: Store information needed for outer boundary conditions, to outer_bc_dest_pt[which_gz][] 
+        // Step 4: Store information needed for outer boundary conditions, to outer_bc_dest_pt[which_gz][]
         //         and outer_bc_face[which_gz][] arrays:
 #define OB_SET(facei0,facei1,facei2) if(bc_gz_map[IDX3S(i0,i1,i2)].i0==-1) {  \
     bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i0 = i0;     \

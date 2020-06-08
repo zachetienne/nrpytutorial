@@ -7,7 +7,7 @@
 #         zachetie **at** gmail **dot* com
 
 # Step 1.a: import all needed modules from NRPy+:
-from outputC import *             # NRPy+: Core C code output module
+import NRPy_param_funcs as par    # NRPy+: parameter interface
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm    # NRPy+: Reference metric support
@@ -120,7 +120,7 @@ def ADM_in_terms_of_BSSN():
                 for l in range(DIM):
                     GammaUDD[i][j][k] += sp.Rational(1,2)*gammaUU[i][l]* \
                                     (gammaDDdD[l][j][k] + gammaDDdD[l][k][j] - gammaDDdD[j][k][l])
-                    
+
     # Step 3: Define ADM extrinsic curvature KDD and
     #         its first spatial derivatives KDDdD
     #         in terms of BSSN quantities

@@ -28,7 +28,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     #    the relevant angular directions to zero; DO NOT SET DIM TO ANYTHING BUT 3.
     # Step P1: Set spatial dimension (must be 3 for BSSN)
     DIM = 3
-    
+
     # Step P2: Copy gammaSphDD_in to gammaSphDD, KSphDD_in to KSphDD, etc.
     #    This ensures that the input arrays are not modified below;
     #    modifying them would result in unexpected effects outside
@@ -51,22 +51,21 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
         print("Error. Called Convert_Spherical_ADM_to_BSSN_curvilinear() without")
         print("       first setting up reference metric, by calling rfm.reference_metric().")
         sys.exit(1)
-    
+
     # Step 1: All input quantitiefs are in terms of r,th,ph or x,y,z. We want them in terms
     #         of xx0,xx1,xx2, so here we call sympify_integers__replace_rthph() to replace
     #         r,th,ph or x,y,z, respectively, with the appropriate functions of xx0,xx1,xx2
-    #         as defined for this particular reference metric in reference_metric.py's 
+    #         as defined for this particular reference metric in reference_metric.py's
     #         xxSph[] or xxCart[], respectively:
 
-    # Note that substitution only works when the variable is not an integer. Hence the 
+    # Note that substitution only works when the variable is not an integer. Hence the
     #         if isinstance(...,...) stuff:
     def sympify_integers__replace_rthph_or_Cartxyz(obj, rthph_or_xyz, rthph_or_xyz_of_xx):
         if isinstance(obj, int):
             return sp.sympify(obj)
-        else:
-            return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
-                subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
-                subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
+        return obj.subs(rthph_or_xyz[0], rthph_or_xyz_of_xx[0]).\
+            subs(rthph_or_xyz[1], rthph_or_xyz_of_xx[1]).\
+            subs(rthph_or_xyz[2], rthph_or_xyz_of_xx[2])
 
     r_th_ph_or_Cart_xyz_of_xx = []
     if CoordType_in == "Spherical":

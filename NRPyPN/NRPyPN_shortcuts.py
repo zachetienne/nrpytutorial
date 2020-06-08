@@ -1,12 +1,11 @@
 # As documented in the NRPyPN notebook
-# NRPyPN_shortcuts.ipynb, this Python script 
+# NRPyPN_shortcuts.ipynb, this Python script
 # provides useful shortcuts for inputting
 # post-Newtonian expressions into SymPy/NRPy+
 
 # Basic functions:
 # dot(a,b): 3-vector dot product
 # cross(a,b): 3-vector cross product
-# define_LeviCivitaSymbol_rank3_dim3(): Outputs Levi-Civita symbol in 3 dimensions
 # div(a,b): a shortcut for SymPy's sp.Rational(a,b), to declare rational numbers
 # num_eval(expr): Numerically evaluates NRPyPN expressions
 
@@ -22,8 +21,8 @@ if nrpy_dir_path not in sys.path:
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 
-# Step 1: Declare several global variables used throughout
-#         NRPyPN
+# Step 1: Declare several global variables used
+#         throughout NRPyPN
 m1,m2 = sp.symbols('m1 m2',real=True)
 S1U = ixp.declarerank1("S1U")
 S2U = ixp.declarerank1("S2U")
@@ -32,7 +31,7 @@ nU = ixp.declarerank1("nU")
 
 drdt = sp.symbols('drdt', real=True)
 Pt, Pr = sp.symbols('Pt Pr', real=True)
-# Some references use r, others use q to represent the 
+# Some references use r, others use q to represent the
 #   distance between the two point masses. This is rather
 #   confusing since q is also used to represent the
 #   mass ratio m2/m1. However, q is the canonical position
@@ -57,19 +56,7 @@ for i in range(3):
     p1U[i]     = +pU[i]
     p2U[i]     = -pU[i]
 
-# Step 2.a: Define the rank-3 version of the Levi-Civita symbol. Amongst
-#         other uses, this is needed for the construction of the approximate 
-#         quasi-Kinnersley tetrad.
-def define_LeviCivitaSymbol_rank3_dim3():
-    LeviCivitaSymbol = ixp.zerorank3()
-    for i in range(3):
-        for j in range(3):
-            for k in range(3):
-                # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
-                LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
-    return LeviCivitaSymbol
-
-# Step 2.b: Define dot and cross product of vectors
+# Step 2.a: Define dot and cross product of vectors
 def dot(vec1,vec2):
     vec1_dot_vec2 = sp.sympify(0)
     for i in range(3):
@@ -78,14 +65,14 @@ def dot(vec1,vec2):
 
 def cross(vec1,vec2):
     vec1_cross_vec2 = ixp.zerorank1()
-    LeviCivitaSymbol = define_LeviCivitaSymbol_rank3_dim3()
+    LeviCivitaSymbol = ixp.LeviCivitaSymbol_dim3_rank3()
     for i in range(3):
         for j in range(3):
             for k in range(3):
                 vec1_cross_vec2[i] += LeviCivitaSymbol[i][j][k]*vec1[j]*vec2[k]
     return vec1_cross_vec2
 
-# Step 2.c: Construct rational numbers a/b via div(a,b)
+# Step 2.b: Construct rational numbers a/b via div(a,b)
 def div(a,b):
     return sp.Rational(a,b)
 

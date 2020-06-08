@@ -3,19 +3,21 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
+import sys  # Standard Python modules for multiplatform OS-level functions
+
+import sympy as sp  # SymPy: The Python computer algebra package upon which NRPy+ depends
+
 # Step 1: Import all needed modules from NRPy+:
-import NRPy_param_funcs as par    # NRPy+: Parameter interface
-import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
-import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import grid as gri                # NRPy+: Functions having to do with numerical grids
-import reference_metric as rfm    # NRPy+: Reference metric support
-import sys                        # Standard Python modules for multiplatform OS-level functions
+import NRPy_param_funcs as par  # NRPy+: Parameter interface
+import grid as gri  # NRPy+: Functions having to do with numerical grids
+import indexedexp as ixp  # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm  # NRPy+: Reference metric support
 
 # Step 1.a: Set the coordinate system for the numerical grid
 #  DO NOT SET IN STANDALONE PYTHON MODULE
 # par.set_parval_from_str("reference_metric::CoordSystem","Spherical")
 
-# Step 1.b: Given the chosen coordinate system, set up 
+# Step 1.b: Given the chosen coordinate system, set up
 #           corresponding reference metric and needed
 #           reference metric quantities
 # The following function call sets up the reference metric
@@ -24,8 +26,8 @@ import sys                        # Standard Python modules for multiplatform OS
 #  DO NOT CALL IN STANDALONE PYTHON MODULE
 # rfm.reference_metric()
 
-# Step 1.c: Set spatial dimension (must be 3 for BSSN, as BSSN is 
-#           a 3+1-dimensional decomposition of the general 
+# Step 1.c: Set spatial dimension (must be 3 for BSSN, as BSSN is
+#           a 3+1-dimensional decomposition of the general
 #           relativistic field equations)
 #  DO NOT CALL IN STANDALONE PYTHON MODULE
 # DIM = 3
@@ -37,12 +39,13 @@ par.initialize_param(par.glb_param("char", thismodule, "EvolvedConformalFactor_c
 par.initialize_param(par.glb_param("bool", thismodule, "detgbarOverdetghat_equals_one", "True"))
 par.initialize_param(par.glb_param("bool", thismodule, "LeaveRicciSymbolic", "False"))
 
+
 def declare_BSSN_gridfunctions_if_not_declared_already():
     # Step 2: Register all needed BSSN gridfunctions.
 
     # Declare as globals all variables that may be
     # used outside this function
-    global hDD,aDD,lambdaU,vetU,betU,trK,cf,alpha
+    global hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha
 
     #   Check to see if this function has already been called.
     #   If so, do not register the gridfunctions again!
@@ -68,16 +71,16 @@ def declare_BSSN_gridfunctions_if_not_declared_already():
 
     return hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha
 
+
 # Step 3: Define all basic conformal BSSN tensors
 #        gammabarDD,AbarDD,LambdabarU,betaU,BU
 #        in terms of BSSN gridfunctions.
 def BSSN_basic_tensors():
-
     # Step 3.a: Declare as globals all variables that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global gammabarDD,AbarDD,LambdabarU,betaU,BU
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    global gammabarDD, AbarDD, LambdabarU, betaU, BU
+    hDD, aDD, lambdaU, vetU, betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already()  # _trK,_cf,_alpha unused.
     DIM = 3
 
     # Step 3.a.i: gammabarDD and AbarDD:
@@ -99,6 +102,7 @@ def BSSN_basic_tensors():
         betaU[i] = vetU[i] * rfm.ReU[i]
         BU[i] = betU[i] * rfm.ReU[i]
 
+
 # Step 4: gammabarUU and spatial derivatives of gammabarDD,
 #         including GammabarUDD
 def gammabar__inverse_and_derivs():
@@ -106,7 +110,7 @@ def gammabar__inverse_and_derivs():
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
     global gammabarUU, gammabarDD_dD, gammabarDD_dupD, gammabarDD_dDD, GammabarUDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    hDD, _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already()  # _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
     # This function needs gammabarDD, defined in BSSN_basic_tensors()
     BSSN_basic_tensors()
@@ -159,13 +163,15 @@ def gammabar__inverse_and_derivs():
                     GammabarUDD[i][k][l] += sp.Rational(1, 2) * gammabarUU[i][m] * \
                                             (gammabarDD_dD[m][k][l] + gammabarDD_dD[m][l][k] - gammabarDD_dD[k][l][m])
 
+
 # Step 5: det(gammabarDD) and its derivatives
 def detgammabar_and_derivs():
     # Step 5.a: Declare as globals all expressions that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global detgammabar,detgammabar_dD,detgammabar_dDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    global detgammabar, detgammabar_dD, detgammabar_dDD
+    # Ignore return values of declare_BSSN_gridfunctions_if_not_declared_already() here, as they are unused
+    declare_BSSN_gridfunctions_if_not_declared_already()
     DIM = 3
 
     detgbarOverdetghat = sp.sympify(1)
@@ -196,6 +202,7 @@ def detgammabar_and_derivs():
                                     detgbarOverdetghat_dD[j] * rfm.detgammahatdD[i] + \
                                     detgbarOverdetghat * rfm.detgammahatdDD[i][j]
 
+
 # Step 6: Quantities related to conformal traceless
 #         extrinsic curvature AbarDD:
 #         AbarUU, AbarUD, and trAbar
@@ -203,15 +210,14 @@ def AbarUU_AbarUD_trAbar_AbarDD_dD():
     # Step 6.a: Declare as globals all expressions that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global AbarUU,AbarUD,trAbar,AbarDD_dD,AbarDD_dupD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    global AbarUU, AbarUD, trAbar, AbarDD_dD, AbarDD_dupD
+    _hDD, aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already()  # _hDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
 
     # Define AbarDD and gammabarDD in terms of BSSN gridfunctions
     BSSN_basic_tensors()
     # Define gammabarUU in terms of BSSN gridfunctions
     gammabar__inverse_and_derivs()
-
 
     # Step 6.a.i: Compute Abar^{ij} in terms of Abar_{ij} and gammabar^{ij}
     AbarUU = ixp.zerorank2()
@@ -236,17 +242,18 @@ def AbarUU_AbarUD_trAbar_AbarDD_dD():
         for j in range(DIM):
             # Abar^k_k = gammabar^{kj} Abar_{jk}
             trAbar += gammabarUU[k][j] * AbarDD[j][k]
-            
+
     # Step 6.a.iv: Compute Abar_{ij,k}
     AbarDD_dD = ixp.zerorank3()
     AbarDD_dupD = ixp.zerorank3()
-    aDD_dD   = ixp.declarerank3("aDD_dD"  ,"sym01")
-    aDD_dupD = ixp.declarerank3("aDD_dupD","sym01")
+    aDD_dD = ixp.declarerank3("aDD_dD", "sym01")
+    aDD_dupD = ixp.declarerank3("aDD_dupD", "sym01")
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                AbarDD_dupD[i][j][k] = rfm.ReDDdD[i][j][k]*aDD[i][j] + rfm.ReDD[i][j]*aDD_dupD[i][j][k]
-                AbarDD_dD[i][j][k]   = rfm.ReDDdD[i][j][k]*aDD[i][j] + rfm.ReDD[i][j]*aDD_dD[  i][j][k]
+                AbarDD_dupD[i][j][k] = rfm.ReDDdD[i][j][k] * aDD[i][j] + rfm.ReDD[i][j] * aDD_dupD[i][j][k]
+                AbarDD_dD[i][j][k] = rfm.ReDDdD[i][j][k] * aDD[i][j] + rfm.ReDD[i][j] * aDD_dD[i][j][k]
+
 
 # Step 7: The conformal ("barred") Ricci tensor RbarDD
 #         and associated quantities
@@ -254,8 +261,8 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
     # Step 7.a: Declare as globals all expressions that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global RbarDD,DGammaUDD,gammabarDD_dHatD,DGammaU
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    global RbarDD, DGammaUDD, gammabarDD_dHatD, DGammaU
+    hDD, _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already()  # _aDD, _lambdaU, _vetU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
     # GammabarUDD is used below, defined in
     #    gammabar__inverse_and_derivs()
@@ -342,9 +349,9 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
             LambarU_dHatD[k][j] = lambdaU_dD[k][j] * rfm.ReU[k] + lambdaU[k] * rfm.ReUdD[k][j]
             for m in range(DIM):
                 LambarU_dHatD[k][j] += rfm.GammahatUDD[k][m][j] * lambdaU[m] * rfm.ReU[m]
-                
-    # Step 7.c: Conformal Ricci tensor, part 3: The \Delta^{k} \Delta_{(i j) k}  
-    #           + \bar{\gamma}^{k l}*(2 \Delta_{k(i}^{m} \Delta_{j) m l} 
+
+    # Step 7.c: Conformal Ricci tensor, part 3: The \Delta^{k} \Delta_{(i j) k}
+    #           + \bar{\gamma}^{k l}*(2 \Delta_{k(i}^{m} \Delta_{j) m l}
     #           + \Delta_{i k}^{m} \Delta_{m j l}) terms
 
     # Step 7.c.i: Define \Delta^i_{jk} = \bar{\Gamma}^i_{jk} - \hat{\Gamma}^i_{jk} = DGammaUDD[i][j][k]
@@ -369,12 +376,12 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
                 for m in range(DIM):
                     DGammaDDD[i][j][k] += gammabarDD[i][m] * DGammaUDD[m][j][k]
 
-    if par.parval_from_str(thismodule+"::LeaveRicciSymbolic") == "True":
+    if par.parval_from_str(thismodule + "::LeaveRicciSymbolic") == "True":
         for i in range(len(gri.glb_gridfcs_list)):
             if "RbarDD00" in gri.glb_gridfcs_list[i].name:
                 return
 
-        RbarDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","RbarDD","sym01")
+        RbarDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "RbarDD", "sym01")
         return
 
     # Step 7.d: Summing the terms and defining \bar{R}_{ij}
@@ -394,8 +401,8 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
     for i in range(DIM):
         for j in range(DIM):
             for k in range(DIM):
-                RbarDD[i][j] += sp.Rational(1, 2) * ( gammabarDD[k][i] * LambarU_dHatD[k][j] +
-                                                      gammabarDD[k][j] * LambarU_dHatD[k][i]  )
+                RbarDD[i][j] += sp.Rational(1, 2) * (gammabarDD[k][i] * LambarU_dHatD[k][j] +
+                                                     gammabarDD[k][j] * LambarU_dHatD[k][i])
 
     # Step 7.d.iii: Add the remaining term to RbarDD:
     #      Rbar_{ij} += \Delta^{k} \Delta_{(i j) k} = 1/2 \Delta^{k} (\Delta_{i j k} + \Delta_{j i k})
@@ -417,6 +424,7 @@ def RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU():
                                                             DGammaUDD[m][k][j] * DGammaDDD[i][m][l] +
                                                             DGammaUDD[m][i][k] * DGammaDDD[m][j][l])
 
+
 # Step 8: The unrescaled shift vector betaU spatial derivatives:
 #         betaUdD & betaUdDD, written in terms of the
 #         rescaled shift vector vetU
@@ -424,8 +432,8 @@ def betaU_derivs():
     # Step 8.i: Declare as globals all expressions that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global betaU_dD,betaU_dupD,betaU_dDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    global betaU_dD, betaU_dupD, betaU_dDD
+    _hDD, _aDD, _lambdaU, vetU, _betU, _trK, _cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already()  # _hDD, _aDD, _lambdaU, _betU, _trK, _cf, _alpha unused.
     DIM = 3
 
     # Step 8.ii: Compute the unrescaled shift vector beta^i = ReU[i]*vet^i
@@ -444,6 +452,7 @@ def betaU_derivs():
                 betaU_dDD[i][j][k] = vetU_dDD[i][j][k] * rfm.ReU[i] + vetU_dD[i][j] * rfm.ReUdD[i][k] + \
                                      vetU_dD[i][k] * rfm.ReUdD[i][j] + vetU[i] * rfm.ReUdDD[i][j][k]
 
+
 # Step 9: Standard BSSN conformal factor phi,
 #         and its partial and covariant derivatives,
 #         all in terms of BSSN gridfunctions like cf
@@ -451,8 +460,8 @@ def phi_and_derivs():
     # Step 9.a: Declare as globals all expressions that may be used
     #           outside this function, declare BSSN gridfunctions
     #           if not defined already, and set DIM=3.
-    global phi_dD,phi_dupD,phi_dDD,exp_m4phi,phi_dBarD,phi_dBarDD
-    hDD, aDD, lambdaU, vetU, betU, trK, cf, alpha = declare_BSSN_gridfunctions_if_not_declared_already()
+    global phi_dD, phi_dupD, phi_dDD, exp_m4phi, phi_dBarD, phi_dBarDD
+    _hDD, _aDD, _lambdaU, _vetU, _betU, _trK, cf, _alpha = declare_BSSN_gridfunctions_if_not_declared_already()  # hDD, _aDD, _lambdaU, _vetU, _betU, _trK, _alpha unused.
     DIM = 3
 
     # GammabarUDD is used below, defined in
@@ -508,8 +517,9 @@ def phi_and_derivs():
 
     # Step 9.a.v: Error out if unsupported EvolvedConformalFactor_cf choice is made:
     cf_choice = par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf")
-    if not (cf_choice == "phi" or cf_choice == "W" or cf_choice == "chi"):
-        print("Error: EvolvedConformalFactor_cf == " + par.parval_from_str("BSSN.BSSN_quantities::EvolvedConformalFactor_cf") + " unsupported!")
+    if cf_choice not in ('phi', 'W', 'chi'):
+        print("Error: EvolvedConformalFactor_cf == " + par.parval_from_str(
+            "BSSN.BSSN_quantities::EvolvedConformalFactor_cf") + " unsupported!")
         sys.exit(1)
 
     # Step 9.b: Define phi_dBarD = phi_dD (since phi is a scalar) and phi_dBarDD (covariant derivative)

@@ -1,11 +1,11 @@
-# indexedexp.py: functions related to indexed expressions, 
+# indexedexp.py: functions related to indexed expressions,
 # including e.g., tensors and pseudotensors:
 
 # Step 1: Load needed modules
-import NRPy_param_funcs as par
-import grid as gri
-import sympy as sp
-import sys
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import grid as gri               # NRPy+: Functions having to do with numerical grids
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
+import sys                       # Standard Python module for multiplatform OS-level functions
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
@@ -48,11 +48,9 @@ def apply_symmetry_condition_to_derivatives(IDX_OBJ):
             sys.exit(1)
 
     def does_IDXOBJ_perform_derivative_across_symmetry_axis(idxobj_str):
-        returnval = False
         if "_d" in idxobj_str:
             # First we find the order of the derivative:
             deriv_order = 0
-            underscore_position = -1000
             for i in range(len(idxobj_str)-1):
                 if idxobj_str[i] == "_" and idxobj_str[i+1]=="d":
                     # The order of the derivative is given by the number of D's in a row after the _d:
@@ -105,8 +103,8 @@ def declarerank1(objname, DIM=-1):
 def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     # Step 0: Verify the gridfunction basename is valid:
     gri.verify_gridfunction_basename_is_valid(gf_basename)
-    
-    # Step 1: Declare a list of SymPy variables, 
+
+    # Step 1: Declare a list of SymPy variables,
     #         where IDX_OBJ_TMP[i] = gf_basename+str(i)
     IDX_OBJ_TMP = declarerank1(gf_basename, DIM)
 
@@ -144,7 +142,7 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
     # Step 0: Verify the gridfunction basename is valid:
     gri.verify_gridfunction_basename_is_valid(gf_basename)
 
-    # Step 1: Declare a list of lists of SymPy variables, 
+    # Step 1: Declare a list of lists of SymPy variables,
     #         where IDX_OBJ_TMP[i][j] = gf_basename+str(i)+str(j)
     IDX_OBJ_TMP = declarerank2(gf_basename,symmetry_option, DIM)
 
@@ -152,7 +150,7 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
     #         not to store duplicates due to rank-2 symmetries.
     if DIM==-1:
         DIM = par.parval_from_str("DIM")
-    # Register only unique gridfunctions. Otherwise 
+    # Register only unique gridfunctions. Otherwise
     # rank-2 symmetries might result in duplicates
     gf_list = []
     for i in range(DIM):
@@ -181,7 +179,7 @@ def declarerank3(objname, symmetry_option, DIM=-1):
                 if symmetry_option == "sym12":
                     if k < j:
                         IDX_OBJ_TMP[i][j][k] = IDX_OBJ_TMP[i][k][j]
-                if not (symmetry_option == "sym01" or symmetry_option == "sym12" or symmetry_option == "nosym"):
+                if symmetry_option not in ('sym01', 'sym12', 'nosym'):
                     print("Error: symmetry option " + symmetry_option + " unsupported.")
                     sys.exit(1)
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
@@ -195,16 +193,16 @@ def declarerank4(objname, symmetry_option, DIM=-1):
             for k in range(DIM):
                 for l in range(DIM):
                     IDX_OBJ_TMP[i][j][k][l] = sp.sympify(objname + str(i) + str(j) + str(k) + str(l))
-                    if symmetry_option == "sym01" or symmetry_option == "sym01_sym23":
+                    if symmetry_option in ('sym01', 'sym01_sym23'):
                         if(j < i):
                             IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[j][i][k][l]
                     if symmetry_option == "sym12":
                         if(k < j):
                             IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[i][k][j][l]
-                    if symmetry_option == "sym23" or symmetry_option == "sym01_sym23":
+                    if symmetry_option in ('sym23', 'sym01_sym23'):
                         if(l < k):
                             IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[i][j][l][k]
-                    if not (symmetry_option=="sym01" or symmetry_option=="sym23" or symmetry_option=="sym01_sym23" or symmetry_option=="none"):
+                    if symmetry_option not in ('sym01', 'sym23', 'sym01_sym23', 'nosym'):
                         print("Error: symmetry option "+symmetry_option+" unsupported.")
                         sys.exit(1)
     return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
@@ -335,3 +333,36 @@ def generic_matrix_inverter4x4(a):
             outINV[mu][nu] /= outDET
 
     return outINV, outDET
+
+# Define the rank-3 version of the Levi-Civita symbol.
+def LeviCivitaSymbol_dim3_rank3():
+    LeviCivitaSymbol = zerorank3(DIM=3)
+
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
+                LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
+    return LeviCivitaSymbol
+
+# Define the UUU rank-3 version of the Levi-Civita *tensor*; UUU divides by sqrtgammaDET
+def LeviCivitaTensorUUU_dim3_rank3(sqrtgammaDET):
+    # Here, we import the Levi-Civita tensor and compute the tensor with upper indices
+    LeviCivitaSymbolDDD = LeviCivitaSymbol_dim3_rank3()
+    LeviCivitaTensorUUU = zerorank3(DIM=3)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sqrtgammaDET
+    return LeviCivitaTensorUUU
+
+# Define the DDD rank-3 version of the Levi-Civita *tensor*; DDD multiplies by sqrtgammaDET
+def LeviCivitaTensorDDD_dim3_rank3(sqrtgammaDET):
+    # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
+    LeviCivitaSymbolDDD = LeviCivitaSymbol_dim3_rank3()
+    LeviCivitaTensorDDD = zerorank3(DIM=3)
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                LeviCivitaTensorDDD[i][j][k] = LeviCivitaSymbolDDD[i][j][k] * sqrtgammaDET
+    return LeviCivitaTensorDDD

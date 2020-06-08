@@ -59,14 +59,17 @@ for WhichPart in ["BSSN_RHSs","Ricci","BSSN_constraints","detgammabar_constraint
             if enable_stress_energy == False:
                 ThornName = "BaikalVacuum"
             paramstr = "WhichPart="+WhichPart+","
-            paramstr+= "WhichParamSet="+str(WhichParamSet)+","
             paramstr+= "ThornName="+ThornName+","
             paramstr+= "FD_order="+str(FD_order)+","
             paramstr+= "LapseCondition="+LapseCondition+","
             paramstr+= "ShiftCondition="+ShiftCondition+","
             paramstr+= "enable_stress_energy_source_terms="+str(enable_stress_energy)
-            paramslist.append(paramstr)
-            WhichParamSet = WhichParamSet + 1
+            if (WhichPart != "detgammabar_constraint") \
+               or (WhichPart == "detgammabar_constraint" and FD_order==4):
+                # Do not output detgammabar_constraint code more than once for each thorn, as
+                #    it does not depend on FD_order
+                paramslist.append(paramstr)
+                WhichParamSet = WhichParamSet + 1
 
 paramslist.sort() # Sort the list alphabetically.
 ###############################
@@ -80,16 +83,22 @@ if nrpy_dir_path not in sys.path:
 
 # Create all output directories if they do not yet exist
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
-import shutil                    # Standard Python module for multiplatform OS-level functions
 for ThornName in ["Baikal","BaikalVacuum"]:
     outrootdir = ThornName
     cmd.mkdir(os.path.join(outrootdir))
     outdir = os.path.join(outrootdir,"src") # Main C code output directory
 
-    # Copy SIMD/SIMD_intrinsics.h to $outdir/SIMD/SIMD_intrinsics.h
+    # Copy SIMD/SIMD_intrinsics.h to $outdir/SIMD/SIMD_intrinsics.h, replacing
+    #   the line "#define REAL_SIMD_ARRAY REAL" with "#define REAL_SIMD_ARRAY CCTK_REAL"
+    #   (since REAL is undefined in the ETK, but CCTK_REAL takes its place)
     cmd.mkdir(os.path.join(outdir,"SIMD"))
-    shutil.copy(os.path.join(nrpy_dir_path,"SIMD/")+"SIMD_intrinsics.h",os.path.join(outdir,"SIMD/"))
+    import fileinput
+    with fileinput.FileInput(os.path.join(nrpy_dir_path,"SIMD","SIMD_intrinsics.h")) as infile:
+        with open(os.path.join(outdir,"SIMD","SIMD_intrinsics.h"),"w") as outfile:
+            for line in infile:
+                outfile.write(line.replace("#define REAL_SIMD_ARRAY REAL", "#define REAL_SIMD_ARRAY CCTK_REAL"))
 
+    # Create directory for rfm_files output
     cmd.mkdir(os.path.join(outdir,"rfm_files"))
 
 # Start parallel C code generation (codegen)
@@ -117,7 +126,7 @@ if __name__ == "__main__":
         def master_func(i):
             import BaikalETK.BaikalETK_C_kernels_codegen as BCk
             return BCk.BaikalETK_C_kernels_codegen_onepart(params=paramslist[i])
-        
+
         # Step 3.d.iv: Evaluate list of functions in parallel if possible;
         #           otherwise fallback to serial evaluation:
         pool = multiprocessing.Pool() #processes=len(paramslist))
@@ -258,7 +267,7 @@ for enable_stress_energy_source_terms in [True,False]:
     ThornName="Baikal"
     if enable_stress_energy_source_terms==False:
         ThornName="BaikalVacuum"
-    cclgen.output_param_ccl(ThornName,enable_stress_energy_source_terms)
+    cclgen.output_param_ccl(ThornName)
     cclgen.output_interface_ccl(ThornName,enable_stress_energy_source_terms)
     cclgen.output_schedule_ccl(ThornName,enable_stress_energy_source_terms)
 ###############################

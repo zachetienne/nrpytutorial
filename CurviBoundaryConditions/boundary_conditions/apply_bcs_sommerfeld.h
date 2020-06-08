@@ -1,13 +1,13 @@
-//          Boundary condtion driver routine: Apply BCs to all 
-//          boundary faces of the 3D numerical domain, filling in the 
+//          Boundary condtion driver routine: Apply BCs to all
+//          boundary faces of the 3D numerical domain, filling in the
 //          outer boundary ghost zone layers, starting with the innermost
 //          layer and working outward.
 
 #include "sommerfeld_params.h"
 #include <string.h>
 
-void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3], 
-                          const bc_struct *restrict bcstruct, const int NUM_GFS, 
+void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3],
+                          const bc_struct *restrict bcstruct, const int NUM_GFS,
                           const int8_t *restrict gfs_parity, REAL *restrict gfs,
                           REAL *restrict rhs_gfs) {
 
@@ -17,11 +17,11 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
           REAL var_at_infinity = evolgf_at_inf[which_gf];
           REAL radpower = evolgf_radpower[which_gf];
           REAL char_speed = evolgf_speed[which_gf];
-            
+
         #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
-                                                 * accounting for the relative path */   
+                                                 * accounting for the relative path */
             for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-                for(int pt=0;pt<bcstruct->num_ob_gz_pts[which_gz];pt++) {                
+                for(int pt=0;pt<bcstruct->num_ob_gz_pts[which_gz];pt++) {
                     int i0 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i0;
                     int i1 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i1;
                     int i2 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i2;
@@ -58,7 +58,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                       dfdy = FACE1PARITY*(-3*gfs[IDX4S(which_gf,i0,i1              ,i2)]
                                           +4*gfs[IDX4S(which_gf,i0,i1+1*FACE1PARITY,i2)]
                                           -1*gfs[IDX4S(which_gf,i0,i1+2*FACE1PARITY,i2)])*invdx1*0.5;
-                   
+
                     // Not on a +y or -y face, using centered difference:
                     } else {
                         dfdy = (gfs[IDX4S(which_gf,i0,i1+1,i2)]-gfs[IDX4S(which_gf,i0,i1-1,i2)])*invdx1*0.5;
@@ -72,24 +72,24 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                       dfdz = FACE2PARITY*(-3*gfs[IDX4S(which_gf,i0,i1,i2              )]
                                           +4*gfs[IDX4S(which_gf,i0,i1,i2+1*FACE2PARITY)]
                                          -1*gfs[IDX4S(which_gf,i0,i1,i2+2*FACE2PARITY)])*invdx2*0.5;
-                      
-                      // Not on a +z or -z face, using centered difference:                   
+
+                      // Not on a +z or -z face, using centered difference:
                     } else {
                         dfdz = (gfs[IDX4S(which_gf,i0,i1,i2+1)]-gfs[IDX4S(which_gf,i0,i1,i2-1)])*invdx2*0.5;
-                    } 
+                    }
 
                     REAL invr = 1./sqrt(xx0*xx0 + xx1*xx1 + xx2*xx2);
                     REAL source_rhs = -invr*char_speed*(xx0*dfdx + xx1*dfdy + xx2*dfdz + gfs[IDX4S(which_gf,i0,i1,i2)] - var_at_infinity);
                     rhs_gfs[IDX4S(which_gf,i0,i1,i2)] = source_rhs;
 
-                    /************* For radial falloff and the extrapolated h'(t) term *************/   
+                    /************* For radial falloff and the extrapolated h'(t) term *************/
                     if (radpower > 0) {
 
                       // Move one point away from gz point to compare pure advection to df/dt|interior
                       int ip0 = i0+FACEX0;
                       int ip1 = i1+FACEX1;
                       int ip2 = i2+FACEX2;
-                      
+
                       REAL xx0 = xx[0][ip0];
                       REAL xx1 = xx[1][ip1];
                       REAL xx2 = xx[2][ip2];
@@ -119,7 +119,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                         dfdy = FACE1PARITY*(-3*gfs[IDX4S(which_gf,ip0,ip1              ,ip2)]
                                             +4*gfs[IDX4S(which_gf,ip0,ip1+1*FACE1PARITY,ip2)]
                                             -1*gfs[IDX4S(which_gf,ip0,ip1+2*FACE1PARITY,ip2)])*invdx1*0.5;
-                        
+
                         // Not on a +y or -y face, using centered difference:
                       } else {
                           dfdy = (gfs[IDX4S(which_gf,ip0,ip1+1,ip2)]-gfs[IDX4S(which_gf,ip0,ip1-1,ip2)])*invdx1*0.5;
@@ -133,18 +133,18 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                         dfdz = FACE2PARITY*(-3*gfs[IDX4S(which_gf,ip0,ip1,ip2              )]
                                             +4*gfs[IDX4S(which_gf,ip0,ip1,ip2+1*FACE2PARITY)]
                                             -1*gfs[IDX4S(which_gf,ip0,ip1,ip2+2*FACE2PARITY)])*invdx2*0.5;
-                        
+
                         // Not on a +z or -z face, using centered difference:
                       } else {
                           dfdz = (gfs[IDX4S(which_gf,ip0,ip1,ip2+1)]-gfs[IDX4S(which_gf,ip0,ip1,ip2-1)])*invdx2*0.5;
-                      } 
+                      }
 
                       REAL rp = sqrt(xx0*xx0 + xx1*xx1 + xx2*xx2);
                       REAL invrp = 1./rp;
 
                       // Pure advection
                       REAL extrap_rhs = invrp*char_speed*(xx0*dfdx + xx1*dfdy + xx2*dfdz + gfs[IDX4S(which_gf,ip0,ip1,ip2)] - var_at_infinity);
-                      
+
                       // Take difference between pure advection and df/dt|interior
                       REAL aux = rhs_gfs[IDX4S(which_gf,ip0,ip1,ip2)] + extrap_rhs;
 
@@ -163,21 +163,21 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                 const int i2src  = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i2;
                 const int8_t *prty= bcstruct->inner[which_gz][pt].parity;
 //                printf("%d\n",bcstruct->inner_bc_parity[which_gz][pt].parity[gfs_parity[which_gf]]);
-                gfs[IDX4S(which_gf,i0dest,i1dest,i2dest)] = 
+                gfs[IDX4S(which_gf,i0dest,i1dest,i2dest)] =
                         bcstruct->inner[which_gz][pt].parity[gfs_parity[which_gf]] * gfs[IDX4S(which_gf, i0src,i1src,i2src)];
             }// END for(int pt=0;pt<num_ib_gz_pts[which_gz];pt++)
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     } // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
-  }// END if coord = Cartesian  
+  }// END if coord = Cartesian
  /* else {
     #pragma omp parallel for
         for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
           REAL var_at_infinity = evolgf_at_inf[which_gf];
           REAL radpower = evolgf_radpower[which_gf];
           REAL char_speed = evolgf_speed[which_gf];
-              
+
             for(int which_gz = 0; which_gz < NGHOSTS; which_gz++) {
-                for(int pt=0;pt<bcstruct->num_ob_gz_pts[which_gz];pt++) {                
+                for(int pt=0;pt<bcstruct->num_ob_gz_pts[which_gz];pt++) {
                     int i0 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i0;
                     int i1 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i1;
                     int i2 = bcstruct->outer[which_gz][pt].outer_bc_dest_pt.i2;
@@ -196,11 +196,11 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                     REAL source_rhs = -char_speed*(dfdr + invr*(gfs[IDX4S(which_gf,i0,i1,i2)] - var_at_infinity));
                     rhs_gfs[IDX4S(which_gf,i0,i1,i2)] = source_rhs;
 
-                     /////////For radial falloff and the extrapolated h'(t) term////////   
+                     /////////For radial falloff and the extrapolated h'(t) term////////
                     if (radpower > 0) {
 
                       int ip0 = i0+1;
-                      
+
                       REAL invrp = 1./(xx[0][ip0]);
                       REAL dfdr = 0.;
 
@@ -208,7 +208,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                               +4*gfs[IDX4S(which_gf,ip0+1,i1,i2)]
                               -1*gfs[IDX4S(which_gf,ip0+2,i1,i2)])*invdx0*0.5;
 
-                      
+
                       REAL extrap_rhs = char_speed*(dfdr + invrp*(gfs[IDX4S(which_gf,ip0,i1,i2)] - var_at_infinity));
                       REAL aux = rhs_gfs[IDX4S(which_gf,ip0,i1,i2)] + extrap_rhs;
                       rhs_gfs[IDX4S(which_gf,i0,i1,i2)] += aux*pow(xx[0][ip0]*invr,radpower);
@@ -224,7 +224,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params,REAL *restrict xx[3
                 const int i2src  = bcstruct->inner[which_gz][pt].inner_bc_src_pt.i2;
                 const int8_t *prty= bcstruct->inner[which_gz][pt].parity;
 //                printf("%d\n",bcstruct->inner_bc_parity[which_gz][pt].parity[gfs_parity[which_gf]]);
-                gfs[IDX4S(which_gf,i0dest,i1dest,i2dest)] = 
+                gfs[IDX4S(which_gf,i0dest,i1dest,i2dest)] =
                         bcstruct->inner[which_gz][pt].parity[gfs_parity[which_gf]] * gfs[IDX4S(which_gf, i0src,i1src,i2src)];
             }// END for(int pt=0;pt<num_ib_gz_pts[which_gz];pt++)
         } // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)

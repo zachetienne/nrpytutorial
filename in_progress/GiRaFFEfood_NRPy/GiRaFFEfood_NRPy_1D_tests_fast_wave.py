@@ -6,12 +6,9 @@ if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
 # Step 0.a: Import the NRPy+ core modules and set the reference metric to Cartesian
-from outputC import *            # NRPy+: Core C code output module
-import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
-import grid as gri               # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import reference_metric as rfm   # NRPy+: Reference metric support
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
@@ -32,8 +29,8 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
 
     # A_x = 0, A_y = 0
     # A_z = y+ (-x-0.0075) if x <= -0.1
-    #          (0.75x^2 - 0.85x) if -0.1 < x <= 0.1 
-    #          (-0.7x-0.0075) if x > 0.1 
+    #          (0.75x^2 - 0.85x) if -0.1 < x <= 0.1
+    #          (-0.7x-0.0075) if x > 0.1
 
     Azleft = y - x - sp.Rational(75,10000)
     Azcenter = y + sp.Rational(75,100)*x*x - sp.Rational(85,100)*x
@@ -44,7 +41,7 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
     AD[2] = noif.coord_leq_bound(x,-bound)*Azleft\
            +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Azcenter\
            +noif.coord_greater_bound(x,bound)*Azright
-    
+
     # B^x(0,x) = 1.0
     # B^y(0,x) = 1.0 if x <= -0.1
     #            1.0-1.5(x+0.1) if -0.1 < x <= 0.1
@@ -61,28 +58,14 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
             +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Bycenter\
             +noif.coord_greater_bound(x,bound)*Byright
     BU[2] = 0
-    
+
     # E^x(0,x) = 0.0 , E^y(x) = 0.0 , E^z(x) = -B^y(0,x)
     EU = ixp.zerorank1()
     EU[0] = sp.sympify(0)
     EU[1] = sp.sympify(0)
     EU[2] = -BU[1]
-    
-    # Define Levi-Civita symbol
-    def define_LeviCivitaSymbol_rank3(DIM=-1):
-        if DIM == -1:
-            DIM = par.parval_from_str("DIM")
 
-        LeviCivitaSymbol = ixp.zerorank3()
-
-        for i in range(DIM):
-            for j in range(DIM):
-                for k in range(DIM):
-                    # From https://codegolf.stackexchange.com/questions/160359/levi-civita-symbol :
-                    LeviCivitaSymbol[i][j][k] = (i - j) * (j - k) * (k - i) * sp.Rational(1,2)
-        return LeviCivitaSymbol
-    # Here, we import the Levi-Civita tensor and compute the tensor with lower indices
-    LeviCivitaSymbolDDD = define_LeviCivitaSymbol_rank3()
+    LeviCivitaSymbolDDD = ixp.LeviCivitaSymbol_dim3_rank3()
 
     B2 = sp.sympify(0)
     for i in range(3):
@@ -95,6 +78,5 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * EU[j] * BU[k] / B2   
+                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * EU[j] * BU[k] / B2
 
-    

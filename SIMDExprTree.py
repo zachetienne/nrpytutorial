@@ -122,6 +122,7 @@ class ExprTree:
         return self.root.expr
 
     class Node:
+        """ Expression Tree Node; a node cannot exist outside the tree """
         def __init__(self, expr, func):
             self.expr = expr
             self.func = func

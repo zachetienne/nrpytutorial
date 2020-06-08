@@ -10,7 +10,7 @@ if sys.version_info[0]==3:
     PYTHONVERSION3 = True
 
 # Step 1: Print logo.
-from NRPy_logo import *
+#from NRPy_logo import print_logo
 #print_logo()
 
 # Step 2: Initialize core parameter NRPy::MainModule,
@@ -100,7 +100,7 @@ getattr(importlib.import_module(MainModule+"."+MainModule), MainModule)()
 # getattr(importlib.import_module(MainModule), 'initparams')()
 
 # Step 3b (temporary): Set a SymPy expression to test processing
-import sympy as sp
+# import sympy as sp
 #from outputC import *
 #getattr(importlib.import_module("outputC"),'outputC')([sympify("3*a*b**4+c*sin(a*b**4)"),sympify("6*a*b**4")],["output1","output2"])
 #getattr(importlib.import_module("outputC"),'outputC')(sp.sympify("3*a*b**4+2*c*sin(a*b**4)"),"output1")

@@ -1,6 +1,6 @@
 # As documented in the NRPy+ tutorial module
 #   Tutorial-RK_Butcher_Table_Dictionary.ipynb ,
-#   this module will construct a Python dictionary 
+#   this module will construct a Python dictionary
 #   of Butcher tables for a large number of explicit
 #   RK methods.
 
@@ -9,8 +9,7 @@
 #          zachetie **at** gmail **dot* com
 
 # Step 1: Initialize needed Python/NRPy+ modules
-import sympy as sp
-import NRPy_param_funcs as par
+import sympy as sp  # Import SymPy, a computer algebra system written entirely in Python
 
 # Step 2a: Generating a Dictionary of Butcher Tables for Explicit Runge Kutta Techniques
 
@@ -21,14 +20,14 @@ Butcher_dict = {}
 
 Butcher_dict['Euler'] = (
 [[sp.sympify(0)],
- ["", sp.sympify(1)]] 
+ ["", sp.sympify(1)]]
 , 1)
 
 # Step 2.a.ii: RK2 Heun's Method
 
 Butcher_dict['RK2 Heun'] = (
 [[sp.sympify(0)],
-[sp.sympify(1), sp.sympify(1)], 
+[sp.sympify(1), sp.sympify(1)],
 ["", sp.Rational(1,2), sp.Rational(1,2)]]
 , 2)
 
@@ -43,8 +42,8 @@ Butcher_dict['RK2 MP'] = (
 # Step 2.a.iv: RK2 Ralston's Method
 
 Butcher_dict['RK2 Ralston'] = (
-[[sp.sympify(0)], 
-[sp.Rational(2,3), sp.Rational(2,3)], 
+[[sp.sympify(0)],
+[sp.Rational(2,3), sp.Rational(2,3)],
 ["", sp.Rational(1,4), sp.Rational(3,4)]]
 , 2)
 
@@ -84,10 +83,10 @@ Butcher_dict['SSPRK3'] = (
 
 # Step 2.a.ix: Classic RK4 Method
 
-Butcher_dict['RK4'] = ([[sp.sympify(0)], 
-[sp.Rational(1,2), sp.Rational(1,2)], 
-[sp.Rational(1,2), sp.sympify(0), sp.Rational(1,2)], 
-[sp.sympify(1), sp.sympify(0), sp.sympify(0), sp.sympify(1)], 
+Butcher_dict['RK4'] = ([[sp.sympify(0)],
+[sp.Rational(1,2), sp.Rational(1,2)],
+[sp.Rational(1,2), sp.sympify(0), sp.Rational(1,2)],
+[sp.sympify(1), sp.sympify(0), sp.sympify(0), sp.sympify(1)],
 ["", sp.Rational(1,6), sp.Rational(1,3), sp.Rational(1,3), sp.Rational(1,6)]]
 , 4)
 
@@ -168,7 +167,7 @@ Butcher_dict['L6'] = (
 ["", sp.Rational(1, 20), sp.sympify(0), sp.Rational(16, 45), sp.sympify(0), sp.Rational(49, 180), sp.Rational(49, 180), sp.Rational(1, 20)]]
 , 6)
 
-# Step 2.a.xvi: RK8 Dormand-Prince Method 
+# Step 2.a.xvi: RK8 Dormand-Prince Method
 
 Butcher_dict['DP8']=(
 [[0],

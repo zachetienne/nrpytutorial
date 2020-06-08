@@ -1,12 +1,12 @@
 # As documented in the NRPyPN notebook
-# PN-Hamiltonian-Nonspinning.ipynb, this Python script 
+# PN-Hamiltonian-Nonspinning.ipynb, this Python script
 # generates nonspinning pieces of the post-Newtonian (PN)
 # Hamiltonian, up to and including third PN order.
 
 # Basic functions:
-# f_H_Newt__H_NS_1PN__H_NS_2PN(m1,m2, pU, nU, q): Compute H_Newt, 
+# f_H_Newt__H_NS_1PN__H_NS_2PN(m1,m2, pU, nU, q): Compute H_Newt,
 #                                                 H_NS_1PN, and H_NS_2PN
-#                                                 and store to global 
+#                                                 and store to global
 #                                                 variables of the same
 #                                                 names.
 # f_H_NS_3PN: Compute H_NS_3PN, and store to global variable of same name
@@ -20,10 +20,9 @@ import os,sys                    # Standard Python modules for multiplatform OS-
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
-import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
-from outputC import *            # NRPy+: Core C code output module
-import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
+import sympy as sp                   # SymPy: The Python computer algebra package upon which NRPy+ depends
+import indexedexp as ixp             # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+from NRPyPN_shortcuts import div,dot # NRPyPN: shortcuts for e.g., vector operations
 
 def f_H_Newt__H_NS_1PN__H_NS_2PN(m1,m2, PU, nU, q):
     mu  = m1*m2 / (m1+m2)

@@ -74,8 +74,8 @@ def calc_error(self):
     if bad_var_list != []:
         logging.error('''
 \nVariable(s) {} in module {} failed. Please check values.
-If you are confident that the newly calculated values are correct, comment out the old trusted values for 
-{} in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict. 
+If you are confident that the newly calculated values are correct, comment out the old trusted values for
+{} in your trusted_values_dict and copy the following code between the ##### into your trusted_values_dict.
 Make sure to fill out the TODO comment describing why the values had to be changed. Then re-run test script.
 
 #####

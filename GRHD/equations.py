@@ -9,7 +9,9 @@
 #          Patrick Nelson
 
 # Step 1: import all needed modules from NRPy+/Python:
-from outputC import *            # NRPy+: Core C code output module
+from outputC import nrpyAbs      # NRPy+: Core C code output module
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 
 # Step 2: Define the stress-energy tensor
@@ -50,7 +52,7 @@ def compute_T4UD(gammaDD,betaU,alpha, T4UU):
 # Step 3: Writing the conservative variables in terms of the primitive variables
 def compute_sqrtgammaDET(gammaDD):
     global sqrtgammaDET
-    gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD)
+    _gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaUU unused.
     sqrtgammaDET = sp.sqrt(gammaDET)
 
 def compute_rho_star(alpha, sqrtgammaDET, rho_b,u4U):

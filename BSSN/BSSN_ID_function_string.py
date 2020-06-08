@@ -4,7 +4,7 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-from outputC import *
+from outputC import outputC, add_to_Cfunction_dict # NRPy+: Core C code output module
 
 def BSSN_ID_function_string(cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU):
     rhss = [trK,alpha,cf]

@@ -4,7 +4,7 @@ set -e # Error out if any commands complete with an error.
 
 # Skip Baikal and all Start-to-Finish notebooks, except ScalarWave for now
 # Tutorial-Start_to_Finish-ScalarWave*.ipynb
-# Let's try all but Psi4 Start-to-Finish and Baikal notebooks
+# Let's try all but Psi4 Start-to-Finish and Baikal notebooks. Also cmdlinehelper yields whitespace differences in Python 2.7
 for i in Tutorial-[A]*.ipynb Tutorial-[C-RT-Z]*.ipynb Tutorial-B[B-Z]*.ipynb Tutorial-S[A-SU-Z]*.ipynb Tutorial-Start_to_Finish-*[^4].ipynb NRPyPN/PN*.ipynb; do
     ./run_Jupyter_notebook.sh $i notimer
     cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i

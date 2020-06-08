@@ -1,20 +1,20 @@
 # As documented in the NRPy+ tutorial notebook
-# Tutorial-cmdline_helper.ipynb, this Python script 
+# Tutorial-cmdline_helper.ipynb, this Python script
 # provides a multi-platform means to run executables,
 # remove files, and compile code.
 
 # Basic functions:
-# check_executable_exists(): Check to see whether an executable exists. 
+# check_executable_exists(): Check to see whether an executable exists.
 #                            Error out or return False if not exists;
 #                            return True if executable exists in PATH.
 # C_compile(): Compile C code using gcc.
-# Execute(): Execute generated executable file, using taskset 
+# Execute(): Execute generated executable file, using taskset
 #            if available. Calls Execute_input_string() to
 #            redirect output from stdout & stderr to desired
 #            destinations.
-# Execute_input_string(): Executes an input string and redirects 
+# Execute_input_string(): Executes an input string and redirects
 #            output from stdout & stderr to desired destinations.
-# delete_existing_files(file_or_wildcard): 
+# delete_existing_files(file_or_wildcard):
 #          Runs del file_or_wildcard in Windows, or
 #                rm file_or_wildcard in Linux/MacOS
 
@@ -25,12 +25,12 @@
 
 import io, os, shlex, subprocess, sys, time, multiprocessing, getpass, platform
 
-# check_executable_exists(): Check to see whether an executable exists. 
+# check_executable_exists(): Check to see whether an executable exists.
 #                            Error out or return False if not exists;
 #                            return True if executable exists in PATH.
 def check_executable_exists(exec_name,error_if_not_found=True):
     cmd = "where" if os.name == "nt" else "which"
-    try: 
+    try:
         subprocess.check_output([cmd, exec_name])
     except subprocess.CalledProcessError:
         if error_if_not_found:
@@ -47,11 +47,10 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
     check_executable_exists("gcc")
 
     # Step 2: Delete existing version of executable
-    delete_string = ""
     if os.name == "nt":
         main_C_output_file += ".exe"
     delete_existing_files(main_C_output_file)
-    
+
     # Step 3: Compile the executable
     if compile_mode=="safe":
         compile_string = "gcc -O2 -g -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"
@@ -100,10 +99,10 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
     else:
         print("Sorry, compile_mode = \""+compile_mode+"\" unsupported.")
         sys.exit(1)
-        
+
     print("Finished compilation.")
 
-# Execute(): Execute generated executable file, using taskset 
+# Execute(): Execute generated executable file, using taskset
 #            if available. Calls Execute_input_string() to
 #            redirect output from stdout & stderr to desired
 #            destinations.
@@ -111,7 +110,7 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
     # Step 1: Delete old version of executable file
     if file_to_redirect_stdout != os.devnull:
         delete_existing_files(file_to_redirect_stdout)
-    
+
     # Step 2: Build the script for executing the desired executable
     execute_string = ""
     # When in Windows...
@@ -136,7 +135,7 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
                 N_cores_to_use = int(multiprocessing.cpu_count()/2) # To account for hyperthreading cores
             else:
                 N_cores_to_use = int(multiprocessing.cpu_count()) # Use all cores if none are hyperthreading cores.
-                                                                  # This will happen on ARM (e.g., cellphone) CPUs 
+                                                                  # This will happen on ARM (e.g., cellphone) CPUs
             for i in range(N_cores_to_use-1):
                 execute_string += ","+str(i+1)
         execute_string += " "
@@ -145,7 +144,7 @@ def Execute(executable, executable_output_arguments="", file_to_redirect_stdout=
     # Step 3: Execute the desired executable
     Execute_input_string(execute_string, file_to_redirect_stdout,verbose)
 
-# Execute_input_string(): Executes an input string and redirects 
+# Execute_input_string(): Executes an input string and redirects
 #            output from stdout & stderr to desired destinations.
 def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, verbose=True):
 
@@ -173,7 +172,7 @@ def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, verbo
     if verbose:
         print("(BENCH): Finished executing in "+str(end-start)+" seconds.")
 
-# delete_existing_files(file_or_wildcard): 
+# delete_existing_files(file_or_wildcard):
 #          Runs del file_or_wildcard in Windows, or
 #                rm file_or_wildcard in Linux/MacOS
 def delete_existing_files(file_or_wildcard):
@@ -190,11 +189,16 @@ def mkdir(newpath):
         os.makedirs(os.path.join(newpath))
 
 def output_Jupyter_notebook_to_LaTeXed_PDF(notebookname,location_of_template_file=os.path.join("."),verbose=True):
-    Execute_input_string(r"jupyter nbconvert --to latex --template "
-                         +os.path.join(location_of_template_file,"latex_nrpy_style.tplx")
-                         +r" --log-level='WARN' "+notebookname+".ipynb",verbose=False)
-    for i in range(3):
-        Execute_input_string(r"pdflatex -interaction=batchmode "+notebookname+".tex",verbose=False)
-    delete_existing_files(notebookname+".out "+notebookname+".aux "+notebookname+".log")
-    if verbose:
-        print("Created "+notebookname+".tex, and compiled LaTeX file to PDF file "+notebookname+".pdf")
+    if sys.platform in ('linux', 'linux32'):
+        Execute_input_string(r"jupyter nbconvert --to latex --template "
+                             +os.path.join(location_of_template_file,"latex_nrpy_style.tplx")
+                             +r" --log-level='WARN' "+notebookname+".ipynb",verbose=False)
+        for _i in range(3):  # _i is an unused variable.
+            Execute_input_string(r"pdflatex -interaction=batchmode "+notebookname+".tex",verbose=False)
+        delete_existing_files(notebookname+".out "+notebookname+".aux "+notebookname+".log")
+        if verbose:
+            import textwrap
+            wrapper = textwrap.TextWrapper(initial_indent="",subsequent_indent="    ",width=75)
+            print(wrapper.fill("Created "+notebookname+".tex, and compiled LaTeX file to PDF file "+notebookname+".pdf"))
+    else:
+        print("Notebook output to PDF is only supported on Linux systems, with pdflatex installed.")

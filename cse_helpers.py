@@ -8,8 +8,8 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-from SIMDExprTree import ExprTree
-import sympy as sp
+from SIMDExprTree import ExprTree  # NRPy+: Contains expression tree data structure class definitions and manipulation functions
+import sympy as sp                 # SymPy: The Python computer algebra package upon which NRPy+ depends
 
 def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=False, debug=False):
     """ Perform CSE Preprocessing

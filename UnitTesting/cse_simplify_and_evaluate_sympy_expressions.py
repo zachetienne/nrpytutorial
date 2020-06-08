@@ -2,10 +2,11 @@
 # This is because we need SymPy to evaluate that expression, not mpmath.
 from mpmath import mp, mpf, sqrt, pi, mpc, fabs
 import random
-from sympy import cse, N, Abs, Function
+from sympy import cse, N, Abs, Function, __version__
 import UnitTesting.standard_constants as standard_constants
 import logging
 import hashlib
+import sys
 from outputC import cse_postprocess
 
 # Called by run_test
@@ -66,16 +67,22 @@ def cse_simplify_and_evaluate_sympy_expressions(self):
             free_symbols_dict[var] = mpf(random.random())
             # Warning: might slow Travis CI too much: logging.debug(' ...Setting '+str(var)+' to the random value: '+str(free_symbols_dict[var]))
 
-    # Initialize calculated_dict and simplified_expression_dict
+    # Initialize calculated_dict
     calculated_dict = dict()
-    simplified_expression_dict = dict()
 
     logging.debug(' ...Calculating values for each variable based on free symbols...')
 
     # Evaluating each expression using the values in var_dict
     for var, expression in expanded_variable_dict.items():
         # Using SymPy's cse algorithm to optimize our value substitution
-        replaced, reduced = cse_postprocess(cse(expression, order='none'))
+        sympy_version = __version__.replace('rc', '...').replace('b', '...')
+        sympy_major_version = int(sympy_version.split(".")[0])
+        sympy_minor_version = int(sympy_version.split(".")[1])
+        if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 3):
+            print('Error: UnitTesting does not support SymPy < 1.3; cse implementation was too primitive back then')
+            sys.exit(1)
+        else:
+            replaced, reduced = cse_postprocess(cse(expression, order='none'))
 
         # Warning: might slow Travis CI too much: logging.debug(' var = '+str(var)+' |||| replaced = '+str(replaced))
 
@@ -120,7 +127,7 @@ def calculate_value(free_symbols_dict, replaced, reduced, precision_factor=1):
             old = upd
         # Warning: might slow Travis CI too much: logging.debug(' dict '+ str(new)+ ' updated with = '+str(old))
         free_symbols_dict[new] = old
-    
+
     # Warning: might slow Travis CI too much: logging.debug(' free symbols_dict: '+str(free_symbols_dict))
     # Warning: might slow Travis CI too much: logging.debug(' replaced: '+str(replaced))
     # Evaluating expression after cse optimization substitution

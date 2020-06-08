@@ -20,15 +20,14 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
-from outputC import *            # NRPy+: Core C code output module
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
+from NRPyPN_shortcuts import div,dot,gamma_EulerMascheroni  # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################
 
 # Constants given in Eqs A1-13 of https://arxiv.org/abs/1502.01747
-def dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
+def dE_GW_dt_OBKPSS2015_consts(m1,m2, _n12U, S1U,S2U): # _n12U unused.
     # define scalars:
     m  = (m1+m2)
     nu = m1*m2/m**2
@@ -51,10 +50,10 @@ def dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
         chi_a[i] = div(1,2) * (chi1U[i] - chi2U[i])
     # define scalars that depend on vectors
     s_l = dot(Stot,l)   /m**2
-    s_n = dot(Stot,n12U)/m**2
+    # s_n = dot(Stot,n12U)/m**2
     sigma_l = dot(Sigma,l)/m**2
-    sigma_n = dot(Sigma,n12U)/m**2
-    return nu,delta,  l,chi_a,chi_s,  s_l,s_n,sigma_l,sigma_n
+    # sigma_n = dot(Sigma,n12U)/m**2
+    return nu,delta,  l,chi_a,chi_s,  s_l,sigma_l
 
 #################################
 #################################
@@ -65,13 +64,11 @@ def dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U):
 #  https://link.springer.com/content/pdf/10.12942/lrr-2014-2.pdf
 def f_dE_GW_dt_and_dM_dt(mOmega, m1,m2, n12U, S1U,S2U):
     def f_compute_quantities(mOmega, m1,m2, n12U, S1U,S2U, which_quantity):
-        if not (which_quantity == "dM_dt" or
-                which_quantity == "dE_GW_dt" or
-                which_quantity == "dE_GW_dt_plus_dM_dt"):
+        if not which_quantity in ('dM_dt', 'dE_GW_dt', 'dE_GW_dt_plus_dM_dt'):
             print("which_quantity == "+str(which_quantity)+" not supported!")
             sys.exit(1)
 
-        nu,delta,  l,chi_a,chi_s,  s_l,s_n,sigma_l,sigma_n = dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U)
+        nu,delta,  l,chi_a,chi_s,  s_l,sigma_l = dE_GW_dt_OBKPSS2015_consts(m1,m2, n12U, S1U,S2U)
         x = (mOmega)**div(2,3)
 
         # Compute b_5_Mdot:

@@ -4,19 +4,20 @@
 #  This module generates C kernels for numerically
 #   solving PDEs with finite differences.
 #
-# Depends on: outputC.py and grid.py.
+# Depends primarily on: outputC.py and grid.py.
 
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-from outputC import *            # NRPy+: Core C code output module
+from outputC import parse_outCparams_string,superfast_uniq,outputC # NRPy+: Core C code output module
+import NRPy_param_funcs as par   # NRPy+: parameter interface
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import sys                       # Standard Python module for multiplatform OS-level functions
 
 from operator import itemgetter
 
 # Step 1: Initialize free parameters for this module:
-import NRPy_param_funcs as par
 modulename = __name__
 # Centered finite difference accuracy order
 par.initialize_param(par.glb_param("int", modulename, "FD_CENTDERIVS_ORDER",  4))
@@ -34,15 +35,15 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     # Step 0.b:
     # finite_difference.py takes control over outCparams.includebraces here,
     #     which is necessary because outputC() is called twice:
-    #     first for the reads from main memory and finite difference 
+    #     first for the reads from main memory and finite difference
     #     stencil expressions, and second for the SymPy expressions and
-    #     writes to main memory. 
-    # If outCparams.includebraces==True, then it will close off the braces 
+    #     writes to main memory.
+    # If outCparams.includebraces==True, then it will close off the braces
     #     after the finite difference stencil expressions and start new ones
     #     for the SymPy expressions and writes to main memory, resulting
-    #     in a non-functioning C code. 
+    #     in a non-functioning C code.
     # To get around this issue, we create braces around the entire
-    #     string of C output from this function, only if 
+    #     string of C output from this function, only if
     #     outCparams.includebraces==True.
     # See Step 6 for corresponding end brace.
     if outCparams.includebraces == "True":
@@ -51,7 +52,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     else:
         Coutput = ""
         indent = ""
-    
+
     # Step 1a:
     # Create a list of free symbols in the sympy expr list
     #     that are registered neither as gridfunctions nor
@@ -107,7 +108,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     #     tuned to reduce cache misses.
     #     Thanks to Aaron Meurer for this nice one-liner!
     list_of_deriv_vars = sorted(list_of_deriv_vars,key=sp.default_sort_key)
-    
+
     # Step 2:
     # Process list_of_deriv_vars into a list of base gridfunctions
     #    and a list of derivative operators.
@@ -170,7 +171,6 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         for gf in gri.glb_gridfcs_list:
             if basegf == str(gf.name):
                 is_gf = True
-                pass
         if not is_gf:
             print("Error: Attempting to take the derivative of "+basegf+", which is not a registered gridfunction.")
             print("       Make sure your gridfunction name does not have any underscores in it!")
@@ -299,11 +299,10 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         sz = 100 # assumed size in each direction
         if par.parval_from_str("MemAllocStyle") == "210":
             return str(int(idx4[0])+os + sz*( (int(idx4[1])+os) + sz*( (int(idx4[2])+os) + sz*( int(idx4[3])+os ) ) ))
-        elif par.parval_from_str("MemAllocStyle") == "012":
+        if par.parval_from_str("MemAllocStyle") == "012":
             return str(int(idx4[3])+os + sz*( (int(idx4[2])+os) + sz*( (int(idx4[1])+os) + sz*( int(idx4[0])+os ) ) ))
-        else:
-            print("Error: MemAllocStyle = "+par.parval_from_str("MemAllocStyle")+" unsupported.")
-            sys.exit(1)
+        print("Error: MemAllocStyle = "+par.parval_from_str("MemAllocStyle")+" unsupported.")
+        sys.exit(1)
 
     # Step 4d.ii: For each gridfunction and
     #      point read from memory, call unique_idx,
@@ -335,7 +334,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                 idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
                 read_from_memory_index.append(unique_idx(idx4))
                 # https://stackoverflow.com/questions/13668393/python-sorting-two-lists
-                UNUSEDlist, sorted_list_of_points_read_from_memory[gfidx] = \
+                _UNUSEDlist, sorted_list_of_points_read_from_memory[gfidx] = \
                     [list(x) for x in zip(*sorted(zip(read_from_memory_index, list_of_points_read_from_memory[gfidx]),
                                                   key=itemgetter(0)))]
     # Step 4e: Create the full C code string
@@ -381,9 +380,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                 varname = "UpwindAlgInput"+varname
         if outCparams.SIMD_enable == "True":
             return "const REAL_SIMD_ARRAY " + varname
-        else:
-            TYPE = par.parval_from_str("PRECISION")
-            return "const "+ TYPE + " " + varname
+        return "const "+ par.parval_from_str("PRECISION") + " " + varname
 
     def varsuffix(idx4):
         if idx4 == [0,0,0,0]:
@@ -422,7 +419,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         for i in range(len(Ccodesplit)):
             outstring += outCparams.preindent+indent+Ccodesplit[i]+'\n'
         return outstring
-    
+
     # Step 5a: Read gridfunctions from memory at needed pts.
     # *** No need to do anything here; already set in
     #     string "read_from_memory_Ccode". ***
@@ -459,8 +456,8 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         if (len(deriv__operator[i]) == 5 and "dKOD" in deriv__operator[i]) or \
            (len(deriv__operator[i]) == 3 and "dD" in deriv__operator[i]) or \
            (len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i] or "ddnD" in deriv__operator[i])):
-                dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
-                exprs[i] *= invdx[dirn]
+            dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
+            exprs[i] *= invdx[dirn]
         # Second-order derivs:
         elif len(deriv__operator[i]) == 5 and "dDD" in deriv__operator[i]:
             dirn1 = int(deriv__operator[i][len(deriv__operator[i]) - 2])
@@ -492,7 +489,6 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     if upwindcontrolvec != "" and len(upwind_directions) > 0:
         NRPy_FD__Number_of_Steps += 1
 
-    default_CSE_varprefix = outCparams.CSE_varprefix
     if len(read_from_memory_Ccode) > 0:
         Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
                                 + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps)+
@@ -557,8 +553,8 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
     Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",CSE_varprefix=FDPart3,includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
-    
-    # Step 6: Add consistent indentation to the output end brace. 
+
+    # Step 6: Add consistent indentation to the output end brace.
     #         See Step 0.b for corresponding start brace.
     if outCparams.includebraces == "True":
         Coutput += outCparams.preindent+"}\n"

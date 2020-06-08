@@ -4,7 +4,7 @@
 #         zachetie **at** gmail **dot* com
 
 # Step P1: import all needed modules from NRPy+:
-from outputC import *             # NRPy+: Core C code output module
+from outputC import nrpyAbs,lhrh,check_if_string__error_if_not,outCfunction  # NRPy+: Core C code output module
 import finite_difference as fin   # NRPy+: Finite difference C code generation module
 import grid as gri                # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp          # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support

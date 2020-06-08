@@ -1,6 +1,7 @@
 """ Convert Expression to SIMD Compiler Intrinsics """
-# Author: Ken Sible
-# Email:  ksible *at* outlook *dot* com
+# Authors: Ken Sible & Zachariah Etienne
+# Emails: ksible *at* outlook *dot** com
+#         zachetie *at* gmail *dot** com
 
 from sympy import (Integer, Rational, Float, Function, Symbol,
     Add, Mul, Pow, Abs, S, sign, srepr, simplify,
@@ -179,15 +180,15 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
         # Recursive Helper Function: Construct Integer Powers
         if   n == 2:
             return MulSIMD(a, a)
-        elif n > 2:
+        if n > 2:
             return MulSIMD(IntegerPowSIMD(a, n - 1), a)
-        elif n <= -2:
+        if n <= -2:
             one = Symbol(prefix + '_Integer_1')
             try: map_rat_to_sym[1]
             except KeyError:
                 map_sym_to_rat[one], map_rat_to_sym[1] = S.One, one
             return DivSIMD(one, IntegerPowSIMD(a, -n))
-        elif n == -1:
+        if n == -1:
             one = Symbol(prefix + '_Integer_1')
             try: map_rat_to_sym[1]
             except KeyError:
@@ -234,7 +235,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
                 subargs = list(args[i].args); subargs.pop(j)
                 # Build the subtraction expression for replacement
                 subexpr = SubSIMD(args[k], Mul(*subargs))
-                args = [arg for arg in args if arg != args[i] and arg != args[k]]
+                args = [arg for arg in args if arg not in (args[i], args[k])]
                 if len(args) > 0:
                     subexpr = Add(subexpr, *args)
                 subtree.expr = subexpr
@@ -251,7 +252,7 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
     for subtree in tree.preorder():
         func = subtree.expr.func
         args = subtree.expr.args
-        if (func == Mul or func == Add):
+        if func in (Mul, Add):
             func = MulSIMD if func == Mul else AddSIMD
             subexpr = func(*args[-2:])
             args, N = args[:-2], len(args) - 2
@@ -494,8 +495,8 @@ def expr_convert_to_SIMD_intrins(expr, map_sym_to_rat=None, prefix="", SIMD_find
         for subtree in tree_diff.preorder():
             subexpr = subtree.expr
             if subexpr.func == Float:
-                if abs(subexpr - Integer(subexpr)) < 1.0e-14:
-                    subtree.expr = Integer(item)
+                if abs(subexpr - Integer(subexpr)) < 1.0e-14*subexpr:
+                    subtree.expr = Integer(subexpr)
         expr_diff = tree_diff.reconstruct()
 
         if expr_diff != 0:

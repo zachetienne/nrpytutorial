@@ -6,14 +6,14 @@
 
 
 # ### NRPy+ Source Code for this module: [BSSN/ShiftedKerrSchild.py](../edit/BSSN/BrillLindquist.py)
-# 
+#
 # WARNING: This module has not yet undergone code testing.
 
 # **Inputs for initial data**:
-# 
+#
 # * The black hole mass, M
 # * The black hole spin parameter, a
- 
+
 
 # Step 1: Initialize core Python/NRPy+ modules
 import sympy as sp             # SymPy: The Python computer algebra package upon which NRPy+ depends
@@ -28,11 +28,11 @@ M, a, r0 = par.Cparameters("REAL", thismodule,
                            ["M", "a", "r0"],
                            [1.0, 0.9, 1.0])
 
-# ComputeADMGlobalsOnly == True will only set up the ADM global quantities. 
+# ComputeADMGlobalsOnly == True will only set up the ADM global quantities.
 #                       == False will perform the full ADM SphorCart->BSSN Curvi conversion
 def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     global Sph_r_th_ph,r,th,ph, rho2, gammaSphDD, KSphDD, alphaSph, betaSphU, BSphU
-    
+
     # All gridfunctions will be written in terms of spherical coordinates (r, th, ph):
     r,th,ph = sp.symbols('r th ph', real=True)
 
@@ -41,7 +41,7 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
 
     # Auxiliary variables:
     rho2 = sp.symbols('rho2', real=True)
-    
+
     # Step 1: Define rho^2, alpha, beta^(r_{KS}), beta^(theta), beta^(phi), gamma_{r_{KS}theta}, gamma_{theta\phi}
 
     # r_{KS} = r + r0
@@ -78,7 +78,7 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
 
     # gammaDD{phi phi} = (rKS^2 + a^2 + 2Mr/rho^2*a^2*sin^2(theta))*sin^2(theta)
     gammaSphDD[2][2] = (rKS*rKS + a*a + 2*M*rKS*a*a*sp.sin(th)**2/rho2)*sp.sin(th)**2
-    
+
     # Step 3: Define useful quantities A, B, C
     # A = (a^2*cos^2(2theta) + a^2 + 2r^2)
     A = (a*a*sp.cos(2*th) + a*a + 2*rKS*rKS)
@@ -88,8 +88,8 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
 
     # D = \sqrt(2M*rKS/(a^2cos^2(theta) + rKS^2) + 1)
     D = sp.sqrt(2*M*rKS/(a*a*sp.cos(th)**2 + rKS*rKS) + 1)
-                
-    
+
+
     # Step 4: Define the extrinsic curvature in spherical polar coordinates
 
     # Establish the 3x3 zero-matrix
@@ -116,20 +116,20 @@ def ShiftedKerrSchild(ComputeADMGlobalsOnly = False):
     #   +4a^2r^2(2r-M)+4a^2r*cos(2theta)(a^2+r(M+2r))+8r^5)]
     KSphDD[2][2] = D/(A*A*B)*(2*M*rKS*sp.sin(th)**2*(a**4*(rKS-M)*sp.cos(4*th)\
                             + a**4*(M+3*rKS)+4*a*a*rKS*rKS*(2*rKS-M)\
-                            + 4*a*a*rKS*sp.cos(2*th)*(a*a + rKS*(M + 2*rKS)) + 8*rKS**5))          
-    
-    
+                            + 4*a*a*rKS*sp.cos(2*th)*(a*a + rKS*(M + 2*rKS)) + 8*rKS**5))
+
+
     if ComputeADMGlobalsOnly == True:
         return
-    
-    # Validated against original SENR: 
+
+    # Validated against original SENR:
     #print(sp.mathematica_code(gammaSphDD[1][1]))
 
     Sph_r_th_ph = [r,th,ph]
     cf,hDD,lambdaU,aDD,trK,alpha,vetU,betU = \
-        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph, 
+        AtoB.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear("Spherical", Sph_r_th_ph,
                                                                     gammaSphDD,KSphDD,alphaSph,betaSphU,BSphU)
 
     import BSSN.BSSN_ID_function_string as bIDf
-    global returnfunction
-    returnfunction = bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)
+    # Generates initial_data() C function & stores to outC_function_dict["initial_data"]
+    bIDf.BSSN_ID_function_string(cf, hDD, lambdaU, aDD, trK, alpha, vetU, betU)

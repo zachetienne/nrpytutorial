@@ -24,9 +24,8 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
-from outputC import *            # NRPy+: Core C code output module
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
+from NRPyPN_shortcuts import div # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################
@@ -110,7 +109,6 @@ def MOmega__a_7(m1,m2, chi1x,chi1y,chi1z, chi2x,chi2y,chi2z):
 # Finally, sum the expressions for a_k to construct p_t as prescribed:
 # MOmega = 1/r^(3/2) * (1 + \sum_{k=2}^7 (a_k/r^{k/2}))
 def f_MOmega(m1,m2, chi1U,chi2U, r):
-    q = m2/m1 # It is assumed that q >= 1, so m2 >= m1.
     a = ixp.zerorank1(DIM=10)
     MOmega__a_2_thru_a_4(m1,m2, chi1U[0],chi1U[1],chi1U[2], chi2U[0],chi2U[1],chi2U[2])
     a[2] = a_2

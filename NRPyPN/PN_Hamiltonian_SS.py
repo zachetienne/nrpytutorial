@@ -24,10 +24,8 @@ import os,sys                    # Standard Python modules for multiplatform OS-
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
-import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
-from outputC import *            # NRPy+: Core C code output module
-import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
+import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+from NRPyPN_shortcuts import div,dot,cross # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################
@@ -75,7 +73,7 @@ def f_H_SS_S1S2_3PN(m1,m2, n12U, S1U,S2U, p1U,p2U, r12):
 #    Steinhoff, Hergt, and Sch\"afer (2008b)
 #       https://arxiv.org/abs/0809.2200
 def f_H_SS_S1sq_S2sq_3PN(m1,m2, n12U,n21U, S1U,S2U, p1U,p2U, r12):
-    def f_H_SS_particle(m1,m2, n12U, S1U,S2U, p1U,p2U, r12):
+    def f_H_SS_particle(m1,m2, n12U, S1U,_S2U, p1U,p2U, r12): # _S2U unused.
         H_SS_S1sq_S2sq_3PN_particle = (
             +  m2/(4*m1**3)*dot(p1U,S1U)**2
             +3*m2/(8*m1**3)*dot(p1U,n12U)**2*dot(S1U,S1U)

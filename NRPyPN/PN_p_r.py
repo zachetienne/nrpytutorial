@@ -40,10 +40,8 @@ import os,sys                    # Standard Python modules for multiplatform OS-
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
-import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
-from outputC import *            # NRPy+: Core C code output module
-import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from NRPyPN_shortcuts import *   # NRPyPN: shortcuts for e.g., vector operations
+import sympy as sp                        # SymPy: The Python computer algebra package upon which NRPy+ depends
+from NRPyPN_shortcuts import Pt,Pr,nU,div # NRPyPN: shortcuts for e.g., vector operations
 
 #################################
 #################################
@@ -76,8 +74,8 @@ def f_Htot_xyplane_binary(m1, m2, n12U, n21U, S1U, S2U, p1U, p2U, r):
             .subs(nU[0], one).subs(nU[1], zero).subs(nU[2], zero)
 
     import PN_Hamiltonian_NS as H_NS
-    H_NS.f_H_Newt__H_NS_1PN__H_NS_2PN(m1, m2, pU, nU, r)
-    H_NS.f_H_NS_3PN(m1, m2, pU, nU, r)
+    H_NS.f_H_Newt__H_NS_1PN__H_NS_2PN(m1, m2, p1U, n12U, r)
+    H_NS.f_H_NS_3PN(m1, m2, p1U, n12U, r)
 
     global Htot_xyplane_binary
     Htot_xyplane_binary = make_replacements(+H_NS.H_Newt

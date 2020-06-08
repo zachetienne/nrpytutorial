@@ -7,19 +7,21 @@
 
 # Step 1: Initialize needed Python/NRPy+ modules
 import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-from outputC import *                      # NRPy+: Basic C code output functionality
+from outputC import outputC                # NRPy+: Basic C code output functionality
+import NRPy_param_funcs as par             # NRPy+: parameter interface
+import sympy as sp                         # SymPy: The Python computer algebra package upon which NRPy+ depends
 import BSSN.ADMBSSN_tofrom_4metric as AB4m # NRPy+: ADM/BSSN <-> 4-metric conversions
 
 def compute_u0_smallb_Poynting__Cartesian(gammaDD=None,betaU=None,alpha=None,ValenciavU=None,BU=None):
 
-    if gammaDD==None:
+    if gammaDD is None: # use "is None" instead of "==None", as the former is more correct.
         # Declare these generically if uninitialized.
         gammaDD    = ixp.declarerank2("gammaDD","sym01")
         betaU      = ixp.declarerank1("betaU")
         alpha      = sp.sympify("alpha")
         ValenciavU = ixp.declarerank1("ValenciavU")
         BU         = ixp.declarerank1("BU")
-    
+
     # Set spatial dimension = 3
     DIM=3
 

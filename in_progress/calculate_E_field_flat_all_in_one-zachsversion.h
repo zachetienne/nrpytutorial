@@ -56,12 +56,12 @@ void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
         for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++) {
             for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++) {
                 // First, we set the index from which we will read memory. indexp1 is incremented by
-                // one point in the direction of reconstruction. These correspond to the faces at at 
+                // one point in the direction of reconstruction. These correspond to the faces at at
                 // i-1/2 and i+1/2
                 int index   = IDX3S(i0,i1,i2);
                 int indexp1 = IDX3S(i0+k_delta[flux_dirn][0],i1+k_delta[flux_dirn][1],i2+k_delta[flux_dirn][2]);
-                
-                // Now, we read in memory. We need all components of velocity and magnetic field on both 
+
+                // Now, we read in memory. We need all components of velocity and magnetic field on both
                 // the left and right sides of the interface at *both* faces.
                 const double Valenciav_rU0 = Vr0[index];
                 const double Valenciav_rU1 = Vr1[index];
@@ -78,16 +78,16 @@ void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
                 // Calculate the flux vector on each face for each component of the E-field:
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
-                
+
                 // Compute the state vector for this flux direction
                 const REAL U_r = B_rU2;
                 const REAL U_l = B_lU2;
 
-                // Basic HLLE solver: 
+                // Basic HLLE solver:
                 const REAL FHLL_0B1 = 0.5*(F0B1_r + F0B1_l - (U_r-U_l));
-                
+
                 // Repeat at i+1
-                // Now, we read in memory. We need all components of velocity and magnetic field on both 
+                // Now, we read in memory. We need all components of velocity and magnetic field on both
                 // the left and right sides of the interface at *both* faces.
                 const double Valenciav_rU0_p1 = Vr0[indexp1];
                 const double Valenciav_rU1_p1 = Vr1[indexp1];
@@ -104,16 +104,16 @@ void calculate_E_field_flat_all_in_one_zachsversion(const paramstruct *params,
                 // Calculate the flux vector on each face for each component of the E-field:
                 const REAL F0B1_r_p1 = (Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
                 const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
-                
+
                 // WRONG (fixme):  Compute the state vector for this flux direction
                 const REAL U_r_p1 = B_rU2_p1;
                 printf("DO NOT USE calculate_E_field_flat_all_in_one-zachsversion.h!\n");
                 exit(1);
                 const REAL U_l_p1 = B_lU2_p1;
-                
+
                 // Basic HLLE solver
                 const REAL FHLL_0B1_p1 = 0.5*(F0B1_r_p1 + F0B1_l_p1 - (U_r_p1-U_l_p1));
-                
+
                 Az_rhs[index] += SIGN*0.25*(FHLL_0B1 + FHLL_0B1_p1);
             } // END LOOP: for(int i0=NGHOSTS; i0<NGHOSTS+Nxx0; i0++)
         } // END LOOP: for(int i1=NGHOSTS; i1<NGHOSTS+Nxx1; i1++)

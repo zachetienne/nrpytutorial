@@ -4,10 +4,9 @@
     dimension in C, and has support for cache blocking (loop tiling).
 """
 # Author: Zachariah B. Etienne
-    # Email: zachetie *at* gmail *dot* com
+    # Email: zachetie **at** gmail **dot* com
 # Contributor: Ken Sible
     # Email: ksible *at* outlook *dot* com
-import sys
 
 def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma='#pragma omp parallel for', padding=''):
     """ Generate a one-dimensional loop in C.
@@ -19,16 +18,16 @@ def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma=
         :arg:    OpenMP pragma (https://en.wikipedia.org/wiki/OpenMP)
         :arg:    padding before a line (tab number)
         :return: string header, string footer
-        
+
         >>> header, footer = loop1D(pragma='')
         >>> print(header)
         for (int i = 0; i < N; i++) {
         <BLANKLINE>
-        
+
         >>> print(footer)
         } // END LOOP: for (int i = 0; i < N; i++)
         <BLANKLINE>
-        
+
         >>> header, footer = loop1D(increment='2', pragma='', padding='    ')
         >>> print(header)
             for (int i = 0; i < N; i += 2) {
@@ -57,22 +56,22 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
         :arg:    interior of the loop
         :arg:    tile size for cache blocking
         :return: (header, footer) or string of the loop
-        
+
         >>> header, footer = loop('i', '0', 'N', '1', '')
         >>> print(header)
         for (int i = 0; i < N; i++) {
         <BLANKLINE>
-        
+
         >>> print(footer)
         } // END LOOP: for (int i = 0; i < N; i++)
         <BLANKLINE>
-        
+
         >>> print(loop('i', '0', 'N', '1', '', interior='print(i)'))
         for (int i = 0; i < N; i++) {
             print(i)
         } // END LOOP: for (int i = 0; i < N; i++)
         <BLANKLINE>
-        
+
         >>> print(loop('i', '0', 'N', '1', '', interior='print(i)', tile_size='16'))
         for (int iB = 0; iB < N; iB += 16) {
             for (int i = iB; i < MIN(N, iB + 16); i++) {
@@ -80,7 +79,7 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
             } // END LOOP: for (int i = iB; i < MIN(N, iB + 16); i++)
         } // END LOOP: for (int iB = 0; iB < N; iB += 16)
         <BLANKLINE>
-        
+
         >>> print(loop(['i', 'j'], ['0', '0'], ['Nx', 'Ny'], ['1', '1'], ['', ''], interior='print(i, j)'))
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {
@@ -131,7 +130,7 @@ def simple_loop(options, interior):
         :arg:    loop options
         :arg:    loop interior
         :return: string of the loop
-        
+
         >>> print(simple_loop('AllPoints', ''))
             #pragma omp parallel for
             for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
@@ -152,7 +151,7 @@ def simple_loop(options, interior):
         i2i1i0_maxs = ["Nxx_plus_2NGHOSTS2", "Nxx_plus_2NGHOSTS1", "Nxx_plus_2NGHOSTS0"]
         if "oldloops" in options:
             i2i1i0_maxs = ["Nxx_plus_2NGHOSTS[2]", "Nxx_plus_2NGHOSTS[1]", "Nxx_plus_2NGHOSTS[0]"]
-    # 'InteriorPoints': loop over the interior of a numerical grid, i.e. exclude ghost zones        
+    # 'InteriorPoints': loop over the interior of a numerical grid, i.e. exclude ghost zones
     elif "InteriorPoints" in options:
         i2i1i0_mins = ["NGHOSTS","NGHOSTS","NGHOSTS"]
         i2i1i0_maxs = ["NGHOSTS+Nxx2","NGHOSTS+Nxx1","NGHOSTS+Nxx0"]
