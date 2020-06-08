@@ -18,7 +18,7 @@ class Lexer:
             '[mM]u', '[nN]u', '[xX]i', '[oO]mikron', '[pP]i', '[Rr]ho', '[sS]igma', '[tT]au',
             '[uU]psilon', '[pP]hi', '[cC]hi', '[pP]si', '[oO]mega')])
         tensor = '|'.join(map(re.escape, re.split(r'[\s,]+', tensor))) if tensor else '(?!)'
-        self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in 
+        self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in
             [ ('RATIONAL',       r'[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
               ('INTEGER',        r'[0-9]+'),
@@ -44,7 +44,7 @@ class Lexer:
               ('TENSOR',         tensor),
               ('SYMBOL',         greek + r'|[a-zA-Z]'),
               ('COMMAND',        r'\\[a-z]+')]]))
-    
+
     def initialize(self, sentence):
         """ Initialize Lexer
 
@@ -65,14 +65,14 @@ class Lexer:
             if token is None:
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (self.sentence[self.index], self.index), self.sentence, self.index)
-            elif token.lastgroup in ('BIGL_DELIM', 'BIGR_DELIM',
+            if token.lastgroup in ('BIGL_DELIM', 'BIGR_DELIM',
                     'LEFT_DELIM', 'RIGHT_DELIM', 'SPACE_DELIM'):
                 self.index = token.end()
             else:
                 self.index  = token.end()
                 self.lexeme = token.group()
                 yield token.lastgroup
-    
+
     def lex(self):
         """ Retrieve Next Token
 
@@ -83,7 +83,7 @@ class Lexer:
         except StopIteration:
             self.token = None
         return self.token
-    
+
     def reset(self):
         """ Reset Token Iterator """
         if not self.sentence:
@@ -94,7 +94,7 @@ class Parser:
     """ LaTeX Parser
 
         The following class will parse a tokenized sentence.
-    
+
         LaTeX Grammar:
         <ROOT>          -> <VARIABLE> = <EXPR> | <EXPR>
         <EXPR>          -> [ - ] <TERM> { ( + | - ) <TERM> }
@@ -173,7 +173,7 @@ class Parser:
             operator = '/' if self.__accept('DIVIDE') else '*'
             expr += '%s%s' % (operator, self.__factor())
         return expr
-    
+
     def __factor(self):
         expr = self.__subexpr()
         while self.__accept('CARET'):
@@ -182,25 +182,25 @@ class Parser:
                 self.__expect('RIGHT_BRACE')
             else: expr += '**' + self.__subexpr()
         return expr
-    
+
     def __subexpr(self):
         if self.__accept('LEFT_PAREN'):
             expr = '(' + self.__expr() + ')'
             self.__expect('RIGHT_PAREN')
             return expr
-        elif self.__accept('LEFT_BRACKET'):
+        if self.__accept('LEFT_BRACKET'):
             expr = '(' + self.__expr() + ')'
             self.__expect('RIGHT_BRACKET')
             return expr
         return self.__operand()
-    
+
     def __operand(self):
         if self.__peek('SYMBOL') or self.__peek('TENSOR'):
             return self.__variable()
-        elif any(self.__peek(i) for i in ('SQRT_CMD', 'FRAC_CMD', 'COMMAND')):
+        if any(self.__peek(i) for i in ('SQRT_CMD', 'FRAC_CMD', 'COMMAND')):
             return self.__command()
         return self.__number()
-    
+
     def __variable(self):
         variable = self.lexer.lexeme
         if variable[0] == '\\':
@@ -221,7 +221,7 @@ class Parser:
             var(variable)
             return 'Symbol(\'' + variable + '\')'
         return self.__array()
-    
+
     def __array(self):
         array = self.lexer.lexeme
         if array[0] == '\\':
@@ -279,25 +279,25 @@ class Parser:
             if not rational:
                 rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
             return 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
-        elif self.__accept('DECIMAL'):
+        if self.__accept('DECIMAL'):
             return 'Float(' + number + ')'
-        elif self.__accept('INTEGER'):
+        if self.__accept('INTEGER'):
             return 'Integer(' + number + ')'
         sentence = self.lexer.sentence
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unexpected \'%s\' at position %d' %
             (sentence[position], position), sentence, position)
-    
+
     def __command(self):
         command = self.lexer.lexeme
         if self.__accept('SQRT_CMD'):
             return self.__sqrt()
-        elif self.__accept('FRAC_CMD'):
+        if self.__accept('FRAC_CMD'):
             return self.__frac()
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unsupported command \'%s\' at position %d' %
             (command, position), self.lexer.sentence, position)
-    
+
     def __sqrt(self):
         if self.__accept('LEFT_BRACKET'):
             root = 'Integer(' + self.lexer.lexeme + ')'
@@ -308,7 +308,7 @@ class Parser:
         expr = self.__expr()
         self.__expect('RIGHT_BRACE')
         return 'Pow(%s, Rational(1, %s))' % (expr, root)
-    
+
     def __frac(self):
         self.__expect('LEFT_BRACE')
         numerator = self.__expr()
@@ -317,7 +317,7 @@ class Parser:
         denominator = self.__expr()
         self.__expect('RIGHT_BRACE')
         return '(%s)/(%s)' % (numerator, denominator)
-    
+
     def __peek(self, token_type):
         return self.lexer.token == token_type
 
@@ -326,7 +326,7 @@ class Parser:
             self.lexer.lex()
             return True
         return False
-    
+
     def __expect(self, token_type):
         if not self.__accept(token_type):
             position = self.lexer.index - len(self.lexer.lexeme)
@@ -361,7 +361,7 @@ def __summation(equation, dimension):
                     count += 1
             if count > 1:
                 if count % 2 != 0 or U != D:
-                    raise IndexError('illegal bound index')
+                    raise TensorError('illegal bound index')
                 lp_idx = next(loop_index)
                 if bound_count >= loop_count:
                     expr = 'sum(%s for %s in range(%d))' % \
@@ -373,12 +373,12 @@ def __summation(equation, dimension):
             if bound_count > loop_count: loop_count = bound_count
     if LHS:
         if set(LHS) != set(RHS):
-            raise IndexError('unbalanced free index')
+            raise TensorError('unbalanced free index')
         for idx, _ in LHS:
             expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
     return {var.split('[')[0]: expr}
 
-class IndexError(Exception): pass
+class TensorError(Exception): pass
 
 def parse(sentence, tensor=None, namespace=None):
     """ Convert LaTeX Sentence to SymPy Expression
