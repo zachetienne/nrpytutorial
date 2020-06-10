@@ -197,79 +197,10 @@ REAL Stilde_rhsD2;
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Bstagger_rU",DIM=3)
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Bstagger_lU",DIM=3)
 
-
-    Memory_Read = """const double alpha_face = auxevol_gfs[IDX4S(ALPHA_FACEGF, i0,i1,i2)];
-const double gamma_faceDD00 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF, i0,i1,i2)];
-const double gamma_faceDD01 = auxevol_gfs[IDX4S(GAMMA_FACEDD01GF, i0,i1,i2)];
-const double gamma_faceDD02 = auxevol_gfs[IDX4S(GAMMA_FACEDD02GF, i0,i1,i2)];
-const double gamma_faceDD11 = auxevol_gfs[IDX4S(GAMMA_FACEDD11GF, i0,i1,i2)];
-const double gamma_faceDD12 = auxevol_gfs[IDX4S(GAMMA_FACEDD12GF, i0,i1,i2)];
-const double gamma_faceDD22 = auxevol_gfs[IDX4S(GAMMA_FACEDD22GF, i0,i1,i2)];
-const double beta_faceU0 = auxevol_gfs[IDX4S(BETA_FACEU0GF, i0,i1,i2)];
-const double beta_faceU1 = auxevol_gfs[IDX4S(BETA_FACEU1GF, i0,i1,i2)];
-const double beta_faceU2 = auxevol_gfs[IDX4S(BETA_FACEU2GF, i0,i1,i2)];
-const double Valenciav_rU0 = auxevol_gfs[IDX4S(VALENCIAV_RU0GF, i0,i1,i2)];
-const double Valenciav_rU1 = auxevol_gfs[IDX4S(VALENCIAV_RU1GF, i0,i1,i2)];
-const double Valenciav_rU2 = auxevol_gfs[IDX4S(VALENCIAV_RU2GF, i0,i1,i2)];
-const double B_rU0 = auxevol_gfs[IDX4S(B_RU0GF, i0,i1,i2)];
-const double B_rU1 = auxevol_gfs[IDX4S(B_RU1GF, i0,i1,i2)];
-const double B_rU2 = auxevol_gfs[IDX4S(B_RU2GF, i0,i1,i2)];
-const double Valenciav_lU0 = auxevol_gfs[IDX4S(VALENCIAV_LU0GF, i0,i1,i2)];
-const double Valenciav_lU1 = auxevol_gfs[IDX4S(VALENCIAV_LU1GF, i0,i1,i2)];
-const double Valenciav_lU2 = auxevol_gfs[IDX4S(VALENCIAV_LU2GF, i0,i1,i2)];
-const double B_lU0 = auxevol_gfs[IDX4S(B_LU0GF, i0,i1,i2)];
-const double B_lU1 = auxevol_gfs[IDX4S(B_LU1GF, i0,i1,i2)];
-const double B_lU2 = auxevol_gfs[IDX4S(B_LU2GF, i0,i1,i2)];
-REAL Stilde_fluxD0 = 0; REAL Stilde_fluxD1 = 0; REAL Stilde_fluxD2 = 0;
-"""
-    Memory_Write = """rhs_gfs[IDX4S(STILDED0GF, i0, i1, i2)] += invdx0*Stilde_fluxD0;
-rhs_gfs[IDX4S(STILDED1GF, i0, i1, i2)] += invdx0*Stilde_fluxD1;
-rhs_gfs[IDX4S(STILDED2GF, i0, i1, i2)] += invdx0*Stilde_fluxD2;
-"""
-
-    indices = ["i0","i1","i2"]
-    indicesp1 = ["i0+1","i1+1","i2+1"]
-    assignment = "+="
-    assignmentp1 = "-="
-    invdx = ["invdx0","invdx1","invdx2"]
-
     subdir = "RHSs"
-    for flux_dirn in range(3):
-        Sf.calculate_Stilde_flux(flux_dirn,True,alpha_face,gamma_faceDD,beta_faceU,\
-                                 Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
-        Stilde_flux_to_print = [\
-                                Sf.Stilde_fluxD[0],\
-                                Sf.Stilde_fluxD[1],\
-                                Sf.Stilde_fluxD[2],\
-                               ]
-        Stilde_flux_names = [\
-                             "Stilde_fluxD0",\
-                             "Stilde_fluxD1",\
-                             "Stilde_fluxD2",\
-                            ]
-
-        desc = "Compute the flux of all 3 components of tilde{S}_i on the right face in the " + str(flux_dirn) + "."
-        name = "calculate_Stilde_flux_D" + str(flux_dirn) + "_right"
-        outCfunction(
-            outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
-            params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
-            body     =  Memory_Read \
-                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params=outCparams).replace("IDX4","IDX4S")\
-                       +Memory_Write.replace(invdx[0],invdx[flux_dirn]),
-            loopopts ="InteriorPoints",
-            rel_path_for_Cparams=os.path.join("../"))
-
-        desc = "Compute the flux of all 3 components of tilde{S}_i on the left face in the " + str(flux_dirn) + "."
-        name = "calculate_Stilde_flux_D" + str(flux_dirn) + "_left"
-        outCfunction(
-            outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
-            params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
-            body     =  Memory_Read.replace(indices[flux_dirn],indicesp1[flux_dirn]) \
-                   +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params=outCparams).replace("IDX4","IDX4S")\
-                       +Memory_Write.replace(invdx[0],invdx[flux_dirn]).replace(assignment,assignmentp1),
-            loopopts ="InteriorPoints",
-            rel_path_for_Cparams=os.path.join("../"))
-
+    Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
+                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
+    
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
     BC.GiRaFFE_NRPy_BCs(os.path.join(out_dir,subdir))
