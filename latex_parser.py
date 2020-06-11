@@ -343,42 +343,39 @@ class ParseError(Exception):
 def __summation(equation, dimension):
     for var_ in equation:
         var, expr = var_, equation[var_]
-    LHS, RHS = list(zip(re.findall(r'\[([a-zA-Z]+)\]', var),
+    LHS, RHS = set(zip(re.findall(r'\[([a-zA-Z]+)\]', var),
         re.findall(r'[UD]', var))), []
-    loop_count = 0
     for product in re.split(r'\s[\+\-]\s', expr):
         loop_index = (2 * chr(97 + n) for n in range(26))
         idx_lst = re.findall(r'\[([a-zA-Z]+)\]', product)
         pos_lst = re.findall(r'[UD]', product)
-        bound_count, index_map = 0, {}
+        free_index, bound_index = [], {}
+        if not idx_lst: continue
         for idx in set(idx_lst):
-            count = U = D = 0
-            free_index = []
+            count = U = D = 0; index_tuple = []
             for idx_, pos_ in zip(idx_lst, pos_lst):
                 if idx_ == idx:
-                    free_index.append((idx_, pos_))
+                    index_tuple.append((idx_, pos_))
                     if pos_ == 'U': U += 1
                     if pos_ == 'D': D += 1
                     count += 1
             if count > 1:
                 if count % 2 != 0 or U != D:
                     raise TensorError('illegal bound index')
-                lp_idx = next(loop_index)
-                if bound_count >= loop_count:
-                    index_map[idx] = lp_idx
-                else: expr = expr.replace(idx, lp_idx)
-                bound_count += 1
-            else:
-                RHS.extend(free_index)
-            if bound_count > loop_count: loop_count = bound_count
-        for idx in index_map:
-            expr = expr.replace(idx, index_map[idx])
-        for idx in index_map:
-            expr = 'sum([%s for %s in range(%d)])' % \
-                (expr, index_map[idx], dimension)
+                bound_index[idx] = next(loop_index)
+            else: free_index.extend(index_tuple)
+        RHS.append(set(free_index))
+        summation = product
+        for idx in bound_index:
+            summation = summation.replace(idx, bound_index[idx])
+        for idx in bound_index:
+            summation = 'sum([%s for %s in range(%d)])' % \
+                (summation, bound_index[idx], dimension)
+        expr = expr.replace(product, summation)
     if LHS:
-        if set(LHS) != set(RHS):
-            raise TensorError('unbalanced free index')
+        for i in range(len(RHS)):
+            if LHS != RHS[i]:
+                raise TensorError('unbalanced free index')
         for idx, _ in LHS:
             expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
     return var.split('[')[0], expr
@@ -386,11 +383,12 @@ def __summation(equation, dimension):
 # pylint: disable=missing-class-docstring
 class TensorError(Exception): pass
 
-def parse(sentence, namespace=None):
+def parse(sentence, namespace=None, debug=False):
     """ Convert LaTeX Sentence to SymPy Expression
 
         :arg:    LaTeX Sentence
         :arg:    Tensor Namespace
+        :arg:    Debug Mode
         :return: SymPy Expression
 
         >>> from latex_parser import parse
@@ -407,6 +405,13 @@ def parse(sentence, namespace=None):
         >>> namespace = {'h': 0, 'hUU': hUU, 'hDD': hDD}
         >>> parse(r'h = h_{\\mu\\mu}h^{\\mu\\mu}', namespace)
         {'h': hDD00*hUU00 + hDD11*hUU11}
+
+        >>> vD  = ixp.declarerank1('vD', DIM=2)
+        >>> bD  = ixp.declarerank1('vD', DIM=2)
+        >>> gUU = ixp.declarerank2('gUU', 'sym01', DIM=2)
+        >>> namespace = {'vD': vD, 'bD': bD, 'gUU': gUU}
+        >>> parse(r'v^i = g^{ij}(v_j + b_j)', namespace)
+        {'vU': [2*gUU00*vD0 + 2*gUU01*vD1, 2*gUU01*vD0 + 2*gUU11*vD1]}
     """
     if namespace is None or isinstance(namespace, str):
         return Parser(namespace).parse(sentence)
@@ -419,6 +424,7 @@ def parse(sentence, namespace=None):
             for tensor in namespace)).parse(sentence)
         var, expr = __summation(equation, dim_list[0])
         globals().update(namespace)
+        if debug: return {var: expr}
         return {var: eval(expr)}
     raise TypeError('inappropriate type for tensor namespace')
 
