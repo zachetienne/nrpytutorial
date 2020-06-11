@@ -374,7 +374,7 @@ def __summation(equation, dimension):
         for idx in index_map:
             expr = expr.replace(idx, index_map[idx])
         for idx in index_map:
-            expr = 'sum(%s for %s in range(%d))' % \
+            expr = 'sum([%s for %s in range(%d)])' % \
                 (expr, index_map[idx], dimension)
     if LHS:
         if set(LHS) != set(RHS):
