@@ -2,22 +2,25 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
+# pylint: disable=unused-import
 from sympy import Function, Symbol, Integer, Rational, Float, Pow
 from sympy import var, sqrt, expand
 import re
 
+# pylint: disable=attribute-defined-outside-init
 class Lexer:
     """ LaTeX Lexer
 
         The following class will tokenize a sentence for parsing.
     """
 
-    def __init__(self, tensor=None):
+    def __init__(self, namespace):
         greek  = '|'.join([r'\\' + i for i in ('[aA]lpha', '[bB]eta', '[gG]amma', '[dD]elta',
             '[eE]psilon', '[zZ]eta', '[eE]ta', '[tT]heta', '[iI]ota', '[kK]appa', '[lL]ambda',
             '[mM]u', '[nN]u', '[xX]i', '[oO]mikron', '[pP]i', '[Rr]ho', '[sS]igma', '[tT]au',
             '[uU]psilon', '[pP]hi', '[cC]hi', '[pP]si', '[oO]mega')])
-        tensor = '|'.join(map(re.escape, re.split(r'[\s,]+', tensor))) if tensor else '(?!)'
+        namespace = '|'.join(map(re.escape, ('\\' + i if len(i) > 1 else i
+            for i in re.split(r'[\s,]+', namespace)))) if namespace else '(?!)'
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in
             [ ('RATIONAL',       r'[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
@@ -41,7 +44,7 @@ class Lexer:
               ('SPACE_DELIM',    r'(?:\s|\\,)+'),
               ('SQRT_CMD',       r'\\sqrt'),
               ('FRAC_CMD',       r'\\frac'),
-              ('TENSOR',         tensor),
+              ('TENSOR',         namespace),
               ('SYMBOL',         greek + r'|[a-zA-Z]'),
               ('COMMAND',        r'\\[a-z]+')]]))
 
@@ -90,6 +93,7 @@ class Lexer:
             raise RuntimeError('cannot reset uninitialized lexer')
         self.initialize(self.sentence)
 
+# pylint: disable=anomalous-backslash-in-string
 class Parser:
     """ LaTeX Parser
 
@@ -107,13 +111,13 @@ class Parser:
         <COMMAND>       -> <SQRT> | <FRAC>
         <SQRT>          -> \ sqrt [ [<INTEGER>] ] {<EXPR>}
         <FRAC>          -> \ frac {<EXPR>} {<EXPR>}
-        <ARRAY>         -> <TENSOR> ( _( <SYMBOL> | {{ <SYMBOL> }} ) [ ^( <SYMBOL> | {{ <SYMBOL> }} ) ]
-                            | ^( <SYMBOL> | {{ <SYMBOL> }} ) [ _( <SYMBOL> | {{ <SYMBOL> }} ) ] )
+        <ARRAY>         -> <TENSOR> [ _( <SYMBOL> | {{ <SYMBOL> }} ) [ ^( <SYMBOL> | {{ <SYMBOL> }} ) ]
+                            | ^( <SYMBOL> | {{ <SYMBOL> }} ) [ _( <SYMBOL> | {{ <SYMBOL> }} ) ] ]
     """
 
-    def __init__(self, tensor=None):
-        self.lexer = Lexer(tensor)
-        self.evaluate = tensor is None
+    def __init__(self, namespace):
+        self.lexer = Lexer(namespace)
+        self.evaluate = namespace is None
 
     def parse(self, sentence):
         """ Parse Sentence
@@ -132,14 +136,14 @@ class Parser:
         return root
 
     def __root(self):
-        if self.__peek('SYMBOL') or self.__peek('TENSOR'):
+        if self.peek('SYMBOL') or self.peek('TENSOR'):
+            if self.peek('SYMBOL') and not self.evaluate:
+                self.expect('TENSOR')
             variable = self.__variable()
-            if self.__peek('SYMBOL'):
-                variable = variable[8:-2]
-            if self.__accept('EQUAL'):
+            if self.accept('EQUAL'):
                 expr = self.__expr()
                 if self.evaluate:
-                    return {eval(variable): eval(expr)}
+                    return {variable[8:-2]: eval(expr)}
                 variable = str(eval(variable))
                 expr = str(expand(eval(expr)))
                 args = variable[7:-1].split(', ')
@@ -157,9 +161,9 @@ class Parser:
         return self.__expr()
 
     def __expr(self):
-        sign = '-' if self.__accept('MINUS') else ''
+        sign = '-' if self.accept('MINUS') else ''
         expr = sign + self.__term()
-        while self.__peek('PLUS') or self.__peek('MINUS'):
+        while self.peek('PLUS') or self.peek('MINUS'):
             operator = self.lexer.lexeme
             self.lexer.lex()
             expr += ' %s %s' % (operator, self.__term())
@@ -167,37 +171,37 @@ class Parser:
 
     def __term(self):
         expr = self.__factor()
-        while any(self.__peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET',
+        while any(self.peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET',
                 'SYMBOL', 'TENSOR', 'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE',
                 'SQRT_CMD', 'FRAC_CMD')):
-            operator = '/' if self.__accept('DIVIDE') else '*'
+            operator = '/' if self.accept('DIVIDE') else '*'
             expr += '%s%s' % (operator, self.__factor())
         return expr
 
     def __factor(self):
         expr = self.__subexpr()
-        while self.__accept('CARET'):
-            if self.__accept('LEFT_BRACE'):
+        while self.accept('CARET'):
+            if self.accept('LEFT_BRACE'):
                 expr += '**(' + self.__expr() + ')'
-                self.__expect('RIGHT_BRACE')
+                self.expect('RIGHT_BRACE')
             else: expr += '**' + self.__subexpr()
         return expr
 
     def __subexpr(self):
-        if self.__accept('LEFT_PAREN'):
+        if self.accept('LEFT_PAREN'):
             expr = '(' + self.__expr() + ')'
-            self.__expect('RIGHT_PAREN')
+            self.expect('RIGHT_PAREN')
             return expr
-        if self.__accept('LEFT_BRACKET'):
+        if self.accept('LEFT_BRACKET'):
             expr = '(' + self.__expr() + ')'
-            self.__expect('RIGHT_BRACKET')
+            self.expect('RIGHT_BRACKET')
             return expr
         return self.__operand()
 
     def __operand(self):
-        if self.__peek('SYMBOL') or self.__peek('TENSOR'):
+        if self.peek('SYMBOL') or self.peek('TENSOR'):
             return self.__variable()
-        if any(self.__peek(i) for i in ('SQRT_CMD', 'FRAC_CMD', 'COMMAND')):
+        if any(self.peek(i) for i in ('SQRT_CMD', 'FRAC_CMD', 'COMMAND')):
             return self.__command()
         return self.__number()
 
@@ -205,9 +209,9 @@ class Parser:
         variable = self.lexer.lexeme
         if variable[0] == '\\':
             variable = variable[1:]
-        if self.__accept('SYMBOL'):
-            if self.__accept('UNDERSCORE'):
-                if self.__peek('SYMBOL') or self.__peek('INTEGER'):
+        if self.accept('SYMBOL'):
+            if self.accept('UNDERSCORE'):
+                if self.peek('SYMBOL') or self.peek('INTEGER'):
                     subscript = self.lexer.lexeme
                     if subscript[0] == '\\':
                         subscript = subscript[1:]
@@ -236,52 +240,49 @@ class Parser:
             self.lexer.lex()
             array.append(suffix)
             index.append(symbol)
-        if self.__accept('UNDERSCORE'):
-            if self.__peek('SYMBOL'):
+        if self.accept('UNDERSCORE'):
+            if self.peek('SYMBOL'):
                 add_index('D')
-            elif self.__accept('LEFT_BRACE'):
-                while self.__peek('SYMBOL'):
+            elif self.accept('LEFT_BRACE'):
+                while self.peek('SYMBOL'):
                     add_index('D')
-                self.__expect('RIGHT_BRACE')
-            if self.__accept('CARET'):
-                if self.__peek('SYMBOL'):
+                self.expect('RIGHT_BRACE')
+            if self.accept('CARET'):
+                if self.peek('SYMBOL'):
                     add_index('U')
-                elif self.__accept('LEFT_BRACE'):
-                    while self.__peek('SYMBOL'):
+                elif self.accept('LEFT_BRACE'):
+                    while self.peek('SYMBOL'):
                         add_index('U')
-                    self.__expect('RIGHT_BRACE')
-        elif self.__accept('CARET'):
-            if self.__peek('SYMBOL'):
+                    self.expect('RIGHT_BRACE')
+        elif self.accept('CARET'):
+            if self.peek('SYMBOL'):
                 add_index('U')
-            elif self.__accept('LEFT_BRACE'):
-                while self.__peek('SYMBOL'):
+            elif self.accept('LEFT_BRACE'):
+                while self.peek('SYMBOL'):
                     add_index('U')
-                self.__expect('RIGHT_BRACE')
-            if self.__accept('UNDERSCORE'):
-                if self.__peek('SYMBOL'):
+                self.expect('RIGHT_BRACE')
+            if self.accept('UNDERSCORE'):
+                if self.peek('SYMBOL'):
                     add_index('D')
-                elif self.__accept('LEFT_BRACE'):
-                    while self.__peek('SYMBOL'):
+                elif self.accept('LEFT_BRACE'):
+                    while self.peek('SYMBOL'):
                         add_index('D')
-                    self.__expect('RIGHT_BRACE')
-        else:
-            sentence = self.lexer.sentence
-            position = self.lexer.index - len(self.lexer.lexeme)
-            raise ParseError('expected \'^\' or \'_\' at position %d' %
-                position, sentence, position)
+                    self.expect('RIGHT_BRACE')
         array = ''.join(array); var(array)
+        if not index:
+            return 'Function(\'Tensor\')(' + array + ')'
         return 'Function(\'Tensor\')(%s, %s)' % (array, ', '.join(index))
 
     def __number(self):
         number = self.lexer.lexeme
-        if self.__accept('RATIONAL'):
+        if self.accept('RATIONAL'):
             rational = re.match(r'([1-9][0-9]*)\/([1-9][0-9]*)', number)
             if not rational:
                 rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
             return 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
-        if self.__accept('DECIMAL'):
+        if self.accept('DECIMAL'):
             return 'Float(' + number + ')'
-        if self.__accept('INTEGER'):
+        if self.accept('INTEGER'):
             return 'Integer(' + number + ')'
         sentence = self.lexer.sentence
         position = self.lexer.index - len(self.lexer.lexeme)
@@ -290,45 +291,45 @@ class Parser:
 
     def __command(self):
         command = self.lexer.lexeme
-        if self.__accept('SQRT_CMD'):
+        if self.accept('SQRT_CMD'):
             return self.__sqrt()
-        if self.__accept('FRAC_CMD'):
+        if self.accept('FRAC_CMD'):
             return self.__frac()
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unsupported command \'%s\' at position %d' %
             (command, position), self.lexer.sentence, position)
 
     def __sqrt(self):
-        if self.__accept('LEFT_BRACKET'):
+        if self.accept('LEFT_BRACKET'):
             root = 'Integer(' + self.lexer.lexeme + ')'
-            self.__expect('INTEGER')
-            self.__expect('RIGHT_BRACKET')
+            self.expect('INTEGER')
+            self.expect('RIGHT_BRACKET')
         else: root = 2
-        self.__expect('LEFT_BRACE')
+        self.expect('LEFT_BRACE')
         expr = self.__expr()
-        self.__expect('RIGHT_BRACE')
+        self.expect('RIGHT_BRACE')
         return 'Pow(%s, Rational(1, %s))' % (expr, root)
 
     def __frac(self):
-        self.__expect('LEFT_BRACE')
+        self.expect('LEFT_BRACE')
         numerator = self.__expr()
-        self.__expect('RIGHT_BRACE')
-        self.__expect('LEFT_BRACE')
+        self.expect('RIGHT_BRACE')
+        self.expect('LEFT_BRACE')
         denominator = self.__expr()
-        self.__expect('RIGHT_BRACE')
+        self.expect('RIGHT_BRACE')
         return '(%s)/(%s)' % (numerator, denominator)
 
-    def __peek(self, token_type):
+    def peek(self, token_type):
         return self.lexer.token == token_type
 
-    def __accept(self, token_type):
-        if self.__peek(token_type):
+    def accept(self, token_type):
+        if self.peek(token_type):
             self.lexer.lex()
             return True
         return False
 
-    def __expect(self, token_type):
-        if not self.__accept(token_type):
+    def expect(self, token_type):
+        if not self.accept(token_type):
             position = self.lexer.index - len(self.lexer.lexeme)
             raise ParseError('expected token %s at position %d' %
                 (token_type, position), self.lexer.sentence, position)
@@ -340,16 +341,16 @@ class ParseError(Exception):
         super().__init__('%s\n%s^\n' % (sentence, (12 + position) * ' ') + message)
 
 def __summation(equation, dimension):
-    loop_count = 0
     for var_ in equation:
         var, expr = var_, equation[var_]
     LHS, RHS = list(zip(re.findall(r'\[([a-zA-Z]+)\]', var),
         re.findall(r'[UD]', var))), []
+    loop_count = 0
     for product in re.split(r'\s[\+\-]\s', expr):
         loop_index = (2 * chr(97 + n) for n in range(26))
         idx_lst = re.findall(r'\[([a-zA-Z]+)\]', product)
         pos_lst = re.findall(r'[UD]', product)
-        bound_count = 0
+        bound_count, index_map = 0, {}
         for idx in set(idx_lst):
             count = U = D = 0
             free_index = []
@@ -364,23 +365,28 @@ def __summation(equation, dimension):
                     raise TensorError('illegal bound index')
                 lp_idx = next(loop_index)
                 if bound_count >= loop_count:
-                    expr = 'sum(%s for %s in range(%d))' % \
-                        (expr.replace(idx, lp_idx), lp_idx, dimension)
+                    index_map[idx] = lp_idx
                 else: expr = expr.replace(idx, lp_idx)
                 bound_count += 1
             else:
                 RHS.extend(free_index)
             if bound_count > loop_count: loop_count = bound_count
+        for idx in index_map:
+            expr = expr.replace(idx, index_map[idx])
+        for idx in index_map:
+            expr = 'sum(%s for %s in range(%d))' % \
+                (expr, index_map[idx], dimension)
     if LHS:
         if set(LHS) != set(RHS):
             raise TensorError('unbalanced free index')
         for idx, _ in LHS:
             expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
-    return {var.split('[')[0]: expr}
+    return var.split('[')[0], expr
 
+# pylint: disable=missing-class-docstring
 class TensorError(Exception): pass
 
-def parse(sentence, tensor=None, namespace=None):
+def parse(sentence, namespace=None):
     """ Convert LaTeX Sentence to SymPy Expression
 
         :arg:    LaTeX Sentence
@@ -391,20 +397,30 @@ def parse(sentence, tensor=None, namespace=None):
         >>> parse(r'-(x\\frac{2}{3} + \\sqrt[5]{x + 3})')
         -2*x/3 - (x + 3)**(1/5)
         >>> parse(r'x_n = \\sqrt[5]{x + 3}')
-        {x_n: (x + 3)**(1/5)}
+        {'x_n': (x + 3)**(1/5)}
         >>> parse(r'v^\\mu = g^{\\mu\\nu}v_\\nu', 'v g')
         {'vU[mu]': 'vD[nu]*gUU[mu][nu]'}
+
+        >>> import indexedexp as ixp
+        >>> hUU = ixp.declarerank2('hUU', 'nosym', 2)
+        >>> hDD = ixp.declarerank2('hDD', 'nosym', 2)
+        >>> namespace = {'h': 0, 'hUU': hUU, 'hDD': hDD}
+        >>> parse(r'h = h_{\\mu\\mu}h^{\\mu\\mu}', namespace)
+        {'h': hDD00*hUU00 + hDD11*hUU11}
     """
-    if namespace is None:
-        return Parser(tensor).parse(sentence)
-    dimension = 3 # (TODO: Inferable Dimension)
-    equation = Parser(tensor).parse(sentence)
-    varmap = __summation(equation, dimension)
-    for var in namespace:
-        globals()[var] = namespace[var]
-    for var in varmap:
-        expr = eval(varmap[var])
-    return {var: expr}
+    if namespace is None or isinstance(namespace, str):
+        return Parser(namespace).parse(sentence)
+    if isinstance(namespace, dict):
+        dim_list = [len(namespace[tensor])
+            for tensor in namespace if isinstance(namespace[tensor], list)]
+        if any(dimension != dim_list[0] for dimension in dim_list):
+            raise TensorError('inconsistent tensor dimension')
+        equation = Parser(' '.join(re.split(r'[UD]', tensor)[0]
+            for tensor in namespace)).parse(sentence)
+        var, expr = __summation(equation, dim_list[0])
+        globals().update(namespace)
+        return {var: eval(expr)}
+    raise TypeError('inappropriate type for tensor namespace')
 
 if __name__ == "__main__":
     import doctest
