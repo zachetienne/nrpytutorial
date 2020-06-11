@@ -397,7 +397,7 @@ def parse(sentence, tensor=None, namespace=None):
     """
     if namespace is None:
         return Parser(tensor).parse(sentence)
-    dimension = 2 # (TODO: Inferable Dimension)
+    dimension = 3 # (TODO: Inferable Dimension)
     equation = Parser(tensor).parse(sentence)
     varmap = __summation(equation, dimension)
     for var in namespace:
