@@ -16,8 +16,7 @@ import grid as gri               # NRPy+: Functions having to do with numerical 
 import sys                       # Standard Python module for multiplatform OS-level functions
 from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
 from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list
-
-from operator import itemgetter
+from finite_difference_helpers import read_gfs_from_memory, out__type_var, FDparams, varsuffix
 
 # Step 1: Initialize free parameters for this module:
 modulename = __name__
@@ -27,6 +26,13 @@ par.initialize_param(par.glb_param("int", modulename, "FD_KO_ORDER__CENTDERIVS_P
 
 def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     outCparams = parse_outCparams_string(params)
+
+    FDparams.SIMD_enable      = outCparams.SIMD_enable
+    FDparams.PRECISION        = par.parval_from_str("PRECISION")
+    FDparams.DIM              = par.parval_from_str("DIM")
+    FDparams.MemAllocStyle    = par.parval_from_str("MemAllocStyle")
+    FDparams.upwindcontrolvec = upwindcontrolvec
+
     # Step 0.a:
     # In case sympyexpr_list is a single sympy expression,
     #     convert it to a list with just one element.
@@ -59,21 +65,23 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     # Step 1: Generate from list of SymPy expressions in the form
     #     [lhrh(lhs=var, rhs=expr),lhrh(...),...]
     #     all derivative expressions, which we will process next.
-    list_of_deriv_vars = generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(sympyexpr_list, upwindcontrolvec)
+    list_of_deriv_vars = generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(sympyexpr_list, FDparams)
 
     # Step 2a: Extract from list_of_deriv_vars a list of base gridfunctions
-    #         and a list of derivative operators.
-    # E.g.,
+    #         and a list of derivative operators. Usually takes list of SymPy
+    #         symbols as input, but could just take strings, as this function
+    #         does only string manipulations.
+    # Example:
     # >>> extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(["aDD_dD012","aDD_dKOD012","vetU_dKOD21","hDD_dDD0112"])
     # (['aDD01', 'aDD01', 'vetU2', 'hDD01'], ['dD2', 'dKOD2', 'dKOD1', 'dDD12'])
-    deriv__base_gridfunction_name, deriv__operator = \
+    list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators = \
         extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_vars)
 
     # Step 2b:
-    # Then check each base gridfunction to determine whether
+    # Next, check each base gridfunction to determine whether
     #     it is indeed registered as a gridfunction.
     #     If not, exit with error.
-    for basegf in deriv__base_gridfunction_name:
+    for basegf in list_of_base_gridfunction_names_in_derivs:
         is_gf = False
         for gf in gri.glb_gridfcs_list:
             if basegf == str(gf.name):
@@ -86,13 +94,13 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     # Step 2c:
     # Check each derivative operator to make sure it is
     #     supported. If not, error out.
-    for i in range(len(deriv__operator)):
+    for i in range(len(list_of_deriv_operators)):
         found_derivID = False
         for derivID in ["dD","dupD","ddnD","dKOD"]:
-            if derivID in deriv__operator[i]:
+            if derivID in list_of_deriv_operators[i]:
                 found_derivID = True
         if not found_derivID:
-            print("Error: Valid derivative operator in "+deriv__operator[i]+" not found.")
+            print("Error: Valid derivative operator in "+list_of_deriv_operators[i]+" not found.")
             sys.exit(1)
 
     # Step 2d (Upwinded derivatives algorithm, part 1):
@@ -105,7 +113,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     #     we find all directions used for upwinding.
     if upwindcontrolvec != "":
         upwind_directions_unsorted_withdups = []
-        for deriv_op in deriv__operator:
+        for deriv_op in list_of_deriv_operators:
             if "dupD" in deriv_op:
                 if deriv_op[len(deriv_op)-1].isdigit():
                     dirn = int(deriv_op[len(deriv_op)-1])
@@ -132,186 +140,14 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     #     the string "ip1" corresponds to (i+1,j,k),
     #     the string "ip1kp1" corresponds to (i+1,j,k+1),
     #     etc.
-    fdcoeffs = [[] for i in range(len(deriv__operator))]
-    fdstencl = [[[] for i in range(4)] for j in range(len(deriv__operator))]
-    for i in range(len(deriv__operator)):
-        fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(deriv__operator[i])
+    fdcoeffs = [[] for i in range(len(list_of_deriv_operators))]
+    fdstencl = [[[] for i in range(4)] for j in range(len(list_of_deriv_operators))]
+    for i in range(len(list_of_deriv_operators)):
+        fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(list_of_deriv_operators[i])
 
-    # Step 4:
-    # Create C code to read gridfunctions from memory
-    # Step 4a: Compile list of points to read from memory
-    #          for each gridfunction i, based on list
-    #          provided in fdstencil[i][].
-    list_of_points_read_from_memory_with_duplicates = [[] for i in range(len(gri.glb_gridfcs_list))]
-    for j in range(len(deriv__base_gridfunction_name)):
-        derivgfname = deriv__base_gridfunction_name[j]
-        # Next find the corresponding gridfunction index:
-        for i in range(len(gri.glb_gridfcs_list)):
-            gfname = gri.glb_gridfcs_list[i].name
-            # If the gridfunction for the derivative matches, then
-            #    add to the list of points read from memory:
-            if derivgfname == gfname:
-                for k in range(len(fdstencl[j])):
-                    list_of_points_read_from_memory_with_duplicates[i].append(str(fdstencl[j][k][0]) + "," + \
-                                                                              str(fdstencl[j][k][1]) + "," + \
-                                                                              str(fdstencl[j][k][2]) + "," + \
-                                                                              str(fdstencl[j][k][3]))
-
-    # Step 4b: "Zeroth derivative" case:
-    #     If gridfunction appears in expression not
-    #     as derivative (i.e., by itself), it must
-    #     be read from memory as well.
-    for expr in range(len(sympyexpr_list)):
-        for var in sympyexpr_list[expr].rhs.free_symbols:
-            vartype = gri.variable_type(var)
-            if vartype == "gridfunction":
-                for i in range(len(gri.glb_gridfcs_list)):
-                    gfname = gri.glb_gridfcs_list[i].name
-                    if gfname == str(var):
-                        list_of_points_read_from_memory_with_duplicates[i].append("0,0,0,0")
-
-
-    # Step 4c: Remove duplicates when reading from memory;
-    #     do not needlessly read the same variable
-    #     from memory twice.
-    list_of_points_read_from_memory = [[] for i in range(len(gri.glb_gridfcs_list))]
-    for i in range(len(gri.glb_gridfcs_list)):
-        list_of_points_read_from_memory[i] = superfast_uniq(list_of_points_read_from_memory_with_duplicates[i])
-
-    # Step 4d: Minimize cache misses:
-    #      Sort the list of points read from
-    #      main memory by how they are stored
-    #      in memory.
-
-    # Step 4d.i: Define a function that maps a gridpoint
-    #     index (i,j,k,l) to a unique memory "address",
-    #     which will correspond to the correct ordering
-    #     of actual memory addresses.
-    #
-    #     Input: a list of 4 indices, e.g., (i,j,k,l)
-    #            corresponding to a gridpoint's *spatial*
-    #            index in memory (thus we support up to
-    #            4D in space). If spatial dimension is
-    #            less than 4D, then just set latter
-    #            index/indices to zero. E.g., for 2D
-    #            spatial indexing, set (i,j,0,0).
-    #     Output: a single number, which when sorted
-    #            will yield a unique "address" in memory
-    #            such that consecutive addresses are
-    #            consecutive in memory.
-    def unique_idx(idx4):
-        # os and sz are set *just for the purposes of ensuring indices are ordered in memory*
-        #    Do not modify the values of os and sz.
-        os = 50  # offset
-        sz = 100 # assumed size in each direction
-        if par.parval_from_str("MemAllocStyle") == "210":
-            return str(int(idx4[0])+os + sz*( (int(idx4[1])+os) + sz*( (int(idx4[2])+os) + sz*( int(idx4[3])+os ) ) ))
-        if par.parval_from_str("MemAllocStyle") == "012":
-            return str(int(idx4[3])+os + sz*( (int(idx4[2])+os) + sz*( (int(idx4[1])+os) + sz*( int(idx4[0])+os ) ) ))
-        print("Error: MemAllocStyle = "+par.parval_from_str("MemAllocStyle")+" unsupported.")
-        sys.exit(1)
-
-    # Step 4d.ii: For each gridfunction and
-    #      point read from memory, call unique_idx,
-    #      then sort according to memory "address"
-    # Input: list_of_points_read_from_memory[gridfunction][point],
-    #        gri.glb_gridfcs_list[gridfunction]
-    # Output: 1) A list of points to be read from
-    #            memory, sorted according to memory
-    #            "address":
-    #            sorted_list_of_points_read_from_memory[gridfunction][point]
-    #        2) A list containing the gridfunction
-    #           read at each point, with the number
-    #           of elements corresponding exactly
-    #           to the total number of points read
-    #           from memory for all gridfunctions:
-    #           read_from_memory_gf[]
-    read_from_memory_gf    = []
-    sorted_list_of_points_read_from_memory = [[] for i in range(len(gri.glb_gridfcs_list))]
-    for gfidx in range(len(gri.glb_gridfcs_list)):
-        # Continue only if reading at least one point of gfidx from memory.
-        #     The sorting algorithm at the end of this code block is not
-        #     well-defined (will throw an error) if no points of gfidx are
-        #     read from memory.
-        if len(list_of_points_read_from_memory[gfidx]) > 0:
-            read_from_memory_index = []
-            for idx in list_of_points_read_from_memory[gfidx]:
-                read_from_memory_gf.append(gri.glb_gridfcs_list[gfidx])
-                idxsplit = idx.split(',')
-                idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
-                read_from_memory_index.append(unique_idx(idx4))
-                # https://stackoverflow.com/questions/13668393/python-sorting-two-lists
-                _UNUSEDlist, sorted_list_of_points_read_from_memory[gfidx] = \
-                    [list(x) for x in zip(*sorted(zip(read_from_memory_index, list_of_points_read_from_memory[gfidx]),
-                                                  key=itemgetter(0)))]
-    # Step 4e: Create the full C code string
-    #      for reading from memory:
-
-    # if DIM==4:
-    #     input: [i,j,k,l]
-    #     output: "i0+i,i1+j,i2+k,i3+l"
-    # if DIM==3:
-    #     input: [i,j,k,l]
-    #     output: "i0+i,i1+j,i2+k"
-    # etc.
-    def ijkl_string(idx4):
-        DIM = par.parval_from_str("DIM")
-        retstring = ""
-        for i in range(DIM):
-            if i>0:
-                # Add a comma
-                retstring += ","
-            retstring += "i"+str(i)+"+"+str(idx4[i])
-        return retstring.replace("+-", "-").replace("+0", "")
-
-    def out__type_var(in_var,AddPrefix_for_UpDownWindVars=True):
-        varname = str(in_var)
-        # Disable prefixing upwinded and downwinded variables
-        # if the upwind control vector algorithm is disabled.
-        if upwindcontrolvec == "":
-            AddPrefix_for_UpDownWindVars = False
-        if AddPrefix_for_UpDownWindVars:
-            if "_dupD" in varname:  # Variables suffixed with "_dupD" are set
-                #                    to be the "pure" upwinded derivative,
-                #                    before the upwinding algorithm has been
-                #                    applied. However, when they are used
-                #                    in the RHS expressions, it is assumed
-                #                    that the up. algorithm has been applied.
-                #                    To ensure consistency we rename all
-                #                    _dupD suffixed variables as
-                #                    _dupDPUREUPWIND, and use them as input
-                #                    into the upwinding algorithm. The output
-                #                    will be the original _dupD variable.
-                varname = "UpwindAlgInput"+varname
-            if "_ddnD" in varname: # For consistency with _dupD
-                varname = "UpwindAlgInput"+varname
-        if outCparams.SIMD_enable == "True":
-            return "const REAL_SIMD_ARRAY " + varname
-        return "const "+ par.parval_from_str("PRECISION") + " " + varname
-
-    def varsuffix(idx4):
-        if idx4 == [0,0,0,0]:
-            return ""
-        return "_"+ijkl_string(idx4).replace(",","_").replace("+","p").replace("-","m")
-
-    def read_from_memory_Ccode_onept(gfname,idx):
-        idxsplit = idx.split(',')
-        idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
-        gf_array_name = "in_gfs" # Default array name.
-        gfaccess_str = gri.gfaccess(gf_array_name,gfname,ijkl_string(idx4))
-        if outCparams.SIMD_enable == "True":
-            retstring = out__type_var(gfname) + varsuffix(idx4) +" = ReadSIMD(&" + gfaccess_str + ");"
-        else:
-            retstring = out__type_var(gfname) + varsuffix(idx4) +" = " + gfaccess_str + ";"
-        return retstring+"\n"
-
-    read_from_memory_Ccode = ""
-    count = 0
-    for gfidx in range(len(gri.glb_gridfcs_list)):
-        for pt in range(len(sorted_list_of_points_read_from_memory[gfidx])):
-            read_from_memory_Ccode += read_from_memory_Ccode_onept(read_from_memory_gf[count].name,
-                                                                   sorted_list_of_points_read_from_memory[gfidx][pt])
-            count += 1
+    # Step 4: Create C code to read gridfunctions from memory
+    read_from_memory_Ccode = read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sympyexpr_list,
+                                                  FDparams)
 
     # Step 5: Output C code. C code consists of three parts
     #         a) Read gridfunctions from memory at needed pts.
@@ -348,10 +184,10 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     #            Coutput string
     for i in range(len(list_of_deriv_vars)):
         exprs.append(sp.sympify(0)) # Append a new element to the list of derivative expressions.
-        lhsvarnames.append(out__type_var(list_of_deriv_vars[i]))
-        var = deriv__base_gridfunction_name[i]
+        lhsvarnames.append(out__type_var(list_of_deriv_vars[i], FDparams))
+        var = list_of_base_gridfunction_names_in_derivs[i]
         for j in range(len(fdcoeffs[i])):
-            varname = str(var)+varsuffix(fdstencl[i][j])
+            varname = str(var)+varsuffix(fdstencl[i][j], FDparams)
             exprs[i] += fdcoeffs[i][j]*sp.sympify(varname)
 
         # Multiply each expression by the appropriate power
@@ -360,18 +196,18 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         for d in range(par.parval_from_str("DIM")):
             invdx.append(sp.sympify("invdx"+str(d)))
         # First-order or Kreiss-Oliger derivatives:
-        if (len(deriv__operator[i]) == 5 and "dKOD" in deriv__operator[i]) or \
-           (len(deriv__operator[i]) == 3 and "dD" in deriv__operator[i]) or \
-           (len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i] or "ddnD" in deriv__operator[i])):
-            dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
+        if (len(list_of_deriv_operators[i]) == 5 and "dKOD" in list_of_deriv_operators[i]) or \
+           (len(list_of_deriv_operators[i]) == 3 and "dD" in list_of_deriv_operators[i]) or \
+           (len(list_of_deriv_operators[i]) == 5 and ("dupD" in list_of_deriv_operators[i] or "ddnD" in list_of_deriv_operators[i])):
+            dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i])-1])
             exprs[i] *= invdx[dirn]
         # Second-order derivs:
-        elif len(deriv__operator[i]) == 5 and "dDD" in deriv__operator[i]:
-            dirn1 = int(deriv__operator[i][len(deriv__operator[i]) - 2])
-            dirn2 = int(deriv__operator[i][len(deriv__operator[i]) - 1])
+        elif len(list_of_deriv_operators[i]) == 5 and "dDD" in list_of_deriv_operators[i]:
+            dirn1 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 2])
+            dirn2 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
             exprs[i] *= invdx[dirn1]*invdx[dirn2]
         else:
-            print("Error: was unable to parse derivative operator: ",deriv__operator[i])
+            print("Error: was unable to parse derivative operator: ",list_of_deriv_operators[i])
             sys.exit(1)
     # Step 5b.ii: If upwind control vector is specified,
     #             add upwind control vectors to the
@@ -380,7 +216,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     if upwindcontrolvec != "":
         for i in range(len(upwind_directions)):
             exprs.append(upwindcontrolvec[upwind_directions[i]])
-            lhsvarnames.append(out__type_var("UpwindControlVectorU"+str(upwind_directions[i])))
+            lhsvarnames.append(out__type_var("UpwindControlVectorU"+str(upwind_directions[i]),FDparams))
 
     # Step 5b.iii: Output useful code comment regarding
     #              which step we are on. *At most* this
@@ -412,7 +248,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                                     + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
                                     ": Implement upwinding algorithm:\n */\n")
             NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
-            if outCparams.SIMD_enable == "True":
+            if FDparams.SIMD_enable == "True":
                 Coutput += """
 const double tmp_upwind_Integer_1 = 1.000000000000000000000000000000000;
 const REAL_SIMD_ARRAY upwind_Integer_1 = ConstSIMD(tmp_upwind_Integer_1);
@@ -420,19 +256,20 @@ const double tmp_upwind_Integer_0 = 0.000000000000000000000000000000000;
 const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
 """
             for dirn in upwind_directions:
-                Coutput += indent_Ccode(out__type_var("UpWind" + str(dirn)) + " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
+                Coutput += indent_Ccode(out__type_var("UpWind" + str(dirn),FDparams) +
+                                        " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
         upwindU = [sp.sympify(0) for i in range(par.parval_from_str("DIM"))]
         for dirn in upwind_directions:
             upwindU[dirn] = sp.sympify("UpWind"+str(dirn))
         upwind_expr_list, var_list = [], []
         for i in range(len(list_of_deriv_vars)):
-            if len(deriv__operator[i]) == 5 and ("dupD" in deriv__operator[i]):
+            if len(list_of_deriv_operators[i]) == 5 and ("dupD" in list_of_deriv_operators[i]):
                 var_dupD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]))
                 var_ddnD = sp.sympify("UpwindAlgInput"+str(list_of_deriv_vars[i]).replace("_dupD","_ddnD"))
-                upwind_dirn = int(deriv__operator[i][len(deriv__operator[i])-1])
+                upwind_dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i])-1])
                 upwind_expr = upwindU[upwind_dirn]*(var_dupD - var_ddnD) + var_ddnD
                 upwind_expr_list.append(upwind_expr)
-                var_list.append(out__type_var(str(list_of_deriv_vars[i]),AddPrefix_for_UpDownWindVars=False))
+                var_list.append(out__type_var(str(list_of_deriv_vars[i]),FDparams,AddPrefix_for_UpDownWindVars=False))
         # For convenience, we require out__type_var() above to
         # prefix up/downwinded variables with "UpwindAlgInput".
         # Here we do not wish to have this prefix.
@@ -448,7 +285,7 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
     lhsvarnames = []
     for i in range(len(sympyexpr_list)):
         exprs.append(sympyexpr_list[i].rhs)
-        if outCparams.SIMD_enable == "True":
+        if FDparams.SIMD_enable == "True":
             lhsvarnames.append("const REAL_SIMD_ARRAY __RHS_exp_"+str(i))
         else:
             lhsvarnames.append(sympyexpr_list[i].lhs)
@@ -456,7 +293,7 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
     # Step 5c: Write output to gridfunctions specified in
     #          sympyexpr_list[].lhs.
     write_to_mem_string = ""
-    if outCparams.SIMD_enable == "True":
+    if FDparams.SIMD_enable == "True":
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&"+sympyexpr_list[i].lhs+", __RHS_exp_"+str(i)+");\n"
     Coutput += indent_Ccode(outputC(exprs,lhsvarnames,"returnstring", params = params+",CSE_varprefix=FDPart3,includebraces=False,preindent=0", prestring="",poststring=write_to_mem_string))
