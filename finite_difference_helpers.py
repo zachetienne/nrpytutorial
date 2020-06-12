@@ -8,132 +8,17 @@
 
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
-from outputC import superfast_uniq # NRPy+: Core C code output module
+from outputC import superfast_uniq, outputC # NRPy+: Core C code output module
 import sympy as sp                 # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri                 # NRPy+: Functions having to do with numerical grids
 import sys                         # Standard Python module for multiplatform OS-level functions
 from collections import namedtuple # Standard Python: Enable namedtuple data type
 
-FDparams = namedtuple('FDparams', 'PRECISION SIMD_enable DIM MemAllocStyle upwindcontrolvec')
+FDparams = namedtuple('FDparams', 'PRECISION SIMD_enable DIM MemAllocStyle upwindcontrolvec fullindent outCparams')
 
-def ijkl_string(idx4, FDparams):
-    """Generate string for reading gridfunction from specific location in memory
-    if DIM==4:
-        input: [i,j,k,l]
-        output: "i0+i,i1+j,i2+k,i3+l"
-    if DIM==3:
-        input: [i,j,k,l]
-        output: "i0+i,i1+j,i2+k"
-    etc.
-    :param idx4: An array of 4 integers, indicating a finite difference grid index relative to where the fd is being computed
-    :param FDparams: Parameters used in the finite-difference codegen
-    :return: DIM==3 input [i,j,k,l] -> output "i0+i,i1+j,i2+k"
-    >>> from finite_difference_helpers import ijkl_string, FDparams
-    >>> FDparams.DIM = 4
-    >>> ijkl_string([-2,1,0,-1], FDparams)
-    \'i0-2,i1+1,i2,i3-1\'
-
-    >>> from finite_difference_helpers import ijkl_string, FDparams
-    >>> FDparams.DIM = 3
-    >>> ijkl_string([-2,-1,-1,-300], FDparams)
-    \'i0-2,i1-1,i2-1\'
-    """
-    retstring = ""
-    for i in range(FDparams.DIM):
-        if i > 0:
-            # Add a comma
-            retstring += ","
-        retstring += "i" + str(i) + "+" + str(idx4[i])
-    return retstring.replace("+-", "-").replace("+0", "")
-
-def varsuffix(idx4, FDparams):
-    """Generate string for suffixing single point read in from memory
-    Example: If a gridfunction is named hDD00, and we want to read from memory data at i0+1,i1,i2-1,
-    we store the value of this gridfunction as hDD00_i0p1_i1_i2m1; this function provides the suffix.
-    if DIM==3:
-    input: [0,2,1,-100]
-    output: "_i0_i1p2_i2p1"
-
-    :param idx4: An array of 4 integers, indicating a finite difference grid index relative to where the fd is being computed
-    :param FDparams: Parameters used in the finite-difference codegen
-    :return: returns suffix to uniquely name a point of data for a gridfunction
-    >>> from finite_difference_helpers import varsuffix, FDparams
-    >>> FDparams.DIM=3
-    >>> varsuffix([-2,0,-1,-300], FDparams)
-    \'_i0m2_i1_i2m1\'
-    """
-    if idx4 == [0, 0, 0, 0]:
-        return ""
-    return "_" + ijkl_string(idx4, FDparams).replace(",", "_").replace("+", "p").replace("-", "m")
-
-def type__var(in_var,FDparams, AddPrefix_for_UpDownWindVars=True):
-    """ Outputs [type] [variable name]; e.g.,
-    "const double variable"
-
-    :param in_var: Variable name
-    :param FDparams: Parameters used in the finite-difference codegen
-    :param AddPrefix_for_UpDownWindVars: Boolean -- add a prefix to up/downwind variables?
-    :return: Return [type] [variable name]
-    >>> from finite_difference_helpers import type__var, FDparams
-    >>> FDparams.SIMD_enable = "True"
-    >>> type__var("aDD00",FDparams)
-    \'const REAL_SIMD_ARRAY aDD00\'
-
-    >>> from finite_difference_helpers import type__var, FDparams
-    >>> FDparams.SIMD_enable = "False"
-    >>> FDparams.PRECISION = "double"
-    >>> type__var("variable",FDparams)
-    \'const double variable\'
-    """
-    varname = str(in_var)
-    # Disable prefixing upwinded and downwinded variables
-    # if the upwind control vector algorithm is disabled.
-    if FDparams.upwindcontrolvec == "":
-        AddPrefix_for_UpDownWindVars = False
-    if AddPrefix_for_UpDownWindVars:
-        if "_dupD" in varname:  # Variables suffixed with "_dupD" are set
-            #                    to be the "pure" upwinded derivative,
-            #                    before the upwinding algorithm has been
-            #                    applied. However, when they are used
-            #                    in the RHS expressions, it is assumed
-            #                    that the up. algorithm has been applied.
-            #                    To ensure consistency we rename all
-            #                    _dupD suffixed variables as
-            #                    _dupDPUREUPWIND, and use them as input
-            #                    into the upwinding algorithm. The output
-            #                    will be the original _dupD variable.
-            varname = "UpwindAlgInput"+varname
-        if "_ddnD" in varname: # For consistency with _dupD
-            varname = "UpwindAlgInput"+varname
-    if FDparams.SIMD_enable == "True":
-        return "const REAL_SIMD_ARRAY " + varname
-    return "const "+ FDparams.PRECISION + " " + varname
-
-def read_from_memory_Ccode_onept(gfname,idx, FDparams):
-    """
-
-    :param gfname: gridfunction name; a string
-    :param idx: Grid index relative to (i0,i1,i2,i3); e.g., "0,1,2,3" -> (i0,i1+1,i2+2,i3+3); later indices ignored for DIM<4
-    :param FDparams: Parameters used in the finite-difference codegen
-    :return: C code string for reading in this gridfunction at point idx from memory
-    >>> import indexedexp as ixp
-    >>> from finite_difference_helpers import FDparams, read_from_memory_Ccode_onept
-    >>> FDparams.DIM = 3
-    >>> FDparams.upwindcontrolvec = ""
-    >>> FDparams.SIMD_enable = "True"
-    >>> vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU",FDparams.DIM)
-    >>> read_from_memory_Ccode_onept("vetU0","0,1,-2,300",FDparams)
-    \'const REAL_SIMD_ARRAY vetU0_i0_i1p1_i2m2 = ReadSIMD(&in_gfs[IDX4(VETU0GF, i0,i1+1,i2-2)]);\\n\'
-    """
-    idxsplit = idx.split(',')
-    idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
-    gf_array_name = "in_gfs" # Default array name.
-    gfaccess_str = gri.gfaccess(gf_array_name,gfname,ijkl_string(idx4, FDparams))
-    if FDparams.SIMD_enable == "True":
-        retstring = type__var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = ReadSIMD(&" + gfaccess_str + ");"
-    else:
-        retstring = type__var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = " + gfaccess_str + ";"
-    return retstring+"\n"
+#########################################
+# STEP 1: EXTRACT DERIVATIVES TO COMPUTE
+#         FROM LIST OF SYMPY EXPRESSIONS
 
 def generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(sympyexpr_list,FDparams):
     """
@@ -210,6 +95,11 @@ def generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(sympyexpr_list,FDparams
     #     tuned to reduce cache misses.
     #     Thanks to Aaron Meurer for this nice one-liner!
     return sorted(list_of_deriv_vars,key=sp.default_sort_key)
+########################################
+
+########################################
+# STEP 2: EXTRACT DERIVATIVE INFORMATION
+#         FROM LIST OF SYMPY EXPRESSIONS
 
 def extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_vars):
     """ Extract from list_of_deriv_vars a list of base gridfunctions
@@ -270,8 +160,132 @@ def extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_
         list_of_deriv_operators.append(varstr[underscore_position + 1:len(varstr) - deriv_order - rank] +
                                varstr[len(varstr) - deriv_order:len(varstr)])
     return list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators
+########################################
+
+########################################
+# STEP 4: GENERATE C CODE FOR READING
+#         NEEDED GRIDPOINTS FROM MEMORY
 
 from operator import itemgetter
+
+def type__var(in_var,FDparams, AddPrefix_for_UpDownWindVars=True):
+    """ Outputs [type] [variable name]; e.g.,
+    "const double variable"
+
+    :param in_var: Variable name
+    :param FDparams: Parameters used in the finite-difference codegen
+    :param AddPrefix_for_UpDownWindVars: Boolean -- add a prefix to up/downwind variables?
+    :return: Return [type] [variable name]
+    >>> from finite_difference_helpers import type__var, FDparams
+    >>> FDparams.SIMD_enable = "True"
+    >>> type__var("aDD00",FDparams)
+    \'const REAL_SIMD_ARRAY aDD00\'
+
+    >>> from finite_difference_helpers import type__var, FDparams
+    >>> FDparams.SIMD_enable = "False"
+    >>> FDparams.PRECISION = "double"
+    >>> type__var("variable",FDparams)
+    \'const double variable\'
+    """
+    varname = str(in_var)
+    # Disable prefixing upwinded and downwinded variables
+    # if the upwind control vector algorithm is disabled.
+    if FDparams.upwindcontrolvec == "":
+        AddPrefix_for_UpDownWindVars = False
+    if AddPrefix_for_UpDownWindVars:
+        if "_dupD" in varname:  # Variables suffixed with "_dupD" are set
+            #                    to be the "pure" upwinded derivative,
+            #                    before the upwinding algorithm has been
+            #                    applied. However, when they are used
+            #                    in the RHS expressions, it is assumed
+            #                    that the up. algorithm has been applied.
+            #                    To ensure consistency we rename all
+            #                    _dupD suffixed variables as
+            #                    _dupDPUREUPWIND, and use them as input
+            #                    into the upwinding algorithm. The output
+            #                    will be the original _dupD variable.
+            varname = "UpwindAlgInput"+varname
+        if "_ddnD" in varname: # For consistency with _dupD
+            varname = "UpwindAlgInput"+varname
+    if FDparams.SIMD_enable == "True":
+        return "const REAL_SIMD_ARRAY " + varname
+    return "const "+ FDparams.PRECISION + " " + varname
+
+def read_from_memory_Ccode_onept(gfname,idx, FDparams):
+    """
+
+    :param gfname: gridfunction name; a string
+    :param idx: Grid index relative to (i0,i1,i2,i3); e.g., "0,1,2,3" -> (i0,i1+1,i2+2,i3+3); later indices ignored for DIM<4
+    :param FDparams: Parameters used in the finite-difference codegen
+    :return: C code string for reading in this gridfunction at point idx from memory
+    >>> import indexedexp as ixp
+    >>> from finite_difference_helpers import FDparams, read_from_memory_Ccode_onept
+    >>> FDparams.DIM = 3
+    >>> FDparams.upwindcontrolvec = ""
+    >>> FDparams.SIMD_enable = "True"
+    >>> vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU",FDparams.DIM)
+    >>> read_from_memory_Ccode_onept("vetU0","0,1,-2,300",FDparams)
+    \'const REAL_SIMD_ARRAY vetU0_i0_i1p1_i2m2 = ReadSIMD(&in_gfs[IDX4(VETU0GF, i0,i1+1,i2-2)]);\\n\'
+    """
+    idxsplit = idx.split(',')
+    idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
+    gf_array_name = "in_gfs" # Default array name.
+    gfaccess_str = gri.gfaccess(gf_array_name,gfname,ijkl_string(idx4, FDparams))
+    if FDparams.SIMD_enable == "True":
+        retstring = type__var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = ReadSIMD(&" + gfaccess_str + ");"
+    else:
+        retstring = type__var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = " + gfaccess_str + ";"
+    return retstring+"\n"
+
+def ijkl_string(idx4, FDparams):
+    """Generate string for reading gridfunction from specific location in memory
+    if DIM==4:
+        input: [i,j,k,l]
+        output: "i0+i,i1+j,i2+k,i3+l"
+    if DIM==3:
+        input: [i,j,k,l]
+        output: "i0+i,i1+j,i2+k"
+    etc.
+    :param idx4: An array of 4 integers, indicating a finite difference grid index relative to where the fd is being computed
+    :param FDparams: Parameters used in the finite-difference codegen
+    :return: DIM==3 input [i,j,k,l] -> output "i0+i,i1+j,i2+k"
+    >>> from finite_difference_helpers import ijkl_string, FDparams
+    >>> FDparams.DIM = 4
+    >>> ijkl_string([-2,1,0,-1], FDparams)
+    \'i0-2,i1+1,i2,i3-1\'
+
+    >>> from finite_difference_helpers import ijkl_string, FDparams
+    >>> FDparams.DIM = 3
+    >>> ijkl_string([-2,-1,-1,-300], FDparams)
+    \'i0-2,i1-1,i2-1\'
+    """
+    retstring = ""
+    for i in range(FDparams.DIM):
+        if i > 0:
+            # Add a comma
+            retstring += ","
+        retstring += "i" + str(i) + "+" + str(idx4[i])
+    return retstring.replace("+-", "-").replace("+0", "")
+
+def varsuffix(idx4, FDparams):
+    """Generate string for suffixing single point read in from memory
+    Example: If a gridfunction is named hDD00, and we want to read from memory data at i0+1,i1,i2-1,
+    we store the value of this gridfunction as hDD00_i0p1_i1_i2m1; this function provides the suffix.
+    if DIM==3:
+    input: [0,2,1,-100]
+    output: "_i0_i1p2_i2p1"
+
+    :param idx4: An array of 4 integers, indicating a finite difference grid index relative to where the fd is being computed
+    :param FDparams: Parameters used in the finite-difference codegen
+    :return: returns suffix to uniquely name a point of data for a gridfunction
+    >>> from finite_difference_helpers import varsuffix, FDparams
+    >>> FDparams.DIM=3
+    >>> varsuffix([-2,0,-1,-300], FDparams)
+    \'_i0m2_i1_i2m1\'
+    """
+    if idx4 == [0, 0, 0, 0]:
+        return ""
+    return "_" + ijkl_string(idx4, FDparams).replace(",", "_").replace("+", "p").replace("-", "m")
 
 def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sympyexpr_list, FDparams):
     # with open(list_of_base_gridfunction_names_in_derivs[0]+".txt","w") as file:
@@ -441,3 +455,186 @@ def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sy
                                                                    FDparams)
             count += 1
     return read_from_memory_Ccode
+#################################
+
+#################################
+# STEP 5: C CODE OUTPUT ROUTINES
+
+def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
+                 fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput):
+
+    def indent_Ccode(Ccode):
+        Ccodesplit = Ccode.splitlines()
+        outstring = ""
+        for i in range(len(Ccodesplit)):
+            outstring += FDparams.fullindent + Ccodesplit[i] + '\n'
+        return outstring
+
+    #         a) Read gridfunctions from memory at needed pts.
+    #         b) Perform arithmetic needed for input expressions
+    #            provided in sympyexpr_list[].rhs and associated
+    #            finite differences.
+    #         c) Write output to gridfunctions specified in
+    #            sympyexpr_list[].lhs.
+
+    # Step 5a: Read gridfunctions from memory at needed pts.
+    # *** No need to do anything here; already set in
+    #     string "read_from_memory_Ccode". ***
+
+    # FIXME: Update these code comments:
+    # Step 5b: Perform arithmetic needed for finite differences
+    #          associated with input expressions provided in
+    #          sympyexpr_list[].rhs.
+    #          Note that exprs and lhsvarnames contain
+    #          i)  finite difference expressions (constructed
+    #              in steps above) and associated variable names,
+    #              and
+    #          ii) Input expressions sympyexpr_list[], which
+    #              in general depend on finite difference
+    #              variables.
+    exprs = []
+    lhsvarnames = []
+    # Step 5b.i: Output finite difference expressions to
+    #            Coutput string
+    for i in range(len(list_of_deriv_vars)):
+        exprs.append(sp.sympify(0))  # Append a new element to the list of derivative expressions.
+        lhsvarnames.append(type__var(list_of_deriv_vars[i], FDparams))
+        var = list_of_base_gridfunction_names_in_derivs[i]
+        for j in range(len(fdcoeffs[i])):
+            varname = str(var) + varsuffix(fdstencl[i][j], FDparams)
+            exprs[i] += fdcoeffs[i][j] * sp.sympify(varname)
+
+        # Multiply each expression by the appropriate power
+        #   of 1/dx[i]
+        invdx = []
+        for d in range(FDparams.DIM):
+            invdx.append(sp.sympify("invdx" + str(d)))
+        # First-order or Kreiss-Oliger derivatives:
+        if (len(list_of_deriv_operators[i]) == 5 and "dKOD" in list_of_deriv_operators[i]) or \
+                (len(list_of_deriv_operators[i]) == 3 and "dD" in list_of_deriv_operators[i]) or \
+                (len(list_of_deriv_operators[i]) == 5 and (
+                        "dupD" in list_of_deriv_operators[i] or "ddnD" in list_of_deriv_operators[i])):
+            dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
+            exprs[i] *= invdx[dirn]
+        # Second-order derivs:
+        elif len(list_of_deriv_operators[i]) == 5 and "dDD" in list_of_deriv_operators[i]:
+            dirn1 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 2])
+            dirn2 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
+            exprs[i] *= invdx[dirn1] * invdx[dirn2]
+        else:
+            print("Error: was unable to parse derivative operator: ", list_of_deriv_operators[i])
+            sys.exit(1)
+
+    # Step 2d (Upwinded derivatives algorithm, part 1):
+    # If an upwinding control vector is specified, determine
+    #    which of the elements of the vector will be required.
+    #    This ensures that those elements are read from memory.
+    # For example, if a symmetry axis is specified,
+    #     upwind derivatives with respect to only
+    #     two of the three dimensions are used. Here
+    #     we find all directions used for upwinding.
+    if FDparams.upwindcontrolvec != "":
+        upwind_directions_unsorted_withdups = []
+        for deriv_op in list_of_deriv_operators:
+            if "dupD" in deriv_op:
+                if deriv_op[len(deriv_op)-1].isdigit():
+                    dirn = int(deriv_op[len(deriv_op)-1])
+                    upwind_directions_unsorted_withdups.append(dirn)
+                else:
+                    print("Error: Derivative operator "+deriv_op+" does not contain a direction")
+                    sys.exit(1)
+        upwind_directions = []
+        if len(upwind_directions_unsorted_withdups)>0:
+            upwind_directions = superfast_uniq(upwind_directions_unsorted_withdups)
+            upwind_directions = sorted(upwind_directions,key=sp.default_sort_key)
+
+        # Step 5b.ii: If upwind control vector is specified,
+        #             add upwind control vectors to the
+        #             derivative expression list, so its
+        #             needed elements are read from memory.
+        for i in range(len(upwind_directions)):
+            exprs.append(FDparams.upwindcontrolvec[upwind_directions[i]])
+            lhsvarnames.append(type__var("UpwindControlVectorU" + str(upwind_directions[i]), FDparams))
+
+    # Step 5b.iii: Output useful code comment regarding
+    #              which step we are on. *At most* this
+    #              is a 3-step process:
+    #           1. Read from memory & compute FD stencils,
+    #           2. Perform upwinding, and
+    #           3. Evaluate remaining expressions+write
+    #              results to main memory.
+    NRPy_FD_StepNumber = 1
+    NRPy_FD__Number_of_Steps = 1
+    if len(read_from_memory_Ccode) > 0:
+        NRPy_FD__Number_of_Steps += 1
+    if FDparams.upwindcontrolvec != "" and len(upwind_directions) > 0:
+        NRPy_FD__Number_of_Steps += 1
+
+    if len(read_from_memory_Ccode) > 0:
+        Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+                                + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
+                                ": Read from main memory and compute finite difference stencils:\n */\n")
+        NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
+        # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
+        Coutput += indent_Ccode(outputC(exprs, lhsvarnames, "returnstring",
+                                        params=FDparams.outCparams + ",CSE_varprefix=FDPart1,includebraces=False,CSE_preprocess=True,SIMD_find_more_subs=True",
+                                        prestring=read_from_memory_Ccode))
+
+    # Step 5b.iv: Implement control-vector upwinding algorithm.
+    if FDparams.upwindcontrolvec != "":
+        if len(upwind_directions) > 0:
+            Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+                                    + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
+                                    ": Implement upwinding algorithm:\n */\n")
+            NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
+            if FDparams.SIMD_enable == "True":
+                for n in ["0","1"]:
+                    Coutput += indent_Ccode("const double tmp_upwind_Integer_"+n+" = "+n+".000000000000000000000000000000000;\n")
+                    Coutput += indent_Ccode("const REAL_SIMD_ARRAY upwind_Integer_"+n+" = ConstSIMD(tmp_upwind_Integer_"+n+");\n")
+            for dirn in upwind_directions:
+                Coutput += indent_Ccode(type__var("UpWind" + str(dirn), FDparams) +
+                                        " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
+        upwindU = [sp.sympify(0) for i in range(FDparams.DIM)]
+        for dirn in upwind_directions:
+            upwindU[dirn] = sp.sympify("UpWind" + str(dirn))
+        upwind_expr_list, var_list = [], []
+        for i in range(len(list_of_deriv_vars)):
+            if len(list_of_deriv_operators[i]) == 5 and ("dupD" in list_of_deriv_operators[i]):
+                var_dupD = sp.sympify("UpwindAlgInput" + str(list_of_deriv_vars[i]))
+                var_ddnD = sp.sympify("UpwindAlgInput" + str(list_of_deriv_vars[i]).replace("_dupD", "_ddnD"))
+                upwind_dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
+                upwind_expr = upwindU[upwind_dirn] * (var_dupD - var_ddnD) + var_ddnD
+                upwind_expr_list.append(upwind_expr)
+                var_list.append(type__var(str(list_of_deriv_vars[i]), FDparams, AddPrefix_for_UpDownWindVars=False))
+        # For convenience, we require type__var() above to
+        # prefix up/downwinded variables with "UpwindAlgInput".
+        # Here we do not wish to have this prefix.
+        Coutput += indent_Ccode(outputC(upwind_expr_list, var_list,
+                                        "returnstring", params=FDparams.outCparams + ",CSE_varprefix=FDPart2,includebraces=False"))
+
+    # Step 5b.v: Add input RHS & LHS expressions from
+    #             sympyexpr_list[]
+    Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+                            + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
+                            ": Evaluate SymPy expressions and write to main memory:\n */\n")
+    exprs = []
+    lhsvarnames = []
+    for i in range(len(sympyexpr_list)):
+        exprs.append(sympyexpr_list[i].rhs)
+        if FDparams.SIMD_enable == "True":
+            lhsvarnames.append("const REAL_SIMD_ARRAY __RHS_exp_" + str(i))
+        else:
+            lhsvarnames.append(sympyexpr_list[i].lhs)
+
+    # Step 5c: Write output to gridfunctions specified in
+    #          sympyexpr_list[].lhs.
+    write_to_mem_string = ""
+    if FDparams.SIMD_enable == "True":
+        for i in range(len(sympyexpr_list)):
+            write_to_mem_string += "WriteSIMD(&" + sympyexpr_list[i].lhs + ", __RHS_exp_" + str(i) + ");\n"
+    Coutput += indent_Ccode(outputC(exprs, lhsvarnames, "returnstring",
+                                    params=FDparams.outCparams + ",CSE_varprefix=FDPart3,includebraces=False,preindent=0",
+                                    prestring="", poststring=write_to_mem_string))
+
+    return Coutput
+#################################
