@@ -55,7 +55,7 @@ add_test WeylScal4NRPy/tests/test_WeylScal4NRPy.py
 
 # TODO: add your tests here
 echo "Starting doctest unit tests!"
-for file in SIMDExprTree.py loop.py; do
+for file in SIMDExprTree.py loop.py finite_difference_helpers.py; do
     echo Running doctest on file: $file
     $PYTHONEXEC -m doctest $file
     echo Doctest of $file finished.
