@@ -16,14 +16,28 @@ from collections import namedtuple # Standard Python: Enable namedtuple data typ
 
 FDparams = namedtuple('FDparams', 'PRECISION SIMD_enable DIM MemAllocStyle upwindcontrolvec')
 
-# if DIM==4:
-#     input: [i,j,k,l]
-#     output: "i0+i,i1+j,i2+k,i3+l"
-# if DIM==3:
-#     input: [i,j,k,l]
-#     output: "i0+i,i1+j,i2+k"
-# etc.
 def ijkl_string(idx4, FDparams):
+    """Generate string for reading gridfunction from specific location in memory
+    if DIM==4:
+        input: [i,j,k,l]
+        output: "i0+i,i1+j,i2+k,i3+l"
+    if DIM==3:
+        input: [i,j,k,l]
+        output: "i0+i,i1+j,i2+k"
+    etc.
+    :param idx4: An array of 4 integers, indicating a finite difference grid index relative to where the fd is being computed
+    :param FDparams: Parameters used in the finite-difference codegen
+    :return: DIM==3 input [i,j,k,l] -> output "i0+i,i1+j,i2+k"
+    >>> from finite_difference_helpers import ijkl_string, FDparams
+    >>> FDparams.DIM = 4
+    >>> ijkl_string([-2,1,0,-1], FDparams)
+    \'i0-2,i1+1,i2,i3-1\'
+
+    >>> from finite_difference_helpers import ijkl_string, FDparams
+    >>> FDparams.DIM = 3
+    >>> ijkl_string([-2,-1,-1,-300], FDparams)
+    \'i0-2,i1-1,i2-1\'
+    """
     retstring = ""
     for i in range(FDparams.DIM):
         if i > 0:
@@ -33,6 +47,21 @@ def ijkl_string(idx4, FDparams):
     return retstring.replace("+-", "-").replace("+0", "")
 
 def varsuffix(idx4, FDparams):
+    """Generate string for suffixing single point read in from memory
+    Example: If a gridfunction is named hDD00, and we want to read from memory data at i0+1,i1,i2-1,
+    we store the value of this gridfunction as hDD00_i0p1_i1_i2m1; this function provides the suffix.
+    if DIM==3:
+    input: [0,2,1,-100]
+    output: "_i0_i1p2_i2p1"
+
+    :param idx4: An array of 4 integers, indicating a finite difference grid index relative to where the fd is being computed
+    :param FDparams: Parameters used in the finite-difference codegen
+    :return: returns suffix to uniquely name a point of data for a gridfunction
+    >>> from finite_difference_helpers import varsuffix, FDparams
+    >>> FDparams.DIM=3
+    >>> varsuffix([-2,0,-1,-300], FDparams)
+    \'_i0m2_i1_i2m1\'
+    """
     if idx4 == [0, 0, 0, 0]:
         return ""
     return "_" + ijkl_string(idx4, FDparams).replace(",", "_").replace("+", "p").replace("-", "m")
