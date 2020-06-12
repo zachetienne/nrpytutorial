@@ -37,7 +37,7 @@ def generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(sympyexpr_list,FDparams
     >>> aDD_dupD = ixp.declarerank3("aDD_dupD","sym01")
     >>> betaU   = ixp.register_gridfunctions_for_single_rank1("EVOL","betaU")
     >>> a0,a1,b,c = par.Cparameters("REAL",__name__,["a0","a1","b","c"],1)
-    >>> FDparams.upwindcontrolvec="betaU"
+    >>> FDparams.upwindcontrolvec=betaU
     >>> exprlist = [lhrh(lhs=a0,rhs=b*aDD[1][0] + b*aDD_dDD[2][1][2][1] + c*aDD_dDD[0][1][1][0]), \
                     lhrh(lhs=a1,rhs=aDD_dDD[1][0][0][1] + c*aDD_dupD[0][2][1]*betaU[1])]
     >>> generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(exprlist,FDparams)
@@ -307,6 +307,8 @@ def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sy
     >>> from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
     >>> from finite_difference_helpers import read_gfs_from_memory
     >>> from finite_difference import compute_fdcoeffs_fdstencl
+    >>> import grid as gri
+    >>> gri.glb_gridfcs_list = []
     >>> hDD      = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD","sym01")
     >>> hDD_dD   = ixp.declarerank3("hDD_dD","sym01")
     >>> hDD_dupD = ixp.declarerank3("hDD_dupD","sym01")
@@ -317,7 +319,7 @@ def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sy
     >>> FDparams.SIMD_enable="False"
     >>> FDparams.PRECISION="double"
     >>> FDparams.MemAllocStyle="012"
-    >>> FDparams.upwindcontrolvec="vU"
+    >>> FDparams.upwindcontrolvec=vU
     >>> exprlist = [lhrh(lhs=a0,rhs=b*hDD[1][0] + c*hDD_dD[0][1][1]), \
                     lhrh(lhs=a1,rhs=c*hDD_dupD[0][2][1]*vU[1])]
     >>> list_of_deriv_vars = generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(exprlist,FDparams)
@@ -460,8 +462,93 @@ def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sy
 #################################
 # STEP 5: C CODE OUTPUT ROUTINES
 
-def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
-                 fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput):
+def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
+                    list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
+                    fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput):
+    """
+    C code is constructed in 3 parts:
+         a) Read gridfunctions from memory at needed pts.
+         b) Perform arithmetic needed for input expressions
+            provided in sympyexpr_list[].rhs and associated
+            finite differences.
+         c) Write output to gridfunctions specified in
+            sympyexpr_list[].lhs.
+
+    :param sympyexpr_list:
+    :param list_of_deriv_vars:
+    :param list_of_base_gridfunction_names_in_derivs:
+    :param list_of_deriv_operators:
+    :param fdcoeffs:
+    :param fdstencl:
+    :param read_from_memory_Ccode:
+    :param FDparams:
+    :param Coutput: The start of the Coutput string; this function's output will be pasted to a copy of Coutput
+    :return: Returns a C code string
+    >>> from outputC import lhrh
+    >>> import indexedexp as ixp
+    >>> import NRPy_param_funcs as par
+    >>> from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list,FDparams
+    >>> from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
+    >>> from finite_difference_helpers import read_gfs_from_memory, construct_Ccode
+    >>> from finite_difference import compute_fdcoeffs_fdstencl
+    >>> import grid as gri
+    >>> gri.glb_gridfcs_list = []
+    >>> hDD      = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD","sym01")
+    >>> hDD_dD   = ixp.declarerank3("hDD_dD","sym01")
+    >>> hDD_dupD = ixp.declarerank3("hDD_dupD","sym01")
+    >>> vU       = ixp.register_gridfunctions_for_single_rank1("EVOL","vU")
+    >>> a0,a1,b,c = par.Cparameters("REAL",__name__,["a0","a1","b","c"],1)
+    >>> par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER",2)
+    >>> FDparams.DIM=3
+    >>> FDparams.SIMD_enable="False"
+    >>> FDparams.PRECISION="double"
+    >>> FDparams.MemAllocStyle="012"
+    >>> FDparams.upwindcontrolvec=vU
+    >>> FDparams.fullindent=""
+    >>> FDparams.outCparams="outCverbose=False"
+    >>> exprlist = [lhrh(lhs=a0,rhs=b*hDD[1][0] + c*hDD_dD[0][1][1]), \
+                    lhrh(lhs=a1,rhs=c*hDD_dupD[0][2][1]*vU[1])]
+    >>> list_of_deriv_vars = generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(exprlist,FDparams)
+    >>> list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators = extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_vars)
+    >>> fdcoeffs = [[] for i in range(len(list_of_deriv_operators))]
+    >>> fdstencl = [[[] for i in range(4)] for j in range(len(list_of_deriv_operators))]
+    >>> for i in range(len(list_of_deriv_operators)): fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(list_of_deriv_operators[i])
+    >>> memread_Ccode = read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, exprlist, FDparams)
+    >>> print(construct_Ccode(exprlist, list_of_deriv_vars, \
+              list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators, \
+              fdcoeffs, fdstencl, memread_Ccode, FDparams, ""))
+    /*
+     * NRPy+ Finite Difference Code Generation, Step 1 of 3: Read from main memory and compute finite difference stencils:
+     */
+    const double hDD01_i0_i1m1_i2 = in_gfs[IDX4(HDD01GF, i0,i1-1,i2)];
+    const double hDD01 = in_gfs[IDX4(HDD01GF, i0,i1,i2)];
+    const double hDD01_i0_i1p1_i2 = in_gfs[IDX4(HDD01GF, i0,i1+1,i2)];
+    const double hDD02_i0_i1m2_i2 = in_gfs[IDX4(HDD02GF, i0,i1-2,i2)];
+    const double hDD02_i0_i1m1_i2 = in_gfs[IDX4(HDD02GF, i0,i1-1,i2)];
+    const double hDD02 = in_gfs[IDX4(HDD02GF, i0,i1,i2)];
+    const double hDD02_i0_i1p1_i2 = in_gfs[IDX4(HDD02GF, i0,i1+1,i2)];
+    const double hDD02_i0_i1p2_i2 = in_gfs[IDX4(HDD02GF, i0,i1+2,i2)];
+    const double vU1 = in_gfs[IDX4(VU1GF, i0,i1,i2)];
+    const double FDPart1_Rational_1_2 = 1.0/2.0;
+    const double FDPart1_Integer_2 = 2.0;
+    const double FDPart1_Rational_3_2 = 3.0/2.0;
+    const double hDD_dD011 = FDPart1_Rational_1_2*invdx1*(-hDD01_i0_i1m1_i2 + hDD01_i0_i1p1_i2);
+    const double UpwindAlgInputhDD_ddnD021 = invdx1*(-FDPart1_Integer_2*hDD02_i0_i1m1_i2 + FDPart1_Rational_1_2*hDD02_i0_i1m2_i2 + FDPart1_Rational_3_2*hDD02);
+    const double UpwindAlgInputhDD_dupD021 = invdx1*(FDPart1_Integer_2*hDD02_i0_i1p1_i2 - FDPart1_Rational_1_2*hDD02_i0_i1p2_i2 - FDPart1_Rational_3_2*hDD02);
+    const double UpwindControlVectorU1 = vU1;
+    /*
+     * NRPy+ Finite Difference Code Generation, Step 2 of 3: Implement upwinding algorithm:
+     */
+    const double UpWind1 = UPWIND_ALG(UpwindControlVectorU1);
+    const double hDD_dupD021 = UpWind1*(-UpwindAlgInputhDD_ddnD021 + UpwindAlgInputhDD_dupD021) + UpwindAlgInputhDD_ddnD021;
+    /*
+     * NRPy+ Finite Difference Code Generation, Step 3 of 3: Evaluate SymPy expressions and write to main memory:
+     */
+    a0 = b*hDD01 + c*hDD_dD011;
+    a1 = c*hDD_dupD021*vU1;
+    <BLANKLINE>
+    """
+
 
     def indent_Ccode(Ccode):
         Ccodesplit = Ccode.splitlines()
@@ -469,13 +556,6 @@ def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_n
         for i in range(len(Ccodesplit)):
             outstring += FDparams.fullindent + Ccodesplit[i] + '\n'
         return outstring
-
-    #         a) Read gridfunctions from memory at needed pts.
-    #         b) Perform arithmetic needed for input expressions
-    #            provided in sympyexpr_list[].rhs and associated
-    #            finite differences.
-    #         c) Write output to gridfunctions specified in
-    #            sympyexpr_list[].lhs.
 
     # Step 5a: Read gridfunctions from memory at needed pts.
     # *** No need to do anything here; already set in
@@ -547,7 +627,6 @@ def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_n
         if len(upwind_directions_unsorted_withdups)>0:
             upwind_directions = superfast_uniq(upwind_directions_unsorted_withdups)
             upwind_directions = sorted(upwind_directions,key=sp.default_sort_key)
-
         # Step 5b.ii: If upwind control vector is specified,
         #             add upwind control vectors to the
         #             derivative expression list, so its
@@ -571,7 +650,7 @@ def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_n
         NRPy_FD__Number_of_Steps += 1
 
     if len(read_from_memory_Ccode) > 0:
-        Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+        Coutput += indent_Ccode("/*\n * NRPy+ Finite Difference Code Generation, Step "
                                 + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
                                 ": Read from main memory and compute finite difference stencils:\n */\n")
         NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
@@ -583,7 +662,7 @@ def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_n
     # Step 5b.iv: Implement control-vector upwinding algorithm.
     if FDparams.upwindcontrolvec != "":
         if len(upwind_directions) > 0:
-            Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+            Coutput += indent_Ccode("/*\n * NRPy+ Finite Difference Code Generation, Step "
                                     + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
                                     ": Implement upwinding algorithm:\n */\n")
             NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
@@ -614,7 +693,7 @@ def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_n
 
     # Step 5b.v: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
-    Coutput += indent_Ccode("/* \n * NRPy+ Finite Difference Code Generation, Step "
+    Coutput += indent_Ccode("/*\n * NRPy+ Finite Difference Code Generation, Step "
                             + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
                             ": Evaluate SymPy expressions and write to main memory:\n */\n")
     exprs = []
@@ -632,7 +711,16 @@ def output_Ccode(sympyexpr_list, list_of_deriv_vars, list_of_base_gridfunction_n
     if FDparams.SIMD_enable == "True":
         for i in range(len(sympyexpr_list)):
             write_to_mem_string += "WriteSIMD(&" + sympyexpr_list[i].lhs + ", __RHS_exp_" + str(i) + ");\n"
-    Coutput += indent_Ccode(outputC(exprs, lhsvarnames, "returnstring",
+
+    # outputC requires as its second argument a list of strings.
+    #   Sometimes when the lhs's are simple constants, but the inputs
+    #   contain gridfunctions, it is necessary to convert the lhs's
+    #   to strings:
+    lhsvarnamestrings = []
+    for lhs in lhsvarnames:
+        lhsvarnamestrings.append(str(lhs))
+
+    Coutput += indent_Ccode(outputC(exprs, lhsvarnamestrings, "returnstring",
                                     params=FDparams.outCparams + ",CSE_varprefix=FDPart3,includebraces=False,preindent=0",
                                     prestring="", poststring=write_to_mem_string))
 

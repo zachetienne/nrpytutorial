@@ -16,7 +16,7 @@ import grid as gri               # NRPy+: Functions having to do with numerical 
 import sys                       # Standard Python module for multiplatform OS-level functions
 from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
 from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list
-from finite_difference_helpers import read_gfs_from_memory, FDparams, output_Ccode
+from finite_difference_helpers import read_gfs_from_memory, FDparams, construct_Ccode
 
 # Step 1: Initialize free parameters for this module:
 modulename = __name__
@@ -127,17 +127,17 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     read_from_memory_Ccode = read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sympyexpr_list,
                                                   FDparams)
 
-    # Step 5: Output C code.
+    # Step 5: construct C code.
     Coutput = ""
     if outCparams.includebraces == "True":
         Coutput = outCparams.preindent + "{\n"
-    Coutput = output_Ccode(sympyexpr_list, list_of_deriv_vars,
+    Coutput = construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                            list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
                            fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput)
     if outCparams.includebraces == "True":
         Coutput += outCparams.preindent+"}\n"
 
-    # Step 7: Output the C code in desired format: stdout, string, or file.
+    # Step 6: Output the C code in desired format: stdout, string, or file.
     if filename == "stdout":
         print(Coutput)
     elif filename == "returnstring":
