@@ -38,6 +38,24 @@ def varsuffix(idx4, FDparams):
     return "_" + ijkl_string(idx4, FDparams).replace(",", "_").replace("+", "p").replace("-", "m")
 
 def type__var(in_var,FDparams, AddPrefix_for_UpDownWindVars=True):
+    """ Outputs [type] [variable name]; e.g.,
+    "const double variable"
+
+    :param in_var: Variable name
+    :param FDparams: Parameters used in the finite-difference codegen
+    :param AddPrefix_for_UpDownWindVars: Boolean -- add a prefix to up/downwind variables?
+    :return: Return [type] [variable name]
+    >>> from finite_difference_helpers import type__var, FDparams
+    >>> FDparams.SIMD_enable = "True"
+    >>> type__var("aDD00",FDparams)
+    \'const REAL_SIMD_ARRAY aDD00\'
+
+    >>> from finite_difference_helpers import type__var, FDparams
+    >>> FDparams.SIMD_enable = "False"
+    >>> FDparams.PRECISION = "double"
+    >>> type__var("variable",FDparams)
+    \'const double variable\'
+    """
     varname = str(in_var)
     # Disable prefixing upwinded and downwinded variables
     # if the upwind control vector algorithm is disabled.
@@ -65,10 +83,10 @@ def type__var(in_var,FDparams, AddPrefix_for_UpDownWindVars=True):
 def read_from_memory_Ccode_onept(gfname,idx, FDparams):
     """
 
-    :param gfname -- gridfunction name; a string:
-    :param idx -- grid index relative to (i0,i1,i2,i3); e.g., "0,1,2,3" -> (i0,i1+1,i2+2,i3+3); later indices ignored for DIM<4:
-    :param FDparams -- parameters used in the finite-difference codegen:
-    :return -- C code string for reading in this gridfunction at point idx from memory:
+    :param gfname: gridfunction name; a string
+    :param idx: Grid index relative to (i0,i1,i2,i3); e.g., "0,1,2,3" -> (i0,i1+1,i2+2,i3+3); later indices ignored for DIM<4
+    :param FDparams: Parameters used in the finite-difference codegen
+    :return: C code string for reading in this gridfunction at point idx from memory
     >>> import indexedexp as ixp
     >>> from finite_difference_helpers import FDparams, read_from_memory_Ccode_onept
     >>> FDparams.DIM = 3
