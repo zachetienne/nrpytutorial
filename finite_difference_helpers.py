@@ -274,6 +274,11 @@ def extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_
 from operator import itemgetter
 
 def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sympyexpr_list, FDparams):
+    # with open(list_of_base_gridfunction_names_in_derivs[0]+".txt","w") as file:
+    #     file.write(str(list_of_base_gridfunction_names_in_derivs))
+    #     file.write(str(fdstencl))
+    #     file.write(str(sympyexpr_list))
+    #     file.write(str(FDparams))
     """
 
     :param list_of_base_gridfunction_names_in_derivs:
@@ -281,6 +286,42 @@ def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sy
     :param sympyexpr_list:
     :param FDparams:
     :return:
+    >>> from outputC import lhrh
+    >>> import indexedexp as ixp
+    >>> import NRPy_param_funcs as par
+    >>> from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list,FDparams
+    >>> from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
+    >>> from finite_difference_helpers import read_gfs_from_memory
+    >>> from finite_difference import compute_fdcoeffs_fdstencl
+    >>> hDD      = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD","sym01")
+    >>> hDD_dD   = ixp.declarerank3("hDD_dD","sym01")
+    >>> hDD_dupD = ixp.declarerank3("hDD_dupD","sym01")
+    >>> vU       = ixp.register_gridfunctions_for_single_rank1("EVOL","vU")
+    >>> a0,a1,b,c = par.Cparameters("REAL",__name__,["a0","a1","b","c"],1)
+    >>> par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER",2)
+    >>> FDparams.DIM=3
+    >>> FDparams.SIMD_enable="False"
+    >>> FDparams.PRECISION="double"
+    >>> FDparams.MemAllocStyle="012"
+    >>> FDparams.upwindcontrolvec="vU"
+    >>> exprlist = [lhrh(lhs=a0,rhs=b*hDD[1][0] + c*hDD_dD[0][1][1]), \
+                    lhrh(lhs=a1,rhs=c*hDD_dupD[0][2][1]*vU[1])]
+    >>> list_of_deriv_vars = generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(exprlist,FDparams)
+    >>> list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators = extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_vars)
+    >>> fdcoeffs = [[] for i in range(len(list_of_deriv_operators))]
+    >>> fdstencl = [[[] for i in range(4)] for j in range(len(list_of_deriv_operators))]
+    >>> for i in range(len(list_of_deriv_operators)): fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(list_of_deriv_operators[i])
+    >>> print(read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, exprlist, FDparams))
+    const double hDD01_i0_i1m1_i2 = in_gfs[IDX4(HDD01GF, i0,i1-1,i2)];
+    const double hDD01 = in_gfs[IDX4(HDD01GF, i0,i1,i2)];
+    const double hDD01_i0_i1p1_i2 = in_gfs[IDX4(HDD01GF, i0,i1+1,i2)];
+    const double hDD02_i0_i1m2_i2 = in_gfs[IDX4(HDD02GF, i0,i1-2,i2)];
+    const double hDD02_i0_i1m1_i2 = in_gfs[IDX4(HDD02GF, i0,i1-1,i2)];
+    const double hDD02 = in_gfs[IDX4(HDD02GF, i0,i1,i2)];
+    const double hDD02_i0_i1p1_i2 = in_gfs[IDX4(HDD02GF, i0,i1+1,i2)];
+    const double hDD02_i0_i1p2_i2 = in_gfs[IDX4(HDD02GF, i0,i1+2,i2)];
+    const double vU1 = in_gfs[IDX4(VU1GF, i0,i1,i2)];
+    <BLANKLINE>
     """
 
     # Step 4a: Compile list of points to read from memory
