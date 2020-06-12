@@ -27,7 +27,6 @@ par.initialize_param(par.glb_param("int", modulename, "FD_KO_ORDER__CENTDERIVS_P
 
 def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     outCparams = parse_outCparams_string(params)
-    print(sympyexpr_list)
     # Step 0.a:
     # In case sympyexpr_list is a single sympy expression,
     #     convert it to a list with just one element.
