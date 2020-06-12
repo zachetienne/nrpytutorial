@@ -16,7 +16,7 @@ import grid as gri               # NRPy+: Functions having to do with numerical 
 import sys                       # Standard Python module for multiplatform OS-level functions
 from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
 from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list
-from finite_difference_helpers import read_gfs_from_memory, out__type_var, FDparams, varsuffix
+from finite_difference_helpers import read_gfs_from_memory, type__var, FDparams, varsuffix
 
 # Step 1: Initialize free parameters for this module:
 modulename = __name__
@@ -184,7 +184,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     #            Coutput string
     for i in range(len(list_of_deriv_vars)):
         exprs.append(sp.sympify(0)) # Append a new element to the list of derivative expressions.
-        lhsvarnames.append(out__type_var(list_of_deriv_vars[i], FDparams))
+        lhsvarnames.append(type__var(list_of_deriv_vars[i], FDparams))
         var = list_of_base_gridfunction_names_in_derivs[i]
         for j in range(len(fdcoeffs[i])):
             varname = str(var)+varsuffix(fdstencl[i][j], FDparams)
@@ -216,7 +216,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     if upwindcontrolvec != "":
         for i in range(len(upwind_directions)):
             exprs.append(upwindcontrolvec[upwind_directions[i]])
-            lhsvarnames.append(out__type_var("UpwindControlVectorU"+str(upwind_directions[i]),FDparams))
+            lhsvarnames.append(type__var("UpwindControlVectorU"+str(upwind_directions[i]),FDparams))
 
     # Step 5b.iii: Output useful code comment regarding
     #              which step we are on. *At most* this
@@ -256,7 +256,7 @@ const double tmp_upwind_Integer_0 = 0.000000000000000000000000000000000;
 const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
 """
             for dirn in upwind_directions:
-                Coutput += indent_Ccode(out__type_var("UpWind" + str(dirn),FDparams) +
+                Coutput += indent_Ccode(type__var("UpWind" + str(dirn),FDparams) +
                                         " = UPWIND_ALG(UpwindControlVectorU" + str(dirn) + ");\n")
         upwindU = [sp.sympify(0) for i in range(par.parval_from_str("DIM"))]
         for dirn in upwind_directions:
@@ -269,8 +269,8 @@ const REAL_SIMD_ARRAY upwind_Integer_0 = ConstSIMD(tmp_upwind_Integer_0);
                 upwind_dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i])-1])
                 upwind_expr = upwindU[upwind_dirn]*(var_dupD - var_ddnD) + var_ddnD
                 upwind_expr_list.append(upwind_expr)
-                var_list.append(out__type_var(str(list_of_deriv_vars[i]),FDparams,AddPrefix_for_UpDownWindVars=False))
-        # For convenience, we require out__type_var() above to
+                var_list.append(type__var(str(list_of_deriv_vars[i]),FDparams,AddPrefix_for_UpDownWindVars=False))
+        # For convenience, we require type__var() above to
         # prefix up/downwinded variables with "UpwindAlgInput".
         # Here we do not wish to have this prefix.
         Coutput += indent_Ccode(outputC(upwind_expr_list,var_list,

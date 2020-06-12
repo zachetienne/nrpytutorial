@@ -37,7 +37,7 @@ def varsuffix(idx4, FDparams):
         return ""
     return "_" + ijkl_string(idx4, FDparams).replace(",", "_").replace("+", "p").replace("-", "m")
 
-def out__type_var(in_var,FDparams, AddPrefix_for_UpDownWindVars=True):
+def type__var(in_var,FDparams, AddPrefix_for_UpDownWindVars=True):
     varname = str(in_var)
     # Disable prefixing upwinded and downwinded variables
     # if the upwind control vector algorithm is disabled.
@@ -63,16 +63,30 @@ def out__type_var(in_var,FDparams, AddPrefix_for_UpDownWindVars=True):
     return "const "+ FDparams.PRECISION + " " + varname
 
 def read_from_memory_Ccode_onept(gfname,idx, FDparams):
+    """
+
+    :param gfname -- gridfunction name; a string:
+    :param idx -- grid index relative to (i0,i1,i2,i3); e.g., "0,1,2,3" -> (i0,i1+1,i2+2,i3+3); later indices ignored for DIM<4:
+    :param FDparams -- parameters used in the finite-difference codegen:
+    :return -- C code string for reading in this gridfunction at point idx from memory:
+    >>> import indexedexp as ixp
+    >>> from finite_difference_helpers import FDparams, read_from_memory_Ccode_onept
+    >>> FDparams.DIM = 3
+    >>> FDparams.upwindcontrolvec = ""
+    >>> FDparams.SIMD_enable = "True"
+    >>> vetU = ixp.register_gridfunctions_for_single_rank1("EVOL","vetU",FDparams.DIM)
+    >>> read_from_memory_Ccode_onept("vetU0","0,1,-2,300",FDparams)
+    \'const REAL_SIMD_ARRAY vetU0_i0_i1p1_i2m2 = ReadSIMD(&in_gfs[IDX4(VETU0GF, i0,i1+1,i2-2)]);\\n\'
+    """
     idxsplit = idx.split(',')
     idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
     gf_array_name = "in_gfs" # Default array name.
     gfaccess_str = gri.gfaccess(gf_array_name,gfname,ijkl_string(idx4, FDparams))
     if FDparams.SIMD_enable == "True":
-        retstring = out__type_var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = ReadSIMD(&" + gfaccess_str + ");"
+        retstring = type__var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = ReadSIMD(&" + gfaccess_str + ");"
     else:
-        retstring = out__type_var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = " + gfaccess_str + ";"
+        retstring = type__var(gfname,FDparams) + varsuffix(idx4, FDparams) +" = " + gfaccess_str + ";"
     return retstring+"\n"
-
 
 def generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(sympyexpr_list,FDparams):
     """
