@@ -466,13 +466,13 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                     list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
                     fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput):
     """
-    C code is constructed in 3 parts:
-         a) Read gridfunctions from memory at needed pts.
-         b) Perform arithmetic needed for input expressions
-            provided in sympyexpr_list[].rhs and associated
-            finite differences.
-         c) Write output to gridfunctions specified in
-            sympyexpr_list[].lhs.
+    C code is constructed in *up to* 3 parts:
+     5.a) Read gridfunctions from memory at needed pts
+          for finite differencing; compute finite-differencing
+          stencils.
+     5.b) Implement upwinding algorithm (if relevant)
+     5.c) Evaluate SymPy expressions and write to main
+          memory
 
     :param sympyexpr_list:
     :param list_of_deriv_vars:
@@ -549,7 +549,6 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
     <BLANKLINE>
     """
 
-
     def indent_Ccode(Ccode):
         Ccodesplit = Ccode.splitlines()
         outstring = ""
@@ -557,32 +556,32 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
             outstring += FDparams.fullindent + Ccodesplit[i] + '\n'
         return outstring
 
-    # Step 5a: Read gridfunctions from memory at needed pts.
+    # Step 5.a.i: Read gridfunctions from memory at needed pts.
     # *** No need to do anything here; already set in
     #     string "read_from_memory_Ccode". ***
 
     # FIXME: Update these code comments:
-    # Step 5b: Perform arithmetic needed for finite differences
-    #          associated with input expressions provided in
-    #          sympyexpr_list[].rhs.
-    #          Note that exprs and lhsvarnames contain
+    # Step 5.a.ii: Perform arithmetic needed for finite differences
+    #              associated with input expressions provided in
+    #              sympyexpr_list[].rhs.
+    #           Note that exprs and lhsvarnames contain
     #          i)  finite difference expressions (constructed
     #              in steps above) and associated variable names,
     #              and
     #          ii) Input expressions sympyexpr_list[], which
     #              in general depend on finite difference
     #              variables.
-    exprs = []
-    lhsvarnames = []
-    # Step 5b.i: Output finite difference expressions to
-    #            Coutput string
+    FDexprs = []
+    FDlhsvarnames = []
+    # Step 5.a.ii.A: Output finite difference expressions to
+    #                Coutput string
     for i in range(len(list_of_deriv_vars)):
-        exprs.append(sp.sympify(0))  # Append a new element to the list of derivative expressions.
-        lhsvarnames.append(type__var(list_of_deriv_vars[i], FDparams))
+        FDexprs.append(sp.sympify(0))  # Append a new element to the list of derivative expressions.
+        FDlhsvarnames.append(type__var(list_of_deriv_vars[i], FDparams))
         var = list_of_base_gridfunction_names_in_derivs[i]
         for j in range(len(fdcoeffs[i])):
             varname = str(var) + varsuffix(fdstencl[i][j], FDparams)
-            exprs[i] += fdcoeffs[i][j] * sp.sympify(varname)
+            FDexprs[i] += fdcoeffs[i][j] * sp.sympify(varname)
 
         # Multiply each expression by the appropriate power
         #   of 1/dx[i]
@@ -592,20 +591,19 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
         # First-order or Kreiss-Oliger derivatives:
         if (len(list_of_deriv_operators[i]) == 5 and "dKOD" in list_of_deriv_operators[i]) or \
                 (len(list_of_deriv_operators[i]) == 3 and "dD" in list_of_deriv_operators[i]) or \
-                (len(list_of_deriv_operators[i]) == 5 and (
-                        "dupD" in list_of_deriv_operators[i] or "ddnD" in list_of_deriv_operators[i])):
+                (len(list_of_deriv_operators[i]) == 5 and ("dupD" in list_of_deriv_operators[i] or "ddnD" in list_of_deriv_operators[i])):
             dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
-            exprs[i] *= invdx[dirn]
+            FDexprs[i] *= invdx[dirn]
         # Second-order derivs:
         elif len(list_of_deriv_operators[i]) == 5 and "dDD" in list_of_deriv_operators[i]:
             dirn1 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 2])
             dirn2 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
-            exprs[i] *= invdx[dirn1] * invdx[dirn2]
+            FDexprs[i] *= invdx[dirn1] * invdx[dirn2]
         else:
             print("Error: was unable to parse derivative operator: ", list_of_deriv_operators[i])
             sys.exit(1)
 
-    # Step 2d (Upwinded derivatives algorithm, part 1):
+    # Step 5.b.i: (Upwinded derivatives algorithm, part 1):
     # If an upwinding control vector is specified, determine
     #    which of the elements of the vector will be required.
     #    This ensures that those elements are read from memory.
@@ -613,6 +611,7 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
     #     upwind derivatives with respect to only
     #     two of the three dimensions are used. Here
     #     we find all directions used for upwinding.
+    upwind_directions = []
     if FDparams.upwindcontrolvec != "":
         upwind_directions_unsorted_withdups = []
         for deriv_op in list_of_deriv_operators:
@@ -623,25 +622,24 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                 else:
                     print("Error: Derivative operator "+deriv_op+" does not contain a direction")
                     sys.exit(1)
-        upwind_directions = []
-        if len(upwind_directions_unsorted_withdups)>0:
+        if len(upwind_directions_unsorted_withdups) > 0:
             upwind_directions = superfast_uniq(upwind_directions_unsorted_withdups)
             upwind_directions = sorted(upwind_directions,key=sp.default_sort_key)
-        # Step 5b.ii: If upwind control vector is specified,
-        #             add upwind control vectors to the
-        #             derivative expression list, so its
-        #             needed elements are read from memory.
-        for i in range(len(upwind_directions)):
-            exprs.append(FDparams.upwindcontrolvec[upwind_directions[i]])
-            lhsvarnames.append(type__var("UpwindControlVectorU" + str(upwind_directions[i]), FDparams))
+        #   If upwind control vector is specified,
+        #        add upwind control vectors to the
+        #        derivative expression list, so its
+        #        needed elements are read from memory.
+        for dirn in upwind_directions:
+            FDexprs.append(FDparams.upwindcontrolvec[dirn])
+            FDlhsvarnames.append(type__var("UpwindControlVectorU" + str(dirn), FDparams))
 
-    # Step 5b.iii: Output useful code comment regarding
-    #              which step we are on. *At most* this
-    #              is a 3-step process:
-    #           1. Read from memory & compute FD stencils,
-    #           2. Perform upwinding, and
-    #           3. Evaluate remaining expressions+write
-    #              results to main memory.
+    # Step 5.x: Output useful code comment regarding
+    #           which step we are on. *At most* this
+    #           is a 3-step process:
+    #        1. Read from memory & compute FD stencils,
+    #        2. Perform upwinding, and
+    #        3. Evaluate remaining expressions+write
+    #           results to main memory.
     NRPy_FD_StepNumber = 1
     NRPy_FD__Number_of_Steps = 1
     if len(read_from_memory_Ccode) > 0:
@@ -655,11 +653,11 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                                 ": Read from main memory and compute finite difference stencils:\n */\n")
         NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
         # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
-        Coutput += indent_Ccode(outputC(exprs, lhsvarnames, "returnstring",
+        Coutput += indent_Ccode(outputC(FDexprs, FDlhsvarnames, "returnstring",
                                         params=FDparams.outCparams + ",CSE_varprefix=FDPart1,includebraces=False,CSE_preprocess=True,SIMD_find_more_subs=True",
                                         prestring=read_from_memory_Ccode))
 
-    # Step 5b.iv: Implement control-vector upwinding algorithm.
+    # Step 5.b.ii: Implement control-vector upwinding algorithm.
     if FDparams.upwindcontrolvec != "":
         if len(upwind_directions) > 0:
             Coutput += indent_Ccode("/*\n * NRPy+ Finite Difference Code Generation, Step "
@@ -691,7 +689,7 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
         Coutput += indent_Ccode(outputC(upwind_expr_list, var_list,
                                         "returnstring", params=FDparams.outCparams + ",CSE_varprefix=FDPart2,includebraces=False"))
 
-    # Step 5b.v: Add input RHS & LHS expressions from
+    # Step 5.c.i: Add input RHS & LHS expressions from
     #             sympyexpr_list[]
     Coutput += indent_Ccode("/*\n * NRPy+ Finite Difference Code Generation, Step "
                             + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
@@ -705,8 +703,8 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
         else:
             lhsvarnames.append(sympyexpr_list[i].lhs)
 
-    # Step 5c: Write output to gridfunctions specified in
-    #          sympyexpr_list[].lhs.
+    # Step 5.c.ii: Write output to gridfunctions specified in
+    #              sympyexpr_list[].lhs.
     write_to_mem_string = ""
     if FDparams.SIMD_enable == "True":
         for i in range(len(sympyexpr_list)):
