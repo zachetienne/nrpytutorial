@@ -66,24 +66,24 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
         } // END LOOP: for (int i = 0; i < N; i++)
         <BLANKLINE>
 
-        >>> print(loop('i', '0', 'N', '1', '', interior='print(i)'))
+        >>> print(loop('i', '0', 'N', '1', '', interior='// <INTERIOR>'))
         for (int i = 0; i < N; i++) {
-            print(i)
+            // <INTERIOR>
         } // END LOOP: for (int i = 0; i < N; i++)
         <BLANKLINE>
 
-        >>> print(loop('i', '0', 'N', '1', '', interior='print(i)', tile_size='16'))
+        >>> print(loop('i', '0', 'N', '1', '', interior='// <INTERIOR>', tile_size='16'))
         for (int iB = 0; iB < N; iB += 16) {
             for (int i = iB; i < MIN(N, iB + 16); i++) {
-                print(i)
+                // <INTERIOR>
             } // END LOOP: for (int i = iB; i < MIN(N, iB + 16); i++)
         } // END LOOP: for (int iB = 0; iB < N; iB += 16)
         <BLANKLINE>
 
-        >>> print(loop(['i', 'j'], ['0', '0'], ['Nx', 'Ny'], ['1', '1'], ['', ''], interior='print(i, j)'))
+        >>> print(loop(['i', 'j'], ['0', '0'], ['Nx', 'Ny'], ['1', '1'], ['', ''], interior='// <INTERIOR>'))
         for (int i = 0; i < Nx; i++) {
             for (int j = 0; j < Ny; j++) {
-                print(i, j)
+                // <INTERIOR>
             } // END LOOP: for (int j = 0; j < Ny; j++)
         } // END LOOP: for (int i = 0; i < Nx; i++)
         <BLANKLINE>
@@ -131,13 +131,12 @@ def simple_loop(options, interior):
         :arg:    loop interior
         :return: string of the loop
 
-        >>> print(simple_loop('AllPoints', ''))
+        >>> print(simple_loop('AllPoints', '// <INTERIOR>'))
             #pragma omp parallel for
             for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++) {
                 for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++) {
                     for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++) {
-        <BLANKLINE>
-        <BLANKLINE>
+                        // <INTERIOR>
                     } // END LOOP: for (int i0 = 0; i0 < Nxx_plus_2NGHOSTS0; i0++)
                 } // END LOOP: for (int i1 = 0; i1 < Nxx_plus_2NGHOSTS1; i1++)
             } // END LOOP: for (int i2 = 0; i2 < Nxx_plus_2NGHOSTS2; i2++)
@@ -164,8 +163,8 @@ def simple_loop(options, interior):
     if "Read_xxs" in options:
         if not "EnableSIMD" in options:
             Read_1Darrays = ["const REAL xx0 = xx[0][i0];",
-                             "            const REAL xx1 = xx[1][i1];",
-                             "        const REAL xx2 = xx[2][i2];", ]
+                             "const REAL xx1 = xx[1][i1];",
+                             "const REAL xx2 = xx[2][i2];", ]
         else: raise ValueError('no SIMD support for Read_xxs (currently).')
     # 'Enable_rfm_precompute': enable pre-computation of reference metric
     if "Enable_rfm_precompute" in options:
@@ -184,7 +183,7 @@ def simple_loop(options, interior):
     increment = ["1", "1", "SIMD_width"] if "EnableSIMD" in options else ["1","1","1"]
 
     return loop(["i2","i1","i0"], i2i1i0_mins, i2i1i0_maxs, increment, [pragma, Read_1Darrays[2], Read_1Darrays[1]], \
-        padding='    ', interior=Read_1Darrays[0] + "\n" + interior)
+        padding='    ', interior=Read_1Darrays[0] + ("\n" if Read_1Darrays[0] else "") + interior)
 
 if __name__ == "__main__":
     import doctest
