@@ -519,25 +519,15 @@ def append_to_FD_C_funcs_dict(FD_C_funcs_dict, list_of_deriv_operators,   fdcoef
         outfunc_hdr = Ctype + " __attribute__ ((noinline)) "+func_prefix+"f_" + str(op) + "("
         which_op_idx = find_which_op_idx(op, list_of_deriv_operators)
 
-        outFDstr = ""
         rhs_expr = sp.sympify(0)
         for j in range(len(fdcoeffs[which_op_idx])):
             var = sp.sympify("f" + varsuffix(fdstencl[which_op_idx][j], FDparams))
-            outfunc_hdr += "const " + Ctype + " " + str(var)
-            if j != len(fdcoeffs[which_op_idx])-1:
-                outfunc_hdr += ","
-            else:
-                outfunc_hdr += ")"
             rhs_expr += fdcoeffs[which_op_idx][j] * var
-
-        # If function is already stored in the FD_C_funcs_dict, then
-        #   move to the next iteration in this loop.
-        if outfunc_hdr in FD_C_funcs_dict:
-            break
 
         # Multiply each expression by the appropriate power
         #   of 1/dx[i]
         invdx = []
+        used_invdx = [False, False, False, False]
         for d in range(FDparams.DIM):
             invdx.append(sp.sympify("invdx" + str(d)))
         # First-order or Kreiss-Oliger derivatives:
@@ -546,18 +536,37 @@ def append_to_FD_C_funcs_dict(FD_C_funcs_dict, list_of_deriv_operators,   fdcoef
              (len(op) == 5 and ("dupD" in op or "ddnD" in op)) ):
             dirn = int(op[len(op) - 1])
             rhs_expr *= invdx[dirn]
+            used_invdx[dirn] = True
         # Second-order derivs:
         elif len(op) == 5 and "dDD" in op:
             dirn1 = int(op[len(op) - 2])
             dirn2 = int(op[len(op) - 1])
+            used_invdx[dirn1] = used_invdx[dirn2] = True
             rhs_expr *= invdx[dirn1]*invdx[dirn2]
         else:
             print("Error: was unable to parse derivative operator: ", op)
             sys.exit(1)
 
+        for d in range(FDparams.DIM):
+            if used_invdx[d]:
+                outfunc_hdr += "const " + Ctype + " invdx" + str(d) + ","
+
+        for j in range(len(fdcoeffs[which_op_idx])):
+            var = sp.sympify("f" + varsuffix(fdstencl[which_op_idx][j], FDparams))
+            outfunc_hdr += "const " + Ctype + " " + str(var)
+            if j != len(fdcoeffs[which_op_idx])-1:
+                outfunc_hdr += ","
+            else:
+                outfunc_hdr += ")"
+
+        # If function is already stored in the FD_C_funcs_dict, then
+        #   move to the next iteration in this loop.
+        if outfunc_hdr in FD_C_funcs_dict:
+            break
+
         p = "preindent=1,SIMD_enable="+FDparams.SIMD_enable+",outCverbose=False,CSE_preprocess=True,includebraces=False"
-        outFDstr += outputC(rhs_expr, "retval", "returnstring", params=p)
-        outFDstr = outFDstr.replace("retval = ", "return ") + "}\n"
+        outFDstr = outputC(rhs_expr, "retval", "returnstring", params=p)
+        outFDstr = outFDstr.replace("retval = ", "return ")
         FD_C_funcs_dict[outfunc_hdr] = outFDstr
 
 # def construct_FD_C_funcs_from_dict(FD_C_funcs_dict):
@@ -680,7 +689,8 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
 
     # Future feature:
     # append_to_FD_C_funcs_dict(FD_C_funcs_dict,  list_of_deriv_operators, fdcoeffs, fdstencl)
-    # print(FD_C_funcs_dict)
+    # for key, item in FD_C_funcs_dict.items():
+    #     print(key + "{\n" + item + "\n}")
 
     # Step 5.b.i: (Upwinded derivatives algorithm, part 1):
     # If an upwinding control vector is specified, determine
