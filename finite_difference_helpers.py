@@ -498,7 +498,7 @@ def construct_FD_exprs_as_SymPy_exprs(list_of_deriv_vars,
             sys.exit(1)
     return FDexprs, FDlhsvarnames
 
-def construct_FD_exprs_as_C_functions(list_of_deriv_operators,   fdcoeffs, fdstencl):
+def append_to_FD_C_funcs_dict(FD_C_funcs_dict, list_of_deriv_operators,   fdcoeffs, fdstencl):
     # Step 5.a.ii.A: First construct a list of all the unique finite difference functions
     list_of_uniq_deriv_operators = superfast_uniq(list_of_deriv_operators)
 
@@ -510,23 +510,30 @@ def construct_FD_exprs_as_C_functions(list_of_deriv_operators,   fdcoeffs, fdste
         sys.exit(1)
 
     Ctype = "REAL"
+    func_prefix = ""
     if FDparams.SIMD_enable == "True":
         Ctype = "REAL_SIMD_ARRAY"
+        func_prefix = "SIMD_"
 
     for op in list_of_uniq_deriv_operators:
+        outfunc_hdr = Ctype + " __attribute__ ((noinline)) "+func_prefix+"f_" + str(op) + "("
         which_op_idx = find_which_op_idx(op, list_of_deriv_operators)
 
-        outstr = "REAL __attribute__ ((noinline)) f_" + str(op) + "("
-
+        outFDstr = ""
         rhs_expr = sp.sympify(0)
         for j in range(len(fdcoeffs[which_op_idx])):
             var = sp.sympify("f" + varsuffix(fdstencl[which_op_idx][j], FDparams))
-            outstr += "const " + Ctype + " " + str(var)
+            outfunc_hdr += "const " + Ctype + " " + str(var)
             if j != len(fdcoeffs[which_op_idx])-1:
-                outstr += ","
+                outfunc_hdr += ","
             else:
-                outstr += ") {\n"
+                outfunc_hdr += ")"
             rhs_expr += fdcoeffs[which_op_idx][j] * var
+
+        # If function is already stored in the FD_C_funcs_dict, then
+        #   move to the next iteration in this loop.
+        if outfunc_hdr in FD_C_funcs_dict:
+            break
 
         # Multiply each expression by the appropriate power
         #   of 1/dx[i]
@@ -549,13 +556,18 @@ def construct_FD_exprs_as_C_functions(list_of_deriv_operators,   fdcoeffs, fdste
             sys.exit(1)
 
         p = "preindent=1,SIMD_enable="+FDparams.SIMD_enable+",outCverbose=False,CSE_preprocess=True,includebraces=False"
-        outstr += outputC(rhs_expr, "retval", "returnstring", params=p)
-        outstr = outstr.replace("retval = ", "return ") + "}\n"
-        return outstr
+        outFDstr += outputC(rhs_expr, "retval", "returnstring", params=p)
+        outFDstr = outFDstr.replace("retval = ", "return ") + "}\n"
+        FD_C_funcs_dict[outfunc_hdr] = outFDstr
+
+# def construct_FD_C_funcs_from_dict(FD_C_funcs_dict):
+#     for item in FD_C_funcs_dict:
+
 
 def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                     list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
-                    fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput):
+                    fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput,
+                    FD_C_funcs_dict = {}):
     """
     C code is constructed in *up to* 3 parts:
      5.a) Read gridfunctions from memory at needed pts
@@ -667,7 +679,8 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                                           fdcoeffs, fdstencl)
 
     # Future feature:
-    # construct_FD_exprs_as_C_functions(list_of_deriv_operators, fdcoeffs, fdstencl)
+    # append_to_FD_C_funcs_dict(FD_C_funcs_dict,  list_of_deriv_operators, fdcoeffs, fdstencl)
+    # print(FD_C_funcs_dict)
 
     # Step 5.b.i: (Upwinded derivatives algorithm, part 1):
     # If an upwinding control vector is specified, determine
