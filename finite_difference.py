@@ -135,13 +135,13 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                            list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
                            fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput)
     if outCparams.includebraces == "True":
-        Coutput += outCparams.preindent+"}\n"
+        Coutput += outCparams.preindent+"}"
 
     # Step 6: Output the C code in desired format: stdout, string, or file.
     if filename == "stdout":
         print(Coutput)
     elif filename == "returnstring":
-        return Coutput+'\n'
+        return Coutput
     else:
         # Output to the file specified by outCfilename
         with open(filename, outCparams.outCfileaccess) as file:
