@@ -461,6 +461,97 @@ def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sy
 
 #################################
 # STEP 5: C CODE OUTPUT ROUTINES
+def construct_FD_exprs_as_SymPy_exprs(list_of_deriv_vars,
+                                      list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
+                                      fdcoeffs, fdstencl):
+    FDexprs = []
+    FDlhsvarnames = []
+    # Step 5.a.ii.A: Output finite difference expressions to
+    #                Coutput string
+    for i in range(len(list_of_deriv_vars)):
+        FDexprs.append(sp.sympify(0))  # Append a new element to the list of derivative expressions.
+        FDlhsvarnames.append(type__var(list_of_deriv_vars[i], FDparams))
+        var = list_of_base_gridfunction_names_in_derivs[i]
+        for j in range(len(fdcoeffs[i])):
+            varname = str(var) + varsuffix(fdstencl[i][j], FDparams)
+            FDexprs[i] += fdcoeffs[i][j] * sp.sympify(varname)
+
+        # Multiply each expression by the appropriate power
+        #   of 1/dx[i]
+        invdx = []
+        for d in range(FDparams.DIM):
+            invdx.append(sp.sympify("invdx" + str(d)))
+        # First-order or Kreiss-Oliger derivatives:
+        if (len(list_of_deriv_operators[i]) == 5 and "dKOD" in list_of_deriv_operators[i]) or \
+                (len(list_of_deriv_operators[i]) == 3 and "dD" in list_of_deriv_operators[i]) or \
+                (len(list_of_deriv_operators[i]) == 5 and (
+                        "dupD" in list_of_deriv_operators[i] or "ddnD" in list_of_deriv_operators[i])):
+            dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
+            FDexprs[i] *= invdx[dirn]
+        # Second-order derivs:
+        elif len(list_of_deriv_operators[i]) == 5 and "dDD" in list_of_deriv_operators[i]:
+            dirn1 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 2])
+            dirn2 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
+            FDexprs[i] *= invdx[dirn1] * invdx[dirn2]
+        else:
+            print("Error: was unable to parse derivative operator: ", list_of_deriv_operators[i])
+            sys.exit(1)
+    return FDexprs, FDlhsvarnames
+
+def construct_FD_exprs_as_C_functions(list_of_deriv_operators,   fdcoeffs, fdstencl):
+    # Step 5.a.ii.A: First construct a list of all the unique finite difference functions
+    list_of_uniq_deriv_operators = superfast_uniq(list_of_deriv_operators)
+
+    def find_which_op_idx(op, list_of_deriv_operators):
+        for j in range(len(list_of_deriv_operators)):
+            if op == list_of_deriv_operators[j]:
+                return j
+        print("Error: could not find operator "+str(op)+" in ",list_of_deriv_operators)
+        sys.exit(1)
+
+    Ctype = "REAL"
+    if FDparams.SIMD_enable == "True":
+        Ctype = "REAL_SIMD_ARRAY"
+
+    for op in list_of_uniq_deriv_operators:
+        which_op_idx = find_which_op_idx(op, list_of_deriv_operators)
+
+        outstr = "REAL __attribute__ ((noinline)) f_" + str(op) + "("
+
+        rhs_expr = sp.sympify(0)
+        for j in range(len(fdcoeffs[which_op_idx])):
+            var = sp.sympify("f" + varsuffix(fdstencl[which_op_idx][j], FDparams))
+            outstr += "const " + Ctype + " " + str(var)
+            if j != len(fdcoeffs[which_op_idx])-1:
+                outstr += ","
+            else:
+                outstr += ") {\n"
+            rhs_expr += fdcoeffs[which_op_idx][j] * var
+
+        # Multiply each expression by the appropriate power
+        #   of 1/dx[i]
+        invdx = []
+        for d in range(FDparams.DIM):
+            invdx.append(sp.sympify("invdx" + str(d)))
+        # First-order or Kreiss-Oliger derivatives:
+        if ( (len(op) == 5 and "dKOD" in op) or
+             (len(op) == 3 and   "dD" in op) or
+             (len(op) == 5 and ("dupD" in op or "ddnD" in op)) ):
+            dirn = int(op[len(op) - 1])
+            rhs_expr *= invdx[dirn]
+        # Second-order derivs:
+        elif len(op) == 5 and "dDD" in op:
+            dirn1 = int(op[len(op) - 2])
+            dirn2 = int(op[len(op) - 1])
+            rhs_expr *= invdx[dirn1]*invdx[dirn2]
+        else:
+            print("Error: was unable to parse derivative operator: ", op)
+            sys.exit(1)
+
+        p = "preindent=1,SIMD_enable="+FDparams.SIMD_enable+",outCverbose=False,CSE_preprocess=True,includebraces=False"
+        outstr += outputC(rhs_expr, "retval", "returnstring", params=p)
+        outstr = outstr.replace("retval = ", "return ") + "}\n"
+        return outstr
 
 def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                     list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
@@ -560,48 +651,23 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
     # *** No need to do anything here; already set in
     #     string "read_from_memory_Ccode". ***
 
-    # FIXME: Update these code comments:
     # Step 5.a.ii: Perform arithmetic needed for finite differences
     #              associated with input expressions provided in
     #              sympyexpr_list[].rhs.
-    #           Note that exprs and lhsvarnames contain
-    #          i)  finite difference expressions (constructed
-    #              in steps above) and associated variable names,
-    #              and
-    #          ii) Input expressions sympyexpr_list[], which
-    #              in general depend on finite difference
-    #              variables.
-    FDexprs = []
-    FDlhsvarnames = []
-    # Step 5.a.ii.A: Output finite difference expressions to
-    #                Coutput string
-    for i in range(len(list_of_deriv_vars)):
-        FDexprs.append(sp.sympify(0))  # Append a new element to the list of derivative expressions.
-        FDlhsvarnames.append(type__var(list_of_deriv_vars[i], FDparams))
-        var = list_of_base_gridfunction_names_in_derivs[i]
-        for j in range(len(fdcoeffs[i])):
-            varname = str(var) + varsuffix(fdstencl[i][j], FDparams)
-            FDexprs[i] += fdcoeffs[i][j] * sp.sympify(varname)
+    #           Note that FDexprs and FDlhsvarnames contain
+    #          A) Finite difference expressions (constructed
+    #             in steps above) and associated variable names,
+    #             and
+    #          B) Input expressions sympyexpr_list[], which
+    #             in general depend on finite difference
+    #             variables.
+    FDexprs, FDlhsvarnames = \
+        construct_FD_exprs_as_SymPy_exprs(list_of_deriv_vars,
+                                          list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
+                                          fdcoeffs, fdstencl)
 
-        # Multiply each expression by the appropriate power
-        #   of 1/dx[i]
-        invdx = []
-        for d in range(FDparams.DIM):
-            invdx.append(sp.sympify("invdx" + str(d)))
-        # First-order or Kreiss-Oliger derivatives:
-        if (len(list_of_deriv_operators[i]) == 5 and "dKOD" in list_of_deriv_operators[i]) or \
-                (len(list_of_deriv_operators[i]) == 3 and "dD" in list_of_deriv_operators[i]) or \
-                (len(list_of_deriv_operators[i]) == 5 and ("dupD" in list_of_deriv_operators[i] or "ddnD" in list_of_deriv_operators[i])):
-            dirn = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
-            FDexprs[i] *= invdx[dirn]
-        # Second-order derivs:
-        elif len(list_of_deriv_operators[i]) == 5 and "dDD" in list_of_deriv_operators[i]:
-            dirn1 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 2])
-            dirn2 = int(list_of_deriv_operators[i][len(list_of_deriv_operators[i]) - 1])
-            FDexprs[i] *= invdx[dirn1] * invdx[dirn2]
-        else:
-            print("Error: was unable to parse derivative operator: ", list_of_deriv_operators[i])
-            sys.exit(1)
+    # Future feature:
+    # construct_FD_exprs_as_C_functions(list_of_deriv_operators, fdcoeffs, fdstencl)
 
     # Step 5.b.i: (Upwinded derivatives algorithm, part 1):
     # If an upwinding control vector is specified, determine
