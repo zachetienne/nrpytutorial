@@ -1,6 +1,6 @@
 
 # Step 1: Import needed core NRPy+ modules
-from outputC import lhrh         # NRPy+: Core C code output module
+from outputC import lhrh,outC_function_dict  # NRPy+: Core C code output module
 import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
@@ -448,4 +448,10 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         outstr.append(pickle.dumps(lst.module))
         outstr.append(pickle.dumps(lst.parname))
         outstr.append(pickle.dumps(lst.defaultval))
+
+    outstr.append(pickle.dumps(len(outC_function_dict)))
+    for Cfuncname, Cfunc in outC_function_dict.items():
+        outstr.append(pickle.dumps(Cfuncname))
+        outstr.append(pickle.dumps(Cfunc))
+
     return outstr

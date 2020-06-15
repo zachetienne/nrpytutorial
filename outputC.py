@@ -453,6 +453,6 @@ def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop=""
     _ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
     if outfile == "returnstring":
         return Cfunc
-    with open(outfile,"w") as file:
+    with open(outfile, "w") as file:
         file.write(Cfunc)
         print("Output C function "+name+"() to file "+outfile)

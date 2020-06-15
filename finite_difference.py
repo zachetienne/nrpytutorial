@@ -57,6 +57,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     # Step 0.c: FDparams named tuple stores parameters used in the finite-difference codegen
     FDparams.SIMD_enable      = outCparams.SIMD_enable
     FDparams.PRECISION        = par.parval_from_str("PRECISION")
+    FDparams.FD_CD_order      = par.parval_from_str("FD_CENTDERIVS_ORDER")
     FDparams.DIM              = par.parval_from_str("DIM")
     FDparams.MemAllocStyle    = par.parval_from_str("MemAllocStyle")
     FDparams.upwindcontrolvec = upwindcontrolvec
