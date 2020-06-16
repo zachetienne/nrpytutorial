@@ -251,10 +251,16 @@ void BaikalETK_BoundaryConditions_aux_gfs(CCTK_ARGUMENTS) {
 
   CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
 
+  CCTK_INT bndsize[6];
+  CCTK_INT is_ghostbnd[6];
+  CCTK_INT is_symbnd[6];
+  CCTK_INT is_physbnd[6];
+  GetBoundarySizesAndTypes(cctkGH, 6, bndsize, is_ghostbnd, is_symbnd, is_physbnd);
+
 """
     for gf in aux_gfs_list:
         outstr += """
-  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, cctk_nghostzones[0], -1, "BaikalETK::"""+gf+"""", "flat");
+  ierr = Boundary_SelectVarForBC(cctkGH, CCTK_ALL_FACES, bndsize[0], -1, "BaikalETK::"""+gf+"""", "flat");
   if (ierr < 0) CCTK_ERROR("Failed to register BC for BaikalETK::"""+gf+"""!");
 """
     outstr += "}\n"
