@@ -6,6 +6,7 @@ import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import sys                       # Standard Python module for multiplatform OS-level functions
+from itertools import product, chain
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
@@ -46,39 +47,53 @@ def declare_indexedexp(rank, symbol=None, symmetry=None, dimension=None):
     for i in range(1, rank + 1):
         indexedexp += ' for %s in range(%s)]' % (loop_index[rank - i][4:-1], dimension)
     indexedexp = eval(indexedexp)
-    if symmetry:
-        if rank == 1:
-            raise Exception ('cannot symmetrize indexed expression of rank 1')
-        elif rank == 2:
-            for i in range(dimension):
-                for j in range(dimension):
-                    if symmetry == 'sym01':
-                        if j < i: indexedexp[i][j] = indexedexp[j][i]
-                    elif symmetry == 'nosym': pass
-                    else: raise Exception('unsupported symmetry option \'' + symmetry + '\'')
-        elif rank == 3:
-            for i in range(dimension):
-                for j in range(dimension):
-                    for k in range(dimension):
-                        if symmetry == 'sym01':
-                            if j < i: indexedexp[i][j][k] = indexedexp[j][i][k]
-                        elif symmetry == 'sym12':
-                            if k < j: indexedexp[i][j][k] = indexedexp[i][k][j]
-                        elif symmetry == 'nosym': pass
-                        else: raise Exception('unsupported symmetry option \'' + symmetry + '\'')
-        elif rank == 4:
-            for i in range(dimension):
-                for j in range(dimension):
-                    for k in range(dimension):
-                        for l in range(dimension):
-                            if symmetry in ('sym01', 'sym01_sym23'):
-                                if j < i: indexedexp[i][j][k][l] = indexedexp[j][i][k][l]
-                                if l < k: indexedexp[i][j][k][l] = indexedexp[i][j][l][k]
-                            elif symmetry == 'sym12':
-                                if k < j: indexedexp[i][j][k][l] = indexedexp[i][k][j][l]
-                            elif symmetry == 'nosym': pass
-                            else: raise Exception('unsupported symmetry option \'' + symmetry + '\'')
-        else: raise Exception('unsupported rank for indexed expression')
+    if symmetry: return symmetrize(rank, indexedexp, symmetry, dimension)
+    return apply_symmetry_condition_to_derivatives(indexedexp)
+
+def symmetrize(rank, indexedexp, symmetry, dimension):
+    if rank == 1:
+        raise Exception ('cannot symmetrize indexed expression of rank 1')
+    if rank == 2:
+        for sym in symmetry.split('_'):
+            for i, j in product(range(dimension), repeat=2):
+                if sym == 'sym01':
+                    if j < i: indexedexp[i][j] = indexedexp[j][i]
+                elif sym == 'nosym': pass
+                else: raise Exception('unsupported symmetry option \'' + sym + '\'')
+    elif rank == 3:
+        symmetry = set(chain.from_iterable(('sym' + sym[3:5], 'sym' + sym[4:6]) 
+            if len(sym[3:]) == 3 else (sym,) for sym in symmetry.split('_')))
+        for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
+            for i, j, k in product(range(dimension), repeat=3):
+                if sym == 'sym01':
+                    if j < i: indexedexp[i][j][k] = indexedexp[j][i][k]
+                elif sym == 'sym02':
+                    if k < i: indexedexp[i][j][k] = indexedexp[k][j][i]
+                elif sym == 'sym12':
+                    if k < j: indexedexp[i][j][k] = indexedexp[i][k][j]
+                elif sym == 'nosym': pass
+                else: raise Exception('unsupported symmetry option \'' + sym + '\'')
+    elif rank == 4:
+        symmetry = set(chain.from_iterable(('sym' + sym[3:5], 'sym' + sym[4:6]) 
+            if len(sym[3:]) == 3 else ('sym' + sym[3:5], 'sym' + sym[4:6], 'sym' + sym[5:7]) 
+            if len(sym[3:]) == 4 else (sym,) for sym in symmetry.split('_')))
+        for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
+            for i, j, k, l in product(range(dimension), repeat=4):
+                if sym == 'sym01':
+                    if j < i: indexedexp[i][j][k][l] = indexedexp[j][i][k][l]
+                elif sym == 'sym02':
+                    if k < i: indexedexp[i][j][k][l] = indexedexp[k][j][i][l]
+                elif sym == 'sym03':
+                    if l < i: indexedexp[i][j][k][l] = indexedexp[l][j][k][i]
+                elif sym == 'sym12':
+                    if k < j: indexedexp[i][j][k][l] = indexedexp[i][k][j][l]
+                elif sym == 'sym13':
+                    if l < j: indexedexp[i][j][k][l] = indexedexp[i][l][k][j]
+                elif sym == 'sym23':
+                    if l < k: indexedexp[i][j][k][l] = indexedexp[i][j][l][k]
+                elif sym == 'nosym': pass
+                else: raise Exception('unsupported symmetry option \'' + sym + '\'')
+    else: raise Exception('unsupported rank for indexed expression')
     return apply_symmetry_condition_to_derivatives(indexedexp)
 
 def zerorank1(DIM=-1):
