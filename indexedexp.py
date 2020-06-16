@@ -53,7 +53,7 @@ def declare_indexedexp(rank, symbol=None, symmetry=None, dimension=None):
 def symmetrize(rank, indexedexp, symmetry, dimension):
     if rank == 1:
         raise Exception('cannot symmetrize indexed expression of rank 1')
-    elif rank == 2:
+    if rank == 2:
         indexedexp = symmetrize_rank2(indexedexp, symmetry, dimension)
     elif rank == 3:
         indexedexp = symmetrize_rank3(indexedexp, symmetry, dimension)
@@ -72,8 +72,12 @@ def symmetrize_rank2(indexedexp, symmetry, dimension):
     return indexedexp
 
 def symmetrize_rank3(indexedexp, symmetry, dimension):
-    symmetry = set(chain.from_iterable(('sym' + sym[3:5], 'sym' + sym[4:6])
-        if len(sym[3:]) == 3 else (sym,) for sym in symmetry.split('_')))
+    symmetry_, symmetry = symmetry, set()
+    for sym in symmetry_.split('_'):
+        if len(sym[3:]) == 3:
+            symmetry.add('sym' + sym[3:5])
+            symmetry.add('sym' + sym[4:6])
+        else: symmetry.add(sym)
     for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
         for i, j, k in product(range(dimension), repeat=3):
             if sym == 'sym01':
@@ -87,9 +91,14 @@ def symmetrize_rank3(indexedexp, symmetry, dimension):
     return indexedexp
 
 def symmetrize_rank4(indexedexp, symmetry, dimension):
-    symmetry = set(chain.from_iterable(('sym' + sym[3:5], 'sym' + sym[4:6])
-        if len(sym[3:]) == 3 else ('sym' + sym[3:5], 'sym' + sym[4:6], 'sym' + sym[5:7])
-        if len(sym[3:]) == 4 else (sym,) for sym in symmetry.split('_')))
+    symmetry_, symmetry = symmetry, set()
+    for sym in symmetry_.split('_'):
+        if len(sym[3:]) in (3, 4):
+            symmetry.add('sym' + sym[3:5])
+            symmetry.add('sym' + sym[4:6])
+        elif len(sym[3:]) == 4:
+            symmetry.add('sym' + sym[5:7])
+        else: symmetry.add(sym)
     for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
         for i, j, k, l in product(range(dimension), repeat=4):
             if sym == 'sym01':
