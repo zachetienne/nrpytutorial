@@ -6,29 +6,128 @@ import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import sys                       # Standard Python module for multiplatform OS-level functions
+from itertools import product, chain
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
 
+def declare_indexedexp(rank, symbol=None, symmetry=None, dimension=None):
+    """ Generate an indexed expression of specified rank and dimension
+
+        >>> declare_indexedexp(rank=1, dimension=3)
+        [0, 0, 0]
+        >>> declare_indexedexp(rank=1, symbol="vU", dimension=3)
+        [vU0, vU1, vU2]
+
+        >>> declare_indexedexp(rank=2, dimension=3)
+        [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        >>> declare_indexedexp(rank=2, symbol='gUU', dimension=3)
+        [[gUU00, gUU01, gUU02], [gUU10, gUU11, gUU12], [gUU20, gUU21, gUU22]]
+        >>> declare_indexedexp(rank=2, symbol='gUU', symmetry='sym01', dimension=3)
+        [[gUU00, gUU01, gUU02], [gUU01, gUU11, gUU12], [gUU02, gUU12, gUU22]]
+
+        >>> declare_indexedexp(rank=3, dimension=3)
+        [[[0, 0, 0], [0, 0, 0], [0, 0, 0]], [[0, 0, 0], [0, 0, 0], [0, 0, 0]], \
+[[0, 0, 0], [0, 0, 0], [0, 0, 0]]]
+        >>> declare_indexedexp(rank=3, symbol='gUU', symmetry='sym01', dimension=3)
+        [[[gUU000, gUU001, gUU002], [gUU010, gUU011, gUU012], [gUU020, gUU021, gUU022]], \
+[[gUU010, gUU011, gUU012], [gUU110, gUU111, gUU112], [gUU120, gUU121, gUU122]], \
+[[gUU020, gUU021, gUU022], [gUU120, gUU121, gUU122], [gUU220, gUU221, gUU222]]]
+        >>> declare_indexedexp(rank=3, symbol='gUU', symmetry='sym12', dimension=3)
+        [[[gUU000, gUU001, gUU002], [gUU001, gUU011, gUU012], [gUU002, gUU012, gUU022]], \
+[[gUU100, gUU101, gUU102], [gUU101, gUU111, gUU112], [gUU102, gUU112, gUU122]], \
+[[gUU200, gUU201, gUU202], [gUU201, gUU211, gUU212], [gUU202, gUU212, gUU222]]]
+    """
+    if not dimension or dimension == -1: dimension = par.parval_from_str('DIM')
+    loop_index = ['str(%s)' % chr(97 + n) for n in range(rank)]
+    indexing = ' + '.join(loop_index)
+    interior = 'sp.sympify(0)' if not symbol \
+        else 'sp.sympify(\'%s\' + %s)' % (symbol, indexing)
+    indexedexp = '[' * rank + interior
+    for i in range(1, rank + 1):
+        indexedexp += ' for %s in range(%s)]' % (loop_index[rank - i][4:-1], dimension)
+    indexedexp = eval(indexedexp)
+    if symmetry: return symmetrize(rank, indexedexp, symmetry, dimension)
+    return apply_symmetry_condition_to_derivatives(indexedexp)
+
+def symmetrize(rank, indexedexp, symmetry, dimension):
+    if rank == 1:
+        raise Exception('cannot symmetrize indexed expression of rank 1')
+    if rank == 2:
+        indexedexp = symmetrize_rank2(indexedexp, symmetry, dimension)
+    elif rank == 3:
+        indexedexp = symmetrize_rank3(indexedexp, symmetry, dimension)
+    elif rank == 4:
+        indexedexp = symmetrize_rank4(indexedexp, symmetry, dimension)
+    else: raise Exception('unsupported rank for indexed expression')
+    return apply_symmetry_condition_to_derivatives(indexedexp)
+
+def symmetrize_rank2(indexedexp, symmetry, dimension):
+    for sym in symmetry.split('_'):
+        for i, j in product(range(dimension), repeat=2):
+            if sym == 'sym01':
+                if j < i: indexedexp[i][j] = indexedexp[j][i]
+            elif sym == 'nosym': pass
+            else: raise Exception('unsupported symmetry option \'' + sym + '\'')
+    return indexedexp
+
+def symmetrize_rank3(indexedexp, symmetry, dimension):
+    symmetry_, symmetry = symmetry, set()
+    for sym in symmetry_.split('_'):
+        if len(sym[3:]) == 3:
+            symmetry.add('sym' + sym[3:5])
+            symmetry.add('sym' + sym[4:6])
+        else: symmetry.add(sym)
+    for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
+        for i, j, k in product(range(dimension), repeat=3):
+            if sym == 'sym01':
+                if j < i: indexedexp[i][j][k] = indexedexp[j][i][k]
+            elif sym == 'sym02':
+                if k < i: indexedexp[i][j][k] = indexedexp[k][j][i]
+            elif sym == 'sym12':
+                if k < j: indexedexp[i][j][k] = indexedexp[i][k][j]
+            elif sym == 'nosym': pass
+            else: raise Exception('unsupported symmetry option \'' + sym + '\'')
+    return indexedexp
+
+def symmetrize_rank4(indexedexp, symmetry, dimension):
+    symmetry_, symmetry = symmetry, set()
+    for sym in symmetry_.split('_'):
+        if len(sym[3:]) in (3, 4):
+            symmetry.add('sym' + sym[3:5])
+            symmetry.add('sym' + sym[4:6])
+        elif len(sym[3:]) == 4:
+            symmetry.add('sym' + sym[5:7])
+        else: symmetry.add(sym)
+    for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
+        for i, j, k, l in product(range(dimension), repeat=4):
+            if sym == 'sym01':
+                if j < i: indexedexp[i][j][k][l] = indexedexp[j][i][k][l]
+            elif sym == 'sym02':
+                if k < i: indexedexp[i][j][k][l] = indexedexp[k][j][i][l]
+            elif sym == 'sym03':
+                if l < i: indexedexp[i][j][k][l] = indexedexp[l][j][k][i]
+            elif sym == 'sym12':
+                if k < j: indexedexp[i][j][k][l] = indexedexp[i][k][j][l]
+            elif sym == 'sym13':
+                if l < j: indexedexp[i][j][k][l] = indexedexp[i][l][k][j]
+            elif sym == 'sym23':
+                if l < k: indexedexp[i][j][k][l] = indexedexp[i][j][l][k]
+            elif sym == 'nosym': pass
+            else: raise Exception('unsupported symmetry option \'' + sym + '\'')
+    return indexedexp
+
 def zerorank1(DIM=-1):
-    if DIM == -1:
-        DIM = par.parval_from_str("DIM")
-    return [sp.sympify(0) for i in range(DIM)]
+    return declare_indexedexp(rank=1, dimension=DIM)
 
 def zerorank2(DIM=-1):
-    if DIM == -1:
-        DIM = par.parval_from_str("DIM")
-    return [[sp.sympify(0) for i in range(DIM)] for j in range(DIM)]
+    return declare_indexedexp(rank=2, dimension=DIM)
 
 def zerorank3(DIM=-1):
-    if DIM == -1:
-        DIM = par.parval_from_str("DIM")
-    return [[[sp.sympify(0) for i in range(DIM)] for j in range(DIM)] for k in range(DIM)]
+    return declare_indexedexp(rank=3, dimension=DIM)
 
 def zerorank4(DIM=-1):
-    if DIM == -1:
-        DIM = par.parval_from_str("DIM")
-    return [[[[sp.sympify(0) for i in range(DIM)] for j in range(DIM)] for k in range(DIM)] for l in range(DIM)]
+    return declare_indexedexp(rank=4, dimension=DIM)
 
 def apply_symmetry_condition_to_derivatives(IDX_OBJ):
     symmetry_axes = par.parval_from_str("indexedexp::symmetry_axes")
@@ -94,11 +193,8 @@ def apply_symmetry_condition_to_derivatives(IDX_OBJ):
                             IDX_OBJ[i0][i1][i2][i3] = sp.sympify(0)
     return IDX_OBJ
 
-def declarerank1(objname, DIM=-1):
-    if DIM==-1:
-        DIM = par.parval_from_str("DIM")
-    IDX_OBJ_TMP = [sp.sympify(objname + str(i)) for i in range(DIM)]
-    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
+def declarerank1(symbol, DIM=-1):
+    return declare_indexedexp(rank=1, symbol=symbol, dimension=DIM)
 
 def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     # Step 0: Verify the gridfunction basename is valid:
@@ -119,24 +215,8 @@ def register_gridfunctions_for_single_rank1(gf_type,gf_basename, DIM=-1):
     # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP
 
-def declarerank2(objname, symmetry_option, DIM=-1):
-    if DIM==-1:
-        DIM = par.parval_from_str("DIM")
-    IDX_OBJ_TMP = [[sp.sympify(objname + str(i) + str(j)) for j in range(DIM)] for i in range(DIM)]
-    for i in range(DIM):
-        for j in range(DIM):
-            if symmetry_option == "sym01":
-                if (j < i):
-                    # j<i in g_{ij} would indicate, e.g., g_{21}.
-                    #  By this convention, we must set
-                    #  g_{21} = g_{12}:
-                    IDX_OBJ_TMP[i][j] = IDX_OBJ_TMP[j][i]
-            elif symmetry_option == "nosym":
-                pass
-            else:
-                print("Error: symmetry option " + symmetry_option + " unsupported.")
-                sys.exit(1)
-    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
+def declarerank2(symbol, symmetry, DIM=-1):
+    return declare_indexedexp(rank=2, symbol=symbol, symmetry=symmetry, dimension=DIM)
 
 def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option, DIM=-1):
     # Step 0: Verify the gridfunction basename is valid:
@@ -166,46 +246,11 @@ def register_gridfunctions_for_single_rank2(gf_type,gf_basename, symmetry_option
     # Step 3: Return array of SymPy variables
     return IDX_OBJ_TMP
 
-def declarerank3(objname, symmetry_option, DIM=-1):
-    if DIM==-1:
-        DIM = par.parval_from_str("DIM")
-    IDX_OBJ_TMP = [[[sp.sympify(objname + str(i) + str(j) + str(k)) for k in range(DIM)] for j in range(DIM)] for i in range(DIM)]
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                if symmetry_option == "sym01":
-                    if j < i:
-                        IDX_OBJ_TMP[i][j][k] = IDX_OBJ_TMP[j][i][k]
-                if symmetry_option == "sym12":
-                    if k < j:
-                        IDX_OBJ_TMP[i][j][k] = IDX_OBJ_TMP[i][k][j]
-                if symmetry_option not in ('sym01', 'sym12', 'nosym'):
-                    print("Error: symmetry option " + symmetry_option + " unsupported.")
-                    sys.exit(1)
-    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
+def declarerank3(symbol, symmetry, DIM=-1):
+    return declare_indexedexp(rank=3, symbol=symbol, symmetry=symmetry, dimension=DIM)
 
-def declarerank4(objname, symmetry_option, DIM=-1):
-    if DIM==-1:
-        DIM = par.parval_from_str("DIM")
-    IDX_OBJ_TMP = [[[[sp.sympify(objname + str(i) + str(j) + str(k) + str(l)) for l in range(DIM)] for k in range(DIM)] for j in range(DIM)] for i in range(DIM)]
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    IDX_OBJ_TMP[i][j][k][l] = sp.sympify(objname + str(i) + str(j) + str(k) + str(l))
-                    if symmetry_option in ('sym01', 'sym01_sym23'):
-                        if(j < i):
-                            IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[j][i][k][l]
-                    if symmetry_option == "sym12":
-                        if(k < j):
-                            IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[i][k][j][l]
-                    if symmetry_option in ('sym23', 'sym01_sym23'):
-                        if(l < k):
-                            IDX_OBJ_TMP[i][j][k][l] = IDX_OBJ_TMP[i][j][l][k]
-                    if symmetry_option not in ('sym01', 'sym23', 'sym01_sym23', 'nosym'):
-                        print("Error: symmetry option "+symmetry_option+" unsupported.")
-                        sys.exit(1)
-    return apply_symmetry_condition_to_derivatives(IDX_OBJ_TMP)
+def declarerank4(symbol, symmetry, DIM=-1):
+    return declare_indexedexp(rank=4, symbol=symbol, symmetry=symmetry, dimension=DIM)
 
 
 # We use the following functions to evaluate 3-metric inverses
