@@ -6,6 +6,7 @@ import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import sys                       # Standard Python module for multiplatform OS-level functions
+import re                        # Standard Python module for regular expressions
 from itertools import product, chain
 
 thismodule = __name__
@@ -38,15 +39,22 @@ def declare_indexedexp(rank, symbol=None, symmetry=None, dimension=None):
 [[gUU100, gUU101, gUU102], [gUU101, gUU111, gUU112], [gUU102, gUU112, gUU122]], \
 [[gUU200, gUU201, gUU202], [gUU201, gUU211, gUU212], [gUU202, gUU212, gUU222]]]
     """
-    if not dimension or dimension == -1: dimension = par.parval_from_str('DIM')
+    if not dimension or dimension == -1:
+        dimension = par.parval_from_str('DIM')
+    if symbol is not None:
+        if not isinstance(symbol, str) or not re.match(r'[\w_]', symbol):
+            raise ValueError('symbol must be an alphabetic string')
+    if dimension is not None:
+        if not isinstance(dimension, int) or not dimension > 0:
+            raise ValueError('dimension must be a positive integer')
     loop_index = ['str(%s)' % chr(97 + n) for n in range(rank)]
     indexing = ' + '.join(loop_index)
-    interior = 'sp.sympify(0)' if not symbol \
-        else 'sp.sympify(\'%s\' + %s)' % (symbol, indexing)
+    interior = 'sympify(0)' if not symbol \
+          else 'sympify(\'%s\' + %s)' % (symbol, indexing)
     indexedexp = '[' * rank + interior
     for i in range(1, rank + 1):
         indexedexp += ' for %s in range(%s)]' % (loop_index[rank - i][4:-1], dimension)
-    indexedexp = eval(indexedexp)
+    indexedexp = eval(indexedexp, {'sympify': sp.sympify}, {})
     if symmetry: return symmetrize(rank, indexedexp, symmetry, dimension)
     return apply_symmetry_condition_to_derivatives(indexedexp)
 
