@@ -194,7 +194,7 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
       }   // END for(int which_gz = 0; which_gz < NGHOSTS; which_gz++)
     }     // END for(int which_gf=0;which_gf<NUM_GFS;which_gf++)
   }       // END if coord = Cartesian
-  /* else if (strcmp(coord, "Spherical") == 0)
+  /* else if (strcmp(coord, "Spherical") == 0) 
   {
 #pragma omp parallel for
     for (int which_gf = 0; which_gf < NUM_GFS; which_gf++)
