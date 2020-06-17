@@ -4,7 +4,7 @@
 
 # pylint: disable=unused-import
 from sympy import Function, Symbol, Integer, Rational, Float, Pow
-from sympy import var, sqrt, expand
+from sympy import preorder_traversal, expand, sqrt
 import re
 
 # pylint: disable=attribute-defined-outside-init
@@ -123,7 +123,7 @@ class Parser:
 
     def __init__(self, namespace):
         self.lexer = Lexer(namespace)
-        self.evaluate = namespace is None
+        self.tensorial = namespace is not None
 
     def parse(self, sentence):
         """ Parse Sentence
@@ -146,57 +146,53 @@ class Parser:
     def __root(self):
         if self.peek('SYMBOL') or self.peek('TENSOR'):
             # expect a tensor variable on LHS of a tensorial equation
-            if self.peek('SYMBOL') and not self.evaluate:
+            if self.tensorial and self.peek('SYMBOL'):
                 self.expect('TENSOR')
             variable = self.__variable()
             if self.accept('EQUAL'):
                 expr = self.__expr()
-                # return a dictionary mapping for a non-tensorial equation
-                if self.evaluate:
-                    return {variable[8:-2]: eval(expr)}
-                # distribute over every parenthetical expression
-                expr = str(expand(eval(expr)))
-                # remove variable cruft and extract tensor information
-                args = variable[19:-1].split(', ')
-                # construct tensor indexing for array notation
-                suffix = ''.join(['[' + n + ']' for n in args[1:]])
-                # construct array notation for a tensor variable
-                variable = args[0] + suffix
-                # iterate over every tensor in the expression
-                for match in re.findall(r'Tensor\([^\)]+\)', expr):
-                    # remove cruft and extract tensor information
-                    args = match[7:-1].split(', ')
+                if self.tensorial:
+                    # distribute over every parenthetical expression
+                    expr_ = expand(expr); expr = str(expr_)
+                    # extract tensor information from variable
+                    args = list(map(str, variable.args))
                     # construct tensor indexing for array notation
                     suffix = ''.join(['[' + n + ']' for n in args[1:]])
-                    # replace function notation with array notation
-                    expr = expr.replace(match, args[0] + suffix)
-                    # return a dictionary mapping for a tensorial equation
-                return {variable: expr}
+                    # construct array notation for a tensor variable
+                    variable = args[0] + suffix
+                    # iterate over every tensor in the expression
+                    for subexpr in preorder_traversal(expr_):
+                        if subexpr.func == Function('Tensor'):
+                            # extract tensor information from function
+                            args = list(map(str, subexpr.args))
+                            # construct tensor indexing for array notation
+                            suffix = ''.join(['[' + n + ']' for n in args[1:]])
+                            # replace function notation with array notation
+                            expr = expr.replace(str(subexpr), args[0] + suffix)
+                return {str(variable): expr}
             # reset the token iterator for expression parsing
-            self.lexer.reset()
-            self.lexer.lex()
-        if self.evaluate:
-            return eval(self.__expr())
+            self.lexer.reset(); self.lexer.lex()
         return self.__expr()
 
     # <EXPR> -> [ - ] <TERM> { ( + | - ) <TERM> }
     def __expr(self):
-        sign = '-' if self.accept('MINUS') else ''
-        expr = sign + self.__term()
+        expr = -self.__term() if self.accept('MINUS') else self.__term()
         while self.peek('PLUS') or self.peek('MINUS'):
-            operator = self.lexer.lexeme
-            self.lexer.lex()
-            expr += ' %s %s' % (operator, self.__term())
+            if self.accept('PLUS'):
+                expr += self.__term()
+            elif self.accept('MINUS'):
+                expr -= self.__term()
         return expr
 
     # <TERM> -> <FACTOR> { [ / ] <FACTOR> }
     def __term(self):
         expr = self.__factor()
         while any(self.peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET',
-                'SYMBOL', 'TENSOR', 'RATIONAL', 'DECIMAL', 'INTEGER', 'DIVIDE',
-                'SQRT_CMD', 'FRAC_CMD')):
-            operator = '/' if self.accept('DIVIDE') else '*'
-            expr += '%s%s' % (operator, self.__factor())
+                'SYMBOL', 'TENSOR', 'RATIONAL', 'DECIMAL', 'INTEGER',
+                'DIVIDE', 'SQRT_CMD', 'FRAC_CMD')):
+            if self.accept('DIVIDE'):
+                expr /= self.__factor()
+            else: expr *= self.__factor()
         return expr
 
     # <FACTOR> -> <SUBEXPR> { ^( <SUBEXPR> | {<EXPR>} ) }
@@ -204,19 +200,19 @@ class Parser:
         expr = self.__subexpr()
         while self.accept('CARET'):
             if self.accept('LEFT_BRACE'):
-                expr += '**(' + self.__expr() + ')'
+                expr **= self.__expr()
                 self.expect('RIGHT_BRACE')
-            else: expr += '**' + self.__subexpr()
+            else: expr **= self.__subexpr()
         return expr
 
     # <SUBEXPR> -> <OPERAND> | (<EXPR>) | [<EXPR>]
     def __subexpr(self):
         if self.accept('LEFT_PAREN'):
-            expr = '(' + self.__expr() + ')'
+            expr = self.__expr()
             self.expect('RIGHT_PAREN')
             return expr
         if self.accept('LEFT_BRACKET'):
-            expr = '(' + self.__expr() + ')'
+            expr = self.__expr()
             self.expect('RIGHT_BRACKET')
             return expr
         return self.__operand()
@@ -239,40 +235,35 @@ class Parser:
             if self.accept('UNDERSCORE'):
                 if self.peek('SYMBOL') or self.peek('INTEGER'):
                     subscript = self.lexer.lexeme
+                    self.lexer.lex()
                     # remove backslash from subscript whenever present
                     if subscript[0] == '\\':
                         subscript = subscript[1:]
                     variable += '_' + subscript
-                    self.lexer.lex()
-                    # create variable symbol and insert into global namespace
-                    var(variable)
-                    return 'Symbol(\'' + variable + '\')'
+                    return Symbol(variable)
                 # raise exception whenever illegal subscript
                 sentence = self.lexer.sentence
                 position = self.lexer.index - len(self.lexer.lexeme)
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
-            # create variable symbol and insert into global namespace
-            var(variable)
-            return 'Symbol(\'' + variable + '\')'
+            return Symbol(variable)
         return self.__array()
 
     # <ARRAY> -> <TENSOR> [ _( <SYMBOL> | {{ <SYMBOL> }} ) [ ^( <SYMBOL> | {{ <SYMBOL> }} ) ]
     #             | ^( <SYMBOL> | {{ <SYMBOL> }} ) [ _( <SYMBOL> | {{ <SYMBOL> }} ) ] ]
     def __array(self):
         array = self.lexer.lexeme
+        self.expect('TENSOR')
         if array[0] == '\\':
             array = array[1:]
-        self.lexer.lex()
         array, index = list(array), []
         def add_index(suffix):
             symbol = self.lexer.lexeme
+            self.lexer.lex()
             if symbol[0] == '\\':
                 symbol = symbol[1:]
-            var(symbol)
-            self.lexer.lex()
+            index.append(Symbol(symbol))
             array.append(suffix)
-            index.append(symbol)
         if self.accept('UNDERSCORE'):
             if self.peek('SYMBOL'):
                 add_index('D')
@@ -301,10 +292,8 @@ class Parser:
                     while self.peek('SYMBOL'):
                         add_index('D')
                     self.expect('RIGHT_BRACE')
-        array = ''.join(array); var(array)
-        if not index:
-            return 'Function(\'Tensor\')(' + array + ')'
-        return 'Function(\'Tensor\')(%s, %s)' % (array, ', '.join(index))
+        array = Symbol(''.join(array))
+        return Function('Tensor')(array, *index)
 
     # <NUMBER> -> <RATIONAL> | <DECIMAL> | <INTEGER>
     def __number(self):
@@ -313,11 +302,11 @@ class Parser:
             rational = re.match(r'([1-9][0-9]*)\/([1-9][0-9]*)', number)
             if not rational:
                 rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
-            return 'Rational(%s, %s)' % (rational.group(1), rational.group(2))
+            return Rational(rational.group(1), rational.group(2))
         if self.accept('DECIMAL'):
-            return 'Float(' + number + ')'
+            return Float(number)
         if self.accept('INTEGER'):
-            return 'Integer(' + number + ')'
+            return Integer(number)
         sentence = self.lexer.sentence
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unexpected \'%s\' at position %d' %
@@ -337,14 +326,15 @@ class Parser:
     # <SQRT> -> \ sqrt [ [<INTEGER>] ] {<EXPR>}
     def __sqrt(self):
         if self.accept('LEFT_BRACKET'):
-            root = 'Integer(' + self.lexer.lexeme + ')'
+            integer = self.lexer.lexeme
             self.expect('INTEGER')
+            root = Rational(1, integer)
             self.expect('RIGHT_BRACKET')
-        else: root = 2
+        else: root = Rational(1, 2)
         self.expect('LEFT_BRACE')
         expr = self.__expr()
         self.expect('RIGHT_BRACE')
-        return 'Pow(%s, Rational(1, %s))' % (expr, root)
+        return Pow(expr, root)
 
     # <FRAC> -> \ frac {<EXPR>} {<EXPR>}
     def __frac(self):
@@ -354,7 +344,7 @@ class Parser:
         self.expect('LEFT_BRACE')
         denominator = self.__expr()
         self.expect('RIGHT_BRACE')
-        return '(%s)/(%s)' % (numerator, denominator)
+        return numerator / denominator
 
     def peek(self, token_type):
         return self.lexer.token == token_type
@@ -481,10 +471,8 @@ gUU01*vD0 + gUU01*wD0 + gUU11*vD1 + gUU11*wD1]}
             for tensor in namespace)).parse(sentence)
         # perform implied summation on the tensorial equation
         var, expr = __summation(equation, dim_list[0])
-        # update the global namespace with the tensor namespace
-        globals().update(namespace)
         if debug: return {var: expr}
-        return {var: eval(expr)}
+        return {var: eval(expr, namespace, {})}
     raise TypeError('inappropriate type for tensor namespace')
 
 if __name__ == "__main__":
