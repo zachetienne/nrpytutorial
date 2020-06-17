@@ -2,6 +2,3 @@
 out*.txt
 htmlcov/
 .coverage
-*Tutorial*.ipynb
-.vscode
-ScalarFieldStaticBackground
