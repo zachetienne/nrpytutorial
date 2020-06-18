@@ -18,6 +18,62 @@ if nrpy_dir_path not in sys.path:
 
 from outputC import *             # TylerK: check what is imported and remove *; also find appropriate description
 
+# Supporting function to simplify derivative expressions by removing terms equal to 0
+def simplify_deriv(lhss_deriv,rhss_deriv):
+    # Copy expressions into another array
+    lhss_deriv_simp = []
+    rhss_deriv_simp = []
+    for i in range(len(rhss_deriv)):
+        lhss_deriv_simp.append(lhss_deriv[i])
+        rhss_deriv_simp.append(rhss_deriv[i])
+    # If a right-hand side is 0, substitute value 0 for the corresponding left-hand side in later terms
+    for i in range(len(rhss_deriv_simp)):
+        if rhss_deriv_simp[i] == 0:
+            for j in range(i+1,len(rhss_deriv_simp)):
+                for var in rhss_deriv_simp[j].free_symbols:
+                    if str(var) == str(lhss_deriv_simp[i]):
+                        rhss_deriv_simp[j] = rhss_deriv_simp[j].subs(var,0)
+    zero_elements_to_remove = []
+    # Create array of indices for expressions that are zero
+    for i in range(len(rhss_deriv_simp)):
+        if rhss_deriv_simp[i] == sp.sympify(0):
+            zero_elements_to_remove.append(i)
+
+    # When removing terms that are zero, we need to take into account their new index (after each removal)
+    count = 0
+    for i in range(len(zero_elements_to_remove)):
+        del lhss_deriv_simp[zero_elements_to_remove[i]+count]
+        del rhss_deriv_simp[zero_elements_to_remove[i]+count]
+        count -= 1
+    return lhss_deriv_simp,rhss_deriv_simp
+
+# Supporing function to convert a generic partial derivative into a partial derivative with respect to a specific variable
+def deriv_onevar(lhss_deriv,rhss_deriv,variable_list,index):
+    # Denote each variable with prm
+    variableprm_list = []
+    for variable in variable_list:
+        variableprm_list.append(str(variable)+"prm")
+
+    # Copy expressions into another array
+    lhss_deriv_new = []
+    rhss_deriv_new = []
+    for i in range(len(rhss_deriv)):
+        lhss_deriv_new.append(lhss_deriv[i])
+        rhss_deriv_new.append(rhss_deriv[i])
+    # For each free symbol's derivative, replace it with:
+    #   1, if we are differentiating with respect to the variable, or
+    #   0, if we are note differentiating with respect to that variable
+    for i in range(len(rhss_deriv_new)):
+        for var in variableprm_list:
+            if variableprm_list.index(str(var))==index:
+            #if var==(variable+"prm"):
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var,1)
+            else:
+                rhss_deriv_new[i] = rhss_deriv_new[i].subs(var,0)
+    # Simplify derivative expressions again
+    lhss_deriv_simp,rhss_deriv_simp = simplify_deriv(lhss_deriv_new,rhss_deriv_new)
+    return lhss_deriv_simp,rhss_deriv_simp
+
 def symbolic_parital_derivative(expression_text_file,constants_text_file):
     # Step 2.a: Read in expressions as a (single) string
     with open(expression_text_file, 'r') as input_expressions:
@@ -100,36 +156,37 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file):
         newrhs = sp.sympify(str(sp.diff(rhss[i],xx)).replace("(xx)","").replace(", xx","prm").replace("Derivative",""))
         rhss_deriv.append(newrhs)
 
-    # Step 7: Call the simplication function and then copy results
+    # Step 7.b: Call the simplication function and then copy results
     lhss_deriv_simp,rhss_deriv_simp = simplify_deriv(lhss_deriv,rhss_deriv)
     lhss_deriv = lhss_deriv_simp
     rhss_deriv = rhss_deriv_simp
 
-# Derivative simplification function
-def simplify_deriv(lhss_deriv,rhss_deriv):
-    # Copy expressions into another array
-    lhss_deriv_simp = []
-    rhss_deriv_simp = []
-    for i in range(len(rhss_deriv)):
-        lhss_deriv_simp.append(lhss_deriv[i])
-        rhss_deriv_simp.append(rhss_deriv[i])
-    # If a right-hand side is 0, substitute value 0 for the corresponding left-hand side in later terms
-    for i in range(len(rhss_deriv_simp)):
-        if rhss_deriv_simp[i] == 0:
-            for j in range(i+1,len(rhss_deriv_simp)):
-                for var in rhss_deriv_simp[j].free_symbols:
-                    if str(var) == str(lhss_deriv_simp[i]):
-                        rhss_deriv_simp[j] = rhss_deriv_simp[j].subs(var,0)
-    zero_elements_to_remove = []
-    # Create array of indices for expressions that are zero
-    for i in range(len(rhss_deriv_simp)):
-        if rhss_deriv_simp[i] == sp.sympify(0):
-            zero_elements_to_remove.append(i)
+    # Step 8.b: Call the derivative function and populate dictionaries with the result
+    lhss_derivative = {}
+    rhss_derivative = {}
+    for index in range(len(dynamic_variables)):
+        lhss_temp,rhss_temp = deriv_onevar(lhss_deriv,rhss_deriv,dynamic_variables,index)
+        lhss_derivative[dynamic_variables[index]] = lhss_temp
+        rhss_derivative[dynamic_variables[index]] = rhss_temp
 
-    # When removing terms that are zero, we need to take into account their new index (after each removal)
-    count = 0
-    for i in range(len(zero_elements_to_remove)):
-        del lhss_deriv_simp[zero_elements_to_remove[i]+count]
-        del rhss_deriv_simp[zero_elements_to_remove[i]+count]
-        count -= 1
-    return lhss_deriv_simp,rhss_deriv_simp
+    # Step 9: Output each partial derivative computation in SymPy snytax to its own file
+    for var in dynamic_variables:
+        with open("partial_wrt_"+str(var)+".txt", "w") as output:
+            outstring = "# Original expression (terms may be needed for derivative computation)\n"
+            output.write("%s" % outstring)
+            for i in range(len(lr)):
+                right_side = lr[i].rhs
+                right_side_in_sp = right_side.replace("sqrt(","sp.sqrt(").replace("log(","sp.log(").replace("pi",
+                                                      "sp.pi").replace("sign(","sp.sign(").replace("Abs(",
+                                                      "sp.Abs(").replace("Rational(","sp.Rational(")
+                outstring = str(lr[i].lhs)+" = "+right_side_in_sp+"\n"
+                output.write("%s" % outstring)
+            outstring = "\n# Derivative expression\n"
+            output.write("%s" % outstring)
+            for i in range(len(lhss_derivative[var])):
+                right_side = str(rhss_derivative[var][i])
+                right_side_in_sp = right_side.replace("sqrt(","sp.sqrt(").replace("log(","sp.log(").replace("pi",
+                                            "sp.pi").replace("sign(","sp.sign(").replace("Abs(",
+                                            "sp.Abs(").replace("Rational(","sp.Rational(")
+                outstring = str(lhss_derivative[var][i])+" = "+right_side_in_sp+"\n"
+                output.write("%s" % outstring)
