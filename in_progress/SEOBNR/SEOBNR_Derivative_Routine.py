@@ -103,7 +103,7 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file):
         rhss.append(sp.sympify(lr[i].rhs))
 
     # Step 3.a: Read in constants as a (single) string
-    with open(constants_text_file, 'r') as file:
+    with open('SEOBNR/Hamstring_constants.txt', 'r') as file:
         constants = file.read()
 
     # Step 3.b: Split the input string by carriage returns
@@ -114,6 +114,19 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file):
     for constant in constants_as_strings:
         constant = sp.symbols(constant,real=True)
         input_constants.append(constant)
+
+    # Step 3.d: Read in variables with which to take derivatives
+    with open('SEOBNR/Hamstring_variables.txt', 'r') as file:
+        variables = file.read()
+
+    # Step 3.e: Split the variable string by carriage returns
+    variables_as_strings = variables.splitlines()
+
+    #Step 3.f: Create "dynamic_variables" array and populate with SymPy symbols
+    dynamic_variables = []
+    for variable in variables_as_strings:
+        variable = sp.symbols(variable,real=True)
+        dynamic_variables.append(variable)
 
     # Step 4.a: Prepare array of "free symbols" in the right-hand side expressions
     full_symbol_list_with_dups = []
