@@ -11,8 +11,10 @@
 #   and separately constructed in the BSSN.BSSN_RHSs
 #   Python module.
 
-# Author: Zachariah B. Etienne
+# Authors: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
+#          Terrence Pierre Jacques
+#         terrencepierrej **at** gmail **dot* com
 
 # Step 1: Import all needed modules from NRPy+:
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
@@ -87,6 +89,14 @@ def BSSN_gauge_RHSs():
     elif LapseEvolOption == "Frozen":
         alpha_rhs = sp.sympify(0)
 
+    # Step 2.d: Alternative 1+log lapse condition:
+    #   \partial_t \alpha = \beta^i \alpha_{,i} -\alpha*(1 - \alpha)*K
+    elif LapseEvolOption == "OnePlusLogAlt":
+        alpha_rhs = -alpha*(1 - alpha)*trK
+        alpha_dupD = ixp.declarerank1("alpha_dupD")
+        for i in range(DIM):
+            alpha_rhs += betaU[i]*alpha_dupD[i]
+
     else:
         print("Error: LapseEvolutionOption == "+LapseEvolOption+" not supported!")
         sys.exit(1)
@@ -96,7 +106,8 @@ def BSSN_gauge_RHSs():
     ShiftEvolOption = par.parval_from_str(thismodule + "::ShiftEvolutionOption")
     if ShiftEvolOption not in ('Frozen', 'GammaDriving2ndOrder_NoCovariant', 'GammaDriving2ndOrder_Covariant',
                                'GammaDriving2ndOrder_Covariant__Hatted', 'GammaDriving1stOrder_Covariant',
-                               'GammaDriving1stOrder_Covariant__Hatted'):
+                               'GammaDriving1stOrder_Covariant__Hatted',
+                               'NonAdvectingGammaDriving'):
         print("Error: ShiftEvolutionOption == " + ShiftEvolOption + " unsupported!")
         sys.exit(1)
 
@@ -255,6 +266,22 @@ def BSSN_gauge_RHSs():
         eta = par.Cparameters("REAL", thismodule, ["eta"], 2.0)
         for i in range(DIM):
             beta_rhsU[i] += sp.Rational(3, 4) * Bq.LambdabarU[i] - eta * betaU[i]
+
+    if ShiftEvolOption == "NonAdvectingGammaDriving":
+        # Step 3.c.i: Compute right-hand side of beta^i
+        # *  \partial_t \beta^i = B^i
+        for i in range(DIM):
+            beta_rhsU[i] += BU[i]
+
+        # Compute right-hand side of B^i:
+        eta = par.Cparameters("REAL", thismodule, ["eta"],2.0)
+
+        # Step 3.c.ii: Compute right-hand side of B^i
+        # *  \partial_t B^i     = 3/4 * \partial_t \Lambda^i - eta B^i
+        # Step 3.c.iii: Evaluate RHS of B^i:
+        for i in range(DIM):
+            B_rhsU[i] += sp.Rational(3,4)*Brhs.Lambdabar_rhsU[i] - eta*BU[i]
+
 
     # Step 4: Rescale the BSSN gauge RHS quantities so that the evolved
     #         variables may remain smooth across coord singularities

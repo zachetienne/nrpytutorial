@@ -57,6 +57,7 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     # Step 0.c: FDparams named tuple stores parameters used in the finite-difference codegen
     FDparams.SIMD_enable      = outCparams.SIMD_enable
     FDparams.PRECISION        = par.parval_from_str("PRECISION")
+    FDparams.FD_CD_order      = par.parval_from_str("FD_CENTDERIVS_ORDER")
     FDparams.DIM              = par.parval_from_str("DIM")
     FDparams.MemAllocStyle    = par.parval_from_str("MemAllocStyle")
     FDparams.upwindcontrolvec = upwindcontrolvec
@@ -135,13 +136,13 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
                            list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
                            fdcoeffs, fdstencl, read_from_memory_Ccode, FDparams, Coutput)
     if outCparams.includebraces == "True":
-        Coutput += outCparams.preindent+"}\n"
+        Coutput += outCparams.preindent+"}"
 
     # Step 6: Output the C code in desired format: stdout, string, or file.
     if filename == "stdout":
         print(Coutput)
     elif filename == "returnstring":
-        return Coutput+'\n'
+        return Coutput
     else:
         # Output to the file specified by outCfilename
         with open(filename, outCparams.outCfileaccess) as file:

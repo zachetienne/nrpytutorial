@@ -167,6 +167,16 @@ USES FUNCTION SymmetryTableHandleForGrid
 CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name)
 USES FUNCTION Boundary_SelectVarForBC
 
+# Needed to determine boundary sizes for applying boundary conditions to BSSN constraint gridfunctions
+CCTK_INT FUNCTION GetBoundarySizesAndTypes \
+  (CCTK_POINTER_TO_CONST IN cctkGH, \
+   CCTK_INT IN size, \
+   CCTK_INT OUT ARRAY bndsize, \
+   CCTK_INT OUT ARRAY is_ghostbnd, \
+   CCTK_INT OUT ARRAY is_symbnd, \
+   CCTK_INT OUT ARRAY is_physbnd)
+REQUIRES FUNCTION GetBoundarySizesAndTypes
+
 # Needed for EinsteinEvolve/NewRad outer boundary condition driver:
 CCTK_INT FUNCTION                         \\
     NewRad_Apply                          \\
@@ -367,9 +377,7 @@ schedule BaikalETK_BSSN_constraints in MoL_PseudoEvolution
 schedule BaikalETK_BoundaryConditions_aux_gfs in MoL_PseudoEvolution after BaikalETK_BSSN_constraints
 {
   LANG: C
-  OPTIONS: LOCAL # Needed so that cctk_nghostzones[0] (the number of boundary points) is defined.
-                 #  In other words, don't use LEVEL mode here, or the number of boundary points
-                 #  filled may not match the actual number of ghost zones. Weird, huh?
+  OPTIONS: LEVEL
   SYNC: aux_variables
 } "Enforce symmetry BCs in constraint computation"
 

@@ -29,6 +29,7 @@ nrpy_dir_path = os.path.join(".")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
+from outputC import outC_function_dict # NRPy: core C code output module
 import grid as gri              # NRPy+: Functions having to do with numerical grids
 import NRPy_param_funcs as par  # NRPy+: Parameter interface
 ###############################
@@ -130,7 +131,7 @@ if __name__ == "__main__":
         # Step 3.d.iv: Evaluate list of functions in parallel if possible;
         #           otherwise fallback to serial evaluation:
         pool = multiprocessing.Pool() #processes=len(paramslist))
-        NRPyEnvVars.append(pool.map(master_func,range(len(paramslist))))
+        NRPyEnvVars.append(pool.map(master_func, range(len(paramslist))))
         pool.terminate()
         pool.join()
     except:
@@ -176,10 +177,12 @@ grfcs_list = []
 param_list = []
 Cparm_list = []
 
+outCfunc_dict = {}
+
+num_Cfunc_dict_els = 0
 for WhichParamSet in NRPyEnvVars[0]:
     # gridfunctions
     i=0
-    # print("Length of WhichParamSet:",str(len(WhichParamSet)))
     num_elements = pickle.loads(WhichParamSet[i]); i+=1
     for lst in range(num_elements):
         grfcs_list.append(gri.glb_gridfc(gftype=pickle.loads(WhichParamSet[i+0]),
@@ -200,6 +203,14 @@ for WhichParamSet in NRPyEnvVars[0]:
                                          module    =pickle.loads(WhichParamSet[i+1]),
                                          parname   =pickle.loads(WhichParamSet[i+2]),
                                          defaultval=pickle.loads(WhichParamSet[i+3]))) ; i+=4
+    # outC_func_dict
+    num_elements = pickle.loads(WhichParamSet[i]); i+=1
+    num_Cfunc_dict_els += num_elements
+    for lst in range(num_elements):
+        funcname = pickle.loads(WhichParamSet[i+0])
+        funcbody = pickle.loads(WhichParamSet[i+1]) ; i+=2
+        outCfunc_dict[funcname] = funcbody
+
 grfcs_list_uniq = []
 for gf_ntuple_stored in grfcs_list:
     found_gf = False
@@ -233,6 +244,15 @@ for Cp_ntuple_stored in Cparm_list:
     if found_Cp == False:
         Cparm_list_uniq.append(Cp_ntuple_stored)
 
+# Dictionary will not have duplicates!
+# print("len = ",len(outCfunc_dict))
+# outCfunc_dict_uniq = {}
+# for key,item in outCfunc_dict.items():
+#     if key not in outCfunc_dict_uniq:
+#         print("should be unique: ",key)
+#         outCfunc_dict_uniq[key] = item
+# print("lenuniq = ",len(outCfunc_dict_uniq))
+
 gri.glb_gridfcs_list = []
 par.glb_params_list  = []
 par.glb_Cparams_list = []
@@ -240,6 +260,7 @@ par.glb_Cparams_list = []
 gri.glb_gridfcs_list = grfcs_list_uniq
 par.glb_params_list  = param_list_uniq
 par.glb_Cparams_list = Cparm_list_uniq
+outC_function_dict   = outCfunc_dict
 
 # Set lapse_floor to default to 1e-15
 lap_floor = par.Cparameters("REAL", "BaikalETK", "lapse_floor", 1e-15)

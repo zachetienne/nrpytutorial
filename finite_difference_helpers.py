@@ -8,13 +8,13 @@
 
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
-from outputC import superfast_uniq, outputC # NRPy+: Core C code output module
+from outputC import superfast_uniq, outputC, outC_function_dict, add_to_Cfunction_dict # NRPy+: Core C code output module
 import sympy as sp                 # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri                 # NRPy+: Functions having to do with numerical grids
 import sys                         # Standard Python module for multiplatform OS-level functions
 from collections import namedtuple # Standard Python: Enable namedtuple data type
 
-FDparams = namedtuple('FDparams', 'PRECISION SIMD_enable DIM MemAllocStyle upwindcontrolvec fullindent outCparams')
+FDparams = namedtuple('FDparams', 'PRECISION FD_CD_order SIMD_enable DIM MemAllocStyle upwindcontrolvec fullindent outCparams')
 
 #########################################
 # STEP 1: EXTRACT DERIVATIVES TO COMPUTE
@@ -498,7 +498,7 @@ def construct_FD_exprs_as_SymPy_exprs(list_of_deriv_vars,
             sys.exit(1)
     return FDexprs, FDlhsvarnames
 
-def construct_FD_exprs_as_C_functions(list_of_deriv_operators,   fdcoeffs, fdstencl):
+def add_FD_func_to_outC_function_dict(list_of_deriv_operators,   fdcoeffs, fdstencl):
     # Step 5.a.ii.A: First construct a list of all the unique finite difference functions
     list_of_uniq_deriv_operators = superfast_uniq(list_of_deriv_operators)
 
@@ -510,27 +510,27 @@ def construct_FD_exprs_as_C_functions(list_of_deriv_operators,   fdcoeffs, fdste
         sys.exit(1)
 
     Ctype = "REAL"
+    func_prefix = "order_"+str(FDparams.FD_CD_order)+"_"
     if FDparams.SIMD_enable == "True":
         Ctype = "REAL_SIMD_ARRAY"
+        func_prefix = "SIMD_"+str(FDparams.FD_CD_order)+"_"
 
     for op in list_of_uniq_deriv_operators:
-        which_op_idx = find_which_op_idx(op, list_of_deriv_operators)
+        # If the function already exists in the outC_function_dict, then do not add it; move to the next op.
+        if func_prefix + "f_" + str(op) in outC_function_dict:
+            break
 
-        outstr = "REAL __attribute__ ((noinline)) f_" + str(op) + "("
+        which_op_idx = find_which_op_idx(op, list_of_deriv_operators)
 
         rhs_expr = sp.sympify(0)
         for j in range(len(fdcoeffs[which_op_idx])):
             var = sp.sympify("f" + varsuffix(fdstencl[which_op_idx][j], FDparams))
-            outstr += "const " + Ctype + " " + str(var)
-            if j != len(fdcoeffs[which_op_idx])-1:
-                outstr += ","
-            else:
-                outstr += ") {\n"
             rhs_expr += fdcoeffs[which_op_idx][j] * var
 
         # Multiply each expression by the appropriate power
         #   of 1/dx[i]
         invdx = []
+        used_invdx = [False, False, False, False]
         for d in range(FDparams.DIM):
             invdx.append(sp.sympify("invdx" + str(d)))
         # First-order or Kreiss-Oliger derivatives:
@@ -539,19 +539,39 @@ def construct_FD_exprs_as_C_functions(list_of_deriv_operators,   fdcoeffs, fdste
              (len(op) == 5 and ("dupD" in op or "ddnD" in op)) ):
             dirn = int(op[len(op) - 1])
             rhs_expr *= invdx[dirn]
+            used_invdx[dirn] = True
         # Second-order derivs:
         elif len(op) == 5 and "dDD" in op:
             dirn1 = int(op[len(op) - 2])
             dirn2 = int(op[len(op) - 1])
+            used_invdx[dirn1] = used_invdx[dirn2] = True
             rhs_expr *= invdx[dirn1]*invdx[dirn2]
         else:
             print("Error: was unable to parse derivative operator: ", op)
             sys.exit(1)
 
+        outfunc_params = ""
+        for d in range(FDparams.DIM):
+            if used_invdx[d]:
+                outfunc_params += "const " + Ctype + " invdx" + str(d) + ","
+
+        for j in range(len(fdcoeffs[which_op_idx])):
+            var = sp.sympify("f" + varsuffix(fdstencl[which_op_idx][j], FDparams))
+            outfunc_params += "const " + Ctype + " " + str(var)
+            if j != len(fdcoeffs[which_op_idx])-1:
+                outfunc_params += ","
+            else:
+                outfunc_params += ")"
+
         p = "preindent=1,SIMD_enable="+FDparams.SIMD_enable+",outCverbose=False,CSE_preprocess=True,includebraces=False"
-        outstr += outputC(rhs_expr, "retval", "returnstring", params=p)
-        outstr = outstr.replace("retval = ", "return ") + "}\n"
-        return outstr
+        outFDstr = outputC(rhs_expr, "retval", "returnstring", params=p)
+        outFDstr = outFDstr.replace("retval = ", "return ")
+        add_to_Cfunction_dict(desc="Finite difference operator for "+str(op).replace("dDD", "second derivative: ").\
+                              replace("dD", "first derivative: ").replace("dKOD", "Kreiss-Oliger derivative: "). \
+                              replace("dupD", "upwinded derivative: ").replace("ddnD", "downwinded derivative: "),
+                              type=Ctype + " __attribute__ ((noinline))",
+                              name=func_prefix+"f_" + str(op),opts="DisableCparameters",
+                              params=outfunc_params, preloop="", body=outFDstr)
 
 def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                     list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
@@ -667,7 +687,9 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                                           fdcoeffs, fdstencl)
 
     # Future feature:
-    # construct_FD_exprs_as_C_functions(list_of_deriv_operators, fdcoeffs, fdstencl)
+    add_FD_func_to_outC_function_dict(list_of_deriv_operators, fdcoeffs, fdstencl)
+    # for key, item in outC_function_dict.items():
+    #     print(key, item)
 
     # Step 5.b.i: (Upwinded derivatives algorithm, part 1):
     # If an upwinding control vector is specified, determine
