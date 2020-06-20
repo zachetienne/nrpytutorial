@@ -448,11 +448,19 @@ def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",b
     outC_function_prototype_dict[name],outC_function_dict[name] = Cfunction(desc,type,name,params,preloop,body,loopopts,
                                                                             postloop,opts,rel_path_for_Cparams)
 
-def outCfunction(outfile="",desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",
+def outCfunction(outfile="",includes=None,desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",
                  opts="",rel_path_for_Cparams=os.path.join("./")):
     _ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
+    incs = ""
+    if includes != None:
+        if not isinstance(includes, list):
+            print("Error in outCfunction(): includes must be set to a list of strings")
+            print("e.g., includes=[\"stdio.h\",\"stdlib.h\"] ;  or None (default)")
+            sys.exit(1)
+        for inc in includes:
+            incs += "#include \"" + inc + "\"\n"
     if outfile == "returnstring":
-        return Cfunc
+        return incs + Cfunc
     with open(outfile, "w") as file:
-        file.write(Cfunc)
+        file.write(incs + Cfunc)
         print("Output C function "+name+"() to file "+outfile)
