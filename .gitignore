@@ -2,3 +2,4 @@
 out*.txt
 htmlcov/
 .coverage
+ScalarFieldStaticBackground/
