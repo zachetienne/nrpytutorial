@@ -14,7 +14,7 @@ import grid as gri                 # NRPy+: Functions having to do with numerica
 import sys                         # Standard Python module for multiplatform OS-level functions
 from collections import namedtuple # Standard Python: Enable namedtuple data type
 
-FDparams = namedtuple('FDparams', 'PRECISION FD_CD_order SIMD_enable DIM MemAllocStyle upwindcontrolvec fullindent outCparams')
+FDparams = namedtuple('FDparams', 'PRECISION FD_CD_order FD_functions_enable SIMD_enable DIM MemAllocStyle upwindcontrolvec fullindent outCparams')
 
 #########################################
 # STEP 1: EXTRACT DERIVATIVES TO COMPUTE
@@ -498,23 +498,27 @@ def construct_FD_exprs_as_SymPy_exprs(list_of_deriv_vars,
             sys.exit(1)
     return FDexprs, FDlhsvarnames
 
-def add_FD_func_to_outC_function_dict(list_of_deriv_operators,   fdcoeffs, fdstencl):
+def find_which_op_idx(op, list_of_deriv_operators):
+    for j in range(len(list_of_deriv_operators)):
+        if op == list_of_deriv_operators[j]:
+            return j
+    print("Error: could not find operator "+str(op)+" in ",list_of_deriv_operators)
+    sys.exit(1)
+
+
+def add_FD_func_to_outC_function_dict(list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
+                                      fdcoeffs, fdstencl):
     # Step 5.a.ii.A: First construct a list of all the unique finite difference functions
     list_of_uniq_deriv_operators = superfast_uniq(list_of_deriv_operators)
-
-    def find_which_op_idx(op, list_of_deriv_operators):
-        for j in range(len(list_of_deriv_operators)):
-            if op == list_of_deriv_operators[j]:
-                return j
-        print("Error: could not find operator "+str(op)+" in ",list_of_deriv_operators)
-        sys.exit(1)
 
     Ctype = "REAL"
     func_prefix = "order_"+str(FDparams.FD_CD_order)+"_"
     if FDparams.SIMD_enable == "True":
         Ctype = "REAL_SIMD_ARRAY"
-        func_prefix = "SIMD_"+str(FDparams.FD_CD_order)+"_"
+        func_prefix = "SIMD_"+func_prefix
 
+    # Stores the needed calls to the functions we're adding to outC_function_dict:
+    FDfunccall_list = []
     for op in list_of_uniq_deriv_operators:
         # If the function already exists in the outC_function_dict, then do not add it; move to the next op.
         if func_prefix + "f_" + str(op) in outC_function_dict:
@@ -560,18 +564,31 @@ def add_FD_func_to_outC_function_dict(list_of_deriv_operators,   fdcoeffs, fdste
             outfunc_params += "const " + Ctype + " " + str(var)
             if j != len(fdcoeffs[which_op_idx])-1:
                 outfunc_params += ","
-            else:
-                outfunc_params += ")"
 
+        for i in range(len(list_of_deriv_operators)):
+            if list_of_deriv_operators[i] == op:
+                funccall = "const " + Ctype + " "
+                gfname = list_of_base_gridfunction_names_in_derivs[i]
+                funccall += gfname + "_" + str(op) + " = " + func_prefix + "f_" + str(op) + "("
+                for d in range(FDparams.DIM):
+                    if used_invdx[d]:
+                        funccall += "invdx" + str(d) + ","
+                for j in range(len(fdcoeffs[which_op_idx])):
+                    funccall += gfname + varsuffix(fdstencl[which_op_idx][j], FDparams)
+                    if j != len(fdcoeffs[which_op_idx])-1:
+                        funccall += ","
+                funccall += ");"
+                FDfunccall_list.append(funccall)
         p = "preindent=1,SIMD_enable="+FDparams.SIMD_enable+",outCverbose=False,CSE_preprocess=True,includebraces=False"
         outFDstr = outputC(rhs_expr, "retval", "returnstring", params=p)
         outFDstr = outFDstr.replace("retval = ", "return ")
-        add_to_Cfunction_dict(desc="Finite difference operator for "+str(op).replace("dDD", "second derivative: ").\
-                              replace("dD", "first derivative: ").replace("dKOD", "Kreiss-Oliger derivative: "). \
+        add_to_Cfunction_dict(desc=" * Finite difference operator for "+str(op).replace("dDD", "second derivative: ").
+                              replace("dD", "first derivative: ").replace("dKOD", "Kreiss-Oliger derivative: ").
                               replace("dupD", "upwinded derivative: ").replace("ddnD", "downwinded derivative: "),
-                              type=Ctype + " __attribute__ ((noinline))",
-                              name=func_prefix+"f_" + str(op),opts="DisableCparameters",
+                              type="static " + Ctype + " NOINLINE",
+                              name=func_prefix+"f_" + str(op), opts="DisableCparameters",
                               params=outfunc_params, preloop="", body=outFDstr)
+    return FDfunccall_list
 
 def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                     list_of_base_gridfunction_names_in_derivs,list_of_deriv_operators,
@@ -686,8 +703,14 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                                           list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
                                           fdcoeffs, fdstencl)
 
-    # Future feature:
-    add_FD_func_to_outC_function_dict(list_of_deriv_operators, fdcoeffs, fdstencl)
+    # Compute finite differences using function calls (instead of inlined calculations)?
+    if FDparams.FD_functions_enable == True:
+        # If so, add FD functions to outputC's outC_function_dict (C function dictionary),
+        #   AND return the full set of needed calls to these functions (to funccall_list)
+        funccall_list = \
+            add_FD_func_to_outC_function_dict(list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators,
+                                              fdcoeffs, fdstencl)
+
     # for key, item in outC_function_dict.items():
     #     print(key, item)
 
@@ -740,10 +763,18 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
                                 + str(NRPy_FD_StepNumber) + " of " + str(NRPy_FD__Number_of_Steps) +
                                 ": Read from main memory and compute finite difference stencils:\n */\n")
         NRPy_FD_StepNumber = NRPy_FD_StepNumber + 1
-        # Prefix chosen CSE variables with "FD", for the finite difference coefficients:
-        Coutput += indent_Ccode(outputC(FDexprs, FDlhsvarnames, "returnstring",
-                                        params=FDparams.outCparams + ",CSE_varprefix=FDPart1,includebraces=False,CSE_preprocess=True,SIMD_find_more_subs=True",
-                                        prestring=read_from_memory_Ccode))
+        if FDparams.FD_functions_enable == True:
+            # Compute finite differences using function calls (instead of inlined calculations)
+            Coutput += read_from_memory_Ccode
+            for funccall in funccall_list:
+                Coutput += indent_Ccode(funccall)
+        else:
+            # Compute finite differences using inlined calculations
+            params  = FDparams.outCparams
+            # We choose the CSE temporary variable prefix "FDpart1" for the finite difference coefficients:
+            params += ",CSE_varprefix=FDPart1,includebraces=False,CSE_preprocess=True,SIMD_find_more_subs=True"
+            Coutput += indent_Ccode(outputC(FDexprs, FDlhsvarnames, "returnstring",params=params,
+                                            prestring=read_from_memory_Ccode))
 
     # Step 5.b.ii: Implement control-vector upwinding algorithm.
     if FDparams.upwindcontrolvec != "":

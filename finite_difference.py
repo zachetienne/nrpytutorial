@@ -9,11 +9,11 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-from outputC import parse_outCparams_string # NRPy+: Core C code output module
+from outputC import parse_outCparams_string, outC_function_dict # NRPy+: Core C code output module
 import NRPy_param_funcs as par   # NRPy+: parameter interface
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-import sys                       # Standard Python module for multiplatform OS-level functions
+import os, sys                     # Standard Python module for multiplatform OS-level functions
 from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
 from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list
 from finite_difference_helpers import read_gfs_from_memory, FDparams, construct_Ccode
@@ -21,8 +21,9 @@ from finite_difference_helpers import read_gfs_from_memory, FDparams, construct_
 # Step 1: Initialize free parameters for this module:
 modulename = __name__
 # Centered finite difference accuracy order
-par.initialize_param(par.glb_param("int", modulename, "FD_CENTDERIVS_ORDER",  4))
-par.initialize_param(par.glb_param("int", modulename, "FD_KO_ORDER__CENTDERIVS_PLUS", 2))
+par.initialize_param(par.glb_param("int",  modulename, "FD_CENTDERIVS_ORDER",          4))
+par.initialize_param(par.glb_param("bool", modulename, "FD_functions_enable",      False))
+par.initialize_param(par.glb_param("int",  modulename, "FD_KO_ORDER__CENTDERIVS_PLUS", 2))
 
 def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
     outCparams = parse_outCparams_string(params)
@@ -55,14 +56,15 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         indent = ""
 
     # Step 0.c: FDparams named tuple stores parameters used in the finite-difference codegen
-    FDparams.SIMD_enable      = outCparams.SIMD_enable
-    FDparams.PRECISION        = par.parval_from_str("PRECISION")
-    FDparams.FD_CD_order      = par.parval_from_str("FD_CENTDERIVS_ORDER")
-    FDparams.DIM              = par.parval_from_str("DIM")
-    FDparams.MemAllocStyle    = par.parval_from_str("MemAllocStyle")
-    FDparams.upwindcontrolvec = upwindcontrolvec
-    FDparams.fullindent       = indent + outCparams.preindent
-    FDparams.outCparams       = params
+    FDparams.SIMD_enable         = outCparams.SIMD_enable
+    FDparams.PRECISION           = par.parval_from_str("PRECISION")
+    FDparams.FD_CD_order         = par.parval_from_str("FD_CENTDERIVS_ORDER")
+    FDparams.FD_functions_enable = par.parval_from_str("FD_functions_enable")
+    FDparams.DIM                 = par.parval_from_str("DIM")
+    FDparams.MemAllocStyle       = par.parval_from_str("MemAllocStyle")
+    FDparams.upwindcontrolvec    = upwindcontrolvec
+    FDparams.fullindent          = indent + outCparams.preindent
+    FDparams.outCparams          = params
 
     # Step 1: Generate from list of SymPy expressions in the form
     #     [lhrh(lhs=var, rhs=expr),lhrh(...),...]
@@ -153,6 +155,17 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
         elif outCparams.outCfileaccess == "w":
             successstr = "Wrote "
         print(successstr + "to file \"" + filename + "\"")
+
+def output_finite_difference_functions_h(path=os.path.join(".")):
+    with open(os.path.join(path, "finite_difference_functions.h"), "w") as file:
+        file.write("""
+#include "math.h"
+#include "stdio.h"
+#include "stdlib.h"
+#define NOINLINE __attribute__ ((noinline))
+""")
+        for key, item in outC_function_dict.items():
+            file.write(item)
 
 #######################################################
 #  FINITE-DIFFERENCE COEFFICIENT ALGORITHM
