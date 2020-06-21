@@ -159,13 +159,17 @@ def FD_outputC(filename,sympyexpr_list, params="", upwindcontrolvec=""):
 def output_finite_difference_functions_h(path=os.path.join(".")):
     with open(os.path.join(path, "finite_difference_functions.h"), "w") as file:
         file.write("""
+#ifndef __FD_FUNCTIONS_H__
+#define __FD_FUNCTIONS_H__
 #include "math.h"
 #include "stdio.h"
 #include "stdlib.h"
 #define NOINLINE __attribute__ ((noinline))
 """)
         for key, item in outC_function_dict.items():
-            file.write(item)
+            if "__FD_OPERATOR_FUNC__" in item:
+                file.write(item)
+        file.write("#endif // #ifndef __FD_FUNCTIONS_H__\n")
 
 #######################################################
 #  FINITE-DIFFERENCE COEFFICIENT ALGORITHM
@@ -347,4 +351,4 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
                     idx4[dirn1] = gridpt_posn1
                     idx4[dirn2] = gridpt_posn2
                     fdstencl.append(idx4)
-    return fdcoeffs,fdstencl
+    return fdcoeffs, fdstencl
