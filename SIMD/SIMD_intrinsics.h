@@ -101,6 +101,7 @@
 #define FusedMulAddSIMD(a,b,c) ((a)*(b) + (c))
 #define FusedMulSubSIMD(a,b,c) ((a)*(b) - (c))
 #define NegFusedMulAddSIMD(a,b,c) ((c) - (a)*(b))
+#define NegFusedMulSubSIMD(a,b,c) (-((a)*(b) + (c))) // -a*b-c = -(a*b+c)
 #define SqrtSIMD(a) (sqrt(a))
 #define ExpSIMD(a) (exp(a))
 #define SinSIMD(a) (sin(a))
