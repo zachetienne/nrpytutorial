@@ -164,11 +164,20 @@ def output_finite_difference_functions_h(path=os.path.join(".")):
 #include "math.h"
 #include "stdio.h"
 #include "stdlib.h"
-#define NOINLINE __attribute__ ((noinline))
 """)
+        UNUSED   = "__attribute__((unused))"
+        NOINLINE = "__attribute__((noinline))"
+        if par.parval_from_str("grid::GridFuncMemAccess") == "ETK":
+            UNUSED   = "CCTK_ATTRIBUTE_UNUSED"
+            NOINLINE = "CCTK_ATTRIBUTE_NOINLINE"
+        file.write("#define _UNUSED   " + UNUSED   + "\n")
+        file.write("#define _NOINLINE " + NOINLINE + "\n")
+
         for key, item in outC_function_dict.items():
             if "__FD_OPERATOR_FUNC__" in item:
-                file.write(item)
+                file.write(item.replace("const REAL_SIMD_ARRAY _NegativeOne_ =",
+                                        "const REAL_SIMD_ARRAY "+UNUSED+" _NegativeOne_ =")) # Many of the NegativeOne's get optimized away in the SIMD postprocessing step. No need for all the warnings
+
         file.write("#endif // #ifndef __FD_FUNCTIONS_H__\n")
 
 #######################################################

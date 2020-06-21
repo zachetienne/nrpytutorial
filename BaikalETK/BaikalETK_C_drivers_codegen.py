@@ -510,6 +510,7 @@ void BaikalETK_BSSN_to_ADM(CCTK_ARGUMENTS) {
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
 #include "SIMD/SIMD_intrinsics.h"
+#include "finite_difference_functions.h"
 """
     common_preloop = """
     DECLARE_CCTK_ARGUMENTS;
@@ -627,6 +628,8 @@ void BaikalETK_enforce_detgammabar_constraint(CCTK_ARGUMENTS) {
 #include "cctk.h"
 #include "cctk_Arguments.h"
 #include "cctk_Parameters.h"
+#include "SIMD/SIMD_intrinsics.h" // Contains needed definition of REAL_SIMD_ARRAY
+#include "finite_difference_functions.h"
 
 void BaikalETK_BSSN_constraints(CCTK_ARGUMENTS) {
     DECLARE_CCTK_ARGUMENTS;

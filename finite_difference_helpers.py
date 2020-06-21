@@ -9,6 +9,7 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 from outputC import superfast_uniq, outputC, outC_function_dict, add_to_Cfunction_dict # NRPy+: Core C code output module
+import NRPy_param_funcs as par   # NRPy+: parameter interface
 import sympy as sp                 # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri                 # NRPy+: Functions having to do with numerical grids
 import sys                         # Standard Python module for multiplatform OS-level functions
@@ -512,6 +513,8 @@ def add_FD_func_to_outC_function_dict(list_of_deriv_vars,
     # Step 5.a.ii.A: First construct a list of all the unique finite difference functions
     list_of_uniq_deriv_operators = superfast_uniq(list_of_deriv_operators)
     Ctype = "REAL"
+    if par.parval_from_str("grid::GridFuncMemAccess") == "ETK":
+        Ctype = "CCTK_REAL"
     func_prefix = "order_"+str(FDparams.FD_CD_order)+"_"
     if FDparams.SIMD_enable == "True":
         Ctype = "REAL_SIMD_ARRAY"
@@ -584,7 +587,7 @@ def add_FD_func_to_outC_function_dict(list_of_deriv_vars,
             add_to_Cfunction_dict(desc=" * (__FD_OPERATOR_FUNC__) Finite difference operator for "+str(op).replace("dDD", "second derivative: ").
                                   replace("dD", "first derivative: ").replace("dKOD", "Kreiss-Oliger derivative: ").
                                   replace("dupD", "upwinded derivative: ").replace("ddnD", "downwinded derivative: "),
-                                  type="static " + Ctype + " NOINLINE",
+                                  type="static " + Ctype + " _NOINLINE _UNUSED",
                                   name=func_prefix+"f_" + str(op), opts="DisableCparameters",
                                   params=outfunc_params, preloop="", body=outFDstr)
     return FDfunccall_list

@@ -12,6 +12,11 @@ import time                      # Standard Python module; useful for benchmarki
 import BSSN.BSSN_RHSs as rhs
 import BSSN.BSSN_gauge_RHSs as gaugerhs
 
+# Output finite difference stencils as functions instead of inlined expressions.
+#   Dramatically speeds up compile times (esp with higher-order finite differences
+#   and GCC 9.3+)
+par.set_parval_from_str("finite_difference::FD_functions_enable", True)
+
 def BaikalETK_C_kernels_codegen_onepart(params=
         "WhichPart=BSSN_RHSs,ThornName=Baikal,FD_order=4,enable_stress_energy_source_terms=True"):
     # Set default parameters
@@ -425,7 +430,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
         sys.exit(1)
 
     # Store all NRPy+ environment variables to an output string so NRPy+ environment from within this subprocess can be easily restored
-    import pickle
+    import pickle  # Standard Python module for converting arbitrary data structures to a uniform format.
     # https://www.pythonforthelab.com/blog/storing-binary-data-and-serializing/
     outstr = []
     outstr.append(pickle.dumps(len(gri.glb_gridfcs_list)))

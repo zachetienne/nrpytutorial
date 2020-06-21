@@ -31,6 +31,7 @@ if nrpy_dir_path not in sys.path:
 
 from outputC import outC_function_dict # NRPy: core C code output module
 import grid as gri              # NRPy+: Functions having to do with numerical grids
+import finite_difference as fin # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par  # NRPy+: Parameter interface
 ###############################
 
@@ -72,7 +73,7 @@ for WhichPart in ["BSSN_RHSs","Ricci","BSSN_constraints","detgammabar_constraint
                 paramslist.append(paramstr)
                 WhichParamSet = WhichParamSet + 1
 
-paramslist.sort() # Sort the list alphabetically.
+paramslist.sort()  # Sort the list alphabetically.
 ###############################
 
 ###############################
@@ -179,7 +180,6 @@ Cparm_list = []
 
 outCfunc_dict = {}
 
-num_Cfunc_dict_els = 0
 for WhichParamSet in NRPyEnvVars[0]:
     # gridfunctions
     i=0
@@ -205,7 +205,6 @@ for WhichParamSet in NRPyEnvVars[0]:
                                          defaultval=pickle.loads(WhichParamSet[i+3]))) ; i+=4
     # outC_func_dict
     num_elements = pickle.loads(WhichParamSet[i]); i+=1
-    num_Cfunc_dict_els += num_elements
     for lst in range(num_elements):
         funcname = pickle.loads(WhichParamSet[i+0])
         funcbody = pickle.loads(WhichParamSet[i+1]) ; i+=2
@@ -244,14 +243,7 @@ for Cp_ntuple_stored in Cparm_list:
     if found_Cp == False:
         Cparm_list_uniq.append(Cp_ntuple_stored)
 
-# Dictionary will not have duplicates!
-# print("len = ",len(outCfunc_dict))
-# outCfunc_dict_uniq = {}
-# for key,item in outCfunc_dict.items():
-#     if key not in outCfunc_dict_uniq:
-#         print("should be unique: ",key)
-#         outCfunc_dict_uniq[key] = item
-# print("lenuniq = ",len(outCfunc_dict_uniq))
+# Dictionary outCfunc_dict (by the nature of Python dictionaries) will not have duplicates!
 
 gri.glb_gridfcs_list = []
 par.glb_params_list  = []
@@ -260,7 +252,8 @@ par.glb_Cparams_list = []
 gri.glb_gridfcs_list = grfcs_list_uniq
 par.glb_params_list  = param_list_uniq
 par.glb_Cparams_list = Cparm_list_uniq
-outC_function_dict   = outCfunc_dict
+for key, item in outCfunc_dict.items():
+    outC_function_dict[key] = item
 
 # Set lapse_floor to default to 1e-15
 lap_floor = par.Cparameters("REAL", "BaikalETK", "lapse_floor", 1e-15)
@@ -270,13 +263,18 @@ lap_floor = par.Cparameters("REAL", "BaikalETK", "lapse_floor", 1e-15)
 #           are used after this point (DIM is definitely
 #           one exception), so most of these lines have no
 #           effect.
-par.set_parval_from_str("grid::DIM",3)
+par.set_parval_from_str("grid::DIM", 3)
 import reference_metric as rfm
-par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
+par.set_parval_from_str("reference_metric::CoordSystem", "Cartesian")
 rfm.reference_metric() # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
-par.set_parval_from_str("grid::GridFuncMemAccess","ETK")
+par.set_parval_from_str("grid::GridFuncMemAccess", "ETK")
 par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::ShiftEvolutionOption", ShiftCondition)
 par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::LapseEvolutionOption", LapseCondition)
+
+# Finally, output all functions needed for computing finite-difference stencils
+#   to thornname/src/finite_difference_functions.h
+for thornname in ["Baikal", "BaikalVacuum"]:
+    fin.output_finite_difference_functions_h(os.path.join(thornname,"src"))
 
 # Step 3.c: Now that NRPy+ parameters and gridfunctions have been
 #           defined, we now have all the information we need loaded
