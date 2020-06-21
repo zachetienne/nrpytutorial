@@ -57,7 +57,10 @@
 #define FusedMulAddSIMD(a,b,c) _mm256_add_pd(_mm256_mul_pd((a),(b)), (c)) // a*b+c
 #define FusedMulSubSIMD(a,b,c) _mm256_sub_pd(_mm256_mul_pd((a),(b)), (c)) // a*b-c
 #define NegFusedMulAddSIMD(a,b,c) _mm256_sub_pd( (c), _mm256_mul_pd((a),(b)) ) // c-a*b
-#define NegFusedMulSubSIMD(a,b,c) _mm256_sub_pd( (c), _mm256_sub_pd( (c), _mm256_sub_pd( _mm256_mul_pd((a),(b)), (c) ))) // -a*b-c = c-c-a*b-c = SubSIMD(c,SubSIMD(c,SubSIMD(MulSIMD(a,b),c)))
+// NegFusedMulSubSIMD(a,b,c) = -a*b - c
+//                           = c - (c+a*b+c)
+//                           = SubSIMD(c, AddSIMD(c, AddSIMD(MulSIMD(a,b), c)))
+#define NegFusedMulSubSIMD(a,b,c) _mm256_sub_pd( (c), _mm256_add_pd( (c), _mm256_add_pd( _mm256_mul_pd((a),(b)), (c) )))
 #endif
 
 
@@ -79,14 +82,19 @@
 // See description above UPWIND_ALG for __AVX__:
 #define UPWIND_ALG(a) _mm_and_pd(_mm_cmpgt_pd( (a), upwind_Integer_0 ), upwind_Integer_1)
 
-#ifdef __FMA__ // Unlikely that any SSE2 chip has FMA, but this will work fine.
+#ifdef __FMA__ // There are no mainstream non-AVX+ chips that have FMA, but we include the following for completeness.
 #define FusedMulAddSIMD(a,b,c) _mm_fmadd_pd((a),(b),(c))
 #define FusedMulSubSIMD(a,b,c) _mm_fmsub_pd((a),(b),(c))
+#define NegFusedMulAddSIMD(a,b,c) _mm_sub_pd( (c), _mm_mul_pd((a),(b)) ) // c-a*b
+#define NegFusedMulSubSIMD(a,b,c) _mm_sub_pd( (c), _mm_sub_pd( (c), _mm_sub_pd( _mm_mul_pd((a),(b)), (c) ))) // -a*b-c = c-c-a*b-c = SubSIMD(c,SubSIMD(c,SubSIMD(MulSIMD(a,b),c)
 #else
 #define FusedMulAddSIMD(a,b,c) _mm_add_pd(_mm_mul_pd((a),(b)), (c)) // a*b+c
 #define FusedMulSubSIMD(a,b,c) _mm_sub_pd(_mm_mul_pd((a),(b)), (c)) // a*b-c
 #define NegFusedMulAddSIMD(a,b,c) _mm_sub_pd( (c), _mm_mul_pd((a),(b)) ) // c-a*b
-#define NegFusedMulSubSIMD(a,b,c) _mm_sub_pd( (c), _mm_sub_pd( (c), _mm_sub_pd( _mm_mul_pd((a),(b)), (c) ))) // -a*b-c = c-c-a*b-c = SubSIMD(c,SubSIMD(c,SubSIMD(MulSIMD(a,b),c)))
+// NegFusedMulSubSIMD(a,b,c) = -a*b - c
+//                           = c - (c+a*b+c)
+//                           = SubSIMD(c, AddSIMD(c, AddSIMD(MulSIMD(a,b), c)))
+#define NegFusedMulSubSIMD(a,b,c) _mm_sub_pd( (c), _mm_add_pd( (c), _mm_add_pd( _mm_mul_pd((a),(b)), (c) )))
 #endif
 
 #else
