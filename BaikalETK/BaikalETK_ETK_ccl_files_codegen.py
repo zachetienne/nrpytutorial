@@ -147,7 +147,8 @@ implements: BaikalETK
 inherits:   ADMBase Boundary Grid MethodofLines\n"""
     if enable_stress_energy_source_terms == True:
         outstr += "inherits:   TmunuBase\n"
-    outstr += """
+        # Need a raw string here due to all the backslashes:
+    outstr += r"""
 # Needed functions and #include's:
 USES INCLUDE: Symmetry.h
 USES INCLUDE: Boundary.h
@@ -169,29 +170,29 @@ USES FUNCTION Boundary_SelectVarForBC
 
 # Needed to determine boundary sizes for applying boundary conditions to BSSN constraint gridfunctions
 CCTK_INT FUNCTION GetBoundarySizesAndTypes \
-  (CCTK_POINTER_TO_CONST IN cctkGH, \
-   CCTK_INT IN size, \
-   CCTK_INT OUT ARRAY bndsize, \
-   CCTK_INT OUT ARRAY is_ghostbnd, \
-   CCTK_INT OUT ARRAY is_symbnd, \
+  (CCTK_POINTER_TO_CONST IN cctkGH,        \
+   CCTK_INT IN size,                       \
+   CCTK_INT OUT ARRAY bndsize,             \
+   CCTK_INT OUT ARRAY is_ghostbnd,         \
+   CCTK_INT OUT ARRAY is_symbnd,           \
    CCTK_INT OUT ARRAY is_physbnd)
 REQUIRES FUNCTION GetBoundarySizesAndTypes
 
 # Needed for EinsteinEvolve/NewRad outer boundary condition driver:
-CCTK_INT FUNCTION                         \\
-    NewRad_Apply                          \\
-        (CCTK_POINTER_TO_CONST IN cctkGH, \\
-         CCTK_REAL ARRAY IN var,          \\
-         CCTK_REAL ARRAY INOUT rhs,       \\
-         CCTK_REAL IN var0,               \\
-         CCTK_REAL IN v0,                 \\
+CCTK_INT FUNCTION                         \
+    NewRad_Apply                          \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
+         CCTK_REAL ARRAY IN var,          \
+         CCTK_REAL ARRAY INOUT rhs,       \
+         CCTK_REAL IN var0,               \
+         CCTK_REAL IN v0,                 \
          CCTK_INT IN radpower)
 REQUIRES FUNCTION NewRad_Apply
 
 # Needed to convert ADM initial data into BSSN initial data (gamma extrapolation)
-CCTK_INT FUNCTION                         \\
-    ExtrapolateGammas                     \\
-        (CCTK_POINTER_TO_CONST IN cctkGH, \\
+CCTK_INT FUNCTION                         \
+    ExtrapolateGammas                     \
+        (CCTK_POINTER_TO_CONST IN cctkGH, \
          CCTK_REAL ARRAY INOUT var)
 REQUIRES FUNCTION ExtrapolateGammas
 
@@ -207,36 +208,37 @@ public:
 """
 
     # Next we declare gridfunctions based on their corresponding gridfunction groups as registered within NRPy+
-
-    def output_list_of_gfs(gfs_list,description="User did not provide description"):
+    def output_list_of_gfs(gfs_list, description="User did not provide description"):
         gfs_list_parsed = []
-        for i in range(len(gfs_list)):
-            # Do not add T4UU gridfunctions if enable_stress_energy_source_terms==False:
-            if not (enable_stress_energy_source_terms==False and "T4UU" in gfs_list[i]):
-                gfs_list_parsed.append(gfs_list[i])
+        for j in range(len(gfs_list)):
+            # Add all gridfunctions in the list...
+            gfs_list_parsed.append(gfs_list[j])
+            # Then remove T4UU gridfunction from list if enable_stress_energy_source_terms==False:
+            if "T4UU" in gfs_list_parsed[-1] and enable_stress_energy_source_terms==False:
+                del gfs_list_parsed[-1]
         gfsstr = "    "
-        for i in range(len(gfs_list_parsed)):
-            gfsstr += gfs_list_parsed[i]
-            if i != len(gfs_list_parsed)-1:
-                gfsstr += "," # This is a comma-separated list of gridfunctions
+        for j in range(len(gfs_list_parsed)):
+            gfsstr += gfs_list_parsed[j]
+            if j != len(gfs_list_parsed)-1:
+                gfsstr += ","  # This is a comma-separated list of gridfunctions
             else:
                 gfsstr += "\n} \""+description+"\"\n\n"
         return gfsstr
     # First EVOL type:
     outstr += "CCTK_REAL evol_variables type = GF Timelevels=3\n{\n"
-    outstr += output_list_of_gfs(evol_gfs_list,"BSSN evolved gridfunctions")
+    outstr += output_list_of_gfs(evol_gfs_list, "BSSN evolved gridfunctions")
     # Second EVOL right-hand-sides
     outstr += "CCTK_REAL evol_variables_rhs type = GF Timelevels=1 TAGS=\'InterpNumTimelevels=1 prolongation=\"none\"\'\n{\n"
-    outstr += output_list_of_gfs(rhs_list,"right-hand-side storage for BSSN evolved gridfunctions")
+    outstr += output_list_of_gfs(rhs_list, "right-hand-side storage for BSSN evolved gridfunctions")
     # Then AUX type:
     outstr += "CCTK_REAL aux_variables type = GF Timelevels=3\n{\n"
-    outstr += output_list_of_gfs(aux_gfs_list,"Auxiliary gridfunctions for BSSN diagnostics")
+    outstr += output_list_of_gfs(aux_gfs_list, "Auxiliary gridfunctions for BSSN diagnostics")
     # Finally, AUXEVOL type:
     outstr += "CCTK_REAL auxevol_variables type = GF Timelevels=1 TAGS=\'InterpNumTimelevels=1 prolongation=\"none\"\'\n{\n"
-    outstr += output_list_of_gfs(auxevol_gfs_list,"Auxiliary gridfunctions needed for evaluating the BSSN RHSs")
+    outstr += output_list_of_gfs(auxevol_gfs_list, "Auxiliary gridfunctions needed for evaluating the BSSN RHSs")
 
-    with open(os.path.join(ThornName,"interface.ccl"), "w") as file:
-        file.write(outstr.replace("BaikalETK",ThornName))
+    with open(os.path.join(ThornName, "interface.ccl"), "w") as file:
+        file.write(outstr.replace("BaikalETK", ThornName))
 
 def output_schedule_ccl(ThornName="BaikalETK",enable_stress_energy_source_terms=False):
     outstr = """
