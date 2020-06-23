@@ -31,6 +31,7 @@ if nrpy_dir_path not in sys.path:
 
 from outputC import outC_function_dict # NRPy: core C code output module
 import grid as gri              # NRPy+: Functions having to do with numerical grids
+import finite_difference as fin # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par  # NRPy+: Parameter interface
 ###############################
 
@@ -40,6 +41,11 @@ import NRPy_param_funcs as par  # NRPy+: Parameter interface
 # Step 1.a: Set compile-time (i.e., NRPy+-time) parameters
 LapseCondition = "OnePlusLog"
 ShiftCondition = "GammaDriving2ndOrder_NoCovariant"
+
+# Output finite difference stencils as functions instead of inlined expressions.
+#   Dramatically speeds up compile times (esp with higher-order finite differences
+#   and GCC 9.3+)
+par.set_parval_from_str("finite_difference::FD_functions_enable", True)
 
 # Step 1.b: Set runtime parameters for Baikal and BaikalVacuum
 #         Current runtime choices:
@@ -72,7 +78,7 @@ for WhichPart in ["BSSN_RHSs","Ricci","BSSN_constraints","detgammabar_constraint
                 paramslist.append(paramstr)
                 WhichParamSet = WhichParamSet + 1
 
-paramslist.sort() # Sort the list alphabetically.
+paramslist.sort()  # Sort the list alphabetically.
 ###############################
 
 ###############################
@@ -100,7 +106,7 @@ for ThornName in ["Baikal","BaikalVacuum"]:
                 outfile.write(line.replace("#define REAL_SIMD_ARRAY REAL", "#define REAL_SIMD_ARRAY CCTK_REAL"))
 
     # Create directory for rfm_files output
-    cmd.mkdir(os.path.join(outdir,"rfm_files"))
+    cmd.mkdir(os.path.join(outdir, "rfm_files"))
 
 # Start parallel C code generation (codegen)
 # NRPyEnvVars stores the NRPy+ environment from all the subprocesses in the following
@@ -141,12 +147,13 @@ if __name__ == "__main__":
         print("(If you were running in parallel before,")
         print(" this means parallel codegen failed)")
         print("***************************************")
-        NRPyEnvVars = [] # Reset NRPyEnvVars in case multiprocessing wrote to it and failed.
         # Steps 3.d.ii-iv, alternate: As fallback, evaluate functions in serial.
         #       This will happen on Android and Windows systems
         import BaikalETK.BaikalETK_C_kernels_codegen as BCk
+        # No need to pickle if doing serial codegen.
         for param in paramslist:
-            NRPyEnvVars.append(BCk.BaikalETK_C_kernels_codegen_onepart(params=param))
+            BCk.BaikalETK_C_kernels_codegen_onepart(params=param)
+        NRPyEnvVars = []  # Reset NRPyEnvVars in case multiprocessing wrote to it and failed.
 
 print("Finished C kernel codegen for Baikal and BaikalVacuum in "+str(time.time()-start)+" seconds.")
 ###############################
@@ -173,94 +180,87 @@ print("Finished C kernel codegen for Baikal and BaikalVacuum in "+str(time.time(
 # Store all NRPy+ environment variables to file so NRPy+ environment from within this subprocess can be easily restored
 
 # https://www.pythonforthelab.com/blog/storing-binary-data-and-serializing/
-grfcs_list = []
-param_list = []
-Cparm_list = []
+if len(NRPyEnvVars) > 0:
+    grfcs_list = []
+    param_list = []
+    Cparm_list = []
 
-outCfunc_dict = {}
+    outCfunc_dict = {}
 
-num_Cfunc_dict_els = 0
-for WhichParamSet in NRPyEnvVars[0]:
-    # gridfunctions
-    i=0
-    num_elements = pickle.loads(WhichParamSet[i]); i+=1
-    for lst in range(num_elements):
-        grfcs_list.append(gri.glb_gridfc(gftype=pickle.loads(WhichParamSet[i+0]),
-                                         name  =pickle.loads(WhichParamSet[i+1]),
-                                         rank  =pickle.loads(WhichParamSet[i+2]),
-                                         DIM   =pickle.loads(WhichParamSet[i+3]))) ; i+=4
-    # parameters
-    num_elements = pickle.loads(WhichParamSet[i]); i+=1
-    for lst in range(num_elements):
-        param_list.append(par.glb_param(type      =pickle.loads(WhichParamSet[i+0]),
-                                        module    =pickle.loads(WhichParamSet[i+1]),
-                                        parname   =pickle.loads(WhichParamSet[i+2]),
-                                        defaultval=pickle.loads(WhichParamSet[i+3]))) ; i+=4
-    # Cparameters
-    num_elements = pickle.loads(WhichParamSet[i]); i+=1
-    for lst in range(num_elements):
-        Cparm_list.append(par.glb_Cparam(type      =pickle.loads(WhichParamSet[i+0]),
-                                         module    =pickle.loads(WhichParamSet[i+1]),
-                                         parname   =pickle.loads(WhichParamSet[i+2]),
-                                         defaultval=pickle.loads(WhichParamSet[i+3]))) ; i+=4
-    # outC_func_dict
-    num_elements = pickle.loads(WhichParamSet[i]); i+=1
-    num_Cfunc_dict_els += num_elements
-    for lst in range(num_elements):
-        funcname = pickle.loads(WhichParamSet[i+0])
-        funcbody = pickle.loads(WhichParamSet[i+1]) ; i+=2
-        outCfunc_dict[funcname] = funcbody
+    for WhichParamSet in NRPyEnvVars[0]:
+        # gridfunctions
+        i=0
+        num_elements = pickle.loads(WhichParamSet[i]); i+=1
+        for lst in range(num_elements):
+            grfcs_list.append(gri.glb_gridfc(gftype=pickle.loads(WhichParamSet[i+0]),
+                                             name  =pickle.loads(WhichParamSet[i+1]),
+                                             rank  =pickle.loads(WhichParamSet[i+2]),
+                                             DIM   =pickle.loads(WhichParamSet[i+3]))) ; i+=4
+        # parameters
+        num_elements = pickle.loads(WhichParamSet[i]); i+=1
+        for lst in range(num_elements):
+            param_list.append(par.glb_param(type      =pickle.loads(WhichParamSet[i+0]),
+                                            module    =pickle.loads(WhichParamSet[i+1]),
+                                            parname   =pickle.loads(WhichParamSet[i+2]),
+                                            defaultval=pickle.loads(WhichParamSet[i+3]))) ; i+=4
+        # Cparameters
+        num_elements = pickle.loads(WhichParamSet[i]); i+=1
+        for lst in range(num_elements):
+            Cparm_list.append(par.glb_Cparam(type      =pickle.loads(WhichParamSet[i+0]),
+                                             module    =pickle.loads(WhichParamSet[i+1]),
+                                             parname   =pickle.loads(WhichParamSet[i+2]),
+                                             defaultval=pickle.loads(WhichParamSet[i+3]))) ; i+=4
+        # outC_func_dict
+        num_elements = pickle.loads(WhichParamSet[i]); i+=1
+        for lst in range(num_elements):
+            funcname = pickle.loads(WhichParamSet[i+0])
+            funcbody = pickle.loads(WhichParamSet[i+1]) ; i+=2
+            outCfunc_dict[funcname] = funcbody
 
-grfcs_list_uniq = []
-for gf_ntuple_stored in grfcs_list:
-    found_gf = False
-    for gf_ntuple_new in grfcs_list_uniq:
-        if gf_ntuple_new == gf_ntuple_stored:
-            found_gf = True
-    if found_gf == False:
-        grfcs_list_uniq.append(gf_ntuple_stored)
+    grfcs_list_uniq = []
+    for gf_ntuple_stored in grfcs_list:
+        found_gf = False
+        for gf_ntuple_new in grfcs_list_uniq:
+            if gf_ntuple_new == gf_ntuple_stored:
+                found_gf = True
+        if found_gf == False:
+            grfcs_list_uniq.append(gf_ntuple_stored)
 
-param_list_uniq = []
-for pr_ntuple_stored in param_list:
-    found_pr = False
-    for pr_ntuple_new in param_list_uniq:
-        if pr_ntuple_new == pr_ntuple_stored:
-            found_pr = True
-    if found_pr == False:
-        param_list_uniq.append(pr_ntuple_stored)
+    param_list_uniq = []
+    for pr_ntuple_stored in param_list:
+        found_pr = False
+        for pr_ntuple_new in param_list_uniq:
+            if pr_ntuple_new == pr_ntuple_stored:
+                found_pr = True
+        if found_pr == False:
+            param_list_uniq.append(pr_ntuple_stored)
 
-# Set glb_paramsvals_list:
-# Step 1: Reset all paramsvals to their defaults
-par.glb_paramsvals_list = []
-for parm in param_list_uniq:
-    par.glb_paramsvals_list.append(parm.defaultval)
+    # Set glb_paramsvals_list:
+    # Step 1: Reset all paramsvals to their defaults
+    par.glb_paramsvals_list = []
+    for parm in param_list_uniq:
+        par.glb_paramsvals_list.append(parm.defaultval)
 
-Cparm_list_uniq = []
-for Cp_ntuple_stored in Cparm_list:
-    found_Cp = False
-    for Cp_ntuple_new in Cparm_list_uniq:
-        if Cp_ntuple_new == Cp_ntuple_stored:
-            found_Cp = True
-    if found_Cp == False:
-        Cparm_list_uniq.append(Cp_ntuple_stored)
+    Cparm_list_uniq = []
+    for Cp_ntuple_stored in Cparm_list:
+        found_Cp = False
+        for Cp_ntuple_new in Cparm_list_uniq:
+            if Cp_ntuple_new == Cp_ntuple_stored:
+                found_Cp = True
+        if found_Cp == False:
+            Cparm_list_uniq.append(Cp_ntuple_stored)
 
-# Dictionary will not have duplicates!
-# print("len = ",len(outCfunc_dict))
-# outCfunc_dict_uniq = {}
-# for key,item in outCfunc_dict.items():
-#     if key not in outCfunc_dict_uniq:
-#         print("should be unique: ",key)
-#         outCfunc_dict_uniq[key] = item
-# print("lenuniq = ",len(outCfunc_dict_uniq))
+    # Dictionary outCfunc_dict (by the nature of Python dictionaries) will not have duplicates!
 
-gri.glb_gridfcs_list = []
-par.glb_params_list  = []
-par.glb_Cparams_list = []
+    gri.glb_gridfcs_list = []
+    par.glb_params_list  = []
+    par.glb_Cparams_list = []
 
-gri.glb_gridfcs_list = grfcs_list_uniq
-par.glb_params_list  = param_list_uniq
-par.glb_Cparams_list = Cparm_list_uniq
-outC_function_dict   = outCfunc_dict
+    gri.glb_gridfcs_list = grfcs_list_uniq
+    par.glb_params_list  = param_list_uniq
+    par.glb_Cparams_list = Cparm_list_uniq
+    for key, item in outCfunc_dict.items():
+        outC_function_dict[key] = item
 
 # Set lapse_floor to default to 1e-15
 lap_floor = par.Cparameters("REAL", "BaikalETK", "lapse_floor", 1e-15)
@@ -270,13 +270,18 @@ lap_floor = par.Cparameters("REAL", "BaikalETK", "lapse_floor", 1e-15)
 #           are used after this point (DIM is definitely
 #           one exception), so most of these lines have no
 #           effect.
-par.set_parval_from_str("grid::DIM",3)
+par.set_parval_from_str("grid::DIM", 3)
 import reference_metric as rfm
-par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
+par.set_parval_from_str("reference_metric::CoordSystem", "Cartesian")
 rfm.reference_metric() # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
-par.set_parval_from_str("grid::GridFuncMemAccess","ETK")
+par.set_parval_from_str("grid::GridFuncMemAccess", "ETK")
 par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::ShiftEvolutionOption", ShiftCondition)
 par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::LapseEvolutionOption", LapseCondition)
+
+# Finally, output all functions needed for computing finite-difference stencils
+#   to thornname/src/finite_difference_functions.h
+for thornname in ["Baikal", "BaikalVacuum"]:
+    fin.output_finite_difference_functions_h(os.path.join(thornname,"src"))
 
 # Step 3.c: Now that NRPy+ parameters and gridfunctions have been
 #           defined, we now have all the information we need loaded
@@ -348,7 +353,7 @@ for key,val in Vac_Csrcdict.items():
 #   part of the ETK build system so that these files are output.
 
 def output_make_code_defn(dictionary, ThornName):
-    with open(os.path.join(ThornName,"src","make.code.defn"), "w") as file:
+    with open(os.path.join(ThornName, "src", "make.code.defn"), "w") as file:
         file.write("""
 # Main make.code.defn file for thorn """+ThornName+"""
 
@@ -365,8 +370,8 @@ SRCS =""")
                 filestring += "\n"
         file.write(filestring)
 
-output_make_code_defn(Reg_Csrcdict,"Baikal")
-output_make_code_defn(Vac_Csrcdict,"BaikalVacuum")
+output_make_code_defn(Reg_Csrcdict, "Baikal")
+output_make_code_defn(Vac_Csrcdict, "BaikalVacuum")
 ###############################
 
 print("Finished generating Baikal and BaikalVacuum Einstein Toolkit thorns!")
