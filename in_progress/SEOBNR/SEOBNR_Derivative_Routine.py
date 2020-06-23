@@ -16,7 +16,8 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-from outputC import *             # TylerK: check what is imported and remove *; also find appropriate description
+from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a Python array; store left- and right-
+                                              #   hand sides of mathematical expressions
 
 # Supporting function to simplify derivative expressions by removing terms equal to 0
 def simplify_deriv(lhss_deriv,rhss_deriv):
@@ -74,28 +75,26 @@ def deriv_onevar(lhss_deriv,rhss_deriv,variable_list,index):
     lhss_deriv_simp,rhss_deriv_simp = simplify_deriv(lhss_deriv_new,rhss_deriv_new)
     return lhss_deriv_simp,rhss_deriv_simp
 
-def symbolic_parital_derivative(expression_text_file,constants_text_file):
+def symbolic_parital_derivative(expression_text_file,constants_text_file,variables_text_file):
     # Step 2.a: Read in expressions as a (single) string
-    with open(expression_text_file, 'r') as input_expressions:
-        all_expressions = input_expressions.read()
+    with open(expression_text_file, 'r') as file:
+        expressions_as_lines = file.readlines()
 
-    # Step 2.b: Split the expression string by carriage returns:
-    string_lines = all_expressions.splitlines()
-
-    # Step 2.c: Create and populate the "lr" array, which will store each left-hand side and right-hand side as strings
+    # Step 2.b: Create and populate the "lr" array, which separates each line into left- and right-hand sides
+    #   Each entry is a string of the form lhrh(lhs='',rhs='')
     lr = []
-    # Loop over each line in string_lines
-    for i in range(len(string_lines)):
+
+    for i in range(len(expressions_as_lines)):
         # Ignore lines with 2 or fewer characters and those starting with #
-        if len(string_lines[i]) > 2 and string_lines[i][0] != "#":
+        if len(expressions_as_lines[i]) > 2 and expressions_as_lines[i][0] != "#":
             # Split each line by its equals sign
-            split_line = string_lines[i].split("=")
-            # Append to the "lr" array, removing spaces, "sp." prefixes, and replacing Lambda->Lamb
+            split_line = expressions_as_lines[i].split("=")
+            # Append the line to "lr", removing spaces, "sp." prefixes, and replacing Lambda->Lamb
             #   (Lambda is a protected keyword):
             lr.append(lhrh(lhs=split_line[0].replace(" ","").replace("Lambda","Lamb"),
-                       rhs=split_line[1].replace(" ","").replace("sp.","").replace("Lambda","Lamb")))
+                           rhs=split_line[1].replace(" ","").replace("sp.","").replace("Lambda","Lamb")))
 
-    # Step 2.d: Separate and simplify right- and left-hand sides into separate arrays
+    # Step 2.c: Separate and sympify right- and left-hand sides into separate arrays
     lhss = []
     rhss = []
     for i in range(len(lr)):
@@ -103,28 +102,22 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file):
         rhss.append(sp.sympify(lr[i].rhs))
 
     # Step 3.a: Read in constants as a (single) string
-    with open('SEOBNR/Hamstring_constants.txt', 'r') as file:
-        constants = file.read()
+    with open(constants_text_file, 'r') as file:
+        constants_as_lines = file.readlines()
 
-    # Step 3.b: Split the input string by carriage returns
-    constants_as_strings = constants.splitlines()
-
-    # Step 3.c: Create "input_constants" array and populate with SymPy constants
+    # Step 3.b: Create "input_constants" array and populate with SymPy constants
     input_constants = []
-    for constant in constants_as_strings:
+    for constant in constants_as_lines:
         constant = sp.symbols(constant,real=True)
         input_constants.append(constant)
 
-    # Step 3.d: Read in variables with which to take derivatives
-    with open('SEOBNR/Hamstring_variables.txt', 'r') as file:
-        variables = file.read()
+    # Step 3.c: Read in variables with which to take derivatives
+    with open(variables_text_file, 'r') as file:
+        variables_as_lines = file.readlines()
 
-    # Step 3.e: Split the variable string by carriage returns
-    variables_as_strings = variables.splitlines()
-
-    #Step 3.f: Create "dynamic_variables" array and populate with SymPy symbols
+    #Step 3.d: Create "dynamic_variables" array and populate with SymPy symbols
     dynamic_variables = []
-    for variable in variables_as_strings:
+    for variable in variables_as_lines:
         variable = sp.symbols(variable,real=True)
         dynamic_variables.append(variable)
 
@@ -182,24 +175,19 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file):
         lhss_derivative[dynamic_variables[index]] = lhss_temp
         rhss_derivative[dynamic_variables[index]] = rhss_temp
 
-    # Step 9: Output each partial derivative computation in SymPy snytax to its own file
-    for var in dynamic_variables:
-        with open("partial_wrt_"+str(var)+".txt", "w") as output:
-            outstring = "# Original expression (terms may be needed for derivative computation)\n"
-            output.write("%s" % outstring)
-            for i in range(len(lr)):
-                right_side = lr[i].rhs
-                right_side_in_sp = right_side.replace("sqrt(","sp.sqrt(").replace("log(","sp.log(").replace("pi",
-                                                      "sp.pi").replace("sign(","sp.sign(").replace("Abs(",
-                                                      "sp.Abs(").replace("Rational(","sp.Rational(")
-                outstring = str(lr[i].lhs)+" = "+right_side_in_sp+"\n"
-                output.write("%s" % outstring)
-            outstring = "\n# Derivative expression\n"
-            output.write("%s" % outstring)
+    # Step 9: Output original expression and each partial derivative expression in SymPy snytax
+    with open("partial_derivatives.txt", "w") as output:
+        for i in range(len(lr)):
+            right_side = lr[i].rhs
+            right_side_in_sp = right_side.replace("sqrt(","sp.sqrt(").replace("log(","sp.log(").replace("pi",
+                                                    "sp.pi").replace("sign(","sp.sign(").replace("Abs(",
+                                                    "sp.Abs(").replace("Rational(","sp.Rational(")
+            output.write(str(lr[i].lhs)+" = "+right_side_in_sp)
+        for var in dynamic_variables:
             for i in range(len(lhss_derivative[var])):
                 right_side = str(rhss_derivative[var][i])
                 right_side_in_sp = right_side.replace("sqrt(","sp.sqrt(").replace("log(","sp.log(").replace("pi",
-                                            "sp.pi").replace("sign(","sp.sign(").replace("Abs(",
-                                            "sp.Abs(").replace("Rational(","sp.Rational(")
-                outstring = str(lhss_derivative[var][i])+" = "+right_side_in_sp+"\n"
-                output.write("%s" % outstring)
+                                                        "sp.pi").replace("sign(","sp.sign(").replace("Abs(",
+                                                        "sp.Abs(").replace("Rational(","sp.Rational(").replace("prm",
+                                                        "prm"+str(var))
+                output.write(str(lhss_derivative[var][i]).replace("prm","prm"+str(var))+" = "+right_side_in_sp+"\n")
