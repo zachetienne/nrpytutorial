@@ -42,6 +42,11 @@ import NRPy_param_funcs as par  # NRPy+: Parameter interface
 LapseCondition = "OnePlusLog"
 ShiftCondition = "GammaDriving2ndOrder_NoCovariant"
 
+# Output finite difference stencils as functions instead of inlined expressions.
+#   Dramatically speeds up compile times (esp with higher-order finite differences
+#   and GCC 9.3+)
+par.set_parval_from_str("finite_difference::FD_functions_enable", True)
+
 # Step 1.b: Set runtime parameters for Baikal and BaikalVacuum
 #         Current runtime choices:
 #         Baikal:       FD_orders = [2,4]  ; Gamma-driving eta parameter; Kreiss-Oliger dissipation strength
@@ -101,7 +106,7 @@ for ThornName in ["Baikal","BaikalVacuum"]:
                 outfile.write(line.replace("#define REAL_SIMD_ARRAY REAL", "#define REAL_SIMD_ARRAY CCTK_REAL"))
 
     # Create directory for rfm_files output
-    cmd.mkdir(os.path.join(outdir,"rfm_files"))
+    cmd.mkdir(os.path.join(outdir, "rfm_files"))
 
 # Start parallel C code generation (codegen)
 # NRPyEnvVars stores the NRPy+ environment from all the subprocesses in the following

@@ -363,34 +363,41 @@ void BaikalETK_ADM_to_BSSN(CCTK_ARGUMENTS) {
     #                      finite-difference derivatives (i.e., all gridfunctions except lambda^i (=Gamma^i
     #                      in non-covariant BSSN)):
     #                      h_{ij}, a_{ij}, trK, vet^i=beta^i,bet^i=B^i, cf (conformal factor), and alpha
+
+    # Output finite difference stencils as inlined expressions.
+    #   We do this instead of outputting as FD functions, as this function
+    #   does not take long to compile, and we have already output all the
+    #   FD functions to file, so if this one contains new FD functions,
+    #   the compile will fail.
+    par.set_parval_from_str("finite_difference::FD_functions_enable", False)
+
     all_but_lambdaU_expressions = [
-        lhrh(lhs=gri.gfaccess("in_gfs","hDD00"),rhs=IDhDD[0][0]),
-        lhrh(lhs=gri.gfaccess("in_gfs","hDD01"),rhs=IDhDD[0][1]),
-        lhrh(lhs=gri.gfaccess("in_gfs","hDD02"),rhs=IDhDD[0][2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","hDD11"),rhs=IDhDD[1][1]),
-        lhrh(lhs=gri.gfaccess("in_gfs","hDD12"),rhs=IDhDD[1][2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","hDD22"),rhs=IDhDD[2][2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","aDD00"),rhs=IDaDD[0][0]),
-        lhrh(lhs=gri.gfaccess("in_gfs","aDD01"),rhs=IDaDD[0][1]),
-        lhrh(lhs=gri.gfaccess("in_gfs","aDD02"),rhs=IDaDD[0][2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","aDD11"),rhs=IDaDD[1][1]),
-        lhrh(lhs=gri.gfaccess("in_gfs","aDD12"),rhs=IDaDD[1][2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","aDD22"),rhs=IDaDD[2][2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","trK"),rhs=IDtrK),
-        lhrh(lhs=gri.gfaccess("in_gfs","vetU0"),rhs=IDvetU[0]),
-        lhrh(lhs=gri.gfaccess("in_gfs","vetU1"),rhs=IDvetU[1]),
-        lhrh(lhs=gri.gfaccess("in_gfs","vetU2"),rhs=IDvetU[2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","betU0"),rhs=IDbetU[0]),
-        lhrh(lhs=gri.gfaccess("in_gfs","betU1"),rhs=IDbetU[1]),
-        lhrh(lhs=gri.gfaccess("in_gfs","betU2"),rhs=IDbetU[2]),
-        lhrh(lhs=gri.gfaccess("in_gfs","alpha"),rhs=IDalpha),
-        lhrh(lhs=gri.gfaccess("in_gfs","cf"),rhs=IDcf)]
+        lhrh(lhs=gri.gfaccess("in_gfs", "hDD00"), rhs=IDhDD[0][0]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "hDD01"), rhs=IDhDD[0][1]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "hDD02"), rhs=IDhDD[0][2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "hDD11"), rhs=IDhDD[1][1]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "hDD12"), rhs=IDhDD[1][2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "hDD22"), rhs=IDhDD[2][2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "aDD00"), rhs=IDaDD[0][0]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "aDD01"), rhs=IDaDD[0][1]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "aDD02"), rhs=IDaDD[0][2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "aDD11"), rhs=IDaDD[1][1]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "aDD12"), rhs=IDaDD[1][2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "aDD22"), rhs=IDaDD[2][2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "trK"), rhs=IDtrK),
+        lhrh(lhs=gri.gfaccess("in_gfs", "vetU0"), rhs=IDvetU[0]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "vetU1"), rhs=IDvetU[1]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "vetU2"), rhs=IDvetU[2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "betU0"), rhs=IDbetU[0]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "betU1"), rhs=IDbetU[1]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "betU2"), rhs=IDbetU[2]),
+        lhrh(lhs=gri.gfaccess("in_gfs", "alpha"), rhs=IDalpha),
+        lhrh(lhs=gri.gfaccess("in_gfs", "cf"), rhs=IDcf)]
 
     outCparams = "preindent=1,outCfileaccess=a,outCverbose=False,includebraces=False"
-    all_but_lambdaU_outC = fin.FD_outputC("returnstring",all_but_lambdaU_expressions, outCparams)
-    outstr += lp.loop(["i2","i1","i0"],["0","0","0"],["cctk_lsh[2]","cctk_lsh[1]","cctk_lsh[0]"],
-                       ["1","1","1"],["#pragma omp parallel for","",""],"    ",all_but_lambdaU_outC)
-
+    all_but_lambdaU_outC = fin.FD_outputC("returnstring", all_but_lambdaU_expressions, outCparams)
+    outstr += lp.loop(["i2", "i1", "i0"], ["0", "0", "0"], ["cctk_lsh[2]", "cctk_lsh[1]", "cctk_lsh[0]"],
+                      ["1", "1", "1"], ["#pragma omp parallel for", "", ""], "    ", all_but_lambdaU_outC)
 
     # ADM to BSSN, Part 3: Set up ADM to BSSN conversions for BSSN gridfunctions defined from
     #                      finite-difference derivatives: lambda^i, which is Gamma^i in non-covariant BSSN):

@@ -12,11 +12,6 @@ import time                      # Standard Python module; useful for benchmarki
 import BSSN.BSSN_RHSs as rhs
 import BSSN.BSSN_gauge_RHSs as gaugerhs
 
-# Output finite difference stencils as functions instead of inlined expressions.
-#   Dramatically speeds up compile times (esp with higher-order finite differences
-#   and GCC 9.3+)
-par.set_parval_from_str("finite_difference::FD_functions_enable", True)
-
 def BaikalETK_C_kernels_codegen_onepart(params=
         "WhichPart=BSSN_RHSs,ThornName=Baikal,FD_order=4,enable_stress_energy_source_terms=True"):
     # Set default parameters
@@ -75,7 +70,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     outdir = os.path.join(ThornName, "src")  # Main C code output directory
 
     # Set spatial dimension (must be 3 for BSSN)
-    par.set_parval_from_str("grid::DIM",3)
+    par.set_parval_from_str("grid::DIM", 3)
 
     # Step 2: Set some core parameters, including CoordSystem MoL timestepping algorithm,
     #                                 FD order, floating point precision, and CFL factor:
@@ -86,12 +81,12 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     #       Spherical, etc. coordinates.
     CoordSystem     = "Cartesian"
 
-    par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
-    rfm.reference_metric() # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
+    par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem)
+    rfm.reference_metric()  # Create ReU, ReDD needed for rescaling B-L initial data, generating BSSN RHSs, etc.
 
     # Set the gridfunction memory access type to ETK-like, so that finite_difference
     #    knows how to read and write gridfunctions from/to memory.
-    par.set_parval_from_str("grid::GridFuncMemAccess","ETK")
+    par.set_parval_from_str("grid::GridFuncMemAccess", "ETK")
 
     par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::ShiftEvolutionOption", ShiftCondition)
     par.set_parval_from_str("BSSN.BSSN_gauge_RHSs::LapseEvolutionOption", LapseCondition)
@@ -103,9 +98,9 @@ def BaikalETK_C_kernels_codegen_onepart(params=
             if gri.glb_gridfcs_list[i].name == "T4UU00":
                 registered_already = True
         if not registered_already:
-            T4UU = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","T4UU","sym01",DIM=4)
+            T4UU = ixp.register_gridfunctions_for_single_rank2("AUXEVOL", "T4UU", "sym01", DIM=4)
         else:
-            T4UU = ixp.declarerank2("T4UU","sym01",DIM=4)
+            T4UU = ixp.declarerank2("T4UU", "sym01", DIM=4)
 
     # Register the BSSN constraints (Hamiltonian & momentum constraints) as gridfunctions.
     registered_already = False
@@ -115,7 +110,7 @@ def BaikalETK_C_kernels_codegen_onepart(params=
     if not registered_already:
         # We ignore return values for register_gridfunctions...() calls below
         #    as they are unused.
-        gri.register_gridfunctions("AUX","H")
+        gri.register_gridfunctions("AUX", "H")
         ixp.register_gridfunctions_for_single_rank1("AUX", "MU")
 
     def BSSN_RHSs__generate_symbolic_expressions():

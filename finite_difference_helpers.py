@@ -780,7 +780,7 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
 
         else:
             # Compute finite differences using inlined calculations
-            params  = FDparams.outCparams
+            params = FDparams.outCparams.replace("preindent=1", "preindent=0")  # Remove an unnecessary indentation
             # We choose the CSE temporary variable prefix "FDpart1" for the finite difference coefficients:
             params += ",CSE_varprefix=FDPart1,includebraces=False,CSE_preprocess=True,SIMD_find_more_subs=True"
             Coutput += indent_Ccode(outputC(FDexprs, FDlhsvarnames, "returnstring",params=params,
