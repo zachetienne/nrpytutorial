@@ -189,5 +189,5 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file,variabl
                 right_side_in_sp = right_side.replace("sqrt(","sp.sqrt(").replace("log(","sp.log(").replace("pi",
                                                         "sp.pi").replace("sign(","sp.sign(").replace("Abs(",
                                                         "sp.Abs(").replace("Rational(","sp.Rational(").replace("prm",
-                                                        "prm"+str(var))
-                output.write(str(lhss_derivative[var][i]).replace("prm","prm"+str(var))+" = "+right_side_in_sp+"\n")
+                                                        "prm_"+str(var))
+                output.write(str(lhss_derivative[var][i]).replace("prm","prm_"+str(var))+" = "+right_side_in_sp+"\n")
