@@ -10,14 +10,16 @@
 # Step 1.a: import all needed modules from Python/NRPy+:
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
 import os, sys                    # Standard Python modules for multiplatform OS-level functions
-
-# Step 1.?: check system path so can use outputC; #TylerK: remove and put outputC back with other imports
-nrpy_dir_path = os.path.join("..")
-if nrpy_dir_path not in sys.path:
-    sys.path.append(nrpy_dir_path)
-
 from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a Python array; store left- and right-
                                               #   hand sides of mathematical expressions
+
+# Step 1.b: Check for a sufficiently new version of SymPy (for validation)
+# Ignore the rc's and b's for release candidates & betas.
+sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+sympy_version_decimal = float(int(sympy_version.split(".")[0]) + int(sympy_version.split(".")[1])/10.0)
+if sympy_version_decimal < 1.2:
+    print('Error: NRPy+ does not support SymPy < 1.2')
+    sys.exit(1)
 
 # Supporting function to simplify derivative expressions by removing terms equal to 0
 def simplify_deriv(lhss_deriv,rhss_deriv):
