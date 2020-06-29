@@ -8,6 +8,8 @@
 # Contributor: Ken Sible
     # Email: ksible *at* outlook *dot* com
 
+import re
+
 def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma='#pragma omp parallel for', padding=''):
     """ Generate a one-dimensional loop in C.
 
@@ -179,7 +181,13 @@ def simple_loop(options, interior):
                              "#include \"rfm_files/rfm_struct__read1.h\"",
                              "#include \"rfm_files/rfm_struct__read2.h\""]
     # 'DisableOpenMP': disable loop parallelization using OpenMP
-    pragma    = "" if "DisableOpenMP" in options else "#pragma omp parallel for"
+    if "DisableOpenMP" in options:
+        pragma = ""
+    # 'OMP_custom_pragma': enable loop parallelization using OpenMP with custom pragma
+    elif "OMP_custom_pragma" in options:
+        pragma = re.search(r'OMP_custom_pragma=[\'\"](.+)[\'\"]', options).group(1)
+    else:
+        pragma = "#pragma omp parallel for"
     increment = ["1", "1", "SIMD_width"] if "EnableSIMD" in options else ["1","1","1"]
 
     return loop(["i2","i1","i0"], i2i1i0_mins, i2i1i0_maxs, increment, [pragma, Read_1Darrays[2], Read_1Darrays[1]], \
