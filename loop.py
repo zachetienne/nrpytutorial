@@ -124,11 +124,12 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='', inter
     if not interior: return header, footer
     return header + ''.join(interior) + footer
 
-def simple_loop(options, interior):
+def simple_loop(options, interior, pragma='#pragma omp parallel for'):
     """ Generate a simple loop in C (for use inside of a function).
 
         :arg:    loop options
         :arg:    loop interior
+        :arg:    OpenMP pragma (https://en.wikipedia.org/wiki/OpenMP)
         :return: string of the loop
 
         >>> print(simple_loop('AllPoints', '// <INTERIOR>'))
@@ -179,7 +180,7 @@ def simple_loop(options, interior):
                              "#include \"rfm_files/rfm_struct__read1.h\"",
                              "#include \"rfm_files/rfm_struct__read2.h\""]
     # 'DisableOpenMP': disable loop parallelization using OpenMP
-    pragma    = "" if "DisableOpenMP" in options else "#pragma omp parallel for"
+    if "DisableOpenMP" in options: pragma = ""
     increment = ["1", "1", "SIMD_width"] if "EnableSIMD" in options else ["1","1","1"]
 
     return loop(["i2","i1","i0"], i2i1i0_mins, i2i1i0_maxs, increment, [pragma, Read_1Darrays[2], Read_1Darrays[1]], \
