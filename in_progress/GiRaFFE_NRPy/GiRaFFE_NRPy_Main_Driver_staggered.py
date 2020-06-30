@@ -21,6 +21,7 @@ import GiRaFFE_NRPy.Stilde_flux as Sf
 import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
 # import GiRaFFE_NRPy.GiRaFFE_NRPy_A2B as A2B
 import GiRaFFE_NRPy.GiRaFFE_NRPy_C2P_P2C as C2P_P2C
+import GiRaFFE_NRPy.GiRaFFE_NRPy_Source_Terms as source
 
 thismodule = "GiRaFFE_NRPy_Main_Driver"
 
@@ -75,8 +76,9 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     subdir = "RHSs"
     cmd.mkdir(os.path.join(out_dir,subdir))
-    source.generate_Stilde_source_terms(os.path.join(out_dir,subdir))
-    
+    source.write_out_functions_for_StildeD_source_term(os.path.join(out_dir,subdir),outCparams,gammaDD,betaU,alpha,
+                                                       ValenciavU,BU,sqrt4pi)
+
     subdir = "FCVAL"
     cmd.mkdir(os.path.join(out_dir, subdir))
     FCVAL.GiRaFFE_NRPy_FCVAL(os.path.join(out_dir,subdir))
@@ -109,7 +111,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     subdir = "RHSs"
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
                                        Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
-    
+
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
     BC.GiRaFFE_NRPy_BCs(os.path.join(out_dir,subdir))
