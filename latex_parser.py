@@ -2,14 +2,15 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# pylint: disable=unused-import
+# pylint: disable=attribute-defined-outside-init
 from sympy import Function, Symbol, Integer, Rational, Float, Pow
-from sympy import preorder_traversal, expand, sqrt
+from sympy import preorder_traversal, expand, var
+from collections import OrderedDict
 from indexedexp import declare_indexedexp
 from inspect import currentframe
+from warnings import warn
 import re
 
-# pylint: disable=attribute-defined-outside-init
 class Lexer:
     """ LaTeX Lexer
 
@@ -32,7 +33,7 @@ class Lexer:
         # every pattern, join together the resulting pattern list using a pipe symbol
         # for regex alternation, and compile the generated regular expression
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in
-            [ ('SPACE_DELIM',    r'(?:\s|\\,|\{\})+'),
+            [ ('SPACE_DELIM',    r'(?:\s|\\,|\{\})+|\&'),
               ('RATIONAL',       r'[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
               ('INTEGER',        r'[0-9]+'),
@@ -55,7 +56,9 @@ class Lexer:
               ('BIGR_DELIM',     r'\\[bB]igr'),
               ('LEFT_DELIM',     r'\\left'),
               ('RIGHT_DELIM',    r'\\right'),
-              ('LINE_BREAK',     r'(?:\\n|;)'),
+              ('LINE_BREAK',     r'(?:\;|\\\\|\\cr)'),
+              ('BEGIN_ALIGN',    r'\\begin{align\*?}'),
+              ('END_ALIGN',      r'\\end{align\*?}'),
               ('SQRT_CMD',       r'\\sqrt'),
               ('FRAC_CMD',       r'\\frac'),
               ('SYMMETRY',       r'nosym|sym[0-9]+(?:_sym[0-9]+)*'),
@@ -123,15 +126,15 @@ class Lexer:
         self.regex = re.compile(re.sub(r'<TENSOR>.+?(?=\)\|)',
             '<TENSOR>' + tensor_pattern, self.regex.pattern))
 
-# pylint: disable=anomalous-backslash-in-string
 class Parser:
     """ LaTeX Parser
 
         The following class will parse a tokenized LaTeX sentence.
 
         LaTeX Extended BNF Grammar:
-        <ROOT>          -> <EXPRESSION> | ( <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <CONFIG> | <ASSIGNMENT> ) }*
-        <CONFIG>        -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
+        <ROOT>          -> <EXPRESSION> | <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
+        <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
+        <ENVIRONMENT>    -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
         <ASSIGNMENT>    -> <VARIABLE> = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
         <TERM>          -> <FACTOR> { [ '/' ] <FACTOR> }*
@@ -144,14 +147,17 @@ class Parser:
         <COMMAND>       -> <SQRT> | <FRAC>
         <SQRT>          -> '\\sqrt' [ '[' <INTEGER> ']' ] '{' <EXPRESSION> '}'
         <FRAC>          -> '\\frac' '{' <EXPRESSION> '}' '{' <EXPRESSION> '}'
+        <CONFIG>        -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
         <ARRAY>         -> ( <SYMBOL | <TENSOR> ) [ '_' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) [ '^' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) ]
                                                   | '^' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) [ '_' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) ] ]
     """
 
-    def __init__(self, namespace=None):
-        if namespace == None: namespace = {}
-        self.lexer      = Lexer(namespace)
-        self.namespace  = namespace
+    namespace = OrderedDict()
+
+    def __init__(self):
+        self.lexer      = Lexer()
+        self.namespace  = OrderedDict()
+        self._summation = []
         self._dimension = []
 
     def parse(self, sentence, expression=False):
@@ -163,26 +169,21 @@ class Parser:
         """
         self.lexer.initialize(sentence)
         self.lexer.lex()
-        postprocess = self._root(expression)
-        if not isinstance(postprocess, list):
-            return postprocess
-        for equation in postprocess:
+        if expression:
+            return self._root(expression)
+        self._root(expression)
+        for equation in self._summation:
             dimension = self._dimension[0]
             if any(dim != dimension for dim in self._dimension):
                 raise TensorError('inconsistent tensor dimension')
             # perform implied summation on a tensorial equation
             var, expr = _summation(equation, dimension)
             self.namespace[var] = expr
+        for var in self.namespace:
+            if var in Parser.namespace:
+                warn('\'' + var + '\'', OverrideWarning, stacklevel=3)
+            Parser.namespace[var] = self.namespace[var]
         return self.namespace
-
-    @staticmethod
-    def _notation(array):
-        # extract tensor information from function
-        args = list(map(str, array.args))
-        # construct tensor indexing for array notation
-        suffix = ''.join(['[' + n + ']' for n in args[1:]])
-        # construct array notation for a tensor variable
-        return args[0], suffix
 
     def _tensorial(self):
         mark_1 = self.lexer.index - 1
@@ -194,64 +195,56 @@ class Parser:
         nameset = set(re.match(r'[^UD]*', tensor).group() for tensor in self.namespace)
         return any(tensor in assignment for tensor in nameset)
 
-    # TODO: <ROOT> -> <EXPRESSION> | ( <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <CONFIG> | <ASSIGNMENT> ) }*
+    # <ROOT> -> <EXPRESSION> | <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
     def _root(self, expression):
         if expression: return self._expression()
-        # PEP 315 -- https://www.python.org/dev/peps/pep-0315/
-        postprocess = []
-        while True:
-            if self.peek('COMMENT'): self._config()
-            elif self.peek('SYMBOL') or self.peek('TENSOR'):
-                tensorial = self._tensorial()
-                # expect a tensor on LHS of a tensorial equation
-                if tensorial and self.peek('SYMBOL'):
-                    self.lexer.token = 'TENSOR'
-                assignment = self._assignment()
-                if tensorial:
-                    postprocess.append(assignment)
-                    self.namespace.update({var.split('[')[0]: None for var in assignment})
-                    self.lexer.update(self.namespace)
-                else: self.namespace.update(assignment)
-            if not self.accept('LINE_BREAK'): break
-        return postprocess
+        self._structure()
+        while self.accept('LINE_BREAK'):
+            self._structure()
+        return None
 
-    # <CONFIG> -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
-    def _config(self):
-        self.expect('COMMENT')
-        while True:
-            array = self._array()
-            self.expect('LEFT_BRACKET')
-            dimension = self.lexer.lexeme
-            self.expect('INTEGER')
-            dimension = int(dimension)
-            self._dimension.append(dimension)
-            self.expect('RIGHT_BRACKET')
-            if self.accept('COLON'):
-                symmetry = self.lexer.lexeme
-                self.expect('SYMMETRY')
-            else: symmetry = None
-            tensor = self._notation(array)
-            rank = len(tensor[1].split(']['))
-            self.namespace[tensor[0]] = declare_indexedexp(rank, tensor[0], symmetry, dimension)
-            if not self.accept('COMMA'): break
-        self.lexer.update(self.namespace)
+    # <STRUCTURE> -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
+    def _structure(self):
+        if self.peek('COMMENT'):
+            self._config()
+        elif self.peek('BEGIN_ALIGN'):
+            self._environment()
+        else: self._assignment()
+
+    # <ENVIRONMENT> -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
+    def _environment(self):
+        self.expect('BEGIN_ALIGN')
+        self._assignment()
+        while self.accept('LINE_BREAK'):
+            self._assignment()
+        self.expect('END_ALIGN')
 
     # <ASSIGNMENT> -> <VARIABLE> = <EXPRESSION>
     def _assignment(self):
+        tensorial = self._tensorial()
+        # expect a tensor on LHS of a tensorial equation
+        if tensorial and self.peek('SYMBOL'):
+            self.lexer.token = 'TENSOR'
         variable = self._variable()
         self.expect('EQUAL')
         expr = self._expression()
         if self.namespace:
             # distribute over every parenthetical expression
             expr_ = expand(expr); expr = str(expr_)
-            variable = ''.join(self._notation(variable))
+            variable = ''.join(_notation(variable))
             # iterate over every tensor in the expression
             for subexpr in preorder_traversal(expr_):
                 if subexpr.func == Function('Tensor'):
                     # replace function notation with array notation
-                    func = ''.join(self._notation(subexpr))
+                    func = ''.join(_notation(subexpr))
                     expr = expr.replace(str(subexpr), func)
-        return {str(variable): expr}
+        assignment = {str(variable): expr}
+        if tensorial:
+            self._summation.append(assignment)
+            for var in assignment:
+                self.namespace.update({var.split('[')[0]: None})
+            self.lexer.update(self.namespace)
+        else: self.namespace.update(assignment)
 
     # <EXPRESSION> -> <TERM> { ( '+' | '-' ) <TERM> }*
     def _expression(self):
@@ -329,9 +322,14 @@ class Parser:
                     if subscript[0] == '\\':
                         subscript = subscript[1:]
                     variable += '_' + subscript
+                    var(variable)
                     return Symbol(variable)
                 # raise exception whenever illegal subscript
-                self._unexpected()
+                sentence = self.lexer.sentence
+                position = self.lexer.index - len(self.lexer.lexeme)
+                raise ParseError('unexpected \'%s\' at position %d' %
+                    (sentence[position], position), sentence, position)
+            var(variable)
             return Symbol(variable)
         return self._array()
 
@@ -347,7 +345,10 @@ class Parser:
             return Float(number)
         if self.accept('INTEGER'):
             return Integer(number)
-        self._unexpected()
+        sentence = self.lexer.sentence
+        position = self.lexer.index - len(self.lexer.lexeme)
+        raise ParseError('unexpected \'%s\' at position %d' %
+            (sentence[position], position), sentence, position)
 
     # <COMMAND> -> <SQRT> | <FRAC>
     def _command(self):
@@ -385,11 +386,35 @@ class Parser:
         self.expect('RIGHT_BRACE')
         return numerator / denominator
 
+    # <CONFIG> -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
+    def _config(self):
+        self.expect('COMMENT')
+        while True:
+            array = self._array()
+            self.expect('LEFT_BRACKET')
+            dimension = self.lexer.lexeme
+            self.expect('INTEGER')
+            dimension = int(dimension)
+            self._dimension.append(dimension)
+            self.expect('RIGHT_BRACKET')
+            if self.accept('COLON'):
+                symmetry = self.lexer.lexeme
+                self.expect('SYMMETRY')
+            else: symmetry = None
+            tensor = _notation(array)
+            rank = len(tensor[1].split(']['))
+            self.namespace[tensor[0]] = declare_indexedexp(rank, tensor[0], symmetry, dimension)
+            if not self.accept('COMMA'): break
+        self.lexer.update(self.namespace)
+
     # <ARRAY> -> ( <SYMBOL | <TENSOR> ) [ '_' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) [ '^' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) ]
     #                                   | '^' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) [ '_' ( <SYMBOL> | '{' { <SYMBOL> }+ '}' ) ] ]
     def _array(self):
         if not (self.peek('SYMBOL') or self.peek('TENSOR')):
-            self._unexpected()
+            sentence = self.lexer.sentence
+            position = self.lexer.index - len(self.lexer.lexeme)
+            raise ParseError('unexpected \'%s\' at position %d' %
+                (sentence[position], position), sentence, position)
         array = self.lexer.lexeme
         self.lexer.lex()
         if array[0] == '\\':
@@ -433,12 +458,6 @@ class Parser:
         array = Symbol(''.join(array))
         return Function('Tensor')(array, *index)
 
-    def _unexpected(self):
-        sentence = self.lexer.sentence
-        position = self.lexer.index - len(self.lexer.lexeme)
-        raise ParseError('unexpected \'%s\' at position %d' %
-            (sentence[position], position), sentence, position)
-
     def peek(self, token_type):
         return self.lexer.token == token_type
 
@@ -460,6 +479,14 @@ class ParseError(Exception):
     def __init__(self, message, sentence, position):
         super().__init__('%s\n%s^\n' % (sentence, (12 + position) * ' ') + message)
 
+def _notation(array):
+    # extract tensor information from function
+    args = list(map(str, array.args))
+    # construct tensor indexing for array notation
+    suffix = ''.join(['[' + n + ']' for n in args[1:]])
+    # construct array notation for a tensor variable
+    return args[0], suffix
+
 def _summation(equation, dimension):
     for var_ in equation:
         var, expr = var_, equation[var_]
@@ -468,42 +495,37 @@ def _summation(equation, dimension):
         re.findall(r'[UD]', var))), []
     # iterate over every subexpression containing a product
     for product in re.split(r'\s[\+\-]\s', expr):
-        # generate a loop index iterator (ex: aa, bb, ...)
-        loop_index = (2 * chr(97 + n) for n in range(26))
         # extract every index present in the subexpression
-        idx_lst = re.findall(r'\[([a-zA-Z]+)\]', product)
+        idx_list = re.findall(r'\[([a-zA-Z]+)\]', product)
         # extract every index position (ex: U or D)
-        pos_lst = re.findall(r'[UD]', product)
-        free_index, bound_index = [], {}
+        pos_list = re.findall(r'[UD]', product)
+        free_index, bound_index = [], []
         # iterate over every unique index in the subexpression
-        for idx in set(idx_lst):
+        for idx in set(idx_list):
             count = U = D = 0; index_tuple = []
             # count index occurrence and position occurrence
-            for idx_, pos_ in zip(idx_lst, pos_lst):
+            for idx_, pos_ in zip(idx_list, pos_list):
                 if idx_ == idx:
                     index_tuple.append((idx_, pos_))
                     if pos_ == 'U': U += 1
                     if pos_ == 'D': D += 1
                     count += 1
-            # assign mapping: bound index -> loop index
+            # identify every bound index on the RHS
             if count > 1:
                 if count != 2 or U != D:
                     # raise exception upon violation of the following rule:
                     # a bound index must appear exactly once as a superscript
                     # and exactly once as a subscript in any single term
                     raise TensorError('illegal bound index')
-                bound_index[idx] = next(loop_index)
+                bound_index.append(idx)
             # identify every free index on the RHS
             else: free_index.extend(index_tuple)
         RHS.append(set(free_index))
         summation = product
-        # replace every bound index with a loop index
-        for idx in bound_index:
-            summation = summation.replace(idx, bound_index[idx])
         # generate implied summation over every bound index
         for idx in bound_index:
             summation = 'sum([%s for %s in range(%d)])' % \
-                (summation, bound_index[idx], dimension)
+                (summation, idx, dimension)
         expr = expr.replace(product, summation)
     if LHS:
         for i in range(len(RHS)):
@@ -517,17 +539,18 @@ def _summation(equation, dimension):
             expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
     return var.split('[')[0], expr
 
-# pylint: disable=missing-class-docstring
-class TensorError(Exception): pass
+class TensorError(Exception):
+    """ Invalid Tensor Indexing or Dimension """
+class OverrideWarning(UserWarning):
+    """ Overridden Namespace Variable """
 
-def parse(sentence, namespace=None, debug=False, expression=False):
+def parse(sentence, expression=False, debug=False):
     """ Convert LaTeX Sentence to SymPy Expression
 
         :arg:    latex sentence (raw string)
-        :arg:    tensor namespace [default: None]
-        :arg:    debug mode [default: None]
         :arg:    expression mode [default: False]
-        :return: symbolic expression or modified namespace
+        :arg:    debug mode [default: None]
+        :return: symbolic expression or tensor namespace
 
         >>> parse(r'-(\\frac{2}{3} + 2\\sqrt[5]{x + 3})', expression=True)
         -2*(x + 3)**(1/5) - 2/3
@@ -536,7 +559,7 @@ def parse(sentence, namespace=None, debug=False, expression=False):
         >>> print(s_n)
         (1 + 1/n)**n
 
-        >>> parse(r'% h^\mu_\mu [3]: nosym; h = h^\mu_\mu')
+        >>> parse(r'% h^\\mu_\\mu [3]: nosym; h = h^\\mu_\\mu')
         ['h', 'hUD']
         >>> print(h)
         hUD00 + hUD11 + hUD22
@@ -549,15 +572,18 @@ def parse(sentence, namespace=None, debug=False, expression=False):
         >>> print(uU)
         [gUU00*vD0 + gUU00*wD0 + gUU01*vD1 + gUU01*wD1, gUU01*vD0 + gUU01*wD0 + gUU11*vD1 + gUU11*wD1]
     """
-    namespace = Parser(namespace).parse(sentence, expression)
+    namespace = Parser().parse(sentence, expression)
     if not isinstance(namespace, dict):
         return namespace
     if not debug:
+        # update global scope with tensor namespace
+        globals().update(namespace)
         for var in namespace:
             if isinstance(namespace[var], str):
-                # update global scope with tensor namespace
-                globals().update(namespace)
+                # evaluate each implied summation
                 namespace[var] = eval(namespace[var])
+                globals()[var] = namespace[var]
+        Parser.namespace.update(namespace)
     # inject namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)
