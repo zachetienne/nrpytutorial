@@ -103,25 +103,14 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file,variabl
         lhss.append(sp.sympify(lr[i].lhs))
         rhss.append(sp.sympify(lr[i].rhs))
 
-    # Step 3.a: Read in constants as a (single) string
-    with open(constants_text_file, 'r') as file:
-        constants_as_lines = file.readlines()
+    # Step 3.a: Create `input_constants` array and populate with SymPy symbols
+    m1,m2,tortoise,eta,KK,k0,k1,EMgamma,d1v2,dheffSSv2 = sp.symbols('m1 m2 tortoise eta KK k0 k1 EMgamma d1v2 dheffSSv2',
+                                                                    real=True)
+    input_constants = [m1,m2,tortoise,eta,KK,k0,k1,EMgamma,d1v2,dheffSSv2]
 
-    # Step 3.b: Create "input_constants" array and populate with SymPy constants
-    input_constants = []
-    for constant in constants_as_lines:
-        constant = sp.symbols(constant,real=True)
-        input_constants.append(constant)
-
-    # Step 3.c: Read in variables with which to take derivatives
-    with open(variables_text_file, 'r') as file:
-        variables_as_lines = file.readlines()
-
-    #Step 3.d: Create "dynamic_variables" array and populate with SymPy symbols
-    dynamic_variables = []
-    for variable in variables_as_lines:
-        variable = sp.symbols(variable,real=True)
-        dynamic_variables.append(variable)
+    # Step 3.b: Create `dynamic_variables` array and populate with SymPy symbols
+    x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z = sp.symbols('x y z px py pz s1x s1y s1z s2x s2y s2z', real=True)
+    dynamic_variables = [x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z]
 
     # Step 4.a: Prepare array of "free symbols" in the right-hand side expressions
     full_symbol_list_with_dups = []
