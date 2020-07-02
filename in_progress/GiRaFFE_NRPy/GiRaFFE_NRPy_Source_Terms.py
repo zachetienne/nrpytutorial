@@ -19,7 +19,7 @@ def generate_memory_access_code():
     general_access = ""
     for var in ["GAMMADD00", "GAMMADD01", "GAMMADD02",
                 "GAMMADD11", "GAMMADD12", "GAMMADD22",
-                "BETAU0", "BETAU1", "BETAU2","ALPHAGF",
+                "BETAU0", "BETAU1", "BETAU2","ALPHA",
                 "BU0","BU1","BU2",
                 "VALENCIAVU0","VALENCIAVU1","VALENCIAVU2"]:
         lhsvar = var.lower().replace("dd","DD").replace("u","U").replace("bU","BU").replace("valencia","Valencia")

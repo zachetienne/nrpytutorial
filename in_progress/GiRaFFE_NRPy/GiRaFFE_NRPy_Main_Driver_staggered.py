@@ -74,6 +74,9 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     gri.register_gridfunctions("AUXEVOL","cmax_z")
     gri.register_gridfunctions("AUXEVOL","cmin_z")
 
+    # Declare this symbol:
+    sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
+
     subdir = "RHSs"
     cmd.mkdir(os.path.join(out_dir,subdir))
     source.write_out_functions_for_StildeD_source_term(os.path.join(out_dir,subdir),outCparams,gammaDD,betaU,alpha,

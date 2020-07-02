@@ -21,6 +21,7 @@ import GiRaFFE_NRPy.Stilde_flux as Sf
 import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
 import GiRaFFE_NRPy.GiRaFFE_NRPy_A2B as A2B
 import GiRaFFE_NRPy.GiRaFFE_NRPy_C2P_P2C as C2P_P2C
+import GiRaFFE_NRPy.GiRaFFE_NRPy_Source_Terms as source
 
 thismodule = "GiRaFFE_NRPy_Main_Driver"
 
@@ -49,6 +50,9 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     PhievolParenU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","PhievolParenU",DIM=3)
     AevolParen = gri.register_gridfunctions("AUXEVOL","AevolParen")
+
+    # Declare this symbol:
+    sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
 
     GRHD.compute_sqrtgammaDET(gammaDD)
     GRFFE.compute_AD_source_term_parenthetical_for_FD(GRHD.sqrtgammaDET,betaU,alpha,psi6Phi,AD)
@@ -113,96 +117,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     with open(os.path.join(out_dir,subdir,name+".h"),"w") as file:
         file.write(source_Ccode)
 
-    # Declare all the Cparameters we will need
-    metricderivDDD = ixp.declarerank3("metricderivDDD","sym01",DIM=3)
-    shiftderivUD = ixp.declarerank2("shiftderivUD","nosym",DIM=3)
-    lapsederivD = ixp.declarerank1("lapsederivD",DIM=3)
-
-    general_access = """const REAL gammaDD00 = auxevol_gfs[IDX4S(GAMMADD00GF,i0,i1,i2)];
-const REAL gammaDD01 = auxevol_gfs[IDX4S(GAMMADD01GF,i0,i1,i2)];
-const REAL gammaDD02 = auxevol_gfs[IDX4S(GAMMADD02GF,i0,i1,i2)];
-const REAL gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF,i0,i1,i2)];
-const REAL gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF,i0,i1,i2)];
-const REAL gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF,i0,i1,i2)];
-const REAL betaU0 = auxevol_gfs[IDX4S(BETAU0GF,i0,i1,i2)];
-const REAL betaU1 = auxevol_gfs[IDX4S(BETAU1GF,i0,i1,i2)];
-const REAL betaU2 = auxevol_gfs[IDX4S(BETAU2GF,i0,i1,i2)];
-const REAL alpha = auxevol_gfs[IDX4S(ALPHAGF,i0,i1,i2)];
-const REAL ValenciavU0 = auxevol_gfs[IDX4S(VALENCIAVU0GF,i0,i1,i2)];
-const REAL ValenciavU1 = auxevol_gfs[IDX4S(VALENCIAVU1GF,i0,i1,i2)];
-const REAL ValenciavU2 = auxevol_gfs[IDX4S(VALENCIAVU2GF,i0,i1,i2)];
-const REAL BU0 = auxevol_gfs[IDX4S(BU0GF,i0,i1,i2)];
-const REAL BU1 = auxevol_gfs[IDX4S(BU1GF,i0,i1,i2)];
-const REAL BU2 = auxevol_gfs[IDX4S(BU2GF,i0,i1,i2)];
-"""
-    metric_deriv_access = ixp.zerorank1(DIM=3)
-    metric_deriv_access[0] = """const REAL metricderivDDD000 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx0;
-const REAL metricderivDDD010 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx0;
-const REAL metricderivDDD020 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx0;
-const REAL metricderivDDD110 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx0;
-const REAL metricderivDDD120 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx0;
-const REAL metricderivDDD220 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx0;
-const REAL shiftderivUD00 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx0;
-const REAL shiftderivUD10 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx0;
-const REAL shiftderivUD20 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx0;
-const REAL lapsederivD0 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0+1,i1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx0;
-REAL Stilde_rhsD0;
-"""
-    metric_deriv_access[1] = """const REAL metricderivDDD001 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx1;
-const REAL metricderivDDD011 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx1;
-const REAL metricderivDDD021 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx1;
-const REAL metricderivDDD111 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx1;
-const REAL metricderivDDD121 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx1;
-const REAL metricderivDDD221 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx1;
-const REAL shiftderivUD01 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx1;
-const REAL shiftderivUD11 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx1;
-const REAL shiftderivUD21 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx1;
-const REAL lapsederivD1 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1+1,i2)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx1;
-REAL Stilde_rhsD1;
-"""
-    metric_deriv_access[2] = """const REAL metricderivDDD002 = (auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)])/dxx2;
-const REAL metricderivDDD012 = (auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD01GF,i0,i1,i2)])/dxx2;
-const REAL metricderivDDD022 = (auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD02GF,i0,i1,i2)])/dxx2;
-const REAL metricderivDDD112 = (auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD11GF,i0,i1,i2)])/dxx2;
-const REAL metricderivDDD122 = (auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD12GF,i0,i1,i2)])/dxx2;
-const REAL metricderivDDD222 = (auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(GAMMA_FACEDD22GF,i0,i1,i2)])/dxx2;
-const REAL shiftderivUD02 = (auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU0GF,i0,i1,i2)])/dxx2;
-const REAL shiftderivUD12 = (auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU1GF,i0,i1,i2)])/dxx2;
-const REAL shiftderivUD22 = (auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(BETA_FACEU2GF,i0,i1,i2)])/dxx2;
-const REAL lapsederivD2 = (auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2+1)]-auxevol_gfs[IDX4S(ALPHA_FACEGF,i0,i1,i2)])/dxx2;
-REAL Stilde_rhsD2;
-"""
-    write_final_quantity = ixp.zerorank1(DIM=3)
-    write_final_quantity[0] = """rhs_gfs[IDX4S(STILDED0GF,i0,i1,i2)] += Stilde_rhsD0;
-"""
-    write_final_quantity[1] = """rhs_gfs[IDX4S(STILDED1GF,i0,i1,i2)] += Stilde_rhsD1;
-"""
-    write_final_quantity[2] = """rhs_gfs[IDX4S(STILDED2GF,i0,i1,i2)] += Stilde_rhsD2;
-"""
-
-    # Declare this symbol:
-    sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
-
-    # We need to rerun a few of these functions with the reset lists to make sure these functions
-    # don't cheat by using analytic expressions
-    GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
-    GRFFE.compute_smallb4U(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
-    GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4U)
-    GRFFE.compute_TEM4UU(gammaDD,betaU,alpha, GRFFE.smallb4U, GRFFE.smallbsquared,GRHD.u4U_ito_ValenciavU)
-    GRHD.compute_g4DD_zerotimederiv_dD(gammaDD,betaU,alpha, metricderivDDD,shiftderivUD,lapsederivD)
-    GRHD.compute_S_tilde_source_termD(alpha, GRHD.sqrtgammaDET,GRHD.g4DD_zerotimederiv_dD, GRFFE.TEM4UU)
-    for i in range(3):
-        desc = "Adds the source term to StildeD"+str(i)+"."
-        name = "calculate_StildeD"+str(i)+"_source_term"
-        outCfunction(
-            outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
-            params   ="const paramstruct *params,const REAL *auxevol_gfs, REAL *rhs_gfs",
-            body     = general_access \
-                      +metric_deriv_access[i]\
-                      +outputC(GRHD.S_tilde_source_termD[i],"Stilde_rhsD"+str(i),"returnstring",params=outCparams).replace("IDX4","IDX4S")\
-                      +write_final_quantity[i],
-            loopopts ="InteriorPoints",
-            rel_path_for_Cparams=os.path.join("../"))
+    source.write_out_functions_for_StildeD_source_term(os.path.join(out_dir,subdir),outCparams,gammaDD,betaU,alpha,
+                                                       ValenciavU,BU,sqrt4pi)
 
     subdir = "FCVAL"
     cmd.mkdir(os.path.join(out_dir, subdir))
