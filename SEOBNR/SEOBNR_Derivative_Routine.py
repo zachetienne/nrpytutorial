@@ -9,7 +9,7 @@
 
 # Step 1.a: import all needed modules from Python/NRPy+:
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
-import os, sys                    # Standard Python modules for multiplatform OS-level functions
+import sys                        # Standard Python modules for multiplatform OS-level functions
 from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a Python array; store left- and right-
                                               #   hand sides of mathematical expressions
 
@@ -77,7 +77,7 @@ def deriv_onevar(lhss_deriv,rhss_deriv,variable_list,index):
     lhss_deriv_simp,rhss_deriv_simp = simplify_deriv(lhss_deriv_new,rhss_deriv_new)
     return lhss_deriv_simp,rhss_deriv_simp
 
-def symbolic_parital_derivative(expression_text_file,constants_text_file,variables_text_file):
+def symbolic_parital_derivative(expression_text_file):
     # Step 2.a: Read in expressions as a (single) string
     with open(expression_text_file, 'r') as file:
         expressions_as_lines = file.readlines()
