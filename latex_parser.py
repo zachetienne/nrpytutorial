@@ -18,7 +18,7 @@ class Lexer:
     """
 
     def __init__(self, namespace=None):
-        if namespace == None: namespace = {}
+        if namespace is None: namespace = {}
         # extract every tensor from namespace, append a backslash to the front of every
         # multi-letter tensor, and join together the resulting tensor list using a pipe
         # symbol for regex alternation
