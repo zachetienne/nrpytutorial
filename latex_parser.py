@@ -6,9 +6,9 @@
 from sympy import Function, Symbol, Integer, Rational, Float, Pow
 from sympy import preorder_traversal, expand, var
 from collections import OrderedDict
-from indexedexp import declare_indexedexp
 from inspect import currentframe
 from warnings import warn
+import indexedexp as ixp
 import re
 
 class Lexer:
@@ -61,7 +61,7 @@ class Lexer:
               ('END_ALIGN',      r'\\end{align\*?}'),
               ('SQRT_CMD',       r'\\sqrt'),
               ('FRAC_CMD',       r'\\frac'),
-              ('SYMMETRY',       r'nosym|sym[0-9]+(?:_sym[0-9]+)*'),
+              ('SYMMETRY',       r'nosym|sym[0-9]+(?:_sym[0-9]+)*|metric'),
               ('TENSOR',         tensor_pattern),
               ('SYMBOL',         greek_pattern + r'|[a-zA-Z]'),
               ('COMMAND',        r'\\[a-z]+')]]))
@@ -403,7 +403,16 @@ class Parser:
             else: symmetry = None
             tensor = _notation(array)
             rank = len(tensor[1].split(']['))
-            self.namespace[tensor[0]] = declare_indexedexp(rank, tensor[0], symmetry, dimension)
+            if symmetry == 'metric':
+                self.namespace[tensor[0]] = ixp.declare_indexedexp(rank, tensor[0], 'sym01', dimension)
+                inverse = tensor[0].replace('U', 'D') if 'U' in tensor[0] else tensor[0].replace('D', 'U')
+                if dimension == 2:
+                    self.namespace[inverse] = ixp.symm_matrix_inverter2x2(self.namespace[tensor[0]])[0]
+                elif dimension == 3:
+                    self.namespace[inverse] = ixp.symm_matrix_inverter3x3(self.namespace[tensor[0]])[0]
+                else:
+                    self.namespace[inverse] = ixp.symm_matrix_inverter4x4(self.namespace[tensor[0]])[0]
+            else: self.namespace[tensor[0]] = ixp.declare_indexedexp(rank, tensor[0], symmetry, dimension)
             if not self.accept('COMMA'): break
         self.lexer.update(self.namespace)
 
@@ -560,15 +569,17 @@ def parse(sentence, expression=False, debug=False):
         (1 + 1/n)**n
 
         >>> parse(r'% h^\\mu_\\mu [3]: nosym; h = h^\\mu_\\mu')
-        ['h', 'hUD']
+        ['hUD', 'h']
         >>> print(h)
         hUD00 + hUD11 + hUD22
         >>> print(hUD)
         [[hUD00, hUD01, hUD02], [hUD10, hUD11, hUD12], [hUD20, hUD21, hUD22]]
 
-        >>> config = r'% g^{ij} [2]: sym01, v_j [2], w_j [2];'
+        >>> config = r'% g^{ij} [2]: metric, v_j [2], w_j [2];'
         >>> parse(config + r'u^i = g^{ij}(v_j + w_j)')
-        ['gUU', 'uU', 'vD', 'wD']
+        ['gUU', 'gDD', 'vD', 'wD', 'uU']
+        >>> print(gDD)
+        [[gUU11/(gUU00*gUU11 - gUU01**2), -gUU01/(gUU00*gUU11 - gUU01**2)], [-gUU01/(gUU00*gUU11 - gUU01**2), gUU00/(gUU00*gUU11 - gUU01**2)]]
         >>> print(uU)
         [gUU00*vD0 + gUU00*wD0 + gUU01*vD1 + gUU01*wD1, gUU01*vD0 + gUU01*wD0 + gUU11*vD1 + gUU11*wD1]
     """
@@ -587,7 +598,7 @@ def parse(sentence, expression=False, debug=False):
     # inject namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)
-    return sorted(list(namespace.keys()))
+    return list(namespace.keys())
 
 if __name__ == "__main__":
     import doctest
