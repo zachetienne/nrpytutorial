@@ -120,17 +120,17 @@ def parse_outCparams_string(params):
     if params != "":
         params2 = re.sub("^,","",params)
         params = params2.strip()
-        splitstring = re.split("=|,", params)
+        split_string = re.split("=|,", params)
 
-        if len(splitstring) % 2 != 0:
+        if len(split_string) % 2 != 0:
             print("outputC: Invalid params string: "+params)
             sys.exit(1)
 
         parnm = []
         value = []
-        for i in range(int(len(splitstring)/2)):
-            parnm.append(splitstring[2*i])
-            value.append(splitstring[2*i+1])
+        for i in range(int(len(split_string)/2)):
+            parnm.append(split_string[2*i])
+            value.append(split_string[2*i+1])
 
         for i, parname in enumerate(parnm):
             # Clean the string
@@ -419,11 +419,13 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
             successstr = "Wrote "
         print(successstr + "to file \"" + filename + "\"")
 
+
 outC_function_prototype_dict = {}
 outC_function_dict           = {}
 
-def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts="",
-              rel_path_for_Cparams=os.path.join("./")):
+
+def Cfunction(includes=None, prefunc="", desc="", type="void", name=None, params=None, preloop="", body=None,
+              loopopts="", postloop="", opts="", rel_path_to_Cparams=os.path.join("./")):
     if name is None or params is None or body is None: # use "is None" instead of "==None", as the former is more correct.
         print("Cfunction() error: strings must be provided for function name, parameters, and body")
         sys.exit(1)
@@ -432,35 +434,50 @@ def Cfunction(desc="",type="void",name=None,params=None,preloop="",body=None,loo
     include_Cparams_str = ""
     if "DisableCparameters" not in opts:
         if "EnableSIMD" in loopopts:
-            include_Cparams_str = "#include \"" + os.path.join(rel_path_for_Cparams, "set_Cparameters-SIMD.h") + "\"\n"
+            include_Cparams_str = "#include \"" + os.path.join(rel_path_to_Cparams, "set_Cparameters-SIMD.h") + "\"\n"
         else:
-            include_Cparams_str = "#include \"" + os.path.join(rel_path_for_Cparams, "set_Cparameters.h") + "\"\n"
+            include_Cparams_str = "#include \"" + os.path.join(rel_path_to_Cparams, "set_Cparameters.h") + "\"\n"
 
-    complete_func  = ""
-    if desc != "":
-        complete_func = "/*\n" + desc + "\n */\n"
-    complete_func += func_prototype + " {\n"+include_Cparams_str+preloop+"\n"+lp.simple_loop(loopopts,body)+postloop+"}\n"
-
-    return func_prototype+";",complete_func
-
-def add_to_Cfunction_dict(desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",opts="",
-                          rel_path_for_Cparams=os.path.join("./")):
-    outC_function_prototype_dict[name],outC_function_dict[name] = Cfunction(desc,type,name,params,preloop,body,loopopts,
-                                                                            postloop,opts,rel_path_for_Cparams)
-
-def outCfunction(outfile="",includes=None,desc="",type="void",name=None,params=None,preloop="",body=None,loopopts="",postloop="",
-                 opts="",rel_path_for_Cparams=os.path.join("./")):
-    _ignoreprototype,Cfunc = Cfunction(desc,type,name,params,preloop,body,loopopts,postloop,opts,rel_path_for_Cparams)
-    incs = ""
-    if includes != None:
+    complete_func = ""
+    if includes is not None:
         if not isinstance(includes, list):
             print("Error in outCfunction(): includes must be set to a list of strings")
             print("e.g., includes=[\"stdio.h\",\"stdlib.h\"] ;  or None (default)")
             sys.exit(1)
         for inc in includes:
-            incs += "#include \"" + inc + "\"\n"
+            complete_func += "#include \"" + inc + "\"\n"
+        complete_func += "\n"
+
+    if prefunc != "":
+        complete_func += prefunc + "\n"
+
+    def indent_Ccode(indent, Ccode):
+        Ccodesplit = Ccode.splitlines()
+        outstring = ""
+        for i in range(len(Ccodesplit)):
+            outstring += indent + Ccodesplit[i] + '\n'
+        return outstring
+
+    if desc != "":
+        complete_func += "/*\n" + indent_Ccode(" * ", desc) + " */\n"
+    complete_func += func_prototype + " {\n"+include_Cparams_str+preloop+"\n"+lp.simple_loop(loopopts,body)+postloop+"}\n"
+
+    return func_prototype+";", complete_func
+
+def add_to_Cfunction_dict(includes=None, prefunc="", desc="", type="void", name=None, params=None,
+                          preloop="", body=None, loopopts="", postloop="", opts="",
+                          rel_path_to_Cparams=os.path.join("./")):
+    outC_function_prototype_dict[name], outC_function_dict[name] = \
+        Cfunction(includes, prefunc, desc, type, name, params, preloop, body, loopopts, postloop, opts,
+                  rel_path_to_Cparams)
+
+def outCfunction(outfile="", includes=None, prefunc="", desc="",
+                 type="void", name=None, params=None, preloop="", body=None, loopopts="", postloop="",
+                 opts="", rel_path_for_Cparams=os.path.join("./")):
+    _ignoreprototype,Cfunc = Cfunction(includes, prefunc, desc, type, name, params, preloop, body,
+                                       loopopts, postloop, opts, rel_path_for_Cparams)
     if outfile == "returnstring":
-        return incs + Cfunc
+        return Cfunc
     with open(outfile, "w") as file:
-        file.write(incs + Cfunc)
+        file.write(Cfunc)
         print("Output C function "+name+"() to file "+outfile)

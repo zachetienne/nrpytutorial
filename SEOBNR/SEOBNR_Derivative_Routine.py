@@ -9,15 +9,17 @@
 
 # Step 1.a: import all needed modules from Python/NRPy+:
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
-import os, sys                    # Standard Python modules for multiplatform OS-level functions
-
-# Step 1.?: check system path so can use outputC; #TylerK: remove and put outputC back with other imports
-nrpy_dir_path = os.path.join("..")
-if nrpy_dir_path not in sys.path:
-    sys.path.append(nrpy_dir_path)
-
+import sys                        # Standard Python modules for multiplatform OS-level functions
 from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a Python array; store left- and right-
                                               #   hand sides of mathematical expressions
+
+# Step 1.b: Check for a sufficiently new version of SymPy (for validation)
+# Ignore the rc's and b's for release candidates & betas.
+sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+sympy_version_decimal = float(int(sympy_version.split(".")[0]) + int(sympy_version.split(".")[1])/10.0)
+if sympy_version_decimal < 1.2:
+    print('Error: NRPy+ does not support SymPy < 1.2')
+    sys.exit(1)
 
 # Supporting function to simplify derivative expressions by removing terms equal to 0
 def simplify_deriv(lhss_deriv,rhss_deriv):
@@ -75,7 +77,7 @@ def deriv_onevar(lhss_deriv,rhss_deriv,variable_list,index):
     lhss_deriv_simp,rhss_deriv_simp = simplify_deriv(lhss_deriv_new,rhss_deriv_new)
     return lhss_deriv_simp,rhss_deriv_simp
 
-def symbolic_parital_derivative(expression_text_file,constants_text_file,variables_text_file):
+def symbolic_parital_derivative(expression_text_file):
     # Step 2.a: Read in expressions as a (single) string
     with open(expression_text_file, 'r') as file:
         expressions_as_lines = file.readlines()
@@ -101,25 +103,14 @@ def symbolic_parital_derivative(expression_text_file,constants_text_file,variabl
         lhss.append(sp.sympify(lr[i].lhs))
         rhss.append(sp.sympify(lr[i].rhs))
 
-    # Step 3.a: Read in constants as a (single) string
-    with open(constants_text_file, 'r') as file:
-        constants_as_lines = file.readlines()
+    # Step 3.a: Create `input_constants` array and populate with SymPy symbols
+    m1,m2,tortoise,eta,KK,k0,k1,EMgamma,d1v2,dheffSSv2 = sp.symbols('m1 m2 tortoise eta KK k0 k1 EMgamma d1v2 dheffSSv2',
+                                                                    real=True)
+    input_constants = [m1,m2,tortoise,eta,KK,k0,k1,EMgamma,d1v2,dheffSSv2]
 
-    # Step 3.b: Create "input_constants" array and populate with SymPy constants
-    input_constants = []
-    for constant in constants_as_lines:
-        constant = sp.symbols(constant,real=True)
-        input_constants.append(constant)
-
-    # Step 3.c: Read in variables with which to take derivatives
-    with open(variables_text_file, 'r') as file:
-        variables_as_lines = file.readlines()
-
-    #Step 3.d: Create "dynamic_variables" array and populate with SymPy symbols
-    dynamic_variables = []
-    for variable in variables_as_lines:
-        variable = sp.symbols(variable,real=True)
-        dynamic_variables.append(variable)
+    # Step 3.b: Create `dynamic_variables` array and populate with SymPy symbols
+    x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z = sp.symbols('x y z px py pz s1x s1y s1z s2x s2y s2z', real=True)
+    dynamic_variables = [x,y,z,px,py,pz,s1x,s1y,s1z,s2x,s2y,s2z]
 
     # Step 4.a: Prepare array of "free symbols" in the right-hand side expressions
     full_symbol_list_with_dups = []

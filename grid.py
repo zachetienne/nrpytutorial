@@ -164,7 +164,10 @@ def register_gridfunctions(gf_type,gf_names,rank=0,is_indexed=False,DIM=3):
     # Step 3: Verify that gridfunction type is valid.
     if gf_type not in ('EVOL', 'AUX', 'AUXEVOL'):
         print("Error in registering gridfunction(s) with unsupported type "+gf_type+".")
-        print("Supported types include \"EVOL\" for gridfunctions related to evolved quantities or \"AUX\" for all others.")
+        print("Supported gridfunction types include:")
+        print("    \"EVOL\": for evolved quantities (i.e., quantities stepped forward in time),")
+        print("    \"AUXEVOL\": for auxiliary quantities needed at all points by evolved quantities,")
+        print("    \"AUX\": for all other quantities needed at all gridpoints.")
         sys.exit(1)
 
     # Step 4: Check for duplicate grid function registrations. If:

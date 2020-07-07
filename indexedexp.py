@@ -260,14 +260,32 @@ def declarerank3(symbol, symmetry, DIM=-1):
 def declarerank4(symbol, symmetry, DIM=-1):
     return declare_indexedexp(rank=4, symbol=symbol, symmetry=symmetry, dimension=DIM)
 
+class NonInvertibleMatrixError(ZeroDivisionError):
+    """ Matrix Not Invertible; Division By Zero """
 
 # We use the following functions to evaluate 3-metric inverses
+def symm_matrix_inverter2x2(a):
+    # It is far more efficient to write out the matrix determinant and inverse by hand
+    #   instead of using SymPy's built-in functions, since the matrix is symmetric.
+    outDET = a[0][0]*a[1][1] - a[0][1]**2
+    if outDET == 0: raise NonInvertibleMatrixError('matrix has determinant zero')
+
+    outINV = [[sp.sympify(0) for i in range(2)] for j in range(2)]
+
+    # First fill in the upper-triangle of the gPhysINV matrix...
+    outINV[0][0] = a[1][1]/outDET
+    outINV[0][1] = -a[0][1]/outDET
+    outINV[1][1] = a[0][0]/outDET
+    outINV[1][0] = outINV[0][1]
+    return outINV, outDET
+
 def symm_matrix_inverter3x3(a):
     # It is far more efficient to write out the matrix determinant and inverse by hand
     #   instead of using SymPy's built-in functions, since the matrix is symmetric.
     outDET = -a[0][2]**2*a[1][1] + 2*a[0][1]*a[0][2]*a[1][2] - \
                 a[0][0]*a[1][2]**2 - a[0][1]**2*a[2][2] + \
                 a[0][0]*a[1][1]*a[2][2]
+    if outDET == 0: raise NonInvertibleMatrixError('matrix has determinant zero')
 
     outINV = [[sp.sympify(0) for i in range(3)] for j in range(3)]
 
@@ -293,6 +311,7 @@ def symm_matrix_inverter4x4(a):
                              + a[0][2]*a[1][1]*a[2][3] - a[0][1]*a[1][2]*a[2][3]))                                 \
              - a[3][3] * (+ a[0][2]*a[0][2]*a[1][1] - a[0][1]*a[0][2]*a[1][2] - a[0][1]*a[0][2]*a[1][2]            \
                           + a[0][0]*a[1][2]*a[1][2] + a[0][1]*a[0][1]*a[2][2] - a[0][0]*a[1][1]*a[2][2])
+    if outDET == 0: raise NonInvertibleMatrixError('matrix has determinant zero')
 
     outINV = [[sp.sympify(0) for i in range(4)] for j in range(4)]
 
@@ -320,10 +339,24 @@ def symm_matrix_inverter4x4(a):
 
 
 # SymPy's generic matrix inverter takes a long time to invert 3x3 matrices, so here we have an optimized version.
+# We use the following functions to evaluate 3-metric inverses
+def generic_matrix_inverter2x2(a):
+    outDET = a[0][0]*a[1][1] - a[0][1]*a[1][0]
+    if outDET == 0: raise NonInvertibleMatrixError('matrix has determinant zero')
+
+    outINV = [[sp.sympify(0) for i in range(2)] for j in range(2)]
+
+    outINV[0][0] = a[1][1]/outDET
+    outINV[0][1] = -a[0][1]/outDET
+    outINV[1][1] = a[0][0]/outDET
+    outINV[1][0] = -a[1][0]/outDET
+    return outINV, outDET
+
 def generic_matrix_inverter3x3(a):
     outDET = -a[0][2]*a[1][1]*a[2][0] + a[0][1]*a[1][2]*a[2][0] + \
               a[0][2]*a[1][0]*a[2][1] - a[0][0]*a[1][2]*a[2][1] - \
               a[0][1]*a[1][0]*a[2][2] + a[0][0]*a[1][1]*a[2][2]
+    if outDET == 0: raise NonInvertibleMatrixError('matrix has determinant zero')
 
     outINV = [[sp.sympify(0) for i in range(3)] for j in range(3)]
 
@@ -359,6 +392,7 @@ def generic_matrix_inverter4x4(a):
              (a[0][1]*a[1][2]*a[2][0]-a[0][0]*a[1][2]*a[2][1]-a[0][1]*a[1][0]*a[2][2]+a[0][0]*a[1][1]*a[2][2])*a[3][3]+\
         a[0][2]*(-(a[1][3]*a[2][1]*a[3][0])+a[1][1]*a[2][3]*a[3][0]+a[1][3]*a[2][0]*a[3][1]-a[1][0]*a[2][3]*a[3][1]-
                  a[1][1]*a[2][0]*a[3][3]+a[1][0]*a[2][1]*a[3][3])
+    if outDET == 0: raise NonInvertibleMatrixError('matrix has determinant zero')
 
     outINV = [[sp.sympify(0) for i in range(4)] for j in range(4)]
 

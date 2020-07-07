@@ -1,0 +1,12 @@
+x
+y
+z
+px
+py
+pz
+s1x
+s1y
+s1z
+s2x
+s2y
+s2z

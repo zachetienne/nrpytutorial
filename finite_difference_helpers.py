@@ -443,7 +443,7 @@ def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sy
                 idx4 = [int(idxsplit[0]),int(idxsplit[1]),int(idxsplit[2]),int(idxsplit[3])]
                 read_from_memory_index.append(unique_idx(idx4, FDparams))
                 # https://stackoverflow.com/questions/13668393/python-sorting-two-lists
-                _UNUSEDlist, sorted_list_of_points_read_from_memory[gfidx] = \
+                _unused_list, sorted_list_of_points_read_from_memory[gfidx] = \
                     [list(x) for x in zip(*sorted(zip(read_from_memory_index, list_of_points_read_from_memory[gfidx]),
                                                   key=itemgetter(0)))]
     # Step 4e: Create the full C code string

@@ -253,10 +253,13 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
     par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem_orig)
     rfm.reference_metric()
 
-# Sommerfeld boundary condition class; generates Sommerfeld parameters to be used in subsequent
+# Sommerfeld boundary condition class; generates Sommerfeld parameters and functions to be used in subsequent
 # C code
 # Author: Terrence Pierre Jacques
 class sommerfeld_bc():
+    """
+    Class for generating C code to apply Sommerfeld boundary conditions
+    """
     # class variables should be the resulting dicts
     # Set class variable default values
     # radial falloff power n = 3 has been found to yield the best results
@@ -308,8 +311,122 @@ class sommerfeld_bc():
         with open(os.path.join(Ccodesdir,"boundary_conditions/sommerfeld_params.h"),"w") as file:
             file.write("""
 // Coordinate system
-const char coord[] = """+"\""+str(par.parval_from_str("reference_metric::CoordSystem"))+"\""+""";
 const REAL evolgf_at_inf[NUM_EVOL_GFS] = """+var_at_inf_string+"""
 const REAL evolgf_radpower[NUM_EVOL_GFS] = """+var_radpow_string+"""
 const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
 """)
+
+    def write_dfdr_function(self, Ccodesdir, fd_order=2):
+        # function to write c code to calculate dfdr term in Sommerfeld boundary condition
+
+        # Read what # of dimensions being usded
+        DIM = par.parval_from_str("grid::DIM")
+
+        # Set up the chosen reference metric from chosen coordinate system, set within NRPy+
+        CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
+        rfm.reference_metric()
+
+        # Simplifying the results make them easier to interpret.
+        do_simplify = True
+        if "Sinh" in CoordSystem:
+            # Simplification takes too long on Sinh* coordinate systems
+            do_simplify = False
+
+        # Construct Jacobian matrix, output Jac_dUSph_dDrfmUD[i][j] = \partial x_{Sph}^i / \partial x^j:
+        Jac_dUSph_dDrfmUD = ixp.zerorank2()
+        for i in range(3):
+            for j in range(3):
+                Jac_dUSph_dDrfmUD[i][j] = sp.diff(rfm.xxSph[i],rfm.xx[j])
+
+        # Invert Jacobian matrix, output to Jac_dUrfm_dDSphUD.
+        Jac_dUrfm_dDSphUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUSph_dDrfmUD)
+
+        # Jac_dUrfm_dDSphUD[i][0] stores \partial x^i / \partial r
+        if do_simplify:
+            for i in range(3):
+                Jac_dUrfm_dDSphUD[i][0] = sp.simplify(Jac_dUrfm_dDSphUD[i][0])
+
+        # Declare \partial_i f, which is actually computed later on
+        fdD = ixp.declarerank1("fdD") # = [fdD0, fdD1, fdD2]
+        contraction = sp.sympify(0)
+        for i in range(3):
+            contraction += fdD[i]*Jac_dUrfm_dDSphUD[i][0]
+
+        r_str_and_contraction_str = outputC([rfm.xxSph[0],contraction],
+                 ["*_r","*_dxU_fdD"],filename="returnstring",params="includebraces=False")
+
+        # https://stackoverflow.com/questions/8951020/pythonic-circular-list
+        cyc = ['0', '1', '2']
+        def gen_central_fd_stencil_str(dirn, fd_order):
+            if fd_order == 2:
+                if dirn == 0:
+                    return "(gfs[IDX4S(which_gf,i0+1,i1,i2)]-gfs[IDX4S(which_gf,i0-1,i1,i2)])"
+                elif dirn == 1:
+                    return "(gfs[IDX4S(which_gf,i0,i1+1,i2)]-gfs[IDX4S(which_gf,i0,i1-1,i2)])"
+                elif dirn == 2:
+                    return "(gfs[IDX4S(which_gf,i0,i1,i2+1)]-gfs[IDX4S(which_gf,i0,i1,i2-1)])"
+
+        def output_dfdx(dirn, fd_order):
+            if fd_order == 2:
+                return """
+// On a +x"""+str(dirn)+""" or -x"""+str(dirn)+""" face, do up/down winding as appropriate:
+if(abs(FACEXi["""+str(dirn)+"""])==1 || i"""+str(dirn)+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""+str(dirn)+""" || i"""+str(dirn)+"""-NGHOSTS <= 0) {
+    int8_t SHIFTSTENCIL"""+str(dirn)+""" = FACEXi["""+str(dirn)+"""];
+    if(i"""+str(dirn)+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""+str(dirn)+""") SHIFTSTENCIL"""+str(dirn)+""" = -1;
+    if(i"""+str(dirn)+"""-NGHOSTS <= 0)                  SHIFTSTENCIL"""+str(dirn)+""" = +1;
+    SHIFTSTENCIL"""+str(cyc[(dirn + 1) % len(cyc)])+""" = 0;
+    SHIFTSTENCIL"""+str(cyc[(dirn + 2) % len(cyc)])+""" = 0;
+
+    fdD"""+str(dirn)+"""
+        = SHIFTSTENCIL"""+str(dirn)+"""*(-1.5*gfs[IDX4S(which_gf,i0+0*SHIFTSTENCIL0,i1+0*SHIFTSTENCIL1,i2+0*SHIFTSTENCIL2)]
+                         +2.*gfs[IDX4S(which_gf,i0+1*SHIFTSTENCIL0,i1+1*SHIFTSTENCIL1,i2+1*SHIFTSTENCIL2)]
+                         -0.5*gfs[IDX4S(which_gf,i0+2*SHIFTSTENCIL0,i1+2*SHIFTSTENCIL1,i2+2*SHIFTSTENCIL2)]
+                        )*invdx"""+str(dirn)+""";
+
+// Not on a +x"""+str(dirn)+""" or -x"""+str(dirn)+""" face, using centered difference:
+} else {
+    fdD"""+str(dirn)+""" = """+gen_central_fd_stencil_str(dirn, 2)+"""*invdx"""+str(dirn)+""";
+}
+"""
+            else:
+                print("Error: fd_order = "+str(fd_order)+" currently unsupported.")
+                sys.exit(1)
+
+        contraction_term_func = """
+
+void contraction_term(const paramstruct *restrict params, const int which_gf, REAL *restrict gfs, REAL *restrict xx[3],
+           int8_t FACEXi[3], int i0, int i1, int i2, REAL *restrict _r, REAL *restrict _dxU_fdD) {
+
+#include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
+                                             * accounting for the relative path */
+
+// Initialize derivatives to crazy values, to ensure that
+//   we will notice in case they aren't set properly.
+REAL fdD0=1e100;
+REAL fdD1=1e100;
+REAL fdD2=1e100;
+
+REAL xx0 = xx[0][i0];
+REAL xx1 = xx[1][i1];
+REAL xx2 = xx[2][i2];
+
+int8_t SHIFTSTENCIL0;
+int8_t SHIFTSTENCIL1;
+int8_t SHIFTSTENCIL2;
+
+"""
+        for i in range(DIM):
+            if "fdD"+str(i) in r_str_and_contraction_str:
+                contraction_term_func += output_dfdx(i, fd_order)
+
+        contraction_term_func += "\n" + r_str_and_contraction_str
+
+        contraction_term_func +="""
+} // END contraction_term function
+"""
+        with open(os.path.join(Ccodesdir,"boundary_conditions/radial_derivative.h"),"w") as file:
+            file.write(contraction_term_func)
+
+    def write_sommerfeld_files(self, Ccodesdir, fd_order=2):
+        self.write_dfdr_function(Ccodesdir, fd_order)
+        self.write_to_sommerfeld_params_file(Ccodesdir)

@@ -18,9 +18,9 @@
     a field for subexpression children (implemented as a mutable list).
 """
 # Author: Ken Sible
-# Email:  ksible *at* outlook **dot* com
+# Email:  ksible *at* outlook *dot* com
 
-__author__ = 'Ken Sible'
+# pylint: disable=too-few-public-methods
 
 class ExprTree:
     """ SymPy (N-Ary) Expression Tree
