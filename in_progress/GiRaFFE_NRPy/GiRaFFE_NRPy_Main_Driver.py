@@ -215,19 +215,10 @@ const int NUM_RECONSTRUCT_GFS = 6;
 #include "RHSs/calculate_StildeD0_source_term.h"
 #include "RHSs/calculate_StildeD1_source_term.h"
 #include "RHSs/calculate_StildeD2_source_term.h"
-// #include "RHSs/calculate_E_field_D0_right.h"
-// #include "RHSs/calculate_E_field_D0_left.h"
-// #include "RHSs/calculate_E_field_D1_right.h"
-// #include "RHSs/calculate_E_field_D1_left.h"
-// #include "RHSs/calculate_E_field_D2_right.h"
-// #include "RHSs/calculate_E_field_D2_left.h"
 #include "../calculate_E_field_flat_all_in_one.h"
-#include "RHSs/calculate_Stilde_flux_D0_right.h"
-#include "RHSs/calculate_Stilde_flux_D0_left.h"
-#include "RHSs/calculate_Stilde_flux_D1_right.h"
-#include "RHSs/calculate_Stilde_flux_D1_left.h"
-#include "RHSs/calculate_Stilde_flux_D2_right.h"
-#include "RHSs/calculate_Stilde_flux_D2_left.h"
+#include "RHSs/calculate_Stilde_flux_D0.h"
+#include "RHSs/calculate_Stilde_flux_D1.h"
+#include "RHSs/calculate_Stilde_flux_D2.h"
 #include "boundary_conditions/GiRaFFE_boundary_conditions.h"
 #include "A2B/driver_AtoB.h"
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
@@ -316,7 +307,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 
     // In each direction, perform the PPM reconstruction procedure.
     // Then, add the fluxes to the RHS as appropriate.
-    int count;
     for(int flux_dirn=0;flux_dirn<3;flux_dirn++) {
         // In each direction, interpolate the metric gfs (gamma,beta,alpha) to cell faces.
         interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
@@ -337,22 +327,19 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
             //calculate_E_field_D0_left(params,auxevol_gfs,rhs_gfs);
             // Finally, we calculate the flux of StildeD and add the appropriate finite-differences
             // to the RHSs.
-            calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D0_left(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D0(params,auxevol_gfs,rhs_gfs);
         }
         else if(flux_dirn==1) {
             calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D1_right(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D1_left(params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D1_right(params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D1_left(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D1(params,auxevol_gfs,rhs_gfs);
         }
         else {
             calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D2_right(params,auxevol_gfs,rhs_gfs);
             //calculate_E_field_D2_left(params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D2_right(params,auxevol_gfs,rhs_gfs);
-            calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
+            calculate_Stilde_flux_D2(params,auxevol_gfs,rhs_gfs);
         }
         for(int count=0;count<=1;count++) {
             // This function is written to be general, using notation that matches the forward permutation added to AD2,
@@ -394,7 +381,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
               &auxevol_gfs[IDX4ptS(B_LU0GF        +(flux_dirn-count+2)%3, 0)],
               &rhs_gfs[IDX4ptS(AD0GF+(flux_dirn+1+count)%3,0)], 2.0*((REAL)count)-1.0, flux_dirn);
         }
-
     }
 }
 

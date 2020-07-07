@@ -180,12 +180,9 @@ const int NUM_RECONSTRUCT_GFS = 15;
 #include "RHSs/Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs.h"
 #include "RHSs/A_i_rhs_no_gauge_terms.h"
 #include "A2B/compute_B_and_Bstagger_from_A.h"
-#include "RHSs/calculate_Stilde_flux_D0_right.h"
-#include "RHSs/calculate_Stilde_flux_D0_left.h"
-#include "RHSs/calculate_Stilde_flux_D1_right.h"
-#include "RHSs/calculate_Stilde_flux_D1_left.h"
-#include "RHSs/calculate_Stilde_flux_D2_right.h"
-#include "RHSs/calculate_Stilde_flux_D2_left.h"
+#include "RHSs/calculate_Stilde_flux_D0.h"
+#include "RHSs/calculate_Stilde_flux_D1.h"
+#include "RHSs/calculate_Stilde_flux_D2.h"
 #include "boundary_conditions/GiRaFFE_boundary_conditions.h"
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
@@ -360,8 +357,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // Then add fluxes to RHS for hydro variables {vx,vy,vz}:
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD0_source_term(params,auxevol_gfs,rhs_gfs);
-  calculate_Stilde_flux_D0_right(params,auxevol_gfs,rhs_gfs);
-  calculate_Stilde_flux_D0_left(params,auxevol_gfs,rhs_gfs);
+  calculate_Stilde_flux_D0(params,auxevol_gfs,rhs_gfs);
   // Calculate the characteristic speeds for the upcoming vector potential evolution:
   calculate_GRFFE_characteristic_speeds(params,
                                         auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
@@ -438,8 +434,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // Then add fluxes to RHS for hydro variables {vx,vy,vz}:
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
-  calculate_Stilde_flux_D1_right(params,auxevol_gfs,rhs_gfs);
-  calculate_Stilde_flux_D1_left(params,auxevol_gfs,rhs_gfs);
+  calculate_Stilde_flux_D1(params,auxevol_gfs,rhs_gfs);
   // Calculate the characteristic speeds for the upcoming vector potential evolution:
   calculate_GRFFE_characteristic_speeds(params,
                                         auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
@@ -558,8 +553,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // Then add fluxes to RHS for hydro variables {vx,vy,vz}:
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
-  calculate_Stilde_flux_D2_right(params,auxevol_gfs,rhs_gfs);
-  calculate_Stilde_flux_D2_left(params,auxevol_gfs,rhs_gfs);
+  calculate_Stilde_flux_D2(params,auxevol_gfs,rhs_gfs);
   calculate_GRFFE_characteristic_speeds(params,
                                         auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
                                         auxevol_gfs+Nxxp2NG012*GAMMADD00GF, auxevol_gfs+Nxxp2NG012*GAMMADD01GF,
