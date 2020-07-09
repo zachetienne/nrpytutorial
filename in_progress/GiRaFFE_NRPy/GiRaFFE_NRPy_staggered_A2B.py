@@ -12,11 +12,11 @@ cmd.mkdir(os.path.join(Ccodesdir))
 def GiRaFFE_NRPy_A2B(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
-    with open(os.path.join(Ccodesdir,"calculate_E_field_flat_all_in_one.h"),"w") as file:
-        file.write("""#define LOOP_DEFINE_SIMPLE                      \
-  _Pragma("omp parallel for")                   \
-  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++)                \
-    for(int j=0;j<Nxx_plus_2NGHOSTS1;j++)              \
+    with open(os.path.join(Ccodesdir,"compute_B_and_Bstagger_from_A.h"),"w") as file:
+        file.write("""#define LOOP_DEFINE_SIMPLE                      \\
+  _Pragma("omp parallel for")                   \\
+  for(int k=0;k<Nxx_plus_2NGHOSTS2;k++)                \\
+    for(int j=0;j<Nxx_plus_2NGHOSTS1;j++)              \\
       for(int i=0;i<Nxx_plus_2NGHOSTS0;i++)
 
 void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
@@ -24,10 +24,6 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
                                            REAL *psi3_bssn, const REAL *Ax, const REAL *Ay, const REAL *Az,
                                            REAL *Bx, REAL *By, REAL *Bz, REAL *Bx_stagger, REAL *By_stagger, REAL *Bz_stagger) {
 #include "../set_Cparameters.h"
-
-  const REAL dxi = invdx0;
-  const REAL dyi = invdx1;
-  const REAL dzi = invdx2;
 
   LOOP_DEFINE_SIMPLE {
     const int index=IDX3S(i,j,k);
@@ -74,12 +70,12 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     // "Grid" Az(i,j,k) is actually Ay(i+1/2,j+1/2,k)
     // Therefore, the 2nd order derivative \partial_z A_y at (i+1/2,j,k) is:
     //          ["Grid" Ay(i,j,k) - "Grid" Ay(i,j,k-1)]/dZ
-    Bx_stagger[actual_index] = (Az[index]-Az[indexjm1])*dyi - (Ay[index]-Ay[indexkm1])*dzi;
+    Bx_stagger[actual_index] = (Az[index]-Az[indexjm1])*invdx1 - (Ay[index]-Ay[indexkm1])*invdx2;
 
     // Now multiply Bx and Bx_stagger by 1/sqrt(gamma(i+1/2,j,k)]) = 1/sqrt(1/2 [gamma + gamma_ip1]) = exp(-6 x 1/2 [phi + phi_ip1] )
     const int imax_minus_i = (Nxx_plus_2NGHOSTS0-1)-i;
     const int indexip1jk = IDX3S(i + ( (imax_minus_i > 0) - (0 > imax_minus_i) ),j,k);
-    Bx_stagger[actual_index] *= Psim3/psi3_bssn[index];
+    Bx_stagger[actual_index] *= Psim3/psi3_bssn[indexip1jk];
 
     /**************/
     /* By_stagger */
@@ -89,12 +85,12 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     indexim1 = IDX3S(shiftedim1,j,shiftedk);
     indexkm1 = IDX3S(shiftedi,j,shiftedkm1);
     // Set By_stagger = \partial_z A_x - \partial_x A_z
-    By_stagger[actual_index] = (Ax[index]-Ax[indexkm1])*dzi - (Az[index]-Az[indexim1])*dxi;
+    By_stagger[actual_index] = (Ax[index]-Ax[indexkm1])*invdx2 - (Az[index]-Az[indexim1])*invdx0;
 
     // Now multiply By and By_stagger by 1/sqrt(gamma(i,j+1/2,k)]) = 1/sqrt(1/2 [gamma + gamma_jp1]) = exp(-6 x 1/2 [phi + phi_jp1] )
     const int jmax_minus_j = (Nxx_plus_2NGHOSTS1-1)-j;
     const int indexijp1k = IDX3S(i,j + ( (jmax_minus_j > 0) - (0 > jmax_minus_j) ),k);
-    By_stagger[actual_index] *= Psim3/psi3_bssn[index];
+    By_stagger[actual_index] *= Psim3/psi3_bssn[indexijp1k];
 
     /**************/
     /* Bz_stagger */
@@ -104,12 +100,12 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     indexim1 = IDX3S(shiftedim1,shiftedj,k);
     indexjm1 = IDX3S(shiftedi,shiftedjm1,k);
     // Set Bz_stagger = \partial_x A_y - \partial_y A_x
-    Bz_stagger[actual_index] = (Ay[index]-Ay[indexim1])*dxi - (Ax[index]-Ax[indexjm1])*dyi;
+    Bz_stagger[actual_index] = (Ay[index]-Ay[indexim1])*invdx0 - (Ax[index]-Ax[indexjm1])*invdx1;
 
     // Now multiply Bz_stagger by 1/sqrt(gamma(i,j,k+1/2)]) = 1/sqrt(1/2 [gamma + gamma_kp1]) = exp(-6 x 1/2 [phi + phi_kp1] )
     const int kmax_minus_k = (Nxx_plus_2NGHOSTS2-1)-k;
     const int indexijkp1 = IDX3S(i,j,k + ( (kmax_minus_k > 0) - (0 > kmax_minus_k) ));
-    Bz_stagger[actual_index] *= Psim3/psi3_bssn[index];
+    Bz_stagger[actual_index] *= Psim3/psi3_bssn[indexijkp1];
 
   }
 
