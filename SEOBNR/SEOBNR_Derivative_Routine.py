@@ -1,15 +1,15 @@
 # As documented in the NRPy+ tutorial module
-#   SEOBNR_Derivative_Routine.ipynb,
-#   this module computes partial derivatives of
-#   an input list of expressions with respect
-#   to an input list of free variables.
+#   Tutorial_SEOBNR_Derivative_Routine.ipynb,
+#   this module computes partial derivatives
+#   of the SEOBNRv3 Hamiltonian with respect
+#   to 12 dynamic variables
 
 # Authors: Zachariah B. Etienne & Tyler Knowles
 #         zachetie **at** gmail **dot* com
 
 # Step 1.a: import all needed modules from Python/NRPy+:
 import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
-import sys                        # Standard Python modules for multiplatform OS-level functions
+import sys, os                    # Standard Python modules for multiplatform OS-level functions
 from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a Python array; store left- and right-
                                               #   hand sides of mathematical expressions
 
@@ -20,6 +20,9 @@ sympy_version_decimal = float(int(sympy_version.split(".")[0]) + int(sympy_versi
 if sympy_version_decimal < 1.2:
     print('Error: NRPy+ does not support SymPy < 1.2')
     sys.exit(1)
+
+# Step 1.c: Name of the directory containing the input file
+inputdir = "SEOBNR"
 
 # Supporting function to simplify derivative expressions by removing terms equal to 0
 def simplify_deriv(lhss_deriv,rhss_deriv):
@@ -77,9 +80,9 @@ def deriv_onevar(lhss_deriv,rhss_deriv,variable_list,index):
     lhss_deriv_simp,rhss_deriv_simp = simplify_deriv(lhss_deriv_new,rhss_deriv_new)
     return lhss_deriv_simp,rhss_deriv_simp
 
-def symbolic_parital_derivative(expression_text_file):
+def symbolic_parital_derivative():
     # Step 2.a: Read in expressions as a (single) string
-    with open(expression_text_file, 'r') as file:
+    with open(os.path.join(inputdir,'Hamstring.txt'), 'r') as file:
         expressions_as_lines = file.readlines()
 
     # Step 2.b: Create and populate the "lr" array, which separates each line into left- and right-hand sides
