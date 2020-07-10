@@ -189,16 +189,13 @@ def mkdir(newpath):
         os.makedirs(os.path.join(newpath))
 
 def output_Jupyter_notebook_to_LaTeXed_PDF(notebookname,location_of_template_file=os.path.join("."),verbose=True):
-    if sys.platform in ('linux', 'linux32'):
-        Execute_input_string(r"jupyter nbconvert --to latex --template "
-                             +os.path.join(location_of_template_file,"latex_nrpy_style.tplx")
-                             +r" --log-level='WARN' "+notebookname+".ipynb",verbose=False)
-        for _i in range(3):  # _i is an unused variable.
-            Execute_input_string(r"pdflatex -interaction=batchmode "+notebookname+".tex",verbose=False)
-        delete_existing_files(notebookname+".out "+notebookname+".aux "+notebookname+".log")
-        if verbose:
-            import textwrap
-            wrapper = textwrap.TextWrapper(initial_indent="",subsequent_indent="    ",width=75)
-            print(wrapper.fill("Created "+notebookname+".tex, and compiled LaTeX file to PDF file "+notebookname+".pdf"))
-    else:
-        print("Notebook output to PDF is only supported on Linux systems, with pdflatex installed.")
+    Execute_input_string(r"jupyter nbconvert --to latex --template "
+                         +os.path.join(location_of_template_file,"latex_nrpy_style.tplx")
+                         +r" --log-level='WARN' "+notebookname+".ipynb",verbose=False)
+    for _i in range(3):  # _i is an unused variable.
+        Execute_input_string(r"pdflatex -interaction=batchmode "+notebookname+".tex",verbose=False)
+    delete_existing_files(notebookname+".out "+notebookname+".aux "+notebookname+".log")
+    if verbose:
+        import textwrap
+        wrapper = textwrap.TextWrapper(initial_indent="",subsequent_indent="    ",width=75)
+        print(wrapper.fill("Created "+notebookname+".tex, and compiled LaTeX file to PDF file "+notebookname+".pdf"))
