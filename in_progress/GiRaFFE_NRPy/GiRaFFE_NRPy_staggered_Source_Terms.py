@@ -12,7 +12,7 @@ cmd.mkdir(os.path.join(Ccodesdir))
 def GiRaFFE_NRPy_Source_Terms(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
-    with open(os.path.join(Ccodesdir,"calculate_E_field_flat_all_in_one.h"),"w") as file:
+    with open(os.path.join(Ccodesdir,"Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs.h"),"w") as file:
         file.write("""static inline REAL avg(const REAL f[PLUS2+1][PLUS2+1][PLUS2+1],const int imin,const int imax, const int jmin,const int jmax, const int kmin,const int kmax);
 
 #define MINUS2 0
@@ -39,19 +39,16 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
                                                            /* END TEMPS, 8 total! */
                                                            REAL *psi6phi_rhs,REAL *Ax_rhs,REAL *Ay_rhs,REAL *Az_rhs) {
   #include "../set_Cparameters.h"
+
   /* Compute
-   * \partial_t psi6phi = -\partial_j ( \alpha \sqrt{\gamma} A^j - \beta^j psi6phi)
+   * \\partial_t psi6phi = -\\partial_j ( \\alpha \\sqrt{\\gamma} A^j - \\beta^j psi6phi)
    *    (Eq 13 of http://arxiv.org/pdf/1110.4633.pdf), using Lorenz gauge.
    * Note that the RHS consists of a shift advection term on psi6phi and
    *    a term depending on the vector potential.
    * psi6phi is defined at (i+1/2,j+1/2,k+1/2), but instead of reconstructing
-   *    to compute the RHS of \partial_t psi6phi, we instead use standard
+   *    to compute the RHS of \\partial_t psi6phi, we instead use standard
    *    interpolations.
    */
-
-  const REAL dXm1=invdx0;
-  const REAL dYm1=invdx1;
-  const REAL dZm1=invdx2;
 
   // The stencil here is {-1,1},{-1,1},{-1,1} for x,y,z directions, respectively.
   //     Note that ALL input variables are defined at ALL gridpoints, so no
@@ -61,15 +58,15 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
         const int index=IDX3S(i,j,k);
         REAL INTERP_VARS[MAXNUMINTERP][PLUS2+1][PLUS2+1][PLUS2+1];
 
-        // First compute \partial_j \alpha \sqrt{\gamma} A^j (RHS of \partial_i psi6phi)
+        // First compute \\partial_j \\alpha \\sqrt{\\gamma} A^j (RHS of \\partial_i psi6phi)
         // FIXME: Would be much cheaper & easier to unstagger A_i, raise, then interpolate A^i.
         //        However, we keep it this way to be completely compatible with the original
         //        Illinois GRMHD thorn, called mhd_evolve.
         //
         //Step 1) j=x: Need to raise A_i, but to do that, we must have all variables at the same gridpoints:
-        // The goal is to compute \partial_j (\alpha \sqrt{\gamma} A^j) at (i+1/2,j+1/2,k+1/2)
-        //    We do this by first interpolating (RHS1x) = (\alpha \sqrt{\gamma} A^x) at
-        //    (i,j+1/2,k+1/2)and (i+1,j+1/2,k+1/2), then taking \partial_x (RHS1x) =
+        // The goal is to compute \\partial_j (\\alpha \\sqrt{\\gamma} A^j) at (i+1/2,j+1/2,k+1/2)
+        //    We do this by first interpolating (RHS1x) = (\\alpha \\sqrt{\\gamma} A^x) at
+        //    (i,j+1/2,k+1/2)and (i+1,j+1/2,k+1/2), then taking \\partial_x (RHS1x) =
         //    [ RHS1x(i+1,j+1/2,k+1/2) - RHS1x(i,j+1/2,k+1/2) ]/dX.
         // First bring gup's, psi, and alpha to (i,j+1/2,k+1/2):
         int num_vars_to_interp;
@@ -119,7 +116,7 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
             }
         }
 
-        // Next set \alpha at (i+1/2,j+1/2,k+1/2). Will come in handy when computing damping term later.
+        // Next set \\alpha at (i+1/2,j+1/2,k+1/2). Will come in handy when computing damping term later.
         alpha_iphjphkph[index] = avg(INTERP_VARS[LAPM1I] , PLUS0,PLUS1, PLUS0,PLUS1, PLUS0,PLUS1)+1.0;
 
         //A_x needs a stencil s.t. interp_limits={0,1,-1,1,-1,1}:
@@ -133,8 +130,8 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
               INTERP_VARS[A_ZI][kk][jj][ii] = in_vars[A_ZI][index_arr_3DB[kk][jj][ii]]; }
 
         // FIRST DO A^X TERM (interpolate to (i,j+1/2,k+1/2) )
-        // \alpha \sqrt{\gamma} A^x = \alpha psi^6 A^x (RHS of \partial_i psi6phi)
-        // Note that gupij is \tilde{\gamma}^{ij}, so we need to multiply by \psi^{-4}.
+        // \\alpha \\sqrt{\\gamma} A^x = \\alpha psi^6 A^x (RHS of \\partial_i psi6phi)
+        // Note that gupij is \\tilde{\\gamma}^{ij}, so we need to multiply by \\psi^{-4}.
         const REAL gupxx_jphkph = avg(INTERP_VARS[GUPXXI], PLUS0,PLUS0, PLUS0,PLUS1, PLUS0,PLUS1);
         const REAL gupxy_jphkph = avg(INTERP_VARS[GUPXYI], PLUS0,PLUS0, PLUS0,PLUS1, PLUS0,PLUS1);
         const REAL gupxz_jphkph = avg(INTERP_VARS[GUPXZI], PLUS0,PLUS0, PLUS0,PLUS1, PLUS0,PLUS1);
@@ -157,8 +154,8 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
 
 
         // DO A^Y TERM (interpolate to (i+1/2,j,k+1/2) )
-        // \alpha \sqrt{\gamma} A^y = \alpha psi^6 A^y (RHS of \partial_i psi6phi)
-        // Note that gupij is \tilde{\gamma}^{ij}, so we need to multiply by \psi^{-4}.
+        // \\alpha \\sqrt{\\gamma} A^y = \\alpha psi^6 A^y (RHS of \\partial_i psi6phi)
+        // Note that gupij is \\tilde{\\gamma}^{ij}, so we need to multiply by \\psi^{-4}.
         const REAL gupxy_iphkph = avg(INTERP_VARS[GUPXYI], PLUS0,PLUS1, PLUS0,PLUS0, PLUS0,PLUS1);
         const REAL gupyy_iphkph = avg(INTERP_VARS[GUPYYI], PLUS0,PLUS1, PLUS0,PLUS0, PLUS0,PLUS1);
         const REAL gupyz_iphkph = avg(INTERP_VARS[GUPYZI], PLUS0,PLUS1, PLUS0,PLUS0, PLUS0,PLUS1);
@@ -175,8 +172,8 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
           ( gupxy_iphkph*A_x_iphkph + gupyy_iphkph*A_y_iphkph + gupyz_iphkph*A_z_iphkph );
 
         // DO A^Z TERM (interpolate to (i+1/2,j+1/2,k) )
-        // \alpha \sqrt{\gamma} A^z = \alpha psi^6 A^z (RHS of \partial_i psi6phi)
-        // Note that gupij is \tilde{\gamma}^{ij}, so we need to multiply by \psi^{-4}.
+        // \\alpha \\sqrt{\\gamma} A^z = \\alpha psi^6 A^z (RHS of \\partial_i psi6phi)
+        // Note that gupij is \\tilde{\\gamma}^{ij}, so we need to multiply by \\psi^{-4}.
         const REAL gupxz_iphjph = avg(INTERP_VARS[GUPXZI], PLUS0,PLUS1, PLUS0,PLUS1, PLUS0,PLUS0);
         const REAL gupyz_iphjph = avg(INTERP_VARS[GUPYZI], PLUS0,PLUS1, PLUS0,PLUS1, PLUS0,PLUS0);
         const REAL gupzz_iphjph = avg(INTERP_VARS[GUPZZI], PLUS0,PLUS1, PLUS0,PLUS1, PLUS0,PLUS0);
@@ -193,7 +190,7 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
           ( gupxz_iphjph*A_x_iphjph + gupyz_iphjph*A_y_iphjph + gupzz_iphjph*A_z_iphjph );
 
 
-        // Next set \alpha \Phi - \beta^j A_j at (i+1/2,j+1/2,k+1/2):
+        // Next set \\alpha \\Phi - \\beta^j A_j at (i+1/2,j+1/2,k+1/2):
         //   We add a "L" suffix to shifti_iphjphkph to denote "LOCAL", as we set
         //      shifti_iphjphkph[] gridfunction below.
         const REAL shiftx_iphjphkphL = avg(INTERP_VARS[SHIFTXI], PLUS0,PLUS1, PLUS0,PLUS1, PLUS0,PLUS1);
@@ -210,7 +207,7 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
         alpha_Phi_minus_betaj_A_j_iphjphkph[index] = psi6phi[index]*lapse_over_Psi6_iphjphkphL
           - (shiftx_iphjphkphL*A_x_iphjphkph + shifty_iphjphkphL*A_y_iphjphkph + shiftz_iphjphkphL*A_z_iphjphkph);
 
-        // Finally, save shifti_iphjphkph, for \partial_j \beta^j psi6phi
+        // Finally, save shifti_iphjphkph, for \\partial_j \\beta^j psi6phi
         shiftx_iphjphkph[index]=shiftx_iphjphkphL;
         shifty_iphjphkph[index]=shifty_iphjphkphL;
         shiftz_iphjphkph[index]=shiftz_iphjphkphL;
@@ -221,16 +218,16 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
   for(int k=NGHOSTS;k<Nxx_plus_2NGHOSTS2-NGHOSTS;k++) for(int j=NGHOSTS;j<Nxx_plus_2NGHOSTS1-NGHOSTS;j++) for(int i=NGHOSTS;i<Nxx_plus_2NGHOSTS0-NGHOSTS;i++) {
         const int index = IDX3S(i,j,k);
 
-        // \partial_t A_i = [reconstructed stuff] + [gauge stuff],
-        //    where [gauge stuff] = -\partial_i (\alpha \Phi - \beta^j A_j)
+        // \\partial_t A_i = [reconstructed stuff] + [gauge stuff],
+        //    where [gauge stuff] = -\\partial_i (\\alpha \\Phi - \\beta^j A_j)
         const REAL alpha_Phi_minus_betaj_A_j_iphjphkphL = alpha_Phi_minus_betaj_A_j_iphjphkph[index];
         // - partial_i -> - (A_{i} - A_{i-1})/dX = (A_{i-1} - A_{i})/dX, for Ax
-        Ax_rhs[index] += dXm1*(alpha_Phi_minus_betaj_A_j_iphjphkph[IDX3S(i-1,j,k)] - alpha_Phi_minus_betaj_A_j_iphjphkphL);
-        Ay_rhs[index] += dYm1*(alpha_Phi_minus_betaj_A_j_iphjphkph[IDX3S(i,j-1,k)] - alpha_Phi_minus_betaj_A_j_iphjphkphL);
-        Az_rhs[index] += dZm1*(alpha_Phi_minus_betaj_A_j_iphjphkph[IDX3S(i,j,k-1)] - alpha_Phi_minus_betaj_A_j_iphjphkphL);
+        Ax_rhs[index] += invdx0*(alpha_Phi_minus_betaj_A_j_iphjphkph[IDX3S(i-1,j,k)] - alpha_Phi_minus_betaj_A_j_iphjphkphL);
+        Ay_rhs[index] += invdx1*(alpha_Phi_minus_betaj_A_j_iphjphkph[IDX3S(i,j-1,k)] - alpha_Phi_minus_betaj_A_j_iphjphkphL);
+        Az_rhs[index] += invdx2*(alpha_Phi_minus_betaj_A_j_iphjphkph[IDX3S(i,j,k-1)] - alpha_Phi_minus_betaj_A_j_iphjphkphL);
 
-        // \partial_t psi6phi = [shift advection term] + \partial_j (\alpha \sqrt{\gamma} A^j)
-        // Here we compute [shift advection term] = \partial_j (\beta^j psi6phi)
+        // \\partial_t psi6phi = [shift advection term] + \\partial_j (\\alpha \\sqrt{\\gamma} A^j)
+        // Here we compute [shift advection term] = \\partial_j (\\beta^j psi6phi)
         // Cache misses are likely more expensive than branch mispredictions here,
         //       which is why we use if() statements and array lookups inside the if()'s.
         REAL psi6phi_rhsL=0.0;
@@ -239,46 +236,46 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
         const REAL shifty_iphjphkphL=shifty_iphjphkph[index];
         const REAL shiftz_iphjphkphL=shiftz_iphjphkph[index];
 
-        // \partial_x (\beta^x psi6phi) :
+        // \\partial_x (\\beta^x psi6phi) :
         if(shiftx_iphjphkphL < 0.0) {
-          psi6phi_rhsL+=0.5*dXm1*(+    shiftx_iphjphkph[IDX3S(i-2,j,k)]*psi6phi[IDX3S(i-2,j,k)]
+          psi6phi_rhsL+=0.5*invdx0*(+    shiftx_iphjphkph[IDX3S(i-2,j,k)]*psi6phi[IDX3S(i-2,j,k)]
                                   -4.0*shiftx_iphjphkph[IDX3S(i-1,j,k)]*psi6phi[IDX3S(i-1,j,k)]
                                   +3.0*shiftx_iphjphkphL*                               psi6phiL);
         } else {
-          psi6phi_rhsL+=0.5*dXm1*(-    shiftx_iphjphkph[IDX3S(i+2,j,k)]*psi6phi[IDX3S(i+2,j,k)]
+          psi6phi_rhsL+=0.5*invdx0*(-    shiftx_iphjphkph[IDX3S(i+2,j,k)]*psi6phi[IDX3S(i+2,j,k)]
                                   +4.0*shiftx_iphjphkph[IDX3S(i+1,j,k)]*psi6phi[IDX3S(i+1,j,k)]
                                   -3.0*shiftx_iphjphkphL*                               psi6phiL);
         }
 
-        // \partial_y (\beta^y psi6phi) :
+        // \\partial_y (\\beta^y psi6phi) :
         if(shifty_iphjphkphL < 0.0) {
-          psi6phi_rhsL+=0.5*dYm1*(+    shifty_iphjphkph[IDX3S(i,j-2,k)]*psi6phi[IDX3S(i,j-2,k)]
+          psi6phi_rhsL+=0.5*invdx1*(+    shifty_iphjphkph[IDX3S(i,j-2,k)]*psi6phi[IDX3S(i,j-2,k)]
                                   -4.0*shifty_iphjphkph[IDX3S(i,j-1,k)]*psi6phi[IDX3S(i,j-1,k)]
                                   +3.0*shifty_iphjphkphL*                               psi6phiL);
         } else {
-          psi6phi_rhsL+=0.5*dYm1*(-    shifty_iphjphkph[IDX3S(i,j+2,k)]*psi6phi[IDX3S(i,j+2,k)]
+          psi6phi_rhsL+=0.5*invdx1*(-    shifty_iphjphkph[IDX3S(i,j+2,k)]*psi6phi[IDX3S(i,j+2,k)]
                                   +4.0*shifty_iphjphkph[IDX3S(i,j+1,k)]*psi6phi[IDX3S(i,j+1,k)]
                                   -3.0*shifty_iphjphkphL*                               psi6phiL);
         }
 
-        // \partial_z (\beta^z psi6phi) :
+        // \\partial_z (\\beta^z psi6phi) :
         if(shiftz_iphjphkphL < 0.0) {
-          psi6phi_rhsL+=0.5*dZm1*(+    shiftz_iphjphkph[IDX3S(i,j,k-2)]*psi6phi[IDX3S(i,j,k-2)]
+          psi6phi_rhsL+=0.5*invdx2*(+    shiftz_iphjphkph[IDX3S(i,j,k-2)]*psi6phi[IDX3S(i,j,k-2)]
                                   -4.0*shiftz_iphjphkph[IDX3S(i,j,k-1)]*psi6phi[IDX3S(i,j,k-1)]
                                   +3.0*shiftz_iphjphkphL*                               psi6phiL);
         } else {
-          psi6phi_rhsL+=0.5*dZm1*(-    shiftz_iphjphkph[IDX3S(i,j,k+2)]*psi6phi[IDX3S(i,j,k+2)]
+          psi6phi_rhsL+=0.5*invdx2*(-    shiftz_iphjphkph[IDX3S(i,j,k+2)]*psi6phi[IDX3S(i,j,k+2)]
                                   +4.0*shiftz_iphjphkph[IDX3S(i,j,k+1)]*psi6phi[IDX3S(i,j,k+1)]
                                   -3.0*shiftz_iphjphkphL*                               psi6phiL);
         }
 
-        // Next we add \partial_j (\alpha \sqrt{\gamma} A^j) to \partial_t psi6phi:
-        psi6phi_rhsL+=dXm1*(alpha_sqrtg_Ax_interp[index] - alpha_sqrtg_Ax_interp[IDX3S(i+1,j,k)])
-          +           dYm1*(alpha_sqrtg_Ay_interp[index] - alpha_sqrtg_Ay_interp[IDX3S(i,j+1,k)])
-          +           dZm1*(alpha_sqrtg_Az_interp[index] - alpha_sqrtg_Az_interp[IDX3S(i,j,k+1)]);
+        // Next we add \\partial_j (\\alpha \\sqrt{\\gamma} A^j) to \\partial_t psi6phi:
+        psi6phi_rhsL+=invdx0*(alpha_sqrtg_Ax_interp[index] - alpha_sqrtg_Ax_interp[IDX3S(i+1,j,k)])
+          +           invdx1*(alpha_sqrtg_Ay_interp[index] - alpha_sqrtg_Ay_interp[IDX3S(i,j+1,k)])
+          +           invdx2*(alpha_sqrtg_Az_interp[index] - alpha_sqrtg_Az_interp[IDX3S(i,j,k+1)]);
 
         // *GENERALIZED* LORENZ GAUGE:
-        // Finally, add damping factor to \partial_t psi6phi
+        // Finally, add damping factor to \\partial_t psi6phi
         //subtract lambda * alpha psi^6 Phi
         psi6phi_rhsL+=-xi_damping*alpha_iphjphkph[index]*psi6phiL;
 
