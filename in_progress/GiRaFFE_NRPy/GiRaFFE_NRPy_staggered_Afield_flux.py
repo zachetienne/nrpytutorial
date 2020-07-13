@@ -12,7 +12,7 @@ cmd.mkdir(os.path.join(Ccodesdir))
 def GiRaFFE_NRPy_Afield_flux(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
-    with open(os.path.join(Ccodesdir,"calculate_E_field_flat_all_in_one.h"),"w") as file:
+    with open(os.path.join(Ccodesdir,"A_i_rhs_no_gauge_terms.h"),"w") as file:
         file.write("""/* Compute the part of A_i_rhs that excludes the gauge terms. I.e., we set
  *   A_i_rhs = \partial_t A_i = \psi^{6} (v^z B^x - v^x B^z)   here.
  */
@@ -103,7 +103,7 @@ static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf
          * Implement 2D HLL flux
          * [see Del Zanna, Bucciantini & Londrillo A&A 400, 397 (2003), Eq. (44)]
          *
-         * Note that cmax/cmin (\alpha^{\pm}  as defined in that paper) is at a slightly DIFFERENT
+         * Note that cmax/cmin (\\alpha^{\pm}  as defined in that paper) is at a slightly DIFFERENT
          * point than that described in the Del Zanna et al paper (e.g., (i+1/2,j,k) instead of
          * (i+1/2,j+1/2,k) for F3).  Yuk Tung Liu discussed this point with M. Shibata,
          * who found that the effect is negligible.

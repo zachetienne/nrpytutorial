@@ -9,7 +9,7 @@ import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line int
 Ccodesdir = "GiRaFFE_standalone_Ccodes/RHSs"
 cmd.mkdir(os.path.join(Ccodesdir))
 
-def GiRaFFE_NRPy_Afield_flux_handwritten(Ccodesdir):
+def GiRaFFE_NRPy_Afield_flux(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
     with open(os.path.join(Ccodesdir,"calculate_E_field_flat_all_in_one.h"),"w") as file:
@@ -87,7 +87,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
 
                 // DEBUGGING:
 //                 if(flux_dirn==0 && SIGN>0 && i1==Nxx_plus_2NGHOSTS1/2 && i2==Nxx_plus_2NGHOSTS2/2) {
-//                     printf("index=%d & indexp1=%d\n",index,indexp1);
+//                     printf("index=%d & indexp1=%d\\n",index,indexp1);
 //                 }
 
                 // Since we are computing A_z, the relevant equation here is:
@@ -113,13 +113,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
                 const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 
-                // ZACH SAYS: Make sure the below is documented!
-                // Compute the state vector for this flux direction
-                // We must also multiply by sign so that we use the positive for the forward permutation
-                // and negative for the backwards permutation. For Az, that means that we add +By and -Bx,
-                // exactly as is done in the original GiRaFFE's A_i_rhs_no_gauge_terms.C, in line with
-                // Del Zanna, 2003 [https://arxiv.org/pdf/astro-ph/0210618.pdf], Eq. 44
-                const REAL U_r = B_rflux_dirn; //B_rU0;
+                // Compute the state vector for these terms:
+                const REAL U_r = B_rflux_dirn;
                 const REAL U_l = B_lflux_dirn;
 
                 // Basic HLLE solver:
