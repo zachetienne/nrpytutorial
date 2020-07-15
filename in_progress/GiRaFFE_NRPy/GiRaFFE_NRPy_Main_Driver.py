@@ -55,8 +55,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
 
     GRHD.compute_sqrtgammaDET(gammaDD)
-    GRFFE.compute_AD_source_term_parenthetical_for_FD(GRHD.sqrtgammaDET,betaU,alpha,psi6Phi,AD)
-    GRFFE.compute_psi6Phi_rhs_parenthetical(gammaDD,GRHD.sqrtgammaDET,betaU,alpha,AD,psi6Phi)
+    GRFFE.compute_AD_source_term_operand_for_FD(GRHD.sqrtgammaDET,betaU,alpha,psi6Phi,AD)
+    GRFFE.compute_psi6Phi_rhs_flux_term_operand(gammaDD,GRHD.sqrtgammaDET,betaU,alpha,AD,psi6Phi)
 
     parens_to_print = [\
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","AevolParen"),rhs=GRFFE.AevolParen),\
@@ -68,7 +68,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     subdir = "RHSs"
     cmd.mkdir(os.path.join(out_dir, subdir))
     desc = "Calculate quantities to be finite-differenced for the GRFFE RHSs"
-    name = "calculate_parentheticals_for_RHSs"
+    name = "calculate_AD_gauge_term_psi6Phi_flux_term_for_RHSs"
     outCfunction(
         outfile  = os.path.join(out_dir,subdir,name+".h"), desc=desc, name=name,
         params   ="const paramstruct *restrict params,const REAL *restrict in_gfs,REAL *restrict auxevol_gfs",
@@ -208,7 +208,7 @@ const int VX=0,VY=1,VZ=2,BX=3,BY=4,BZ=5;
 const int NUM_RECONSTRUCT_GFS = 6;
 
 // Include ALL functions needed for evolution
-#include "RHSs/calculate_parentheticals_for_RHSs.h"
+#include "RHSs/calculate_AD_gauge_term_psi6Phi_flux_term_for_RHSs.h"
 #include "RHSs/calculate_AD_gauge_psi6Phi_RHSs.h"
 #include "PPM/reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
 #include "FCVAL/interpolate_metric_gfs_to_cell_faces.h"
@@ -253,7 +253,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
     }
     // Next calculate the easier source terms that don't require flux directions
     // This will also reset the RHSs for each gf at each new timestep.
-    calculate_parentheticals_for_RHSs(params,in_gfs,auxevol_gfs);
+    calculate_AD_gauge_term_psi6Phi_flux_term_for_RHSs(params,in_gfs,auxevol_gfs);
     calculate_AD_gauge_psi6Phi_RHSs(params,in_gfs,auxevol_gfs,rhs_gfs);
 
     // Now, we set up a bunch of structs of pointers to properly guide the PPM algorithm.
