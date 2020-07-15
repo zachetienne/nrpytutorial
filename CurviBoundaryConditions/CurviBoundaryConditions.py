@@ -16,7 +16,7 @@ import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line int
 import shutil, os, sys           # Standard Python modules for multiplatform OS-level functions
 
 def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.join("../"),
-                                   enable_copy_of_static_Ccodes=True, BoundaryCondition="QPE"):
+                                   enable_copy_of_static_Ccodes=True, BoundaryCondition="QuadraticExtrapolation"):
     # Step P0: Check that Ccodesdir is not the same as CurviBoundaryConditions/boundary_conditions,
     #          to prevent trusted versions of these C codes from becoming contaminated.
     if os.path.join(Ccodesdir) == os.path.join("CurviBoundaryConditions", "boundary_conditions"):
@@ -32,7 +32,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
         # Choosing boundary condition drivers with in NRPy+
         #  - current options are Quadratic Polynomial Extrapolation for any coordinate system,
         #    and the Sommerfeld boundary condition for only cartesian coordinates
-        if   str(BoundaryCondition) == "QPE":
+        if   str(BoundaryCondition) == "QuadraticExtrapolation":
             for file in ["apply_bcs_curvilinear.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
                          "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
                 shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
@@ -52,7 +52,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
                 file.write("\n#include \"apply_bcs_sommerfeld.h\"")
 
 
-        elif str(BoundaryCondition) == "QPE&Sommerfeld":
+        elif str(BoundaryCondition) == "QuadraticExtrapolation&Sommerfeld":
             for file in ["apply_bcs_curvilinear.h","apply_bcs_sommerfeld.h", "BCs_data_structs.h", "bcstruct_freemem.h", "CurviBC_include_Cfunctions.h",
                          "driver_bcstruct.h", "set_bcstruct.h", "set_up__bc_gz_map_and_parity_condns.h"]:
                 shutil.copy(os.path.join("CurviBoundaryConditions", "boundary_conditions", file),
@@ -64,7 +64,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
 
 
         else:
-            print("ERROR: Only Quadratic Polynomial Extrapolation (QPE) and Sommerfeld boundary conditions are currently supported\n")
+            print("ERROR: Only Quadratic Polynomial Extrapolation (QuadraticExtrapolation) and Sommerfeld boundary conditions are currently supported\n")
             sys.exit(1)
 
 
@@ -396,8 +396,8 @@ if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""
 
         contraction_term_func = """
 
-void contraction_term(const paramstruct *restrict params, const int which_gf, REAL *restrict gfs, REAL *restrict xx[3],
-           int8_t FACEXi[3], int i0, int i1, int i2, REAL *restrict _r, REAL *restrict _dxU_fdD) {
+void contraction_term(const paramstruct *restrict params, const int which_gf, const REAL *restrict gfs, REAL *restrict xx[3],
+           const int8_t FACEXi[3], const int i0, const int i1, const int i2, REAL *restrict _r, REAL *restrict _dxU_fdD) {
 
 #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
                                              * accounting for the relative path */
