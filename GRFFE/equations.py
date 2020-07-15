@@ -112,7 +112,7 @@ def compute_AD_flux_term(sqrtgammaDET,driftvU,BU):
                 # \epsilon_{ijk} v^j B^k
                 A_fluxD[i] += LeviCivitaDDD[i][j][k]*driftvU[j]*BU[k]
 
-def compute_AD_source_term_parenthetical_for_FD(sqrtgammaDET,betaU,alpha,psi6Phi,AD):
+def compute_AD_source_term_operand_for_FD(sqrtgammaDET,betaU,alpha,psi6Phi,AD):
     Phi = psi6Phi/sqrtgammaDET
     global AevolParen
     # \alpha \Phi - \beta^j A_j
@@ -120,7 +120,7 @@ def compute_AD_source_term_parenthetical_for_FD(sqrtgammaDET,betaU,alpha,psi6Phi
     for j in range(3):
         AevolParen += -betaU[j] * AD[j]
 
-def compute_psi6Phi_rhs_parenthetical(gammaDD,sqrtgammaDET,betaU,alpha,AD,psi6Phi):
+def compute_psi6Phi_rhs_flux_term_operand(gammaDD,sqrtgammaDET,betaU,alpha,AD,psi6Phi):
     gammaUU,_gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaDET unused.
     AU = ixp.zerorank1()
     # Raise the index on A in the usual way:
