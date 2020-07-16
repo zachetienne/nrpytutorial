@@ -7,7 +7,7 @@ import grid as gri               # NRPy+: Functions having to do with numerical 
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import sys                       # Standard Python module for multiplatform OS-level functions
 import re                        # Standard Python module for regular expressions
-from itertools import product, chain
+from itertools import product    # Standard Python module for iteration tools
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
@@ -15,29 +15,57 @@ par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
 def declare_indexedexp(rank, symbol=None, symmetry=None, dimension=None):
     """ Generate an indexed expression of specified rank and dimension
 
-        >>> declare_indexedexp(rank=1, dimension=3)
-        [0, 0, 0]
-        >>> declare_indexedexp(rank=1, symbol="vU", dimension=3)
-        [vU0, vU1, vU2]
+        >>> from itertools import chain
+        >>> ixp = declare_indexedexp(rank=2, symbol='M', dimension=3, symmetry='sym01')
+        >>> assert len(set(chain.from_iterable(ixp))) == 6
 
-        >>> declare_indexedexp(rank=2, dimension=3)
-        [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
-        >>> declare_indexedexp(rank=2, symbol='gUU', dimension=3)
-        [[gUU00, gUU01, gUU02], [gUU10, gUU11, gUU12], [gUU20, gUU21, gUU22]]
-        >>> declare_indexedexp(rank=2, symbol='gUU', symmetry='sym01', dimension=3)
-        [[gUU00, gUU01, gUU02], [gUU01, gUU11, gUU12], [gUU02, gUU12, gUU22]]
+        >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym01')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 18
+        >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym02')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 18
+        >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym12')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 18
 
-        >>> declare_indexedexp(rank=3, dimension=3)
-        [[[0, 0, 0], [0, 0, 0], [0, 0, 0]], [[0, 0, 0], [0, 0, 0], [0, 0, 0]], \
-[[0, 0, 0], [0, 0, 0], [0, 0, 0]]]
-        >>> declare_indexedexp(rank=3, symbol='gUU', symmetry='sym01', dimension=3)
-        [[[gUU000, gUU001, gUU002], [gUU010, gUU011, gUU012], [gUU020, gUU021, gUU022]], \
-[[gUU010, gUU011, gUU012], [gUU110, gUU111, gUU112], [gUU120, gUU121, gUU122]], \
-[[gUU020, gUU021, gUU022], [gUU120, gUU121, gUU122], [gUU220, gUU221, gUU222]]]
-        >>> declare_indexedexp(rank=3, symbol='gUU', symmetry='sym12', dimension=3)
-        [[[gUU000, gUU001, gUU002], [gUU001, gUU011, gUU012], [gUU002, gUU012, gUU022]], \
-[[gUU100, gUU101, gUU102], [gUU101, gUU111, gUU112], [gUU102, gUU112, gUU122]], \
-[[gUU200, gUU201, gUU202], [gUU201, gUU211, gUU212], [gUU202, gUU212, gUU222]]]
+        >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym012')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 10
+
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym01')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym02')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym03')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym12')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym13')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym23')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym012')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym013')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym01_sym23')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 36
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym02_sym13')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 36
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym023')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym03_sym12')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 36
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym123')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym0123')
+        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 15
+
+        >>> ixp = declare_indexedexp(rank=2, symbol='M', dimension=3, symmetry='anti01')
+        >>> assert len(set(map(abs, chain.from_iterable(ixp))).difference({0}))== 3
+        >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='anti012')
+        >>> assert len(set(map(abs, chain.from_iterable(chain.from_iterable(ixp)))).difference({0})) == 1
+        >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='anti0123')
+        >>> assert len(set(map(abs, chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))).difference({0})) == 0
     """
     if not dimension or dimension == -1:
         dimension = par.parval_from_str('DIM')
@@ -72,55 +100,72 @@ def symmetrize(rank, indexedexp, symmetry, dimension):
 
 def symmetrize_rank2(indexedexp, symmetry, dimension):
     for sym in symmetry.split('_'):
+        sign = 1 if sym[:3] == 'sym' else -1
         for i, j in product(range(dimension), repeat=2):
-            if sym == 'sym01':
-                if j < i: indexedexp[i][j] = indexedexp[j][i]
+            if sym[-2:] == '01':
+                if j < i: indexedexp[i][j] = sign*indexedexp[j][i]
+                elif i == j and sign < 0: indexedexp[i][j] = 0
             elif sym == 'nosym': pass
             else: raise Exception('unsupported symmetry option \'' + sym + '\'')
     return indexedexp
 
 def symmetrize_rank3(indexedexp, symmetry, dimension):
-    symmetry_, symmetry = symmetry, set()
+    symmetry_, symmetry = symmetry, []
     for sym in symmetry_.split('_'):
-        if len(sym[3:]) == 3:
-            symmetry.add('sym' + sym[3:5])
-            symmetry.add('sym' + sym[4:6])
-        else: symmetry.add(sym)
-    for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
+        index = 3 if sym[:3] == 'sym' else 4
+        if len(sym[index:]) == 3:
+            prefix = sym[:index]
+            symmetry.append(prefix + sym[index:(index + 2)])
+            symmetry.append(prefix + sym[(index + 1):(index + 3)])
+        else: symmetry.append(sym)
+    for sym in (symmetry[k] for n in range(len(symmetry), 0, -1) for k in range(n)):
+        sign = 1 if sym[:3] == 'sym' else -1
         for i, j, k in product(range(dimension), repeat=3):
-            if sym == 'sym01':
-                if j < i: indexedexp[i][j][k] = indexedexp[j][i][k]
-            elif sym == 'sym02':
-                if k < i: indexedexp[i][j][k] = indexedexp[k][j][i]
-            elif sym == 'sym12':
-                if k < j: indexedexp[i][j][k] = indexedexp[i][k][j]
+            if sym[-2:] == '01':
+                if j < i: indexedexp[i][j][k] = sign*indexedexp[j][i][k]
+                elif i == j and sign < 0: indexedexp[i][j][k] = 0
+            elif sym[-2:] == '02':
+                if k < i: indexedexp[i][j][k] = sign*indexedexp[k][j][i]
+                elif i == k and sign < 0: indexedexp[i][j][k] = 0
+            elif sym[-2:] == '12':
+                if k < j: indexedexp[i][j][k] = sign*indexedexp[i][k][j]
+                elif j == k and sign < 0: indexedexp[i][j][k] = 0
             elif sym == 'nosym': pass
             else: raise Exception('unsupported symmetry option \'' + sym + '\'')
     return indexedexp
 
 def symmetrize_rank4(indexedexp, symmetry, dimension):
-    symmetry_, symmetry = symmetry, set()
+    symmetry_, symmetry = symmetry, []
     for sym in symmetry_.split('_'):
-        if len(sym[3:]) in (3, 4):
-            symmetry.add('sym' + sym[3:5])
-            symmetry.add('sym' + sym[4:6])
-        elif len(sym[3:]) == 4:
-            symmetry.add('sym' + sym[5:7])
-        else: symmetry.add(sym)
-    for sym in chain(symmetry, reversed(list(symmetry)[:-1])):
+        index = 3 if sym[:3] == 'sym' else 4
+        if len(sym[index:]) in (3, 4):
+            prefix = sym[:index]
+            symmetry.append(prefix + sym[index:(index + 2)])
+            symmetry.append(prefix + sym[(index + 1):(index + 3)])
+            if len(sym[index:]) == 4:
+                symmetry.append(prefix + sym[(index + 2):(index + 4)])
+        else: symmetry.append(sym)
+    for sym in (symmetry[k] for n in range(len(symmetry), 0, -1) for k in range(n)):
+        sign = 1 if sym[:3] == 'sym' else -1
         for i, j, k, l in product(range(dimension), repeat=4):
-            if sym == 'sym01':
-                if j < i: indexedexp[i][j][k][l] = indexedexp[j][i][k][l]
-            elif sym == 'sym02':
-                if k < i: indexedexp[i][j][k][l] = indexedexp[k][j][i][l]
-            elif sym == 'sym03':
-                if l < i: indexedexp[i][j][k][l] = indexedexp[l][j][k][i]
-            elif sym == 'sym12':
-                if k < j: indexedexp[i][j][k][l] = indexedexp[i][k][j][l]
-            elif sym == 'sym13':
-                if l < j: indexedexp[i][j][k][l] = indexedexp[i][l][k][j]
-            elif sym == 'sym23':
-                if l < k: indexedexp[i][j][k][l] = indexedexp[i][j][l][k]
+            if sym[-2:] == '01':
+                if j < i: indexedexp[i][j][k][l] = sign*indexedexp[j][i][k][l]
+                elif i == j and sign < 0: indexedexp[i][j][k][l] = 0
+            elif sym[-2:] == '02':
+                if k < i: indexedexp[i][j][k][l] = sign*indexedexp[k][j][i][l]
+                elif i == k and sign < 0: indexedexp[i][j][k][l] = 0
+            elif sym[-2:] == '03':
+                if l < i: indexedexp[i][j][k][l] = sign*indexedexp[l][j][k][i]
+                elif i == l and sign < 0: indexedexp[i][j][k][l] = 0
+            elif sym[-2:] == '12':
+                if k < j: indexedexp[i][j][k][l] = sign*indexedexp[i][k][j][l]
+                elif j == k and sign < 0: indexedexp[i][j][k][l] = 0
+            elif sym[-2:] == '13':
+                if l < j: indexedexp[i][j][k][l] = sign*indexedexp[i][l][k][j]
+                elif j == l and sign < 0: indexedexp[i][j][k][l] = 0
+            elif sym[-2:] == '23':
+                if l < k: indexedexp[i][j][k][l] = sign*indexedexp[i][j][l][k]
+                elif k == l and sign < 0: indexedexp[i][j][k][l] = 0
             elif sym == 'nosym': pass
             else: raise Exception('unsupported symmetry option \'' + sym + '\'')
     return indexedexp
