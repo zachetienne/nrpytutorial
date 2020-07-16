@@ -631,6 +631,7 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
     >>> par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER",2)
     >>> FDparams.DIM=3
     >>> FDparams.SIMD_enable="False"
+    >>> FDparams.FD_functions_enable=False
     >>> FDparams.PRECISION="double"
     >>> FDparams.MemAllocStyle="012"
     >>> FDparams.upwindcontrolvec=vU
