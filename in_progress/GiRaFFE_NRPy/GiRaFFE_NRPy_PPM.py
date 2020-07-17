@@ -64,7 +64,6 @@ static void reconstruct_set_of_prims_PPM_GRFFE_NRPy(const paramstruct *params,RE
       exit(0);
     }
 
-
     // *** LOOP 1: Interpolate to Ur and Ul, which are face values ***
     //  You will find that Ur depends on U at MINUS1,PLUS0, PLUS1,PLUS2, and
     //                     Ul depends on U at MINUS2,MINUS1,PLUS0,PLUS1.
