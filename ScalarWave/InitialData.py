@@ -52,7 +52,7 @@ def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=3):
     global uu_ID, vv_ID
     # uu_ID = (r - wavespeed*time)/r * sp.exp(- (r - wavespeed*time)**2 / (2*sigma**2) )
     uu_ID = (+(r - wavespeed * time) / r * sp.exp(- (r - wavespeed * time) ** 2 / (2 * sigma ** 2))
-             +(r + wavespeed * time) / r * sp.exp(- (r + wavespeed * time) ** 2 / (2 * sigma ** 2)))
+             +(r + wavespeed * time) / r * sp.exp(- (r + wavespeed * time) ** 2 / (2 * sigma ** 2))) + sp.sympify(1)
     vv_ID = sp.diff(uu_ID, time)
 
 # Set up monochromatic plane-wave initial data

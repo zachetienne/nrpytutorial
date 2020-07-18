@@ -13,5 +13,6 @@ trusted_values_dict['ScalarWaveCurvilinear_RHSs__ScalarWaveCurvilinear_RHSs__glo
 # Generated on: 2020-05-23
 trusted_values_dict['InitialData__InitialData__Type__PlaneWave___globals'] = {'uu_ID': mpf('2.52358067004083477110217386122'), 'vv_ID': mpf('-0.569645247209539485189673979502')}
 
-# Generated on: 2020-05-23
-trusted_values_dict['InitialData__InitialData__Type__SphericalGaussian___globals'] = {'uu_ID': mpf('0.365134057130369776890221067476'), 'vv_ID': mpf('0.0563512459589975646763098472872')}
+# Generated on: 2020-07-18
+# Notes: Added 1 to uu, so that relative error is well-defined everywhere.
+trusted_values_dict['InitialData__InitialData__Type__SphericalGaussian___globals'] = {'uu_ID': mpf('1.365134057130369776890221067476'), 'vv_ID': mpf('0.0563512459589975646763098472872')}
