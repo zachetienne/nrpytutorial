@@ -4,10 +4,10 @@
 # Step 1: Load needed modules
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
+import functional as func        # NRPy+: Python toolkit for functional programming
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import sys                       # Standard Python module for multiplatform OS-level functions
 import re                        # Standard Python module for regular expressions
-from itertools import product    # Standard Python module for iteration tools
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
@@ -15,57 +15,56 @@ par.initialize_param(par.glb_param("char", thismodule, "symmetry_axes",  ""))
 def declare_indexedexp(rank, symbol=None, symmetry=None, dimension=None):
     """ Generate an indexed expression of specified rank and dimension
 
-        >>> from itertools import chain
         >>> ixp = declare_indexedexp(rank=2, symbol='M', dimension=3, symmetry='sym01')
-        >>> assert len(set(chain.from_iterable(ixp))) == 6
+        >>> assert func.pipe(ixp, lambda x: func.repeat(func.flatten, x, 1), set, len) == 6
 
         >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym01')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 18
+        >>> assert len(set(func.repeat(func.flatten, ixp, 2))) == 18
         >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym02')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 18
+        >>> assert len(set(func.repeat(func.flatten, ixp, 2))) == 18
         >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym12')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 18
+        >>> assert len(set(func.repeat(func.flatten, ixp, 2))) == 18
 
         >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='sym012')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(ixp)))) == 10
+        >>> assert len(set(func.repeat(func.flatten, ixp, 2))) == 10
 
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym01')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 54
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym02')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 54
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym03')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 54
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym12')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 54
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym13')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 54
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym23')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 54
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 54
 
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym012')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 30
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym013')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 30
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym01_sym23')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 36
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 36
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym02_sym13')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 36
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 36
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym023')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 30
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym03_sym12')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 36
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 36
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym123')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 30
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 30
 
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='sym0123')
-        >>> assert len(set(chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))) == 15
+        >>> assert len(set(func.repeat(func.flatten, ixp, 3))) == 15
 
         >>> ixp = declare_indexedexp(rank=2, symbol='M', dimension=3, symmetry='anti01')
-        >>> assert len(set(map(abs, chain.from_iterable(ixp))).difference({0}))== 3
+        >>> assert len(set(map(abs, func.repeat(func.flatten, ixp, 1))).difference({0})) == 3
         >>> ixp = declare_indexedexp(rank=3, symbol='M', dimension=3, symmetry='anti012')
-        >>> assert len(set(map(abs, chain.from_iterable(chain.from_iterable(ixp)))).difference({0})) == 1
+        >>> assert len(set(map(abs, func.repeat(func.flatten, ixp, 2))).difference({0})) == 1
         >>> ixp = declare_indexedexp(rank=4, symbol='M', dimension=3, symmetry='anti0123')
-        >>> assert len(set(map(abs, chain.from_iterable(chain.from_iterable(chain.from_iterable(ixp))))).difference({0})) == 0
+        >>> assert len(set(map(abs, func.repeat(func.flatten, ixp, 3))).difference({0})) == 0
     """
     if not dimension or dimension == -1:
         dimension = par.parval_from_str('DIM')
@@ -101,7 +100,7 @@ def symmetrize(rank, indexedexp, symmetry, dimension):
 def symmetrize_rank2(indexedexp, symmetry, dimension):
     for sym in symmetry.split('_'):
         sign = 1 if sym[:3] == 'sym' else -1
-        for i, j in product(range(dimension), repeat=2):
+        for i, j in func.product(range(dimension), repeat=2):
             if sym[-2:] == '01':
                 if j < i: indexedexp[i][j] = sign*indexedexp[j][i]
                 elif i == j and sign < 0: indexedexp[i][j] = 0
@@ -120,7 +119,7 @@ def symmetrize_rank3(indexedexp, symmetry, dimension):
         else: symmetry.append(sym)
     for sym in (symmetry[k] for n in range(len(symmetry), 0, -1) for k in range(n)):
         sign = 1 if sym[:3] == 'sym' else -1
-        for i, j, k in product(range(dimension), repeat=3):
+        for i, j, k in func.product(range(dimension), repeat=3):
             if sym[-2:] == '01':
                 if j < i: indexedexp[i][j][k] = sign*indexedexp[j][i][k]
                 elif i == j and sign < 0: indexedexp[i][j][k] = 0
@@ -147,7 +146,7 @@ def symmetrize_rank4(indexedexp, symmetry, dimension):
         else: symmetry.append(sym)
     for sym in (symmetry[k] for n in range(len(symmetry), 0, -1) for k in range(n)):
         sign = 1 if sym[:3] == 'sym' else -1
-        for i, j, k, l in product(range(dimension), repeat=4):
+        for i, j, k, l in func.product(range(dimension), repeat=4):
             if sym[-2:] == '01':
                 if j < i: indexedexp[i][j][k][l] = sign*indexedexp[j][i][k][l]
                 elif i == j and sign < 0: indexedexp[i][j][k][l] = 0
