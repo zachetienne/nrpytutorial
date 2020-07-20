@@ -63,7 +63,7 @@ def reduce(f, iterable):
         result = f(result, element)
     return result
 
-def product(*iterable, repeat=1):
+def product(*iterable, **kwargs):
     """ Cartesian Product
 
         >>> list(product(['a', 'b'], [1, 2, 3]))
@@ -79,8 +79,9 @@ def product(*iterable, repeat=1):
         b: 1
         b: 2
     """
-    if repeat > 1 and len(iterable) == 1:
-        iterable = repeat * iterable
+    if 'repeat' in kwargs:
+        if kwargs['repeat'] > 1 and len(iterable) == 1:
+            iterable = kwargs['repeat'] * iterable
     f = lambda A, B: [list(flatten([x] + [y])) for x in A for y in B]
     for prod in reduce(f, iterable):
         yield tuple(prod)
