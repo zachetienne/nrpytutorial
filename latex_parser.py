@@ -374,16 +374,20 @@ class Parser:
     def _derivative(self):
         indexing = []
         while True:
-            self.expect('DERIV_CMD')
+            self.expect('DERV_CMD')
             self.expect('UNDERSCORE')
             index, _ = self._lower_index()
-            indexing.extend(index)
-            if not self.peek('DERIV_CMD'): break
-        suffix = '_{,%s}' % ''.join(indexing[::-1])
+            indexing.extend(list(map(str, index)))
+            if not self.peek('DERV_CMD'): break
         mark = self.lexer.index - 1
         self._array()
         sentence, position = self.lexer.sentence, self.lexer.index
-        self.lexer.sentence = sentence[:position] + suffix + sentence[position:]
+        if '_' in sentence[mark:position]:
+            tensor = sentence[mark:position].split('_')
+            suffix = tensor[1][1:-1] if '{' in tensor[1] else tensor[1]
+            tensor = tensor[0] + '_{%s,%s}' % (suffix, ''.join(indexing[::-1]))
+        else: tensor = sentence[mark:position] + '_{,%s}' % ''.join(indexing[::-1])
+        self.lexer.sentence = sentence[:mark] + tensor + sentence[position:]
         self.lexer.reset(mark); self.lexer.lex()
         return self._array()
 
