@@ -16,7 +16,7 @@ import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodyn
 import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
 import GiRaFFE_NRPy.GiRaFFE_NRPy_Metric_Face_Values as FCVAL
 import GiRaFFE_NRPy.GiRaFFE_NRPy_PPM as PPM
-import GiRaFFE_NRPy.Afield_flux as Af
+import GiRaFFE_NRPy.GiRaFFE_NRPy_Afield_flux_handwritten as Af
 import GiRaFFE_NRPy.Stilde_flux as Sf
 import GiRaFFE_NRPy.GiRaFFE_NRPy_BCs as BC
 import GiRaFFE_NRPy.GiRaFFE_NRPy_A2B as A2B
@@ -143,9 +143,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
 
     subdir = "RHSs"
-    Af.generate_Afield_flux_function_files(out_dir,subdir,alpha_face,gamma_faceDD,beta_faceU,\
-                                           Valenciav_rU,B_rU,Valenciav_lU,B_lU,True)
-
+    Af.GiRaFFE_NRPy_Afield_flux(os.path.join(out_dir,subdir))
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
                                        Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
 
