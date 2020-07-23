@@ -41,7 +41,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
     // corresponds to flux_dirn=0 and count=1 (which corresponds to SIGN=+1.0).
     // Thus, Az(i,j,k) += 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)) are solved here.
     // The other terms are computed by cyclically permuting the indices when calling this function.
-#include "GiRaFFE_standalone_Ccodes/set_Cparameters.h"
+#include "../set_Cparameters.h"
 
 #pragma omp parallel for
     for(int i2=NGHOSTS; i2<NGHOSTS+Nxx2; i2++) {
@@ -142,8 +142,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // -E_z(x_i,y_j,z_k) &= 0.25 ( [F_HLL^x(B^y)]_z(i+1/2,j,k)+[F_HLL^x(B^y)]_z(i-1/2,j,k)
                 //                            -[F_HLL^y(B^x)]_z(i,j+1/2,k)-[F_HLL^y(B^x)]_z(i,j-1/2,k) )
                 // (Eq. 11 in https://arxiv.org/pdf/1009.2468.pdf)
-                // This code, as written, solves the first two terms for flux_dirn=0. Calling this function for count=1
-                // flips x for y to solve the latter two, switching to SIGN=-1 as well.
+                // This code, as written, solves the first two terms for flux_dirn=0. Calling this function for count=0
+                // and flux_dirn=1 flips x for y to solve the latter two, switching to SIGN=-1 as well.
 
                 // Here, we finally add together the output of the HLLE solver at i-1/2 and i+1/2
                 // We also multiply by the SIGN dictated by the order of the input vectors and divide by 4.
