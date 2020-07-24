@@ -15,9 +15,10 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
 
     #pragma omp parallel for
         for(int which_gf=0;which_gf<NUM_GFS;which_gf++) {
-          const REAL var_at_infinity = evolgf_at_inf[which_gf];
-          const REAL radpower        = evolgf_radpower[which_gf];
-          const REAL char_speed      = evolgf_speed[which_gf];
+          const REAL char_speed             = evolgf_speed[which_gf];
+          const REAL var_at_infinity        = evolgf_at_inf[which_gf];
+          const REAL radial_falloff_power = evolgf_radial_falloff_power[which_gf];
+
 
           #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
                                                        * accounting for the relative path */
@@ -37,17 +38,17 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
                     // Initialize derivatives to crazy values, to ensure that
                     //   we will notice in case they aren't set properly.
                     REAL r = 1e100;
-                    REAL dxU_fdD = 1e100;
+                    REAL partial_i_f = 1e100;
 
-                    contraction_term(params, which_gf, gfs, xx, FACEXi, i0, i1, i2, &r, &dxU_fdD);
+                    contraction_term(params, which_gf, gfs, xx, FACEXi, i0, i1, i2, &r, &partial_i_f);
 
                     const REAL invr = 1./r;
 
-                    const REAL source_rhs = -char_speed*(dxU_fdD + invr*(gfs[IDX4S(which_gf,i0,i1,i2)] - var_at_infinity));
+                    const REAL source_rhs = -char_speed*(partial_i_f + invr*(gfs[IDX4S(which_gf,i0,i1,i2)] - var_at_infinity));
                     rhs_gfs[IDX4S(which_gf,i0,i1,i2)] = source_rhs;
 
                     /************* For radial falloff and the extrapolated k term *************/
-                    if (radpower > 0) {
+                    if (radial_falloff_power > 0) {
 
                       // Move one point away from gz point to compare pure advection to df/dt|interior
 
@@ -72,8 +73,9 @@ void apply_bcs_sommerfeld(const paramstruct *restrict params, REAL *restrict xx[
                           rhs_gfs[IDX4S(which_gf,i0_offset,i1_offset,i2_offset)] + extrap_rhs;
 
                       // Solve for k/(r_gz)^n+1 term
-                      rhs_gfs[IDX4S(which_gf,i0,i1,i2)] += diff_between_advection_and_f_rhs*pow(r_offset*invr,radpower);
-                    }
+                      rhs_gfs[IDX4S(which_gf,i0,i1,i2)] += diff_between_advection_and_f_rhs*pow(r_offset*invr,radial_falloff_power);
+
+                  }
                 } // END for(int pt=0;pt<num_ob_gz_pts[which_gz];pt++)
 
             // Then apply INNER (parity) boundary conditions:

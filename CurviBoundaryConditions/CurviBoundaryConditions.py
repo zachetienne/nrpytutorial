@@ -264,7 +264,7 @@ class sommerfeld_bc():
     # Set class variable default values
     # radial falloff power n = 3 has been found to yield the best results
     #  - see Tutorial-SommerfeldBoundaryCondition.ipynb Step 2 for details
-    def __init__(self, vars_at_inf_default = 0., vars_radpower_default = 3., vars_speed_default = 1.):
+    def __init__(self, vars_at_inf_default = 0., vars_radial_falloff_power_default = 3., vars_speed_default = 1.):
         evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = \
                                                         gri.gridfunction_lists()
 
@@ -277,12 +277,12 @@ class sommerfeld_bc():
         self.vars_speed = {}
 
         # EVOL gridfunction radial falloff power
-        self.vars_radpower = {}
+        self.vars_radial_falloff_power = {}
 
         # Set default values for each specific EVOL gridfunction
         for gf in evolved_variables_list:
             self.vars_at_infinity[gf.upper() + 'GF'] = vars_at_inf_default
-            self.vars_radpower[gf.upper() + 'GF'] = vars_radpower_default
+            self.vars_radial_falloff_power[gf.upper() + 'GF'] = vars_radial_falloff_power_default
             self.vars_speed[gf.upper() + 'GF'] = vars_speed_default
 
     def write_to_sommerfeld_params_file(self, Ccodesdir):
@@ -295,10 +295,10 @@ class sommerfeld_bc():
         var_at_inf_string = var_at_inf_string[:-2] + "};"
 
         # Creating array for EVOL gridfunction values of radial falloff power
-        var_radpow_string = "{"
-        for gf,val in self.vars_radpower.items():
-            var_radpow_string += str(val) + ", "
-        var_radpow_string = var_radpow_string[:-2] + "};"
+        vars_radial_falloff_power_string = "{"
+        for gf,val in self.vars_radial_falloff_power.items():
+            vars_radial_falloff_power_string += str(val) + ", "
+        vars_radial_falloff_power_string = vars_radial_falloff_power_string[:-2] + "};"
 
         # Creating array for EVOL gridfunction values of wave speed at outer boundaries
         var_speed_string = "{"
@@ -312,7 +312,7 @@ class sommerfeld_bc():
             file.write("""
 // Coordinate system
 const REAL evolgf_at_inf[NUM_EVOL_GFS] = """+var_at_inf_string+"""
-const REAL evolgf_radpower[NUM_EVOL_GFS] = """+var_radpow_string+"""
+const REAL evolgf_radial_falloff_power[NUM_EVOL_GFS] = """+vars_radial_falloff_power_string+"""
 const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
 """)
 
@@ -351,11 +351,11 @@ const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
         contraction = sp.sympify(0)
         for i in range(3):
             contraction += fdD[i]*Jac_dUrfm_dDSphUD[i][0]
+        contraction = sp.simplify(contraction)
 
         r_str_and_contraction_str = outputC([rfm.xxSph[0],contraction],
-                 ["*_r","*_dxU_fdD"],filename="returnstring",params="includebraces=False")
+                 ["*_r","*_partial_i_f"],filename="returnstring",params="includebraces=False")
 
-        # https://stackoverflow.com/questions/8951020/pythonic-circular-list
         def gen_central_fd_stencil_str(intdirn, fd_order):
             if fd_order == 2:
                 if intdirn == 0:
@@ -397,7 +397,7 @@ if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""
         contraction_term_func = """
 
 void contraction_term(const paramstruct *restrict params, const int which_gf, const REAL *restrict gfs, REAL *restrict xx[3],
-           const int8_t FACEXi[3], const int i0, const int i1, const int i2, REAL *restrict _r, REAL *restrict _dxU_fdD) {
+           const int8_t FACEXi[3], const int i0, const int i1, const int i2, REAL *restrict _r, REAL *restrict _partial_i_f) {
 
 #include "RELATIVE_PATH__set_Cparameters.h" /* Header file containing correct #include for set_Cparameters.h;
                                              * accounting for the relative path */
