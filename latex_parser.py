@@ -415,7 +415,7 @@ class Parser:
                 'sym01' if symmetry == 'metric' else 'nosym' if symmetry == 'permutation' else symmetry,
                 invertible=(symmetry == 'metric'), permutation=(symmetry == 'permutation'))
             self.namespace[tensor.name] = tensor
-            if tensor.inverse and dimension == 2:
+            if tensor.inverse and tensor.rank == 2:
                 inverse = tensor.name.replace('U', 'D') if 'U' in tensor.name else tensor.name.replace('D', 'U')
                 self.namespace[inverse] = self.namespace[tensor.name].inverse
             if not self.accept('COMMA'): break
@@ -428,6 +428,7 @@ class Parser:
             position = self.lexer.index - len(self.lexer.lexeme)
             raise ParseError('unexpected \'%s\' at position %d' %
                 (sentence[position], position), sentence, position)
+        mark = self.lexer.index - 1
         array = self.lexer.lexeme
         self.lexer.lex()
         if array[0] == '\\':
@@ -442,7 +443,8 @@ class Parser:
             else:
                 if order == 2: symmetry = 'sym%d%d' % (rank, rank + order - 1)
             function = Function('Array')(Symbol(''.join(array)), *indexing)
-            self.namespace[''.join(array)] = Tensor('', function, dimension, symmetry)
+            latex = self.lexer.sentence[mark:self.lexer.index]
+            self.namespace[''.join(array)] = Tensor(latex, function, dimension, symmetry)
             return function
         if self.accept('UNDERSCORE'):
             index, order = self._lower_index()
