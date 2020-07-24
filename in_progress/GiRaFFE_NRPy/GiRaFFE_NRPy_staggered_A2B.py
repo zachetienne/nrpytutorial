@@ -72,7 +72,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     //          ["Grid" Ay(i,j,k) - "Grid" Ay(i,j,k-1)]/dZ
     Bx_stagger[actual_index] = (Az[index]-Az[indexjm1])*invdx1 - (Ay[index]-Ay[indexkm1])*invdx2;
 
-    // Now multiply Bx and Bx_stagger by 1/sqrt(gamma(i+1/2,j,k)]) = 1/sqrt(1/2 [gamma + gamma_ip1]) = exp(-6 x 1/2 [phi + phi_ip1] )
+    // Now multiply Bx_stagger by 1/sqrt(gamma(i+1/2,j,k)]) = 1/sqrt(1/2 [gamma + gamma_ip1]) = exp(-6 x 1/2 [phi + phi_ip1] )
     const int imax_minus_i = (Nxx_plus_2NGHOSTS0-1)-i;
     const int indexip1jk = IDX3S(i + ( (imax_minus_i > 0) - (0 > imax_minus_i) ),j,k);
     Bx_stagger[actual_index] *= Psim3/psi3_bssn[indexip1jk];
@@ -87,7 +87,7 @@ void GiRaFFE_compute_B_and_Bstagger_from_A(const paramstruct *params,
     // Set By_stagger = \partial_z A_x - \partial_x A_z
     By_stagger[actual_index] = (Ax[index]-Ax[indexkm1])*invdx2 - (Az[index]-Az[indexim1])*invdx0;
 
-    // Now multiply By and By_stagger by 1/sqrt(gamma(i,j+1/2,k)]) = 1/sqrt(1/2 [gamma + gamma_jp1]) = exp(-6 x 1/2 [phi + phi_jp1] )
+    // Now multiply By_stagger by 1/sqrt(gamma(i,j+1/2,k)]) = 1/sqrt(1/2 [gamma + gamma_jp1]) = exp(-6 x 1/2 [phi + phi_jp1] )
     const int jmax_minus_j = (Nxx_plus_2NGHOSTS1-1)-j;
     const int indexijp1k = IDX3S(i,j + ( (jmax_minus_j > 0) - (0 > jmax_minus_j) ),k);
     By_stagger[actual_index] *= Psim3/psi3_bssn[indexijp1k];
