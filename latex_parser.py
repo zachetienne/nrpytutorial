@@ -281,20 +281,20 @@ class Parser:
                 for subtree in tree.preorder():
                     subexpr = subtree.expr
                     if subexpr.func == Function('Tensor'):
-                        subtree.expr = Function('Tensor')(*subexpr.args, Symbol('_x'))
+                        subtree.expr = Function('Tensor')(Symbol('_x'), *subexpr.args)
                         tree.build(subtree)
                 expr = tree.reconstruct()
                 tree = ExprTree(diff(expr, Symbol('_x')))
                 for subtree in tree.preorder():
                     subexpr = subtree.expr
                     if subexpr.func == Derivative:
-                        order, array = len(indices), subexpr.args[0]
+                        order, array = len(indices), subexpr.args[1]
                         indexing = list(array.args[1:-1]) + indices
                         tensor = self.namespace[str(array.args[0])]
                         subtree.expr = self._differentiate(tensor, order, *indexing)
                         tree.build(subtree)
                     elif subexpr.func == Function('Tensor'):
-                        subtree.expr = Function('Tensor')(*subexpr.args[:-1])
+                        subtree.expr = Function('Tensor')(*subexpr.args[1:])
                         tree.build(subtree)
                 return tree.reconstruct()
             return expr
@@ -418,20 +418,20 @@ class Parser:
             for subtree in tree.preorder():
                 subexpr = subtree.expr
                 if subexpr.func == Function('Tensor'):
-                    subtree.expr = Function('Tensor')(*subexpr.args, Symbol('_x'))
+                    subtree.expr = Function('Tensor')(Symbol('_x'), *subexpr.args)
                     tree.build(subtree)
             expr = tree.reconstruct()
             tree = ExprTree(diff(expr, Symbol('_x')))
             for subtree in tree.preorder():
                 subexpr = subtree.expr
                 if subexpr.func == Derivative:
-                    order, array = len(indices), subexpr.args[0]
+                    order, array = len(indices), subexpr.args[1]
                     indexing = list(array.args[1:-1]) + indices
                     tensor = self.namespace[str(array.args[0])]
                     subtree.expr = self._differentiate(tensor, order, *indexing)
                     tree.build(subtree)
                 elif subexpr.func == Function('Tensor'):
-                    subtree.expr = Function('Tensor')(*subexpr.args[:-1])
+                    subtree.expr = Function('Tensor')(*subexpr.args[1:])
                     tree.build(subtree)
             return tree.reconstruct()
         order, array = len(indices), self._tensor()
