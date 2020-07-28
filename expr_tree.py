@@ -1,4 +1,4 @@
-""" SymPy (N-Ary) Expression Tree
+""" Symbolic (N-Ary) Expression Tree
 
     The following script will extend the expression tree from SymPy,
     allowing direct node manipulation for subexpression replacement.
@@ -20,10 +20,8 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# pylint: disable=too-few-public-methods
-
 class ExprTree:
-    """ SymPy (N-Ary) Expression Tree
+    """ Symbolic (N-Ary) Expression Tree
 
         >>> from sympy.abc import a, b, x
         >>> from sympy import cos
@@ -38,11 +36,11 @@ class ExprTree:
         self.root = self.Node(expr, None)
         self.build(self.root)
 
-    def build(self, node, clear=False):
+    def build(self, node, clear=True):
         """ Build expression (sub)tree.
 
             :arg:   root node of (sub)tree
-            :arg:   clear children (default: False)
+            :arg:   clear children (default: True)
 
             >>> from sympy.abc import a, b
             >>> from sympy import cos, sin
@@ -117,12 +115,11 @@ class ExprTree:
         for subtree in self.postorder():
             if subtree.children:
                 expr_list = [node.expr for node in subtree.children]
-                subtree.expr = subtree.expr.func(\
-                    *expr_list, evaluate=evaluate)
+                subtree.expr = subtree.expr.func(*expr_list, evaluate=evaluate)
         return self.root.expr
 
     class Node:
-        """ Expression Tree Node; a node cannot exist outside the tree """
+        """ Expression Tree Node """
         def __init__(self, expr, func):
             self.expr = expr
             self.func = func
@@ -131,11 +128,16 @@ class ExprTree:
         def append(self, node):
             self.children.append(node)
 
-    def __repr__(self):
-        return str([node.expr for node in self.preorder()])
+        def __repr__(self):
+            return 'Node(%s, %s)' % (self.expr, self.func)
 
-    def __str__(self):
-        return 'ExprTree(%s)' % str(self.root.expr)
+        def __str__(self):
+            return str(self.expr)
+
+    def __repr__(self):
+        return 'ExprTree(' + str(self.root.expr) + ')'
+
+    __str__ = __repr__
 
 if __name__ == "__main__":
     import doctest

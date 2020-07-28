@@ -8,8 +8,8 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-from SIMDExprTree import ExprTree  # NRPy+: Contains expression tree data structure class definitions and manipulation functions
-import sympy as sp                 # SymPy: The Python computer algebra package upon which NRPy+ depends
+from expr_tree import ExprTree  # NRPy+: Contains expression tree data structure class definitions and manipulation functions
+import sympy as sp              # SymPy: The Python computer algebra package upon which NRPy+ depends
 
 def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=False, debug=False):
     """ Perform CSE Preprocessing
@@ -76,7 +76,7 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
                     repl = sp.Symbol(var_name)
                     map_sym_to_rat[repl], map_rat_to_sym[subexpr] = subexpr, repl
                 subtree.expr = repl * sign
-                if sign < 0: tree.build(subtree)
+                if sign < 0: tree.build(subtree, clear=False)
             # If declare == True, then declare symbol for negative one
             elif declare == True and subexpr == sp.S.NegativeOne:
                 try: subtree.expr = map_rat_to_sym[sp.S.NegativeOne]
@@ -93,24 +93,24 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
                     for var in map_sym_to_rat:
                         if var != _NegativeOne_:
                             arg.expr = sp.collect(arg.expr, var)
-                    tree.build(arg, clear=True)
+                    tree.build(arg)
             expr = tree.reconstruct()
             # Perform partial factoring on expression(s)
             for var in map_sym_to_rat:
                 if var != _NegativeOne_:
                     expr = sp.collect(expr, var)
             tree.root.expr = expr
-            tree.build(tree.root, clear=True)
+            tree.build(tree.root)
         # If negative == True, then perform partial factoring on _NegativeOne_
         if negative == True:
             for subtree in tree.preorder():
                 if isinstance(subtree.expr, sp.Function):
                     arg = subtree.children[0]
                     arg.expr = sp.collect(arg.expr, _NegativeOne_)
-                    tree.build(arg, clear=True)
+                    tree.build(arg)
             expr = sp.collect(tree.reconstruct(), _NegativeOne_)
             tree.root.expr = expr
-            tree.build(tree.root, clear=True)
+            tree.build(tree.root)
         # If declare == True, then simplify (-1)^n
         if declare == True:
             _One_ = sp.Symbol(prefix + '_Integer_1')
@@ -120,7 +120,7 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
                     base, expo = subexpr.args[0], subexpr.args[1]
                     if base == _NegativeOne_:
                         subtree.expr = _One_ if expo % 2 == 0 else _NegativeOne_
-                        tree.build(subtree, clear=True)
+                        tree.build(subtree)
             expr = tree.reconstruct()
         # Replace any left-over one(s) after partial factoring
         if factor == True or negative == True:
