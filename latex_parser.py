@@ -5,7 +5,7 @@
 # pylint: disable=attribute-defined-outside-init
 from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
-from sympy import exp, log, expand, diff, var
+from sympy import pi, exp, log, expand, diff, var
 from collections import OrderedDict
 from expr_tree import ExprTree
 from inspect import currentframe
@@ -39,6 +39,7 @@ class Lexer:
               ('RATIONAL',       r'[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
               ('INTEGER',        r'\-?[0-9]+'),
+              ('PI',             r'\\pi'),
               ('EULER',          r'e'),
               ('PLUS',           r'\+'),
               ('MINUS',          r'\-'),
@@ -142,11 +143,11 @@ class Parser:
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
         <TERM>          -> <FACTOR> { [ '/' ] <FACTOR> }*
         <FACTOR>        -> ( <BASE> | <EULER> ) { '^' <EXPONENT> }*
-        <BASE>          -> [ '-' ] ( <ATOM> | '(' <EXPRESSION> ')' [ '_' '{' ',' { <SYMBOL> }+ '}' ] )
+        <BASE>          -> [ '-' ] ( <ATOM> | '(' <EXPRESSION> ')' )
         <EXPONENT>      -> <BASE> | '{' <BASE> '}'
         <ATOM>          -> <VARIABLE> | <NUMBER> | <COMMAND>
         <VARIABLE>      -> <ARRAY> | <SYMBOL> [ '_' ( <SYMBOL> | <INTEGER> ) ]
-        <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER>
+        <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER> | <PI>
         <COMMAND>       -> <SQRT> | <FRAC> | <NLOG> | <TRIG> | <DERV>
         <SQRT>          -> <SQRT_CMD> [ '[' <INTEGER> ']' ] '{' <EXPRESSION> '}'
         <FRAC>          -> <FRAC_CMD> '{' <EXPRESSION> '}' '{' <EXPRESSION> '}'
@@ -173,6 +174,15 @@ class Parser:
             :arg:    expression mode [default: False]
             :return: symbolic expression or namespace tuple
         """
+        stack = []; i_1 = i_2 = i_3 = 0
+        for i, lexeme in enumerate(sentence):
+            if   lexeme == '(': stack.append(i)
+            elif lexeme == ')': i_1, i_2 = stack.pop(), i + 1
+            elif lexeme == ',' and sentence[i - 1] == '{':
+                i_3 = sentence.find('}', i) + 1
+                subexpr, indices = sentence[i_1:i_2], sentence[i_2:i_3][3:-1]
+                operator = ''.join('\\partial_' + index for index in indices)
+                sentence = sentence.replace(sentence[i_1:i_3], operator + subexpr)
         self.lexer.initialize(sentence)
         self.lexer.lex()
         if expression:
@@ -267,42 +277,12 @@ class Parser:
             expr = exp(expr) if subexpr == 'e' else subexpr ** expr
         return expr
 
-    # <BASE> -> [ '-' ] ( <ATOM> | '(' <EXPRESSION> ')' [ '_' '{' ',' { <SYMBOL> }+ '}' ] )
+    # <BASE> -> [ '-' ] ( <ATOM> | '(' <EXPRESSION> ')' )
     def _base(self):
         sign = -1 if self.accept('MINUS') else 1
         if self.accept('LEFT_PAREN'):
             expr = sign * self._expression()
             self.expect('RIGHT_PAREN')
-            if self.accept('UNDERSCORE'):
-                self.expect('LEFT_BRACE')
-                self.expect('COMMA')
-                indices = [self.lexer.lexeme]
-                self.expect('SYMBOL')
-                while self.peek('SYMBOL'):
-                    index = self.lexer.lexeme
-                    self.expect('SYMBOL')
-                    indices.extend(index)
-                self.expect('RIGHT_BRACE')
-                tree = ExprTree(expr)
-                for subtree in tree.preorder():
-                    subexpr = subtree.expr
-                    if subexpr.func == Function('Tensor'):
-                        subtree.expr = Function('Tensor')(Symbol('_x'), *subexpr.args)
-                        tree.build(subtree)
-                expr = tree.reconstruct()
-                tree = ExprTree(diff(expr, Symbol('_x')))
-                for subtree in tree.preorder():
-                    subexpr = subtree.expr
-                    if subexpr.func == Derivative:
-                        order, array = len(indices), subexpr.args[1]
-                        indexing = list(array.args[1:-1]) + indices
-                        tensor = self.namespace[str(array.args[0])]
-                        subtree.expr = self._differentiate(tensor, order, *indexing)
-                        tree.build(subtree)
-                    elif subexpr.func == Function('Tensor'):
-                        subtree.expr = Function('Tensor')(*subexpr.args[1:])
-                        tree.build(subtree)
-                return tree.reconstruct()
             return expr
         return sign * self._atom()
 
@@ -362,6 +342,8 @@ class Parser:
             return Float(number)
         if self.accept('INTEGER'):
             return Integer(number)
+        if self.accept('PI'):
+            return pi
         sentence = self.lexer.sentence
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unexpected \'%s\' at position %d' %
@@ -501,9 +483,9 @@ class Parser:
             for subtree in tree.preorder():
                 subexpr = subtree.expr
                 if subexpr.func == Derivative:
-                    order, array = len(indices), subexpr.args[1]
-                    indexing = list(array.args[1:-1]) + indices
-                    tensor = self.namespace[str(array.args[0])]
+                    order, array = len(indices), subexpr.args[0]
+                    indexing = list(array.args[2:]) + indices
+                    tensor = self.namespace[str(array.args[1])]
                     subtree.expr = self._differentiate(tensor, order, *indexing)
                     tree.build(subtree)
                 elif subexpr.func == Function('Tensor'):
@@ -613,7 +595,7 @@ class Parser:
         return index
 
     def _tensorial(self):
-        mark_1 = self.lexer.index - 1
+        mark_1 = self.lexer.index - len(self.lexer.lexeme)
         for token in self.lexer.tokenize():
             if token == 'LINE_BREAK': break
         mark_2 = self.lexer.index
@@ -796,6 +778,8 @@ def parse(sentence, expression=False, debug=False):
         [[[0, 0, 0], [0, 0, 1], [0, -1, 0]], [[0, 0, -1], [0, 0, 0], [1, 0, 0]], [[0, 1, 0], [-1, 0, 0], [0, 0, 0]]]
         >>> print(aU)
         [-bD_dD12 + bD_dD21, bD_dD02 - bD_dD20, -bD_dD01 + bD_dD10]
+
+        >>> config = r'% \\epsilon^{ijk} [3]: permutation, b_k [3];'
     """
     namespace = Parser().parse(sentence, expression)
     if not isinstance(namespace, dict):
