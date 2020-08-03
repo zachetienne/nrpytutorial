@@ -19,6 +19,7 @@ WaveToyNRPy
 Slab
 SymBase
 Time
+NewRad
 "
 
 #############################################################
@@ -34,9 +35,9 @@ CoordBase::boundary_size_y_upper        = 4
 CoordBase::boundary_size_z_upper        = 4
 
 # Size of the grid (including boundary points)
-PUGH::global_nx = 69
-PUGH::global_ny = 69
-PUGH::global_nz = 69
+PUGH::global_nx = 137
+PUGH::global_ny = 137
+PUGH::global_nz = 137
 
 PUGH::ghost_size = 4
 
@@ -49,8 +50,6 @@ CartGrid3D::zmin = -13.6
 CartGrid3D::xmax =  13.6
 CartGrid3D::ymax =  13.6
 CartGrid3D::zmax =  13.6
-
-Periodic::periodic = "yes"
 
 #############################################################
 # Time integration
@@ -84,7 +83,7 @@ IOBasic::outInfo_vars         = "WaveToyNRPy::uuGF"
 
 
 IOASCII::out1D_style          = "gnuplot f(t,x)"
-IOASCII::out1D_every          = 1
+IOASCII::out1D_every          = 2
 IOASCII::out1D_x              = "yes"
 IOASCII::out1D_y              = "no"
 IOASCII::out1D_z              = "no"
@@ -98,4 +97,4 @@ IDScalarWaveNRPy::kk0 = 0.4
 IDScalarWaveNRPy::kk1 = 0.4
 IDScalarWaveNRPy::kk2 = 0.4
 
-WaveToyNRPy::bound = "static" # There is no good boundary condition option for plane-wave initial data.
+###WaveToyNRPy::bound = "static" # There is no good boundary condition option for plane-wave initial data.

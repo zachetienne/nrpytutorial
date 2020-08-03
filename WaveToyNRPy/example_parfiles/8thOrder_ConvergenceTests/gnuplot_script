@@ -1,0 +1,8 @@
+# GNUPLOT SCRIPTS
+
+
+# RK8 + FD8 3D run:
+set term post enh color fontscale 1.5
+set out "out-RK8-FD8-3D.ps"
+set title "8th-order Convergence:\n om=k=c=1 Sine Plane Wave along Grid Diagonal, t=3 / om";set xlabel "x (units of 1/k)";set ylabel "|Numerical - Exact|";a=15;p [-4:4] "planewave_along_3D_diagonal-dx_0.4__FD8-RK8/uuGF.gnuplot" u 2:(abs($3-$4)) i a ti "dx=0.4" w l,"planewave_along_3D_diagonal-dx_0.2__FD8-RK8/uuGF.gnuplot" u 2:(abs($3-$4)*256) i a ti "rescaled (by 2**8; 4th order conv) dx = 0.2" w lp
+!ps2pdf out-RK4-FD4-3D.ps
