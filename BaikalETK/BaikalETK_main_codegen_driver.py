@@ -100,10 +100,10 @@ for ThornName in ["Baikal","BaikalVacuum"]:
     #   (since REAL is undefined in the ETK, but CCTK_REAL takes its place)
     cmd.mkdir(os.path.join(outdir,"SIMD"))
     import fileinput
-    with fileinput.FileInput(os.path.join(nrpy_dir_path,"SIMD","SIMD_intrinsics.h")) as infile:
-        with open(os.path.join(outdir,"SIMD","SIMD_intrinsics.h"),"w") as outfile:
-            for line in infile:
-                outfile.write(line.replace("#define REAL_SIMD_ARRAY REAL", "#define REAL_SIMD_ARRAY CCTK_REAL"))
+    f = fileinput.input(os.path.join(nrpy_dir_path,"SIMD","SIMD_intrinsics.h"))
+    with open(os.path.join(outdir,"SIMD","SIMD_intrinsics.h"),"w") as outfile:
+        for line in f:
+            outfile.write(line.replace("#define REAL_SIMD_ARRAY REAL", "#define REAL_SIMD_ARRAY CCTK_REAL"))
 
     # Create directory for rfm_files output
     cmd.mkdir(os.path.join(outdir, "rfm_files"))
