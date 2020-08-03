@@ -19,6 +19,7 @@ WaveToyNRPy
 Slab
 SymBase
 Time
+NewRad
 "
 
 #############################################################
@@ -49,8 +50,6 @@ CartGrid3D::zmin = -12.8
 CartGrid3D::xmax =  12.8
 CartGrid3D::ymax =  12.8
 CartGrid3D::zmax =  12.8
-
-Periodic::periodic = "yes"
 
 #############################################################
 # Time integration
@@ -98,4 +97,4 @@ IDScalarWaveNRPy::kk0 = 0.4
 IDScalarWaveNRPy::kk1 = 0.4
 IDScalarWaveNRPy::kk2 = 0.4
 
-WaveToyNRPy::bound = "static" # There is no good boundary condition option for plane-wave initial data.
+###WaveToyNRPy::bound = "static" # There is no good boundary condition option for plane-wave initial data.
