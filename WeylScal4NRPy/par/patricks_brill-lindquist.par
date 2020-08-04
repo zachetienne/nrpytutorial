@@ -1,0 +1,584 @@
+
+ActiveThorns = "ADMBase ADMMacros ADMCoupling AEILocalInterp AHFinderDirect Boundary Carpet CarpetInterp CarpetIOASCII CarpetIOBasic CarpetIOHDF5 CarpetIOScalar CarpetLib CarpetReduce CarpetRegrid2 CarpetSlab CarpetTracker CartGrid3D CoordBase CoordGauge CycleClock Dissipation Fortran GenericFD GSL HDF5 InitBase IOUtil LocalInterp LocalReduce LoopControl ML_ADMConstraints ML_BSSN ML_BSSN_Helper MoL MPI NaNChecker NewRad PunctureTracker Slab SpaceMask SphericalSurface StaticConformal SymBase SystemStatistics TerminationTrigger Time Timers TmunuBase IDanalyticBH Vectors zlib ReflectionSymmetry WeylScal4NRPy WeylScal4 Multipole QuasiLocalMeasures"
+
+WeylScal4NRPy::WeylScal4NRPy_calc_every       = 256
+WeylScal4::WeylScal4_psis_calc_Nth_calc_every = 256
+
+CarpetLib::max_memory_size_MB = 54000
+CarpetLib::max_allowed_memory_MB = 54000
+
+# Parameters of thorn ADMBase (implementing ADMBase)
+ADMBase::dtlapse_evolution_method = "ML_BSSN"
+ADMBase::dtshift_evolution_method = "ML_BSSN"
+ADMBase::evolution_method         = "ML_BSSN"
+ADMBase::initial_data             = "bl_bh"
+#ADMBase::initial_dtlapse          = "zero"
+#ADMBase::initial_dtshift          = "zero"
+#ADMBase::initial_lapse            = "twopunctures-averaged"
+#ADMBase::initial_shift            = "zero"
+ADMBase::lapse_evolution_method   = "ML_BSSN"
+
+ADMBase::metric_type              = "physical"
+ADMBase::shift_evolution_method   = "ML_BSSN"
+
+# Parameters of thorn ADMMacros (implementing ADMMacros)
+ADMMacros::spatial_order = 4
+
+ML_BSSN::fdOrder = 6
+ML_BSSN::conformalMethod = 1 # USE W EVOLUTION!
+
+# Parameters of thorn AHFinderDirect (implementing AHFinderDirect)
+AHFinderDirect::find_every = 16
+
+#AHFinderDirect::verbose_level = "physics details"
+AHFinderDirect::verbose_level = "algorithm debug"
+
+AHFinderDirect::h_base_file_name              = "h"
+AHFinderDirect::BH_diagnostics_base_file_name = "BH_diagnostics"
+AHFinderDirect::output_OpenDX_control_files   = "no"
+
+AHFinderDirect::Theta_norm_for_convergence = 1.3e-2
+
+AHFinderDirect::geometry_interpolator_name = "Lagrange polynomial interpolation"
+AHFinderDirect::geometry_interpolator_pars = "order=4"
+
+AHFinderDirect::max_Newton_iterations__initial = 40
+
+# individual AH
+AHFinderDirect::N_horizons = 2
+AHFinderDirect::patch_system_type[1] = "+z hemisphere"
+AHFinderDirect::move_origins = "yes"
+AHFinderDirect::reshape_while_moving = "yes"
+AHFinderDirect::predict_origin_movement = "yes"
+
+AHFinderDirect::max_allowable_horizon_radius[1] = 2.0
+AHFinderDirect::origin_x[1] = 2.0
+AHFinderDirect::origin_y[1] =  0.0
+AHFinderDirect::origin_z[1] =  0.0
+AHFinderDirect::which_surface_to_store_info[1] = 0
+AHFinderDirect::initial_guess_method[1] = "coordinate sphere"
+AHFinderDirect::initial_guess__coord_sphere__x_center[1] = 2.0
+AHFinderDirect::initial_guess__coord_sphere__y_center[1] =  0.0
+AHFinderDirect::initial_guess__coord_sphere__z_center[1] =  0.0
+AHFinderDirect::initial_guess__coord_sphere__radius[1] = 0.25
+AHFinderDirect::reset_horizon_after_not_finding[1] = no
+
+AHFinderDirect::max_allowable_horizon_radius[2] = 2.0
+AHFinderDirect::origin_x[2] =-2.0
+AHFinderDirect::origin_y[2] =  0.0
+AHFinderDirect::origin_z[2] =  0.0
+AHFinderDirect::which_surface_to_store_info[2] = 1
+AHFinderDirect::initial_guess_method[2] = "coordinate sphere"
+AHFinderDirect::initial_guess__coord_sphere__x_center[2] =-2.0
+AHFinderDirect::initial_guess__coord_sphere__y_center[2] =  0.0
+AHFinderDirect::initial_guess__coord_sphere__z_center[2] =  0.0
+AHFinderDirect::initial_guess__coord_sphere__radius[2] = 0.25
+AHFinderDirect::reset_horizon_after_not_finding[2] = no
+
+CarpetTracker::surface[0] = 0
+CarpetTracker::surface[1] = 1
+#CarpetTracker::surface[2] = 2
+#################################################################
+
+# Parameters of thorn Boundary (implementing boundary)
+Boundary::radpower = 2
+
+# Parameters of thorn Cactus (implementing AMR)
+Cactus::cctk_full_warnings = "yes"
+Cactus::cctk_run_title     = "SinglePuncture"
+Cactus::cctk_final_time     = 3000.00
+Cactus::terminate           = "time"
+
+# Parameters of thorn Carpet (implementing Driver)
+Carpet::check_for_poison         = "no"
+Carpet::enable_all_storage       = "no"
+Carpet::init_3_timelevels        = "no"
+Carpet::init_fill_timelevels     = "yes"
+Carpet::output_timers_every      = 1024
+Carpet::poison_new_timelevels    = "yes"
+
+###Carpet::schedule_barriers        = "yes"
+###Carpet::sync_barriers            = "yes"
+Carpet::storage_verbose          = "no"
+Carpet::time_refinement_factors         = "[1,1,1,1,2,4,8,16,32,64]" # N_repeats = 3 (see dtfac below)
+#Carpet::time_refinement_factors  = "[1,2,2,4,8,16,32,64]" # N_repeats = 1 (see dtfac below)
+Carpet::verbose                  = "no"
+Carpet::veryverbose              = "no"
+
+# Parameters of thorn CarpetInterp (implementing interp)
+CarpetInterp::check_tree_search = "no"
+CarpetInterp::tree_search       = "yes"
+
+# Parameters of thorn CarpetIOASCII (implementing IOASCII)
+CarpetIOASCII::one_file_per_group     = "no"
+CarpetIOASCII::out0D_every            = 16
+CarpetIOASCII::out0D_vars             = "
+  PunctureTracker::pt_loc
+  Carpet::physical_time_per_hour
+  ##QuasiLocalMeasures::qlm_scalars 
+  QuasiLocalMeasures::qlm_spin[0]
+  QuasiLocalMeasures::qlm_radius[0]
+  QuasiLocalMeasures::qlm_mass[0]
+  QuasiLocalMeasures::qlm_3det[0]
+  SphericalSurface::sf_active
+"
+CarpetIOASCII::out1D_d                = "no"
+CarpetIOASCII::out1D_every            = 256
+CarpetIOASCII::out1D_vars             = "
+  WeylScal4NRPy::psi4r
+  WeylScal4NRPy::psi4i
+  WeylScal4NRPy::psi3r
+  WeylScal4NRPy::psi3i
+  WeylScal4NRPy::psi2r
+  WeylScal4NRPy::psi2i
+  WeylScal4NRPy::psi1r
+  WeylScal4NRPy::psi1i
+  WeylScal4NRPy::psi0r
+  WeylScal4NRPy::psi0i
+  WeylScal4NRPy::NRPycurvIr
+  WeylScal4NRPy::NRPycurvIi
+  WeylScal4NRPy::NRPycurvJr
+  WeylScal4NRPy::NRPycurvJi
+  WeylScal4NRPy::NRPycurvJ1
+  WeylScal4NRPy::NRPycurvJ2
+  WeylScal4NRPy::NRPycurvJ3
+  WeylScal4NRPy::NRPycurvJ4
+  WeylScal4::Psi4r
+  WeylScal4::Psi4i
+  WeylScal4::Psi3r
+  WeylScal4::Psi3i
+  WeylScal4::Psi2r
+  WeylScal4::Psi2i
+  WeylScal4::Psi1r
+  WeylScal4::Psi1i
+  WeylScal4::Psi0r
+  WeylScal4::Psi0i
+  WeylScal4::curvIr
+  WeylScal4::curvIi
+  WeylScal4::curvJr
+  WeylScal4::curvJi
+  WeylScal4::curvJ1
+  WeylScal4::curvJ2
+  WeylScal4::curvJ3
+  WeylScal4::curvJ4
+  ADMBase::curv
+  ADMBase::lapse
+  ADMBase::metric
+  ADMBase::shift
+  CarpetReduce::weight
+  ML_BSSN::ml_Ham
+  ML_BSSN::ml_mom
+"
+CarpetIOASCII::out2D_every            = -1
+CarpetIOASCII::out2D_vars             = "
+  ADMBase::curv
+  ADMBase::lapse
+  ADMBase::metric
+  ADMBase::shift
+  ML_BSSN::ml_ham
+  ML_BSSN::ml_mom
+  SphericalSurface::sf_radius
+"
+CarpetIOASCII::out3D_ghosts           = "no"
+CarpetIOASCII::output_symmetry_points = "no"
+
+# Parameters of thorn CarpetIOBasic (implementing IOBasic)
+CarpetIOBasic::outInfo_every      = 8
+CarpetIOBasic::outInfo_reductions = "maximum norm2"
+CarpetIOBasic::outInfo_vars       = "
+  Carpet::physical_time_per_hour
+  ML_BSSN::phi
+  ML_BSSN::ml_trace_curv
+"
+
+# Parameters of thorn CarpetIOHDF5 (implementing IOHDF5)
+CarpetIOHDF5::checkpoint                    = "yes"
+CarpetIOHDF5::compression_level             = 0
+CarpetIOHDF5::one_file_per_group            = "no"
+CarpetIOHDF5::open_one_input_file_at_a_time = "yes"
+CarpetIOHDF5::out2D_every                   = -1
+CarpetIOHDF5::out2D_vars                    = "
+  ML_ADMConstraints::ml_ham
+"
+#CarpetIOHDF5::out_every                     = 256
+#CarpetIOHDF5::out_vars                      = "
+#"
+
+# Parameters of thorn CarpetIOScalar (implementing IOScalar)
+CarpetIOScalar::one_file_per_group   = "no"
+CarpetIOScalar::outScalar_every      = 16
+CarpetIOScalar::outScalar_reductions = "minimum maximum average norm1 norm2"
+CarpetIOScalar::outScalar_vars       = "
+  ML_BSSN::ml_lapse
+#  ML_BSSN::ml_ham
+#  ML_BSSN::ml_mom
+  QuasiLocalMeasures::qlm_spin[0]
+  QuasiLocalMeasures::qlm_radius[0]
+  QuasiLocalMeasures::qlm_mass[0]
+  QuasiLocalMeasures::qlm_3det[0]
+"
+
+# Parameters of thorn CarpetLib (implementing CarpetLib)
+CarpetLib::support_staggered_operators = "yes"
+
+CarpetLib::poison_new_memory    = "no"
+#CarpetLib::poison_value         = 114
+CarpetLib::print_memstats_every = -1
+
+# Parameters of thorn CarpetMask (implementing CarpetMask)
+#CarpetMask::excluded_surface[0]        = 0
+#CarpetMask::excluded_surface[1]        = 1
+#CarpetMask::excluded_surface[2]        = 2
+#CarpetMask::excluded_surface_factor[0] = 1
+#CarpetMask::excluded_surface_factor[1] = 1
+#CarpetMask::excluded_surface_factor[2] = 1
+#CarpetMask::verbose                    = "no"
+
+# Parameters of thorn CarpetReduce (implementing reduce)
+CarpetReduce::verbose = "no"
+
+###############################################
+# Coordinate setup:
+driver::ghost_size = 4
+
+coordbase::boundary_shiftout_z_lower     = 1
+coordbase::boundary_size_x_lower         = 4
+coordbase::boundary_size_x_upper         = 4
+coordbase::boundary_size_y_lower         = 4
+coordbase::boundary_size_y_upper         = 4
+coordbase::boundary_size_z_lower         = 4
+coordbase::boundary_size_z_upper         = 4
+
+
+
+#grid::domain = "bitant"
+#grid::bitant_plane = "xy"
+#grid::avoid_origin = "no"
+
+CoordBase::domainsize = "minmax"
+CoordBase::xmax                         = 128.015625
+CoordBase::ymax                         = 128.015625
+CoordBase::zmax                         = 128.0
+CoordBase::xmin                         =-127.984375
+CoordBase::ymin                         =-127.984375
+CoordBase::zmin                         =  0.0
+CoordBase::dx                           = 4.0
+CoordBase::dy                           = 4.0
+CoordBase::dz                           = 4.0
+
+CartGrid3D::type = "coordbase"
+
+###############################################
+# CARPET:
+#Carpet::use_tapered_grids = "yes"
+
+Carpet::domain_from_coordbase = "yes"
+
+carpet::max_refinement_levels = 8
+
+#Carpet::regrid_in_level_mode         = yes
+#Carpet::regrid_during_initialisation = no
+#Carpet::init_3_timelevels            = yes
+
+#CarpetLib::fast_recomposing = yes
+
+CarpetRegrid2::regrid_every = 16
+
+CarpetTracker::verbose = yes
+#CarpetRegrid2::verbose = yes
+
+CarpetRegrid2::num_centres = 3
+
+CarpetRegrid2::num_levels_1 =   8
+CarpetRegrid2::position_x_1 =   2.0
+CarpetRegrid2::radius_1[ 1] =   48.0
+CarpetRegrid2::radius_1[ 2] =   24.0
+CarpetRegrid2::radius_1[ 3] =   12.0
+CarpetRegrid2::radius_1[ 4] =    6.0
+CarpetRegrid2::radius_1[ 5] =    3.0
+CarpetRegrid2::radius_1[ 6] =    1.5
+CarpetRegrid2::radius_1[ 7] =    0.75
+
+CarpetRegrid2::num_levels_2 =    8
+CarpetRegrid2::position_x_2 =  -2.0
+CarpetRegrid2::radius_2[ 1] =   48.0
+CarpetRegrid2::radius_2[ 2] =   24.0
+CarpetRegrid2::radius_2[ 3] =   12.0
+CarpetRegrid2::radius_2[ 4] =    6.0
+CarpetRegrid2::radius_2[ 5] =    3.0
+CarpetRegrid2::radius_2[ 6] =    1.5
+CarpetRegrid2::radius_2[ 7] =    0.75
+
+CarpetRegrid2::num_levels_3 =    8
+CarpetRegrid2::position_x_3 =   0.0
+CarpetRegrid2::radius_3[ 1] =   48.0
+CarpetRegrid2::radius_3[ 2] =   24.0
+CarpetRegrid2::radius_3[ 3] =   12.0
+CarpetRegrid2::radius_3[ 4] =    6.0
+CarpetRegrid2::radius_3[ 5] =    3.0
+CarpetRegrid2::radius_3[ 6] =    1.5
+CarpetRegrid2::radius_3[ 7] =    0.75
+
+Carpet::prolongation_order_space = 5
+#Carpet::prolongation_order_space = 7
+Carpet::prolongation_order_time  = 2
+#Carpet::prolongation_order_time  = 1
+Carpet::use_buffer_zones  = yes
+
+#Carpet::poison_new_timelevels = yes
+#Carpet::check_for_poison = yes
+#Carpet::poison_value = 255
+
+Carpet::convergence_level = 0
+
+###############################################
+
+
+
+
+# Parameters of thorn Dissipation (implementing Dissipation)
+Dissipation::epsdis = 0.3
+Dissipation::order  = 7
+Dissipation::vars   = "
+  ML_BSSN::ml_curv
+  ML_BSSN::ml_dtlapse
+  ML_BSSN::ml_dtshift
+  ML_BSSN::ml_gamma
+  ML_BSSN::ml_lapse
+  ML_BSSN::ml_log_confac
+  ML_BSSN::ml_metric
+  ML_BSSN::ml_shift
+  ML_BSSN::ml_trace_curv
+"
+
+# Parameters of thorn InitBase (implementing InitBase)
+InitBase::initial_data_setup_method = "init_all_levels"
+
+# Parameters of thorn IOUtil (implementing IO)
+IOUtil::checkpoint_dir          = ABEoutput_directory-$parfile
+IOUtil::checkpoint_every_walltime_hours = 1000.8
+IOUtil::checkpoint_keep         = 1
+IOUtil::checkpoint_on_terminate = "yes"
+IOUtil::out_dir                 = ABEoutput_directory-$parfile
+IOUtil::out_fileinfo            = "none"
+IOUtil::parfile_write           = "generate"
+IOUtil::recover                 = "autoprobe"
+IOUtil::recover_dir             = ABEoutput_directory-$parfile
+
+# Parameters of thorn ML_BSSN (implementing ML_BSSN)
+# Mathematica worksheet to translate these parameters:
+#kneg[x_] := -x;
+#kmul[x_, y_] := x*y;
+#kmadd[x_, y_, z_] := x*y + z;
+#ToReal[x_] := x;
+#kpow[x_, y_] := x^y;
+#kadd[x_, y_] := x + y;
+#ksub[x_, y_] := x - y;
+#kneg[kmul[
+#  kmul[kmadd[ToReal[1 - LapseACoeff], 
+#    kmadd[ToReal[AlphaDriver], kadd[ToReal[-1], alphaL], trKL], 
+#    kmul[ToReal[LapseACoeff], AL]], kpow[alphaL, harmonicN]], 
+#  ToReal[harmonicF]]]
+#
+#Output: lapserhs = -alphaL^harmonicN harmonicF (AL LapseACoeff + (1 - 
+#      LapseACoeff) (AlphaDriver (-1 + alphaL) + trKL))
+#
+#So for the case 
+#AlphaDriver = 0;
+#harmonicF = 2;
+#harmonicN = 1;
+#LapseACoeff = 0;
+#LapseAdvectionCoeff = 1;
+#we get
+# lapserhs = -2 alphaL trKL
+##################################
+# Similarly,
+# beta1rhs = kmul(kmul(theta,kadd(Xt1L,kmadd(ToReal(BetaDriver),kmul(ToReal(-1 + 
+#          ShiftBCoeff),kmul(beta1L,eta)),kmul(ToReal(ShiftBCoeff),ksub(B1L,Xt1L))))),ToReal(ShiftGammaCoeff));
+# = kmul[kmul[theta, 
+#   kadd[Xt1L, 
+#    kmadd[ToReal[BetaDriver], 
+#     kmul[ToReal[-1 + ShiftBCoeff], kmul[beta1L, eta]], 
+#     kmul[ToReal[ShiftBCoeff], ksub[B1L, Xt1L]]]]], 
+#  ToReal[ShiftGammaCoeff]]
+
+# = ShiftGammaCoeff theta (beta1L BetaDriver eta (-1 + ShiftBCoeff) + 
+#    ShiftBCoeff (B1L - Xt1L) + Xt1L)
+
+# So for the case
+#BetaDriver = 8/3;
+#ShiftAdvectionCoeff = 1; (* Means that shift advection term is enabled. *)
+#ShiftBCoeff = 0;
+#ShiftGammaCoeff = 3/4;
+#theta = 1;
+# we get:
+# beta1rhs = -2 beta1L eta + (3 Xt1L)/4
+##################################
+
+# LapseACoeff is the coefficient on RHS of \partial_t \alpha^i = A^i. Thus LapseACoeff=0 disables A evolution.
+# ShiftBCoeff is the coefficient on RHS of \partial_t \beta^i  = B^i. Thus ShiftBCoeff=0 disables B evolution.
+
+ML_BSSN::AlphaDriver                   = 0
+ML_BSSN::ShiftGammaCoeff               = 0.75                     # 3/4
+ML_BSSN::BetaDriver                    = 1.8333333333333333333333 # -> eta = ShiftGammaCoeff*BetaDriver = 3/4*1.833333333333333 = 1.375.
+ML_BSSN::ShiftBCoeff                   = 0.0
+ML_BSSN::ShiftAdvectionCoeff           = 0.0
+ML_BSSN::harmonicF                     = 2
+ML_BSSN::harmonicN                     = 1
+ML_BSSN::LapseACoeff                   = 0
+ML_BSSN::LapseAdvectionCoeff           = 1
+ML_BSSN::MinimumLapse                  = 1.0000000000000000209e-08
+ML_BSSN::ML_curv_bound                 = "none"
+ML_BSSN::ML_dtlapse_bound              = "none"
+ML_BSSN::ML_dtshift_bound              = "none"
+ML_BSSN::ML_Gamma_bound                = "none"
+ML_BSSN::ML_lapse_bound                = "none"
+ML_BSSN::ML_log_confac_bound           = "none"
+ML_BSSN::ML_metric_bound               = "none"
+ML_BSSN::ML_shift_bound                = "none"
+ML_BSSN::ML_trace_curv_bound           = "none"
+ML_BSSN::my_initial_boundary_condition = "extrapolate-gammas"
+ML_BSSN::my_rhs_boundary_condition     = "NewRad"
+ML_BSSN::timelevels                    = 3
+
+
+# Parameters of thorn MoL (implementing MethodOfLines)
+MoL::MoL_Intermediate_Steps                     = 4
+MoL::MoL_Num_Scratch_Levels                     = 1
+MoL::ODE_Method                                 = "RK4"
+MoL::run_MoL_PostStep_in_Post_Recover_Variables = "no"
+
+# Parameters of thorn NaNChecker (implementing NaNChecker)
+NaNChecker::action_if_found = "terminate"
+NaNChecker::check_every     = 16000
+NaNChecker::check_vars      = "
+  ADMBase::curv 
+  ADMBase::dtlapse
+  ADMBase::dtshift
+  ADMBase::lapse 
+  ADMBase::metric 
+  ADMBase::shift 
+  ML_BSSN::ml_curv
+  ML_BSSN::ml_dtlapse
+  ML_BSSN::ml_dtshift
+  ML_BSSN::ml_Gamma
+  ML_BSSN::ml_lapse
+  ML_BSSN::ml_log_confac
+  ML_BSSN::ml_metric
+  ML_BSSN::ml_shift
+  ML_BSSN::ml_trace_curv
+"
+NaNChecker::verbose         = "all"
+
+# Parameters of thorn OutsideMask (implementing OutsideMask)
+##OutsideMask::OutsideMask_Distance_GF = "yes"
+
+# Parameters of thorn PunctureTracker (implementing PunctureTracker)
+PunctureTracker::initial_x[0]                   = -2.0
+PunctureTracker::initial_x[1]                   =  2.0
+PunctureTracker::track[0]                       = "yes"
+PunctureTracker::track[1]                       = "yes"
+PunctureTracker::verbose                        = "yes"
+PunctureTracker::which_surface_to_store_info[0] = 0
+PunctureTracker::which_surface_to_store_info[1] = 1
+
+# Parameters of thorn QuasiLocalMeasures (implementing QuasiLocalMeasures)
+QuasiLocalMeasures::interpolator         = "Lagrange polynomial interpolation"
+QuasiLocalMeasures::interpolator_options = "order=4"
+QuasiLocalMeasures::num_surfaces         = 2
+QuasiLocalMeasures::spatial_order        = 2
+QuasiLocalMeasures::surface_index[0]     = 0
+QuasiLocalMeasures::surface_index[1]     = 1
+QuasiLocalMeasures::verbose              = "yes"
+
+# Parameters of thorn ReflectionSymmetry (implementing ReflectionSymmetry)
+ReflectionSymmetry::avoid_origin_x = "no"
+ReflectionSymmetry::avoid_origin_y = "no"
+ReflectionSymmetry::avoid_origin_z = "no"
+ReflectionSymmetry::reflection_x   = "no"
+ReflectionSymmetry::reflection_y   = "no"
+ReflectionSymmetry::reflection_z   = "yes"
+
+# Parameters of thorn SpaceMask (implementing SpaceMask)
+SpaceMask::use_mask = "yes"
+
+# Parameters of thorn SphericalSurface (implementing SphericalSurface)
+# Parameters of thorn SphericalSurface (implementing SphericalSurface)
+SphericalSurface::maxnphi         = 304
+SphericalSurface::maxntheta       = 155
+SphericalSurface::nghostsphi[0]   = 2
+SphericalSurface::nghostsphi[1]   = 2
+SphericalSurface::nghostsphi[2]   = 2
+SphericalSurface::nghoststheta[0] = 2
+SphericalSurface::nghoststheta[1] = 2
+SphericalSurface::nghoststheta[2] = 2
+SphericalSurface::nphi[0]         = 304
+SphericalSurface::nphi[1]         = 304
+SphericalSurface::nphi[2]         = 304
+SphericalSurface::nsurfaces       = 3
+SphericalSurface::ntheta[0]       = 155
+SphericalSurface::ntheta[1]       = 155
+SphericalSurface::ntheta[2]       = 155
+
+# Parameters of thorn TerminationTrigger (implementing TerminationTrigger)
+TerminationTrigger::create_termination_file = "yes"
+TerminationTrigger::max_walltime            = 40000.0
+TerminationTrigger::on_remaining_walltime   = 10
+TerminationTrigger::output_remtime_every_minutes = 10.0
+TerminationTrigger::termination_file        = "TERMINATE"
+TerminationTrigger::termination_from_file   = "yes"
+
+# Parameters of thorn Time (implementing time)
+time::dtfac=0.05625
+
+# Set above:
+#admbase::initial_data     = "bl_bh" 
+
+idanalyticbh::bl_nbh       = 2
+
+idanalyticbh::bl_x0_1      =-2.0
+idanalyticbh::bl_y0_1      = 0.0
+idanalyticbh::bl_z0_1      = 0.0
+idanalyticbh::bl_M_1       = 0.5
+
+idanalyticbh::bl_x0_2      = 2.0
+idanalyticbh::bl_y0_2      = 0.0
+idanalyticbh::bl_z0_2      = 0.0
+idanalyticbh::bl_M_2       = 0.5
+
+
+#------------------multipole---------------------------------------------------
+multipole::l_max                         = 4
+multipole::nphi                          = 240
+multipole::nradii                        = 8
+multipole::ntheta                        = 120
+multipole::out_every                     = 16
+multipole::output_ascii                  = yes
+multipole::output_hdf5                   = yes
+multipole::radius[0]                     = 44.7846096908265
+multipole::radius[1]                     = 48.948052762078
+multipole::radius[2]                     = 53.9649552314747
+multipole::radius[3]                     = 60.1277102551413
+multipole::radius[4]                     = 67.879494625433
+multipole::radius[5]                     = 77.9258507826028
+multipole::radius[6]                     = 91.4625681655286
+multipole::radius[7]                     = 110.69101357243
+#multipole::radius[8]                     = 140.156535270868
+#multipole::radius[9]                     = 191.0
+#multipole::radius[10]                    = 382.0
+
+#
+multipole::variables                     = "WeylScal4NRPy::psi4r{sw=-2 cmplx='WeylScal4NRPy::psi4i' name='psi4NRPy'} 
+ WeylScal4::Psi4r{sw=-2 cmplx='WeylScal4::Psi4i' name='psi4'} 
+#  BNSAnalysis::rflux_unbnd
+#  whisky::poynting_scalar
+"
+
+#------------------weylscal4---------------------------------------------------
+weylscal4::fd_order                      = "Nth"
+weylscal4::fdOrder                       = 4
+weylscal4::calc_scalars                  = "psis"
+weylscal4::calc_invariants               = "always"
+
+#------------------weylscal4NRPy-----------------------------------------------
+WeylScal4NRPy::output_scalars            = "all_psis_and_invariants"
