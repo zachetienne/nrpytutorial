@@ -21,8 +21,6 @@ par.initialize_param(par.glb_param("char *", thismodule, "output_scalars", "all_
 
 def WeylScalars_Cartesian():
     # Step 3.a: Set spatial dimension (must be 3 for BSSN)
-    DIM = 3
-    par.set_parval_from_str("grid::DIM", DIM)
 
     # Step 3.b: declare the additional gridfunctions (i.e., functions whose values are declared
     #          at every grid point, either inside or outside of our SymPy expressions) needed
@@ -74,13 +72,13 @@ def WeylScalars_Cartesian():
         v2U[1] = ymoved
         v2U[2] = zmoved
         LeviCivitaSymbol_rank3 = ixp.LeviCivitaSymbol_dim3_rank3()
-        for a in range(DIM):
-            for b in range(DIM):
-                for c in range(DIM):
-                    for d in range(DIM):
+        for a in range(3):
+            for b in range(3):
+                for c in range(3):
+                    for d in range(3):
                         v3U[a] += sp.sqrt(detgamma) * gammaUU[a][d] * LeviCivitaSymbol_rank3[d][b][c] * v1U[b] * v2U[c]
 
-        for a in range(DIM):
+        for a in range(3):
             v3U[a] = sp.simplify(v3U[a])
 
         # Step 5.b: Gram-Schmidt orthonormalization of the vectors.
@@ -92,50 +90,50 @@ def WeylScalars_Cartesian():
 
         # Normalize the first vector
         w1U = ixp.zerorank1()
-        for a in range(DIM):
+        for a in range(3):
             w1U[a] = v1U[a]
         omega11 = sp.sympify(0)
-        for a in range(DIM):
-            for b in range(DIM):
+        for a in range(3):
+            for b in range(3):
                 omega11 += w1U[a] * w1U[b] * gammaDD[a][b]
         e1U = ixp.zerorank1()
-        for a in range(DIM):
+        for a in range(3):
             e1U[a] = w1U[a] / sp.sqrt(omega11)
 
         # Subtract off the portion of the first vector along the second, then normalize
         omega12 = sp.sympify(0)
-        for a in range(DIM):
-            for b in range(DIM):
+        for a in range(3):
+            for b in range(3):
                 omega12 += e1U[a] * v2U[b] * gammaDD[a][b]
         w2U = ixp.zerorank1()
-        for a in range(DIM):
+        for a in range(3):
             w2U[a] = v2U[a] - omega12 * e1U[a]
         omega22 = sp.sympify(0)
-        for a in range(DIM):
-            for b in range(DIM):
+        for a in range(3):
+            for b in range(3):
                 omega22 += w2U[a] * w2U[b] * gammaDD[a][b]
         e2U = ixp.zerorank1()
-        for a in range(DIM):
+        for a in range(3):
             e2U[a] = w2U[a] / sp.sqrt(omega22)
 
         # Subtract off the portion of the first and second vectors along the third, then normalize
         omega13 = sp.sympify(0)
-        for a in range(DIM):
-            for b in range(DIM):
+        for a in range(3):
+            for b in range(3):
                 omega13 += e1U[a] * v3U[b] * gammaDD[a][b]
         omega23 = sp.sympify(0)
-        for a in range(DIM):
-            for b in range(DIM):
+        for a in range(3):
+            for b in range(3):
                 omega23 += e2U[a] * v3U[b] * gammaDD[a][b]
         w3U = ixp.zerorank1()
-        for a in range(DIM):
+        for a in range(3):
             w3U[a] = v3U[a] - omega13 * e1U[a] - omega23 * e2U[a]
         omega33 = sp.sympify(0)
-        for a in range(DIM):
-            for b in range(DIM):
+        for a in range(3):
+            for b in range(3):
                 omega33 += w3U[a] * w3U[b] * gammaDD[a][b]
         e3U = ixp.zerorank1()
-        for a in range(DIM):
+        for a in range(3):
             e3U[a] = w3U[a] / sp.sqrt(omega33)
 
         # Step 5.c: Construct the tetrad itself.
@@ -151,7 +149,7 @@ def WeylScalars_Cartesian():
         # mtetccU = ixp.zerorank1()
         remtetU = ixp.zerorank1()  # SymPy did not like trying to take the real/imaginary parts of such a
         immtetU = ixp.zerorank1()  # complicated expression, so we do it ourselves.
-        for i in range(DIM):
+        for i in range(3):
             ltetU[i] = isqrt2 * e2U[i]
             ntetU[i] = -isqrt2 * e2U[i]
             remtetU[i] = isqrt2 * e3U[i]
@@ -166,11 +164,11 @@ def WeylScalars_Cartesian():
     gammaDD_dD = ixp.declarerank3("gammaDD_dD", "sym01")
 
     # Define the Christoffel symbols
-    GammaUDD = ixp.zerorank3(DIM)
-    for i in range(DIM):
-        for k in range(DIM):
-            for l in range(DIM):
-                for m in range(DIM):
+    GammaUDD = ixp.zerorank3(3)
+    for i in range(3):
+        for k in range(3):
+            for l in range(3):
+                for m in range(3):
                     GammaUDD[i][k][l] += (sp.Rational(1, 2)) * gammaUU[i][m] * \
                                          (gammaDD_dD[m][k][l] + gammaDD_dD[m][l][k] - gammaDD_dD[k][l][m])
 
@@ -179,16 +177,21 @@ def WeylScalars_Cartesian():
     #            + \gamma_{je} \Gamma^{j}_{bc}\Gamma^{e}_{ad} - \gamma_{je} \Gamma^{j}_{bd} \Gamma^{e}_{ac}
     gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
     RiemannDDDD = ixp.zerorank4()
-    for a in range(DIM):
-        for b in range(DIM):
-            for c in range(DIM):
-                for d in range(DIM):
-                    RiemannDDDD[a][b][c][d] = (gammaDD_dDD[a][d][c][b] + \
-                                               gammaDD_dDD[b][c][d][a] - \
-                                               gammaDD_dDD[a][c][b][d] - \
-                                               gammaDD_dDD[b][d][a][c]) / 2
-                    for e in range(DIM):
-                        for j in range(DIM):
+    for a in range(3):
+        for b in range(3):
+            for c in range(3):
+                for d in range(3):
+                    RiemannDDDD[a][b][c][d] += (gammaDD_dDD[a][d][c][b] +
+                                               gammaDD_dDD[b][c][d][a] -
+                                               gammaDD_dDD[a][c][b][d] -
+                                               gammaDD_dDD[b][d][a][c]) * sp.Rational(1,2)
+
+    for a in range(3):
+        for b in range(3):
+            for c in range(3):
+                for d in range(3):
+                    for e in range(3):
+                        for j in range(3):
                             RiemannDDDD[a][b][c][d] +=  gammaDD[j][e] * GammaUDD[j][b][c] * GammaUDD[e][a][d] - \
                                                         gammaDD[j][e] * GammaUDD[j][b][d] * GammaUDD[e][a][c]
 
@@ -197,30 +200,34 @@ def WeylScalars_Cartesian():
     # In Cartesian coordinates, we already made the components gridfunctions.
     # We will, however, need to calculate the trace of K seperately:
     trK = sp.sympify(0)
-    for i in range(DIM):
-        for j in range(DIM):
+    for i in range(3):
+        for j in range(3):
             trK += gammaUU[i][j] * kDD[i][j]
 
     # Step 7: Build the formula for \psi_4.
     # Gauss equation: involving the Riemann tensor and extrinsic curvature.
     # GaussDDDD[i][j][k][l] =& R_{ijkl} + 2K_{i[k}K_{l]j}
     GaussDDDD = ixp.zerorank4()
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for l in range(DIM):
-                    GaussDDDD[i][j][k][l] = RiemannDDDD[i][j][k][l] + kDD[i][k]*kDD[l][j] - kDD[i][l]*kDD[k][j]
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                for l in range(3):
+                    GaussDDDD[i][j][k][l] += RiemannDDDD[i][j][k][l] + kDD[i][k]*kDD[l][j] - kDD[i][l]*kDD[k][j]
 
     # Codazzi equation: involving partial derivatives of the extrinsic curvature.
     # We will first need to declare derivatives of kDD
     # CodazziDDD[j][k][l] =& -2 (K_{j[k,l]} + \Gamma^p_{j[k} K_{l]p})
     kDD_dD = ixp.declarerank3("kDD_dD","sym01")
     CodazziDDD = ixp.zerorank3()
-    for j in range(DIM):
-        for k in range(DIM):
-            for l in range(DIM):
-                CodazziDDD[j][k][l] = kDD_dD[j][l][k] - kDD_dD[j][k][l]
-                for p in range(DIM):
+    for j in range(3):
+        for k in range(3):
+            for l in range(3):
+                CodazziDDD[j][k][l] += kDD_dD[j][l][k] - kDD_dD[j][k][l]
+
+    for j in range(3):
+        for k in range(3):
+            for l in range(3):
+                for p in range(3):
                     CodazziDDD[j][k][l] += GammaUDD[p][j][l]*kDD[k][p] - GammaUDD[p][j][k]*kDD[l][p]
 
     # Another piece. While not associated with any particular equation,
@@ -228,11 +235,14 @@ def WeylScalars_Cartesian():
     # RojoDD[j][l]} = & R_{jl} - K_{jp} K^p_l + KK_{jl} \\
     #               = & \gamma^{pd} R_{jpld} - K_{jp} K^p_l + KK_{jl}
     RojoDD = ixp.zerorank2()
-    for j in range(DIM):
-        for l in range(DIM):
-            RojoDD[j][l] = trK*kDD[j][l]
-            for p in range(DIM):
-                for d in range(DIM):
+    for j in range(3):
+        for l in range(3):
+            RojoDD[j][l] += trK*kDD[j][l]
+
+    for j in range(3):
+        for l in range(3):
+            for p in range(3):
+                for d in range(3):
                     RojoDD[j][l] += gammaUU[p][d]*RiemannDDDD[j][p][l][d] - kDD[j][p]*gammaUU[p][d]*kDD[d][l]
 
     # Now we can calculate $\psi_4$ itself! We assume l^0 = n^0 = \frac{1}{\sqrt{2}}
@@ -265,8 +275,8 @@ def WeylScalars_Cartesian():
     psi1i = sp.sympify(0)
     psi0r = sp.sympify(0)
     psi0i = sp.sympify(0)
-    for l in range(DIM):
-        for j in range(DIM):
+    for l in range(3):
+        for j in range(3):
             psi4r += RojoDD[j][l] * nn * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
             psi4i += RojoDD[j][l] * nn * nn * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
             psi3r +=-RojoDD[j][l] * nn * nn * (ntetU[j]-ltetU[j]) * remtetU[l]
@@ -278,9 +288,9 @@ def WeylScalars_Cartesian():
             psi0r += RojoDD[j][l] * nn * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
             psi0i += RojoDD[j][l] * nn * nn * (remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
 
-    for l in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
+    for l in range(3):
+        for j in range(3):
+            for k in range(3):
                 psi4r += 2 * CodazziDDD[j][k][l] * ntetU[k] * nn * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
                 psi4i += 2 * CodazziDDD[j][k][l] * ntetU[k] * nn * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
                 psi3r += 1 * CodazziDDD[j][k][l] * nn * ((ntetU[j]-ltetU[j])*remtetU[k]*ntetU[l]-remtetU[j]*ltetU[k]*ntetU[l])
@@ -292,10 +302,10 @@ def WeylScalars_Cartesian():
                 psi0r += 2 * CodazziDDD[j][k][l] * nn * ltetU[k]*(remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
                 psi0i += 2 * CodazziDDD[j][k][l] * nn * ltetU[k]*(remtetU[j]*immtetU[l]+immtetU[j]*remtetU[l])
 
-    for l in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                for i in range(DIM):
+    for l in range(3):
+        for j in range(3):
+            for k in range(3):
+                for i in range(3):
                     psi4r += GaussDDDD[i][j][k][l] * ntetU[i] * ntetU[k] * (remtetU[j]*remtetU[l]-immtetU[j]*immtetU[l])
                     psi4i += GaussDDDD[i][j][k][l] * ntetU[i] * ntetU[k] * (-remtetU[j]*immtetU[l]-immtetU[j]*remtetU[l])
                     psi3r += GaussDDDD[i][j][k][l] * ltetU[i] * ntetU[j] * remtetU[k] * ntetU[l]
