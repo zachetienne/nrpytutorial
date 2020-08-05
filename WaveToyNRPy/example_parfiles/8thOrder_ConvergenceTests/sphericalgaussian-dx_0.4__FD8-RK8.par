@@ -37,21 +37,21 @@ CoordBase::boundary_size_y_upper        = 4
 CoordBase::boundary_size_z_upper        = 4
 
 # Size of the grid (including boundary points)
-PUGH::global_nx = 69
-PUGH::global_ny = 69
-PUGH::global_nz = 69
+PUGH::global_nx = 70
+PUGH::global_ny = 70
+PUGH::global_nz = 70
 
 PUGH::ghost_size = 4
 
 CartGrid3D::type         = "byrange"
 CartGrid3D::avoid_origin = "no"
 
-CartGrid3D::xmin = -13.6
-CartGrid3D::ymin = -13.6
-CartGrid3D::zmin = -13.6
-CartGrid3D::xmax =  13.6
-CartGrid3D::ymax =  13.6
-CartGrid3D::zmax =  13.6
+CartGrid3D::xmin = -13.8
+CartGrid3D::ymin = -13.8
+CartGrid3D::zmin = -13.8
+CartGrid3D::xmax =  13.8
+CartGrid3D::ymax =  13.8
+CartGrid3D::zmax =  13.8
 
 #############################################################
 # Time integration
@@ -90,12 +90,12 @@ IOASCII::out1D_x              = "yes"
 IOASCII::out1D_y              = "no"
 IOASCII::out1D_z              = "no"
 IOASCII::out1D_d              = "no"
+IOASCII::out1d_xline_y        = 0.2
+IOASCII::out1d_xline_z        = 0.2
 IOASCII::out1D_vars           = "WaveToyNRPy::uuGF WaveToyNRPy::vvGF"
 
 #############################################################
 #Initial Data: "PlaneWave" or "SphericalGaussian"
 #############################################################
-IDScalarWaveNRPy::initial_data = "PlaneWave"
-IDScalarWaveNRPy::kk0 = 0.4
-IDScalarWaveNRPy::kk1 = 0.4
-IDScalarWaveNRPy::kk2 = 0.4
+IDScalarWaveNRPy::initial_data = "SphericalGaussian"
+IDScalarWaveNRPy::sigma = 3.0

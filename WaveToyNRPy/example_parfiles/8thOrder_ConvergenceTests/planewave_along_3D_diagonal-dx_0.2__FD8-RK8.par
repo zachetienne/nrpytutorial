@@ -26,6 +26,8 @@ NewRad
 # Grid
 #############################################################
 
+WaveToyNRPy::FD_ordern = 8
+
 CoordBase::boundary_size_x_lower        = 4
 CoordBase::boundary_size_y_lower        = 4
 CoordBase::boundary_size_z_lower        = 4
@@ -91,10 +93,9 @@ IOASCII::out1D_d              = "no"
 IOASCII::out1D_vars           = "WaveToyNRPy::uuGF WaveToyNRPy::vvGF"
 
 #############################################################
-#Initial Data
+#Initial Data: "PlaneWave" or "SphericalGaussian"
 #############################################################
+IDScalarWaveNRPy::initial_data = "PlaneWave"
 IDScalarWaveNRPy::kk0 = 0.4
 IDScalarWaveNRPy::kk1 = 0.4
 IDScalarWaveNRPy::kk2 = 0.4
-
-###WaveToyNRPy::bound = "static" # There is no good boundary condition option for plane-wave initial data.

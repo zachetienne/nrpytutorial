@@ -26,32 +26,32 @@ NewRad
 # Grid
 #############################################################
 
-WaveToyNRPy::FD_order = 8
+WaveToyNRPy::FD_order = 4
 
-CoordBase::boundary_size_x_lower        = 4
-CoordBase::boundary_size_y_lower        = 4
-CoordBase::boundary_size_z_lower        = 4
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
 
-CoordBase::boundary_size_x_upper        = 4
-CoordBase::boundary_size_y_upper        = 4
-CoordBase::boundary_size_z_upper        = 4
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
 
 # Size of the grid (including boundary points)
-PUGH::global_nx = 69
-PUGH::global_ny = 69
-PUGH::global_nz = 69
+PUGH::global_nx = 131
+PUGH::global_ny = 131
+PUGH::global_nz = 131
 
-PUGH::ghost_size = 4
+PUGH::ghost_size = 2
 
 CartGrid3D::type         = "byrange"
 CartGrid3D::avoid_origin = "no"
 
-CartGrid3D::xmin = -13.6
-CartGrid3D::ymin = -13.6
-CartGrid3D::zmin = -13.6
-CartGrid3D::xmax =  13.6
-CartGrid3D::ymax =  13.6
-CartGrid3D::zmax =  13.6
+CartGrid3D::xmin = -13.
+CartGrid3D::ymin = -13.
+CartGrid3D::zmin = -13.
+CartGrid3D::xmax =  13.
+CartGrid3D::ymax =  13.
+CartGrid3D::zmax =  13.
 
 #############################################################
 # Time integration
@@ -61,9 +61,9 @@ Cactus::terminate                     = "time"
 Cactus::cctk_final_time               = 3
 
 Time::dtfac                           = 0.5
-MethodOfLines::ode_method             = "RK87"
-MethodOfLines::MoL_Intermediate_Steps = 13
-MethodOfLines::MoL_Num_Scratch_Levels = 13
+MethodOfLines::ode_method             = "RK4"
+MethodOfLines::MoL_Intermediate_Steps = 4
+MethodOfLines::MoL_Num_Scratch_Levels = 1
 MethodOfLines::MoL_NaN_Check          = "yes"
 
 #############################################################
@@ -85,17 +85,17 @@ IOBasic::outInfo_vars         = "WaveToyNRPy::uuGF"
 
 
 IOASCII::out1D_style          = "gnuplot f(t,x)"
-IOASCII::out1D_every          = 1
+IOASCII::out1D_every          = 2
 IOASCII::out1D_x              = "yes"
 IOASCII::out1D_y              = "no"
 IOASCII::out1D_z              = "no"
 IOASCII::out1D_d              = "no"
+IOASCII::out1d_xline_y        = 0.2
+IOASCII::out1d_xline_z        = 0.2
 IOASCII::out1D_vars           = "WaveToyNRPy::uuGF WaveToyNRPy::vvGF"
 
 #############################################################
 #Initial Data: "PlaneWave" or "SphericalGaussian"
 #############################################################
-IDScalarWaveNRPy::initial_data = "PlaneWave"
-IDScalarWaveNRPy::kk0 = 0.4
-IDScalarWaveNRPy::kk1 = 0.4
-IDScalarWaveNRPy::kk2 = 0.4
+IDScalarWaveNRPy::initial_data = "SphericalGaussian"
+IDScalarWaveNRPy::sigma = 3.0
