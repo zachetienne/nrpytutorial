@@ -25,9 +25,8 @@ class Lexer:
         # multi-letter tensor, and join together the resulting tensor list using a pipe
         # symbol for regex alternation
         nameset = set(re.match(r'[^UD]*', tensor).group() for tensor in namespace)
-        tensor_pattern = '|'.join(r'\\' + name if len(name) > 1 else name
-            for name in nameset) if nameset else '(?!)'
-        greek_pattern = '|'.join(r'\\' + letter for letter in ('[aA]lpha', '[bB]eta', '[gG]amma', '[dD]elta',
+        tensor_pattern = '|'.join(r'\\' + name if len(name) > 1 else name for name in nameset) if nameset else '(?!)'
+        greek_pattern  = '|'.join(r'\\' + letter for letter in ('[aA]lpha', '[bB]eta', '[gG]amma', '[dD]elta',
             '[eE]psilon', '[zZ]eta', '[eE]ta', '[tT]heta', '[iI]ota', '[kK]appa', '[lL]ambda',
             '[mM]u', '[nN]u', '[xX]i', '[oO]mikron', '[pP]i', '[Rr]ho', '[sS]igma', '[tT]au',
             '[uU]psilon', '[pP]hi', '[cC]hi', '[pP]si', '[oO]mega'))
@@ -125,10 +124,8 @@ class Lexer:
             :arg: tensor namespace
         """
         nameset = set(re.match(r'[^UD]*', tensor).group() for tensor in namespace)
-        tensor_pattern = '|'.join(r'\\\\' + name if len(name) > 1 else name
-            for name in nameset) if nameset else '(?!)'
-        self.regex = re.compile(re.sub(r'<TENSOR>.+?(?=\)\|)',
-            '<TENSOR>' + tensor_pattern, self.regex.pattern))
+        tensor_pattern = '|'.join(r'\\\\' + name if len(name) > 1 else name for name in nameset) if nameset else '(?!)'
+        self.regex = re.compile(re.sub(r'<TENSOR>.+?(?=\)\|)', '<TENSOR>' + tensor_pattern, self.regex.pattern))
 
 class Parser:
     """ LaTeX Parser
@@ -176,23 +173,27 @@ class Parser:
         """
         stack = []; i_1 = i_2 = i_3 = 0
         for i, lexeme in enumerate(sentence):
+            # convert comma to operator notation for parenthetical expression
             if   lexeme == '(': stack.append(i)
             elif lexeme == ')': i_1, i_2 = stack.pop(), i + 1
             elif lexeme == ',' and sentence[i - 1] == '{':
                 i_3 = sentence.find('}', i) + 1
                 subexpr, indices = sentence[i_1:i_2], sentence[i_2:i_3][3:-1]
                 operator = ''.join('\\partial_' + index for index in indices)
-                sentence = sentence.replace(sentence[i_1:i_3], operator + subexpr)
+                sentence = sentence.replace(sentence[i_1:i_3], operator + ' ' + subexpr)
         self.lexer.initialize(sentence)
         self.lexer.lex()
         if expression:
             return self._root(expression)
         self._root(expression)
         for var in self.namespace:
+            # throw warning whenever duplicate namespace variable
             if var in Parser.namespace:
                 warn('\'' + var + '\'', OverrideWarning, stacklevel=3)
+            # extract array field from Tensor wrapper class
             if isinstance(self.namespace[var], Tensor):
                 self.namespace[var] = self.namespace[var].array
+            # update static namespace for persistance across each function call
             Parser.namespace[var] = self.namespace[var]
         return self.namespace
 
@@ -229,20 +230,21 @@ class Parser:
         variable = self._variable()
         self.expect('EQUAL')
         expr = self._expression()
-        if self.namespace:
+        if tensorial:
             # distribute over every parenthetical expression
             expr_ = expand(expr); expr = str(expr_)
-            variable = ''.join(Tensor.notation(variable))
+            variable = Tensor.notation(variable)
             # iterate over every tensor in the expression
             for subtree in ExprTree(expr_).preorder():
                 subexpr = subtree.expr
                 if subexpr.func == Function('Tensor'):
                     # replace function notation with array notation
-                    func = ''.join(Tensor.notation(subexpr))
+                    func = Tensor.notation(subexpr)
                     expr = expr.replace(str(subexpr), func)
-        if tensorial:
-            # perform implied summation on a tensorial equation
-            self.namespace.update(_summation((str(variable), expr), self.dimension))
+            # perform implied summation on tensorial equation
+            summation = _summation((str(variable), expr), self.dimension)
+            # update namespace and lexer with expanded equation
+            self.namespace.update(summation)
             self.lexer.update(self.namespace)
         else: self.namespace[str(variable)] = expr
 
@@ -299,7 +301,7 @@ class Parser:
         if self.peek('SYMBOL') or self.peek('TENSOR'):
             return self._variable()
         if any(self.peek(i) for i in ('COMMAND', 'SQRT_CMD',
-            'FRAC_CMD', 'NLOG_CMD', 'TRIG_CMD', 'DERV_CMD')):
+                'FRAC_CMD', 'NLOG_CMD', 'TRIG_CMD', 'DERV_CMD')):
             return self._command()
         return self._number()
 
@@ -319,15 +321,13 @@ class Parser:
                     if subscript[0] == '\\':
                         subscript = subscript[1:]
                     variable += '_' + subscript
-                    var(variable)
-                    return Symbol(variable)
+                    return var(variable)
                 # raise exception whenever illegal subscript
                 sentence = self.lexer.sentence
                 position = self.lexer.index - len(self.lexer.lexeme)
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
-            var(variable)
-            return Symbol(variable)
+            return var(variable)
         return self._array()
 
     # <NUMBER> -> <RATIONAL> | <DECIMAL> | <INTEGER>
@@ -476,22 +476,27 @@ class Parser:
             for subtree in tree.preorder():
                 subexpr = subtree.expr
                 if subexpr.func == Function('Tensor'):
+                    # insert temporary symbol '_x' for symbolic differentiation
                     subtree.expr = Function('Tensor')(Symbol('_x'), *subexpr.args)
                     tree.build(subtree)
             expr = tree.reconstruct()
+            # differentiate the expression, including product rule expansion
             tree = ExprTree(diff(expr, Symbol('_x')))
             for subtree in tree.preorder():
                 subexpr = subtree.expr
                 if subexpr.func == Derivative:
+                    # instantiate each derivative and update namespace
                     order, array = len(indices), subexpr.args[0]
                     indexing = list(array.args[2:]) + indices
                     tensor = self.namespace[str(array.args[1])]
                     subtree.expr = self._differentiate(tensor, order, *indexing)
                     tree.build(subtree)
                 elif subexpr.func == Function('Tensor'):
+                    # remove temporary symbol '_x' from tensor function
                     subtree.expr = Function('Tensor')(*subexpr.args[1:])
                     tree.build(subtree)
             return tree.reconstruct()
+        # instantiate derivative and update namespace
         order, array = len(indices), self._array()
         indices = list(array.args[1:]) + indices
         tensor = self.namespace[str(array.args[0])]
@@ -595,6 +600,8 @@ class Parser:
         return index
 
     def _tensorial(self):
+        # extract equation from sentence and identify tensor(s)
+        # to determine whether equation is tensorial
         mark_1 = self.lexer.index - len(self.lexer.lexeme)
         for token in self.lexer.tokenize():
             if token == 'LINE_BREAK': break
@@ -605,6 +612,7 @@ class Parser:
         return any(tensor in assignment for tensor in nameset)
 
     def _differentiate(self, tensor, order, *index):
+        # instantiate derivative and update namespace
         name = tensor.name + ('' if '_d' in tensor.name else '_d') + order * 'D'
         rank, dimension, symmetry = tensor.rank, tensor.dimension, tensor.symmetry
         function = Function('Tensor')(Symbol(name), *index)
@@ -645,9 +653,11 @@ class Tensor:
         self.rank = len(function.args) - 1
         self.dimension = dimension
         self.symmetry  = symmetry
+        # avoid repeated instantiation of the same derivative
         if '_d' in self.name and self.name in Parser.namespace:
             self.array = Parser.namespace[self.name]
         elif permutation:
+            # instantiate permutation or Levi-Civita symbol using parity
             index = [chr(105 + n) for n in range(self.rank)]
             prefix = '[' * self.rank + 'sgn([' + ', '.join(index) + '])'
             suffix = ''.join(' for %s in range(%d)]' % (index[self.rank - i], dimension) for i in range(1, self.rank + 1))
@@ -664,6 +674,8 @@ class Tensor:
 
     @staticmethod
     def _sgn(sequence):
+        """ Permutation Signature (Parity)"""
+
         cycle_length = 0
         for n, i in enumerate(sequence[:-1]):
             for j in sequence[(n + 1):]:
@@ -673,6 +685,8 @@ class Tensor:
 
     @staticmethod
     def notation(function):
+        """ Tensor Notation for Array Indexing """
+
         fields = [str(arg) for arg in function.args]
         suffix = ''.join(['[' + n + ']' for n in fields[1:]])
         return fields[0] + suffix
