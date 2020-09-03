@@ -88,7 +88,7 @@ thismodule = __name__
 # First, however, we must set $$\gamma_\mu = (1-\mu^2)^{-1/2}$$ and $$g(x) = \cos (5\pi \gamma_\mu x)/\pi$$.
 # $$\label{step2}$$
 
-def GiRaFFEfood_NRPy_1D_tests(stagger = False):
+def GiRaFFEfood_NRPy_1D_tests_three_waves(stagger = False):
 
     # We'll use reference_metric.py to define x and y
     x = rfm.xxCart[0]
@@ -136,10 +136,10 @@ def GiRaFFEfood_NRPy_1D_tests(stagger = False):
 
     if stagger:
         B_aU[0] = sp.sympify(1)
-        B_aU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(-1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(-3,2)
+        B_aU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(3,2)
         B_aU[2] = sp.sympify(2)
 
-        E_aU[0] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(3,2)
+        E_aU[0] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(-1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(-3,2)
         E_aU[1] = sp.sympify(1)
         E_aU[2] = sp.sympify(0)
 
@@ -153,17 +153,17 @@ def GiRaFFEfood_NRPy_1D_tests(stagger = False):
 
         B_mU[0] = sp.sympify(0)
         B_mU[1] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
-        B_mU[2] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
+        B_mU[2] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(3,2) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
 
         E_mU[0] = sp.sympify(0)
         E_mU[1] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
         E_mU[2] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
     else:
         B_aU[0] = sp.sympify(1)
-        B_aU[1] = noif.coord_leq_bound(x,0) * sp.sympify(-1) + noif.coord_greater_bound(x,0) * sp.Rational(-3,2)
+        B_aU[1] = noif.coord_leq_bound(x,0) * sp.sympify(1) + noif.coord_greater_bound(x,0) * sp.Rational(3,2)
         B_aU[2] = sp.sympify(2)
 
-        E_aU[0] = noif.coord_leq_bound(x,0) * sp.sympify(1) + noif.coord_greater_bound(x,0) * sp.Rational(3,2)
+        E_aU[0] = noif.coord_leq_bound(x,0) * sp.sympify(-1) + noif.coord_greater_bound(x,0) * sp.Rational(-3,2)
         E_aU[1] = sp.sympify(1)
         E_aU[2] = sp.sympify(0)
 
@@ -177,12 +177,11 @@ def GiRaFFEfood_NRPy_1D_tests(stagger = False):
 
         B_mU[0] = sp.sympify(0)
         B_mU[1] = noif.coord_leq_bound(x,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x,0) * sp.sympify(0)
-        B_mU[2] = noif.coord_leq_bound(x,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x,0) * sp.sympify(0)
+        B_mU[2] = noif.coord_leq_bound(x,0) * sp.Rational(3,2) + noif.coord_greater_bound(x,0) * sp.sympify(0)
 
         E_mU[0] = sp.sympify(0)
         E_mU[1] = noif.coord_leq_bound(x,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x,0) * sp.sympify(0)
         E_mU[2] = noif.coord_leq_bound(x,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x,0) * sp.sympify(0)
-
 
     global BU
     BU = ixp.zerorank1(DIM=3)

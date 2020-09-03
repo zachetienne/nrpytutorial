@@ -88,7 +88,7 @@ thismodule = __name__
 # First, however, we must set $$\gamma_\mu = (1-\mu^2)^{-1/2}$$ and $$g(x) = \cos (5\pi \gamma_\mu x)/\pi$$.
 # $$\label{step2}$$
 
-def GiRaFFEfood_NRPy_1D_tests(stagger = False):
+def GiRaFFEfood_NRPy_1D_tests_FFE_breakdown(stagger = False):
 
     # We'll use reference_metric.py to define x and y
     x = rfm.xxCart[0]
@@ -108,11 +108,11 @@ def GiRaFFEfood_NRPy_1D_tests(stagger = False):
 
     if stagger:
         Ayleft = x_p_half - sp.Rational(1,5)
-        Aycenter = -sp.sympify(5) + x_p_half - sp.Rational(1,5)
+        Aycenter = -sp.sympify(5)*x_p_half**2 + x_p_half - sp.Rational(1,5)
         Ayright = -x_p_half
     else:
         Ayleft = x - sp.Rational(1,5)
-        Aycenter = -sp.sympify(5) + x - sp.Rational(1,5)
+        Aycenter = -sp.sympify(5)*x**2 + x - sp.Rational(1,5)
         Ayright = -x
 
     AD[0] = sp.sympify(0)
