@@ -13,11 +13,55 @@ def GiRaFFE_NRPy_Afield_flux(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
     with open(os.path.join(Ccodesdir,"calculate_E_field_flat_all_in_one.h"),"w") as file:
-        file.write("""REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l) {
+        file.write("""void find_cmax_cmin(const REAL gammaDD00, const REAL gammaDD01, const REAL gammaDD02,
+                    const REAL gammaDD11, const REAL gammaDD12, const REAL gammaDD22,
+                    const REAL betaUi, const REAL alpha, const int flux_dirn,
+                    REAL *cmax, REAL *cmin) {
+    // First, we find the inverse metric component we need. We pass in value of the metric components
+    // at the current point, and use a switch statement to compute only the component we need.
+    const double tmp_4 = (1.0/(gammaDD00*gammaDD11*gammaDD22 - gammaDD00*((gammaDD12)*(gammaDD12)) - ((gammaDD01)*(gammaDD01))*gammaDD22 + 2*gammaDD01*gammaDD02*gammaDD12 - ((gammaDD02)*(gammaDD02))*gammaDD11));
+    REAL gammaUUii;
+    switch(flux_dirn) {
+        case 0:
+            gammaUUii = tmp_4*(gammaDD11*gammaDD22 - ((gammaDD12)*(gammaDD12))); // gammaUU00
+            break;
+        case 1:
+            gammaUUii = tmp_4*(gammaDD00*gammaDD22 - ((gammaDD02)*(gammaDD02))); // gammaUU11
+            break;
+        case 2:
+            gammaUUii = tmp_4*(gammaDD00*gammaDD11 - ((gammaDD01)*(gammaDD01))); // gammaUU22
+            break;
+        default:
+            printf("Invalid parameter flux_dirn!"); gammaUUii = 1.0/0.0;
+            break;
+    }
+    // We have passed the lapse alpha at the current point and betaU[flux_dirn] at the current poitn
+    // into the function.
+    // a = 1/(alpha^2)
+    const REAL a = 1.0/(alpha*alpha);
+    // b = 2 beta^i / alpha^2
+    const REAL b = 2.0 * betaUi /(alpha*alpha);
+    // c = -g^{ii} + (beta^i)^2 / alpha^2
+    const REAL c = - gammaUUii + betaUi*betaUi/(alpha*alpha);
+
+    // Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
+    // negative value to the sqrt function.
+    REAL detm = b*b - 4.0*a*c;
+
+    // Based on a trick from Roland Haas:
+    // detm = sqrt(MAX(0,detm))
+    detm = sqrt(0.5*(detm + fabs(detm)));
+    const REAL cplus  = 0.5*(-b/a + detm/a);
+    const REAL cminus = 0.5*(-b/a - detm/a);
+
+    *cmax = 0.5*(cplus + fabs(cplus)); // MAX(cplus, 0)
+    *cmin = -0.5*(cminus - fabs(cminus)); // -MIN(cminus, 0)
+}
+
+REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l, REAL cmin, REAL cmax) {
   // Eq. 3.15 of https://epubs.siam.org/doi/abs/10.1137/1025002?journalCode=siread
   // F_HLLE = (c_min F_R + c_max F_L - c_min c_max (U_R-U_L)) / (c_min + c_max)
-  return 0.5*(F0B1_r+F0B1_l-(U_r-U_l));
-  // FIXME: Curved space implementation!
+  return (cmin*F0B1_r + cmax*F0B1_l - cmin*cmax*(U_r-U_l)) / (cmin+cmax);
 }
 
 /*
@@ -33,8 +77,10 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                                        const REAL *Bl0,const REAL *Bl1,
                                        const REAL *Brflux_dirn,
                                        const REAL *Blflux_dirn,
+                                       const REAL *gamma_faceDD00, const REAL *gamma_faceDD01, const REAL *gamma_faceDD02,
+                                       const REAL *gamma_faceDD11, const REAL *gamma_faceDD12, const REAL *gamma_faceDD22,
+                                       const REAL *beta_faceU0, const REAL *alpha,
                                        REAL *A2_rhs,const REAL SIGN,const int flux_dirn) {
-    // FIXME: include metric functions!
     // This function is written to be generic and compute the contribution for all three AD RHSs.
     // However, for convenience, the notation used in the function itself is for the contribution
     // to AD2, specifically the [F_HLL^x(B^y)]_z term, with reconstructions in the x direction. This
@@ -117,8 +163,13 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL U_r = B_rflux_dirn;
                 const REAL U_l = B_lflux_dirn;
 
+                REAL cmin,cmax;
                 // Basic HLLE solver:
-                const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l);
+                find_cmax_cmin(gamma_faceDD00[index],gamma_faceDD01[index],gamma_faceDD02[index],
+                               gamma_faceDD11[index],gamma_faceDD12[index],gamma_faceDD22[index],
+                               beta_faceU0[index],alpha[index],flux_dirn,
+                               &cmax, &cmin);
+                const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l, cmin, cmax);
 
                 // ************************************
                 // ************************************
@@ -133,7 +184,11 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 //const REAL U_r_p1 = B_rU1_p1;
                 //const REAL U_l_p1 = B_lU1_p1;
                 // Basic HLLE solver, but at the next point:
-                const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1);
+                find_cmax_cmin(gamma_faceDD00[indexp1],gamma_faceDD01[indexp1],gamma_faceDD02[indexp1],
+                               gamma_faceDD11[indexp1],gamma_faceDD12[indexp1],gamma_faceDD22[indexp1],
+                               beta_faceU0[indexp1],alpha[indexp1],flux_dirn,
+                               &cmax, &cmin);
+                const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1, cmin, cmax);
                 // ************************************
                 // ************************************
 
