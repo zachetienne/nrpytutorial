@@ -318,14 +318,15 @@ class Parser:
                 variable = variable[1:]
             if variable == 'Gamma':
                 array = self._array()
-                if self.dimension is None:
-                    sentence = self.lexer.sentence
-                    position = self.lexer.index - len(self.lexer.lexeme)
-                    raise ParseError('cannot declare from inference without dimension', sentence, position)
-                lexer, self.lexer = self.lexer, Lexer()
-                self.parse(self._christoffel(array.args[1:]))
-                self.namespace.move_to_end('GammaUDD', False)
-                self.lexer = lexer
+                if 'GammaUDD' not in Parser.namespace:
+                    if self.dimension is None:
+                        sentence = self.lexer.sentence
+                        position = self.lexer.index - len(self.lexer.lexeme)
+                        raise ParseError('cannot declare from inference without dimension', sentence, position)
+                    lexer, self.lexer = self.lexer, Lexer()
+                    self.parse(self._generate_christoffel(array.args[1:]))
+                    self.namespace.move_to_end('GammaUDD', False)
+                    self.lexer = lexer
                 return array
             self.expect('SYMBOL')
             if self.accept('UNDERSCORE'):
@@ -562,12 +563,24 @@ class Parser:
         mark_2 = self.lexer.index
         equation[0] += ' ' + self.lexer.sentence[mark_1:mark_2]
         equation[3] += ' ' + self.lexer.sentence[mark_1:mark_2]
+        # == REMOVE ==
         if location == 'RHS' and equation[2]:
             lexer, self.lexer = self.lexer, Lexer()
             if config: config = '%' + ';\n'.join(config) + ';\n'
             self.parse(config + ''.join(equation))
             self.lexer = lexer
+        # ============
         tensor = self.namespace[str(array.args[0])]
+        # if location == 'RHS':
+        #     if equation[2]:
+        #         lexer, self.lexer = self.lexer, Lexer()
+        #         if config: config = '%' + ';\n'.join(config) + ';\n'
+        #         self.parse(config + ''.join(equation))
+        #         self.lexer = lexer
+        #     else:
+        #         lexer, self.lexer = self.lexer, Lexer()
+        #         self.parse(self._generate_gradient(tensor, [index[0] for index in indices]))
+        #         self.lexer = lexer
         return self._differentiate(tensor, order, list(array.args[1:]) +
             [index[0] for index in indices], [index[1] for index in indices])
 
@@ -688,20 +701,48 @@ class Parser:
         name = tensor.name + ('' if prefix in tensor.name else prefix) + suffix
         rank, dimension, symmetry = tensor.rank, tensor.dimension, tensor.symmetry
         function = Function('Tensor')(Symbol(name), *indices)
+        # == REMOVE ==
         if order == 2:
             if symmetry and symmetry != 'nosym':
                 symmetry = tensor.symmetry + '_sym%d%d' % (rank, rank + order - 1)
             else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
         if not covariant or all(pos == 'D' for pos in covariant):
             self.namespace[name] = Tensor(function, dimension, symmetry)
+        # ============
+        # if not covariant:
+        #     if order == 2:
+        #         if symmetry and symmetry != 'nosym':
+        #             symmetry = tensor.symmetry + '_sym%d%d' % (rank, rank + order - 1)
+        #         else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
+        #     self.namespace[name] = Tensor(function, dimension, symmetry)
         return function
 
-    def _christoffel(self, indices):
+    def _generate_christoffel(self, indices):
         indices = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indices]
         bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x not in indices)
         return (('% g^{{{i1}{bound_index}}} [{dim}]: metric, g_{{{i3}{bound_index}}} [{dim}]: metric, g_{{{bound_index} {i2}}} [{dim}]: metric, g_{{{i2}{i3}}} [{dim}]: metric;\n'
                 '\\Gamma^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} g^{{{i1} {bound_index}}}(g_{{{i3} {bound_index},{i2}}} + g_{{{bound_index} {i2},{i3}}} - g_{{{i2} {i3},{bound_index}}})')
                 .format(i1 = indices[0], i2 = indices[1], i3 = indices[2], bound_index = bound_index, dim = self.dimension))
+
+    @staticmethod
+    def _generate_gradient(tensor, indices):
+        indices = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indices]
+        order, LHS, RHS = len(indices), str(tensor), ''
+        while order > 0:
+            diff_index = indices[order - 1]
+            LHS = 'D_%s %s' % (diff_index, LHS)
+            RHS += '\\partial_%s %s' % (diff_index, str(tensor))
+            indexing = [index[0] for index in tensor.indexing]
+            for index, position in tensor.indexing:
+                bound_index  = next(x for x in (chr(97 + n) for n in range(26)) if x not in indexing)
+                tensor_latex = Tensor.latex_format(tensor.name,
+                    [(bound_index, index_[1]) if index_[0] == index else index_ for index_ in tensor.indexing])
+                if position == 'U':
+                    RHS += ' + \\Gamma^%s_{%s %s} %s' % (index, bound_index, diff_index, tensor_latex)
+                else:
+                    RHS += ' - \\Gamma^%s_{%s %s} %s' % (bound_index, index, diff_index, tensor_latex)
+            order -= 1
+        return LHS + ' = ' + RHS
 
     def peek(self, token_type):
         return self.lexer.token == token_type
@@ -735,6 +776,7 @@ class Tensor:
         self.symmetry  = 'sym01' if symmetry == 'metric' \
                     else 'nosym' if symmetry == 'permutation' \
                     else symmetry
+        self.indexing = list(zip(function.args[1:], re.findall(r'[UD]', self.name)))
         # avoid repeated instantiation of the same derivative
         if '_d' in self.name and self.name in Parser.namespace:
             self.array = Parser.namespace[self.name]
@@ -773,11 +815,38 @@ class Tensor:
         suffix = ''.join(['[' + n + ']' for n in fields[1:]])
         return fields[0] + suffix
 
+    @staticmethod
+    def latex_format(name, indexing):
+        latex = [re.split('[UD]', name)[0], [], []]
+        U_count, D_count = 0, 0
+        for index, position in indexing:
+            index = str(index)
+            if len(index) > 1:
+                index = '\\' + index
+            if position == 'U':
+                latex[1].append(index)
+                U_count += 1
+            else:
+                latex[2].append(index)
+                D_count += 1
+        latex[1] = ' '.join(latex[1])
+        latex[2] = ' '.join(latex[2])
+        if U_count > 0:
+            if U_count > 1:
+                latex[1] = '^{' + latex[1] + '}'
+            else: latex[1] = '^' + latex[1]
+        if D_count > 0:
+            if D_count > 1:
+                latex[2] = '_{' + latex[2] + '}'
+            else: latex[2] = '_' + latex[2]
+        return ''.join(latex)
+
     def __repr__(self):
         return '%s -> (dimension: %d, symmetry: %s)' % \
             (self.function, self.dimension, self.symmetry)
 
-    __str__ = __repr__
+    def __str__(self):
+        return self.latex_format(self.name, self.indexing)
 
 def _summation(equation, dimension):
     var, expr = equation
