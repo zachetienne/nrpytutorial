@@ -196,15 +196,6 @@ class Parser:
         if expression:
             return self._root(expression)
         self._root(expression)
-        for var in self.namespace:
-            # throw warning whenever duplicate namespace variable
-            if var in Parser.namespace:
-                warn('\'' + var + '\'', OverrideWarning, stacklevel=3)
-            # extract array field from Tensor wrapper class
-            if isinstance(self.namespace[var], Tensor):
-                self.namespace[var] = self.namespace[var].array
-            # update static namespace for persistance across each function call
-            Parser.namespace[var] = self.namespace[var]
         return self.namespace
 
     # <ROOT> -> <EXPRESSION> | <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
@@ -238,7 +229,7 @@ class Parser:
         # expect a tensor on LHS of a tensorial equation
         if tensorial and self.peek('SYMBOL'):
             self.lexer.token = 'TENSOR'
-        variable = self._gradient() if self.peek('GRAD_OP') else self._variable()
+        variable = self._gradient('LHS') if self.peek('GRAD_OP') else self._variable()
         self.expect('EQUAL')
         expr = self._expression()
         if tensorial:
@@ -331,8 +322,10 @@ class Parser:
                     sentence = self.lexer.sentence
                     position = self.lexer.index - len(self.lexer.lexeme)
                     raise ParseError('cannot declare from inference without dimension', sentence, position)
-                parse(self._christoffel(array.args[1:]))
-                self.lexer.update(self.namespace)
+                lexer, self.lexer = self.lexer, Lexer()
+                self.parse(self._christoffel(array.args[1:]))
+                self.namespace.move_to_end('GammaUDD', False)
+                self.lexer = lexer
                 return array
             self.expect('SYMBOL')
             if self.accept('UNDERSCORE'):
@@ -392,7 +385,7 @@ class Parser:
         if self.peek('DERV_OP'):
             return self._derivative()
         if self.peek('GRAD_OP'):
-            return self._gradient()
+            return self._gradient('RHS')
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unsupported operator \'%s\' at position %d' %
             (operator, position), self.lexer.sentence, position)
@@ -520,7 +513,7 @@ class Parser:
                     order, array = len(indices), subexpr.args[0]
                     indexing = list(array.args[2:]) + indices
                     tensor = self.namespace[str(array.args[1])]
-                    subtree.expr = self._differentiate(tensor, order, False, *indexing)
+                    subtree.expr = self._differentiate(tensor, order, indexing)
                     tree.build(subtree)
                 elif subexpr.func == Function('Tensor'):
                     # remove temporary symbol '_x' from tensor function
@@ -531,30 +524,52 @@ class Parser:
         order, array = len(indices), self._array()
         indices = list(array.args[1:]) + indices
         tensor = self.namespace[str(array.args[0])]
-        return self._differentiate(tensor, order, False, *indices)
+        return self._differentiate(tensor, order, indices)
 
     # <GRAD> -> { <GRAD_OP> ( '^' | '_' ) <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
-    def _gradient(self):
-        indices = []
+    def _gradient(self, location):
+        indices, config, equation = [], [], ['', ' = ', '', '']
         while self.accept('GRAD_OP'):
+            equation[0] += 'D'
+            equation[3] += 'D'
             if self.accept('CARET'):
-                pass
-            elif self.accept('UNDERSCORE'):
                 index = self.lexer.lexeme
+                equation[0] += '^' + index
+                bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x != index)
+                equation[2] += 'g^{%s %s} ' % (index, bound_index)
+                config.append(equation[2] + '[%d]: metric' % self.dimension)
+                equation[3] += '_' + bound_index
                 if index[0] == '\\':
                     index = index[1:]
                 self.expect('SYMBOL')
-                indices.append(Symbol(index))
+                indices.append((Symbol(index), 'U'))
+            elif self.accept('UNDERSCORE'):
+                index = self.lexer.lexeme
+                equation[0] += '_' + index
+                equation[3] += '_' + index
+                if index[0] == '\\':
+                    index = index[1:]
+                self.expect('SYMBOL')
+                indices.append((Symbol(index), 'D'))
             else:
                 sentence = self.lexer.sentence
                 position = self.lexer.index - len(self.lexer.lexeme)
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
         # instantiate absolute gradient and update namespace
+        mark_1 = self.lexer.index - len(self.lexer.lexeme)
         order, array = len(indices), self._array()
-        indices = list(array.args[1:]) + indices
+        mark_2 = self.lexer.index
+        equation[0] += ' ' + self.lexer.sentence[mark_1:mark_2]
+        equation[3] += ' ' + self.lexer.sentence[mark_1:mark_2]
+        if location == 'RHS' and equation[2]:
+            lexer, self.lexer = self.lexer, Lexer()
+            if config: config = '%' + ';\n'.join(config) + ';\n'
+            self.parse(config + ''.join(equation))
+            self.lexer = lexer
         tensor = self.namespace[str(array.args[0])]
-        return self._differentiate(tensor, order, True, *indices)
+        return self._differentiate(tensor, order, list(array.args[1:]) +
+            [index[0] for index in indices], [index[1] for index in indices])
 
     # <CONFIG> -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
     def _config(self):
@@ -602,7 +617,7 @@ class Parser:
             array.extend((len(index) - order) * ['D'])
             if order > 0:
                 tensor = self.namespace[''.join(array)]
-                return self._differentiate(tensor, order, False, *indices)
+                return self._differentiate(tensor, order, indices)
         if self.accept('CARET'):
             index = self._upper_index()
             indices.extend(index)
@@ -613,7 +628,7 @@ class Parser:
                 array.extend((len(index) - order) * ['D'])
                 if order > 0:
                     tensor = self.namespace[''.join(array)]
-                    return self._differentiate(tensor, order, False, *indices)
+                    return self._differentiate(tensor, order, indices)
         return Function('Tensor')(Symbol(''.join(array)), *indices)
 
     # <LOWER_INDEX> -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
@@ -667,17 +682,18 @@ class Parser:
         nameset.add('Gamma') # reserved keyword for christoffel symbol
         return any(tensor in assignment for tensor in nameset)
 
-    def _differentiate(self, tensor, order, covariant, *index):
+    def _differentiate(self, tensor, order, indices, covariant=None):
         # instantiate partial derivative and update namespace
-        suffix = '_cd' if covariant else '_d'
-        name = tensor.name + ('' if suffix in tensor.name else suffix) + order * 'D'
+        prefix, suffix = '_cd' if covariant else '_d', ''.join(covariant) if covariant else order * 'D'
+        name = tensor.name + ('' if prefix in tensor.name else prefix) + suffix
         rank, dimension, symmetry = tensor.rank, tensor.dimension, tensor.symmetry
-        function = Function('Tensor')(Symbol(name), *index)
+        function = Function('Tensor')(Symbol(name), *indices)
         if order == 2:
             if symmetry and symmetry != 'nosym':
                 symmetry = tensor.symmetry + '_sym%d%d' % (rank, rank + order - 1)
             else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
-        self.namespace[name] = Tensor(function, dimension, symmetry)
+        if not covariant or all(pos == 'D' for pos in covariant):
+            self.namespace[name] = Tensor(function, dimension, symmetry)
         return function
 
     def _christoffel(self, indices):
@@ -824,7 +840,7 @@ def parse(sentence, expression=False, debug=False):
 
         :arg:    latex sentence (raw string)
         :arg:    expression mode [default: False]
-        :arg:    debug mode [default: None]
+        :arg:    debug mode [default: False]
         :return: symbolic expression or tensor namespace
 
         >>> parse(r'-(\\frac{2}{3} + 2\\sqrt[5]{x + 3})', expression=True)
@@ -865,6 +881,13 @@ def parse(sentence, expression=False, debug=False):
     if not isinstance(namespace, dict):
         return namespace
     if not debug:
+        for var in namespace:
+            # throw warning whenever duplicate namespace variable
+            if var in Parser.namespace:
+                warn('\'' + var + '\'', OverrideWarning, stacklevel=3)
+            # extract array field from Tensor wrapper class
+            if isinstance(namespace[var], Tensor):
+                namespace[var] = namespace[var].array
         # update global scope with tensor namespace
         globals().update(namespace)
         for var in namespace:
@@ -872,6 +895,7 @@ def parse(sentence, expression=False, debug=False):
                 # evaluate each implied summation
                 namespace[var] = eval(namespace[var])
                 globals()[var] = namespace[var]
+        # update static namespace for persistance
         Parser.namespace.update(namespace)
     # inject namespace into the previous stack frame
     frame = currentframe().f_back
