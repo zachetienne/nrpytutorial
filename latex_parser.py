@@ -814,8 +814,7 @@ class Tensor:
 
     @staticmethod
     def latex_format(name, indexing):
-        # TODO
-        """ """
+        """ Tensor Notation for LaTeX Formatting """
 
         latex = [re.split('[UD]', name)[0], [], []]
         U_count, D_count = 0, 0
