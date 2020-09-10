@@ -25,8 +25,9 @@ class Lexer:
         # multi-letter tensor, and join together the resulting tensor list using a pipe
         # symbol for regex alternation
         nameset = set(re.match(r'[^UD]*', tensor).group() for tensor in namespace)
-        tensor_pattern = '|'.join(r'\\' + name if len(name) > 1 else name for name in nameset) if nameset else '(?!)'
-        greek_pattern  = '|'.join(r'\\' + letter for letter in ('[aA]lpha', '[bB]eta', '[gG]amma', '[dD]elta',
+        symmetry_pattern = r'nosym|sym[0-9]+(?:_sym[0-9]+)*|anti[0-9]+(?:_anti[0-9]+)*'
+        tensor_pattern   = '|'.join(r'\\' + name if len(name) > 1 else name for name in nameset) if nameset else '(?!)'
+        greek_pattern    = '|'.join(r'\\' + letter for letter in ('[aA]lpha', '[bB]eta', '[gG]amma', '[dD]elta',
             '[eE]psilon', '[zZ]eta', '[eE]ta', '[tT]heta', '[iI]ota', '[kK]appa', '[lL]ambda',
             '[mM]u', '[nN]u', '[xX]i', '[oO]mikron', '[pP]i', '[Rr]ho', '[sS]igma', '[tT]au',
             '[uU]psilon', '[pP]hi', '[cC]hi', '[pP]si', '[oO]mega'))
@@ -66,10 +67,10 @@ class Lexer:
               ('FRAC_CMD',       r'\\frac'),
               ('TRIG_CMD',       r'\\sinh|\\cosh|\\tanh|\\sin|\\cos|\\tan'),
               ('NLOG_CMD',       r'\\ln|\\log'),
-              ('DERV_OP',        r'\\partial'),
-              ('GRAD_OP',        r'\\Nabla|D'),
+              ('PDRV_OP',        r'\\partial'),
+              ('CDRV_OP',        r'\\Nabla|D'),
               # TODO: INFER METRIC TENSOR AND PERMUTATION SYMBOL
-              ('SYMMETRY',       r'nosym|sym[0-9]+(?:_sym[0-9]+)*|metric|permutation'),
+              ('SYMMETRY',       symmetry_pattern + r'|metric|permutation'),
               ('TENSOR',         tensor_pattern),
               ('SYMBOL',         greek_pattern + r'|[a-zA-Z]'),
               ('COMMAND',        r'\\[a-z]+')]]))
@@ -139,7 +140,7 @@ class Parser:
         <ROOT>          -> <EXPRESSION> | <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
         <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
         <ENVIRONMENT>   -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
-        <ASSIGNMENT>    -> ( <VARIABLE> | <GRAD> ) = <EXPRESSION>
+        <ASSIGNMENT>    -> ( <VARIABLE> | <CDRV> ) = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
         <TERM>          -> <FACTOR> { [ '/' ] <FACTOR> }*
         <FACTOR>        -> ( <BASE> | <EULER> ) { '^' <EXPONENT> }*
@@ -149,13 +150,13 @@ class Parser:
         <VARIABLE>      -> <ARRAY> | <SYMBOL> [ '_' ( <SYMBOL> | <INTEGER> ) ]
         <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER> | <PI>
         <COMMAND>       -> <SQRT> | <FRAC> | <NLOG> | <TRIG>
-        <OPERATOR>      -> <DERV> | <GRAD>
+        <OPERATOR>      -> <PDRV> | <CDRV>
         <SQRT>          -> <SQRT_CMD> [ '[' <INTEGER> ']' ] '{' <EXPRESSION> '}'
         <FRAC>          -> <FRAC_CMD> '{' <EXPRESSION> '}' '{' <EXPRESSION> '}'
         <NLOG>          -> <NLOG_CMD> [ '_' <INTEGER> | { <INTEGER> } ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
         <TRIG>          -> <TRIG_CMD> [ '^' <INTEGER> | { <INTEGER> } ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
-        <DERV>          -> { <DERV_OP> '_' <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
-        <GRAD>          -> { <GRAD_OP> ( '^' | '_' ) <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
+        <PDRV>          -> { <PDRV_OP> '_' <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
+        <CDRV>          -> { <CDRV_OP> ( '^' | '_' ) <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
         <CONFIG>        -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
         <ARRAY>         -> <TENSOR> ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ] )
         <LOWER_INDEX>   -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
@@ -223,13 +224,13 @@ class Parser:
             self._assignment()
         self.expect('END_ALIGN')
 
-    # <ASSIGNMENT> -> ( <VARIABLE> | <GRAD> ) = <EXPRESSION>
+    # <ASSIGNMENT> -> ( <VARIABLE> | <CDRV> ) = <EXPRESSION>
     def _assignment(self):
         tensorial = self._tensorial()
         # expect a tensor on LHS of a tensorial equation
         if tensorial and self.peek('SYMBOL'):
             self.lexer.token = 'TENSOR'
-        variable = self._gradient('LHS') if self.peek('GRAD_OP') else self._variable()
+        variable = self._gradient('LHS') if self.peek('CDRV_OP') else self._variable()
         self.expect('EQUAL')
         expr = self._expression()
         if tensorial:
@@ -244,7 +245,7 @@ class Parser:
                     func = Tensor.notation(subexpr)
                     expr = expr.replace(str(subexpr), func)
             # perform implied summation on tensorial equation
-            summation = _summation((str(variable), expr), self.dimension)
+            summation = _summation((variable, expr), self.dimension)
             # update namespace and lexer with expanded equation
             self.namespace.update(summation)
             self.lexer.update(self.namespace)
@@ -263,9 +264,9 @@ class Parser:
     # <TERM> -> <FACTOR> { [ '/' ] <FACTOR> }*
     def _term(self):
         expr = self._factor()
-        while any(self.peek(i) for i in ('LEFT_PAREN', 'LEFT_BRACKET',
-                'SYMBOL', 'TENSOR', 'RATIONAL', 'DECIMAL', 'INTEGER',
-                'DIVIDE', 'SQRT_CMD', 'FRAC_CMD', 'DERV_OP', 'GRAD_OP')):
+        while any(self.peek(i) for i in ('LEFT_PAREN', 'PDRV_OP', 'CDRV_OP',
+                'SYMBOL', 'TENSOR', 'RATIONAL', 'DECIMAL', 'INTEGER', 'PI', 'EULER',
+                'DIVIDE', 'COMMAND', 'SQRT_CMD', 'FRAC_CMD', 'TRIG_CMD', 'NLOG_CMD')):
             if self.accept('DIVIDE'):
                 expr /= self._factor()
             else: expr *= self._factor()
@@ -302,7 +303,7 @@ class Parser:
     def _atom(self):
         if self.peek('SYMBOL') or self.peek('TENSOR'):
             return self._variable()
-        if self.peek('DERV_OP') or self.peek('GRAD_OP'):
+        if self.peek('PDRV_OP') or self.peek('CDRV_OP'):
             return self._operator()
         if any(self.peek(i) for i in ('COMMAND',
                 'SQRT_CMD', 'FRAC_CMD', 'NLOG_CMD', 'TRIG_CMD')):
@@ -323,10 +324,11 @@ class Parser:
                         sentence = self.lexer.sentence
                         position = self.lexer.index - len(self.lexer.lexeme)
                         raise ParseError('cannot declare from inference without dimension', sentence, position)
-                    lexer, self.lexer = self.lexer, Lexer()
+                    index, sentence = self.lexer.index, self.lexer.sentence
                     self.parse(self._generate_christoffel(array.args[1:]))
                     self.namespace.move_to_end('GammaUDD', False)
-                    self.lexer = lexer
+                    self.lexer.initialize(sentence, index - 1)
+                    self.lexer.lex()
                 return array
             self.expect('SYMBOL')
             if self.accept('UNDERSCORE'):
@@ -380,12 +382,12 @@ class Parser:
         raise ParseError('unsupported command \'%s\' at position %d' %
             (command, position), self.lexer.sentence, position)
 
-    # <OPERATOR> -> <DERV> | <GRAD>
+    # <OPERATOR> -> <PDRV> | <CDRV>
     def _operator(self):
         operator = self.lexer.lexeme
-        if self.peek('DERV_OP'):
+        if self.peek('PDRV_OP'):
             return self._derivative()
-        if self.peek('GRAD_OP'):
+        if self.peek('CDRV_OP'):
             return self._gradient('RHS')
         position = self.lexer.index - len(self.lexer.lexeme)
         raise ParseError('unsupported operator \'%s\' at position %d' %
@@ -485,10 +487,10 @@ class Parser:
         if exponent == -1: return trig(expr)
         return trig(expr) ** exponent
 
-    # <DERV> -> { <DERV_OP> '_' <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+    # <PDRV> -> { <PDRV_OP> '_' <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _derivative(self):
         indices = []
-        while self.accept('DERV_OP'):
+        while self.accept('PDRV_OP'):
             self.expect('UNDERSCORE')
             index = self.lexer.lexeme
             self.expect('SYMBOL')
@@ -527,10 +529,10 @@ class Parser:
         tensor = self.namespace[str(array.args[0])]
         return self._differentiate(tensor, order, indices)
 
-    # <GRAD> -> { <GRAD_OP> ( '^' | '_' ) <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
+    # <CDRV> -> { <CDRV_OP> ( '^' | '_' ) <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
     def _gradient(self, location):
         indices, config, equation = [], [], ['', ' = ', '', '']
-        while self.accept('GRAD_OP'):
+        while self.accept('CDRV_OP'):
             equation[0] += 'D'
             equation[3] += 'D'
             if self.accept('CARET'):
@@ -563,24 +565,19 @@ class Parser:
         mark_2 = self.lexer.index
         equation[0] += ' ' + self.lexer.sentence[mark_1:mark_2]
         equation[3] += ' ' + self.lexer.sentence[mark_1:mark_2]
-        # == REMOVE ==
-        if location == 'RHS' and equation[2]:
-            lexer, self.lexer = self.lexer, Lexer()
-            if config: config = '%' + ';\n'.join(config) + ';\n'
-            self.parse(config + ''.join(equation))
-            self.lexer = lexer
-        # ============
         tensor = self.namespace[str(array.args[0])]
-        # if location == 'RHS':
-        #     if equation[2]:
-        #         lexer, self.lexer = self.lexer, Lexer()
-        #         if config: config = '%' + ';\n'.join(config) + ';\n'
-        #         self.parse(config + ''.join(equation))
-        #         self.lexer = lexer
-        #     else:
-        #         lexer, self.lexer = self.lexer, Lexer()
-        #         self.parse(self._generate_gradient(tensor, [index[0] for index in indices]))
-        #         self.lexer = lexer
+        if location == 'RHS':
+            if equation[2]:
+                index, sentence = self.lexer.index, self.lexer.sentence
+                if config: config = '%' + ';\n'.join(config) + ';\n'
+                self.parse(config + ''.join(equation))
+                self.lexer.initialize(sentence, index - 1)
+                self.lexer.lex()
+            else:
+                index, sentence = self.lexer.index, self.lexer.sentence
+                self.parse(self._generate_gradient(tensor, [index[0] for index in indices]))
+                self.lexer.initialize(sentence, index - 1)
+                self.lexer.lex()
         return self._differentiate(tensor, order, list(array.args[1:]) +
             [index[0] for index in indices], [index[1] for index in indices])
 
@@ -701,20 +698,12 @@ class Parser:
         name = tensor.name + ('' if prefix in tensor.name else prefix) + suffix
         rank, dimension, symmetry = tensor.rank, tensor.dimension, tensor.symmetry
         function = Function('Tensor')(Symbol(name), *indices)
-        # == REMOVE ==
-        if order == 2:
-            if symmetry and symmetry != 'nosym':
-                symmetry = tensor.symmetry + '_sym%d%d' % (rank, rank + order - 1)
-            else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
-        if not covariant or all(pos == 'D' for pos in covariant):
+        if not covariant:
+            if order == 2:
+                if symmetry and symmetry != 'nosym':
+                    symmetry = tensor.symmetry + '_sym%d%d' % (rank, rank + order - 1)
+                else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
             self.namespace[name] = Tensor(function, dimension, symmetry)
-        # ============
-        # if not covariant:
-        #     if order == 2:
-        #         if symmetry and symmetry != 'nosym':
-        #             symmetry = tensor.symmetry + '_sym%d%d' % (rank, rank + order - 1)
-        #         else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
-        #     self.namespace[name] = Tensor(function, dimension, symmetry)
         return function
 
     def _generate_christoffel(self, indices):
@@ -726,17 +715,25 @@ class Parser:
 
     @staticmethod
     def _generate_gradient(tensor, indices):
-        indices = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indices]
         order, LHS, RHS = len(indices), str(tensor), ''
         while order > 0:
-            diff_index = indices[order - 1]
+            indexing = [index[0] for index in tensor.indexing] + indices
+            for i, index in enumerate(indexing):
+                if index in indexing[:i]:
+                    alphabet = (chr(97 + n) for n in range(26))
+                    indexing[i] = next(x for x in alphabet if x not in indexing)
+            diff_index = indexing[len(indexing) - order]
+            if len(str(diff_index)) > 1:
+                diff_index = '\\' + str(diff_index)
             LHS = 'D_%s %s' % (diff_index, LHS)
             RHS += '\\partial_%s %s' % (diff_index, str(tensor))
-            indexing = [index[0] for index in tensor.indexing]
             for index, position in tensor.indexing:
-                bound_index  = next(x for x in (chr(97 + n) for n in range(26)) if x not in indexing)
+                alphabet = (chr(97 + n) for n in range(26))
+                bound_index  = next(x for x in alphabet if x not in indexing)
                 tensor_latex = Tensor.latex_format(tensor.name,
                     [(bound_index, index_[1]) if index_[0] == index else index_ for index_ in tensor.indexing])
+                if len(str(index)) > 1:
+                    index = '\\' + str(index)
                 if position == 'U':
                     RHS += ' + \\Gamma^%s_{%s %s} %s' % (index, bound_index, diff_index, tensor_latex)
                 else:
@@ -817,6 +814,9 @@ class Tensor:
 
     @staticmethod
     def latex_format(name, indexing):
+        # TODO
+        """ """
+
         latex = [re.split('[UD]', name)[0], [], []]
         U_count, D_count = 0, 0
         for index, position in indexing:
