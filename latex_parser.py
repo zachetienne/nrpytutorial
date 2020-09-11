@@ -11,7 +11,7 @@ from expr_tree import ExprTree
 from inspect import currentframe
 from warnings import warn
 import indexedexp as ixp
-import re
+import re, sys
 
 class Lexer:
     """ LaTeX Lexer
@@ -68,7 +68,8 @@ class Lexer:
               ('TRIG_CMD',       r'\\sinh|\\cosh|\\tanh|\\sin|\\cos|\\tan'),
               ('NLOG_CMD',       r'\\ln|\\log'),
               ('PDRV_OP',        r'\\partial'),
-              ('CDRV_OP',        r'\\Nabla|D'),
+              ('CDRV_OP',        r'\\nabla|D'),
+              ('LABEL',          r'\\hat|\\tilde|\\bar'),
               # TODO: INFER METRIC TENSOR AND PERMUTATION SYMBOL
               ('SYMMETRY',       symmetry_pattern + r'|metric|permutation'),
               ('TENSOR',         tensor_pattern),
@@ -110,7 +111,8 @@ class Lexer:
         try:
             self.token = next(self.tokenize())
         except StopIteration:
-            self.token = None
+            self.token  = None
+            self.lexeme = ''
         return self.token
 
     def reset(self, position=0):
@@ -140,7 +142,7 @@ class Parser:
         <ROOT>          -> <EXPRESSION> | <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
         <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
         <ENVIRONMENT>   -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
-        <ASSIGNMENT>    -> ( <VARIABLE> | <CDRV> ) = <EXPRESSION>
+        <ASSIGNMENT>    -> ( <CDRV> | <VARIABLE> ) = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
         <TERM>          -> <FACTOR> { [ '/' ] <FACTOR> }*
         <FACTOR>        -> ( <BASE> | <EULER> ) { '^' <EXPONENT> }*
@@ -158,9 +160,10 @@ class Parser:
         <PDRV>          -> { <PDRV_OP> '_' <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
         <CDRV>          -> { <CDRV_OP> ( '^' | '_' ) <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
         <CONFIG>        -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
-        <ARRAY>         -> <TENSOR> ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ] )
+        <ARRAY>         -> <ARRAY_LABEL> ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ] )
         <LOWER_INDEX>   -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
         <UPPER_INDEX>   -> <SYMBOL> | '{' { <SYMBOL> }+ '}'
+        <ARRAY_LABEL>   -> <TENSOR> | <LABEL> '{' <TENSOR> '}'
     """
 
     namespace = OrderedDict()
@@ -190,7 +193,7 @@ class Parser:
             elif lexeme == ';' and sentence[i - 1] == '{':
                 i_3 = sentence.find('}', i) + 1
                 subexpr, indices = sentence[i_1:i_2], sentence[i_2:i_3][3:-1]
-                operator = ''.join('\\Nabla_' + index for index in indices)
+                operator = ''.join('\\nabla_' + index for index in indices)
                 sentence = sentence.replace(sentence[i_1:i_3], operator + ' ' + subexpr)
         self.lexer.initialize(sentence)
         self.lexer.lex()
@@ -224,7 +227,7 @@ class Parser:
             self._assignment()
         self.expect('END_ALIGN')
 
-    # <ASSIGNMENT> -> ( <VARIABLE> | <CDRV> ) = <EXPRESSION>
+    # <ASSIGNMENT> -> ( <CDRV> | <VARIABLE> ) = <EXPRESSION>
     def _assignment(self):
         tensorial = self._tensorial()
         # expect a tensor on LHS of a tensorial equation
@@ -264,9 +267,9 @@ class Parser:
     # <TERM> -> <FACTOR> { [ '/' ] <FACTOR> }*
     def _term(self):
         expr = self._factor()
-        while any(self.peek(i) for i in ('LEFT_PAREN', 'PDRV_OP', 'CDRV_OP',
+        while any(self.peek(i) for i in ('LEFT_PAREN', 'DIVIDE', 'PDRV_OP', 'CDRV_OP',
                 'SYMBOL', 'TENSOR', 'RATIONAL', 'DECIMAL', 'INTEGER', 'PI', 'EULER',
-                'DIVIDE', 'COMMAND', 'SQRT_CMD', 'FRAC_CMD', 'TRIG_CMD', 'NLOG_CMD')):
+                'COMMAND', 'LABEL', 'SQRT_CMD', 'FRAC_CMD', 'TRIG_CMD', 'NLOG_CMD')):
             if self.accept('DIVIDE'):
                 expr /= self._factor()
             else: expr *= self._factor()
@@ -301,7 +304,7 @@ class Parser:
 
     # <ATOM> -> <VARIABLE> | <NUMBER> | <OPERATOR> | <COMMAND>
     def _atom(self):
-        if self.peek('SYMBOL') or self.peek('TENSOR'):
+        if any(self.peek(i) for i in ('LABEL', 'SYMBOL', 'TENSOR')):
             return self._variable()
         if self.peek('PDRV_OP') or self.peek('CDRV_OP'):
             return self._operator()
@@ -313,21 +316,30 @@ class Parser:
     # <VARIABLE> -> <ARRAY> | <SYMBOL> [ '_' ( <SYMBOL> | <INTEGER> ) ]
     def _variable(self):
         variable = self.lexer.lexeme
+        # remove backslash from variable whenever present
+        if variable[0] == '\\':
+            variable = variable[1:]
         if self.peek('SYMBOL'):
-            # remove backslash from variable whenever present
-            if variable[0] == '\\':
-                variable = variable[1:]
+            # reserved keyword for christoffel symbol
             if variable == 'Gamma':
+                self.lexer.token = 'TENSOR'
                 array = self._array()
                 if 'GammaUDD' not in Parser.namespace:
                     if self.dimension is None:
                         sentence = self.lexer.sentence
                         position = self.lexer.index - len(self.lexer.lexeme)
-                        raise ParseError('cannot declare from inference without dimension', sentence, position)
-                    index, sentence = self.lexer.index, self.lexer.sentence
-                    self.parse(self._generate_christoffel(array.args[1:]))
-                    self.namespace.move_to_end('GammaUDD', False)
-                    self.lexer.initialize(sentence, index - 1)
+                        raise ParseError('cannot instantiate from inference', sentence, position)
+                    index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
+                    self.parse(self._generate_christoffel(self.dimension, array.args[1:]))
+                    # rearrange namespace ordering for variable dependence
+                    reordered = OrderedDict({'GammaUDD': self.namespace['GammaUDD']})
+                    if sys.version_info >= (3, 2):
+                        self.namespace.move_to_end('GammaUDD', False)
+                    else:
+                        self.namespace.pop('GammaUDD')
+                        reordered.update(self.namespace)
+                        self.namespace = reordered
+                    self.lexer.initialize(sentence, index)
                     self.lexer.lex()
                 return array
             self.expect('SYMBOL')
@@ -487,7 +499,7 @@ class Parser:
         if exponent == -1: return trig(expr)
         return trig(expr) ** exponent
 
-    # <PDRV> -> { <PDRV_OP> '_' <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+    # <PDRV> -> { <PDRV_OP> '_' <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
     def _derivative(self):
         indices = []
         while self.accept('PDRV_OP'):
@@ -516,7 +528,7 @@ class Parser:
                     order, array = len(indices), subexpr.args[0]
                     indexing = list(array.args[2:]) + indices
                     tensor = self.namespace[str(array.args[1])]
-                    subtree.expr = self._differentiate(tensor, order, indexing)
+                    subtree.expr = self._instantiate_derivative(tensor, order, indexing)
                     tree.build(subtree)
                 elif subexpr.func == Function('Tensor'):
                     # remove temporary symbol '_x' from tensor function
@@ -527,14 +539,14 @@ class Parser:
         order, array = len(indices), self._array()
         indices = list(array.args[1:]) + indices
         tensor = self.namespace[str(array.args[0])]
-        return self._differentiate(tensor, order, indices)
+        return self._instantiate_derivative(tensor, order, indices)
 
     # <CDRV> -> { <CDRV_OP> ( '^' | '_' ) <SYMBOL> }+ ( <ARRAY> | '(' <EXPRESSION> ')' )
     def _gradient(self, location):
         indices, config, equation = [], [], ['', ' = ', '', '']
         while self.accept('CDRV_OP'):
-            equation[0] += 'D'
-            equation[3] += 'D'
+            equation[0] += '\\nabla'
+            equation[3] += '\\nabla'
             if self.accept('CARET'):
                 index = self.lexer.lexeme
                 equation[0] += '^' + index
@@ -559,7 +571,6 @@ class Parser:
                 position = self.lexer.index - len(self.lexer.lexeme)
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
-        # instantiate absolute gradient and update namespace
         mark_1 = self.lexer.index - len(self.lexer.lexeme)
         order, array = len(indices), self._array()
         mark_2 = self.lexer.index
@@ -568,26 +579,27 @@ class Parser:
         tensor = self.namespace[str(array.args[0])]
         if location == 'RHS':
             if equation[2]:
-                index, sentence = self.lexer.index, self.lexer.sentence
-                if config: config = '%' + ';\n'.join(config) + ';\n'
+                index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
+                if config: config = '% ' + ';\n'.join(config) + ';\n'
                 self.parse(config + ''.join(equation))
-                self.lexer.initialize(sentence, index - 1)
+                self.lexer.initialize(sentence, index)
                 self.lexer.lex()
             else:
-                index, sentence = self.lexer.index, self.lexer.sentence
+                # TODO: MODIFY RESET BEHAVIOR TO SHORTEN THE FOLLOWING PROCEDURE
+                index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
                 self.parse(self._generate_gradient(tensor, [index[0] for index in indices]))
-                self.lexer.initialize(sentence, index - 1)
+                self.lexer.initialize(sentence, index)
                 self.lexer.lex()
-        return self._differentiate(tensor, order, list(array.args[1:]) +
+        return self._instantiate_derivative(tensor, order, list(array.args[1:]) +
             [index[0] for index in indices], [index[1] for index in indices])
 
     # <CONFIG> -> '%' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] { ',' <ARRAY> '[' <INTEGER> ']' [ ':' <SYMMETRY> ] }*
     def _config(self):
         self.expect('COMMENT')
         while True:
-            mark_1 = self.lexer.index - len(self.lexer.lexeme)
+            if self.peek('SYMBOL'):
+                self.lexer.token = 'TENSOR'
             array = self._array()
-            mark_2 = self.lexer.index - 1
             self.expect('LEFT_BRACKET')
             dimension = self.lexer.lexeme
             self.expect('INTEGER')
@@ -609,25 +621,19 @@ class Parser:
             if not self.accept('COMMA'): break
         self.lexer.update(self.namespace)
 
-    # <ARRAY> -> <TENSOR> ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ] )
+    # <ARRAY> -> <ARRAY_LABEL> ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ] )
     def _array(self):
-        if not (self.peek('SYMBOL') or self.peek('TENSOR')):
-            sentence = self.lexer.sentence
-            position = self.lexer.index - len(self.lexer.lexeme)
-            raise ParseError('unexpected \'%s\' at position %d' %
-                (sentence[position], position), sentence, position)
-        array = self.lexer.lexeme
-        self.lexer.lex()
-        if array[0] == '\\':
-            array = array[1:]
-        array, indices = list(array), []
+        name = self._array_label()
+        if name[0] == '\\':
+            name = name[1:]
+        array, indices = list(name), []
         if self.accept('UNDERSCORE'):
             index, order = self._lower_index()
             indices.extend(index)
             array.extend((len(index) - order) * ['D'])
             if order > 0:
                 tensor = self.namespace[''.join(array)]
-                return self._differentiate(tensor, order, indices)
+                return self._instantiate_derivative(tensor, order, indices)
         if self.accept('CARET'):
             index = self._upper_index()
             indices.extend(index)
@@ -638,7 +644,7 @@ class Parser:
                 array.extend((len(index) - order) * ['D'])
                 if order > 0:
                     tensor = self.namespace[''.join(array)]
-                    return self._differentiate(tensor, order, indices)
+                    return self._instantiate_derivative(tensor, order, indices)
         return Function('Tensor')(Symbol(''.join(array)), *indices)
 
     # <LOWER_INDEX> -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
@@ -679,9 +685,31 @@ class Parser:
             self.expect('RIGHT_BRACE')
         return index
 
+    # <ARRAY_LABEL> -> <TENSOR> | <LABEL> '{' <TENSOR> '}'
+    def _array_label(self):
+        label = self.lexer.lexeme
+        if self.accept('TENSOR'):
+            return label
+        if self.accept('LABEL'):
+            self.expect('LEFT_BRACE')
+            tensor = self.lexer.lexeme
+            self.lexer.lex()
+            self.expect('RIGHT_BRACE')
+            return tensor + label[1:]
+        sentence = self.lexer.sentence
+        position = self.lexer.index - len(self.lexer.lexeme)
+        raise ParseError('unexpected \'%s\' at position %d' %
+            (sentence[position], position), sentence, position)
+
     def _tensorial(self):
         # extract equation from sentence and identify tensor(s)
         # to determine whether equation is tensorial
+        def expand_notation(name):
+            prefix = 'bar'   if 'bar'   in name \
+                else 'hat'   if 'hat'   in name \
+                else 'tilde' if 'tilde' in name \
+                else None
+            return '%s{%s}' % (prefix, name[:-len(prefix)]) if prefix else name
         mark_1 = self.lexer.index - len(self.lexer.lexeme)
         for token in self.lexer.tokenize():
             if token == 'LINE_BREAK': break
@@ -690,10 +718,10 @@ class Parser:
         self.lexer.reset(mark_1); self.lexer.lex()
         nameset = set(re.match(r'[^UD]*', tensor).group() for tensor in self.namespace)
         nameset.add('Gamma') # reserved keyword for christoffel symbol
+        nameset = set(expand_notation(name) for name in nameset)
         return any(tensor in assignment for tensor in nameset)
 
-    def _differentiate(self, tensor, order, indices, covariant=None):
-        # instantiate partial derivative and update namespace
+    def _instantiate_derivative(self, tensor, order, indices, covariant=None):
         prefix, suffix = '_cd' if covariant else '_d', ''.join(covariant) if covariant else order * 'D'
         name = tensor.name + ('' if prefix in tensor.name else prefix) + suffix
         rank, dimension, symmetry = tensor.rank, tensor.dimension, tensor.symmetry
@@ -706,18 +734,20 @@ class Parser:
             self.namespace[name] = Tensor(function, dimension, symmetry)
         return function
 
-    def _generate_christoffel(self, indices):
+    @staticmethod
+    def _generate_christoffel(dimension, indices):
         indices = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indices]
         bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x not in indices)
         return (('% g^{{{i1}{bound_index}}} [{dim}]: metric, g_{{{i3}{bound_index}}} [{dim}]: metric, g_{{{bound_index} {i2}}} [{dim}]: metric, g_{{{i2}{i3}}} [{dim}]: metric;\n'
                 '\\Gamma^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} g^{{{i1} {bound_index}}}(g_{{{i3} {bound_index},{i2}}} + g_{{{bound_index} {i2},{i3}}} - g_{{{i2} {i3},{bound_index}}})')
-                .format(i1 = indices[0], i2 = indices[1], i3 = indices[2], bound_index = bound_index, dim = self.dimension))
+                .format(i1 = indices[0], i2 = indices[1], i3 = indices[2], bound_index = bound_index, dim = dimension))
 
     @staticmethod
     def _generate_gradient(tensor, indices):
         order, LHS, RHS = len(indices), str(tensor), ''
         while order > 0:
-            indexing = [index[0] for index in tensor.indexing] + indices
+            indexing = [str(index[0]) for index in tensor.indexing] + \
+                [str(index) for index in indices]
             for i, index in enumerate(indexing):
                 if index in indexing[:i]:
                     alphabet = (chr(97 + n) for n in range(26))
@@ -725,7 +755,7 @@ class Parser:
             diff_index = indexing[len(indexing) - order]
             if len(str(diff_index)) > 1:
                 diff_index = '\\' + str(diff_index)
-            LHS = 'D_%s %s' % (diff_index, LHS)
+            LHS = '\\nabla_%s %s' % (diff_index, LHS)
             RHS += '\\partial_%s %s' % (diff_index, str(tensor))
             for index, position in tensor.indexing:
                 alphabet = (chr(97 + n) for n in range(26))
