@@ -9,53 +9,47 @@ import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line int
 Ccodesdir = "GiRaFFE_standalone_Ccodes/RHSs"
 cmd.mkdir(os.path.join(Ccodesdir))
 
+from outputC import outCfunction, outputC # NRPy+: Core C code output module
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
+import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import GiRaFFE_NRPy.GiRaFFE_NRPy_Characteristic_Speeds as chsp
+
 def GiRaFFE_NRPy_Afield_flux(Ccodesdir):
     cmd.mkdir(Ccodesdir)
     # Write out the code to a file.
+
+    gammaDD = ixp.declarerank2("gammaDD","sym01",DIM=3)
+    betaU = ixp.declarerank1("betaU",DIM=3)
+    alpha = sp.sympify("alpha")
+
+    for flux_dirn in range(3):
+        chsp.find_cmax_cmin(flux_dirn,gammaDD,betaU,alpha)
+        Ccode_kernel = outputC([chsp.cmax,chsp.cmin],["cmax","cmin"],"returnstring",params="outCverbose=False,CSE_sorting=none")
+        Ccode_kernel = Ccode_kernel.replace("cmax","*cmax").replace("cmin","*cmin")
+        Ccode_kernel = Ccode_kernel.replace("betaU0","betaUi").replace("betaU1","betaUi").replace("betaU2","betaUi")
+
+        with open(os.path.join(Ccodesdir,"compute_cmax_cmin_dirn"+str(flux_dirn)+".h"),"w") as file:
+            file.write(Ccode_kernel)
+
     with open(os.path.join(Ccodesdir,"calculate_E_field_flat_all_in_one.h"),"w") as file:
         file.write("""void find_cmax_cmin(const REAL gammaDD00, const REAL gammaDD01, const REAL gammaDD02,
                     const REAL gammaDD11, const REAL gammaDD12, const REAL gammaDD22,
                     const REAL betaUi, const REAL alpha, const int flux_dirn,
                     REAL *cmax, REAL *cmin) {
-    // First, we find the inverse metric component we need. We pass in value of the metric components
-    // at the current point, and use a switch statement to compute only the component we need.
-    const double tmp_4 = (1.0/(gammaDD00*gammaDD11*gammaDD22 - gammaDD00*((gammaDD12)*(gammaDD12)) - ((gammaDD01)*(gammaDD01))*gammaDD22 + 2*gammaDD01*gammaDD02*gammaDD12 - ((gammaDD02)*(gammaDD02))*gammaDD11));
-    REAL gammaUUii;
     switch(flux_dirn) {
         case 0:
-            gammaUUii = tmp_4*(gammaDD11*gammaDD22 - ((gammaDD12)*(gammaDD12))); // gammaUU00
+#include "compute_cmax_cmin_dirn0.h"
             break;
         case 1:
-            gammaUUii = tmp_4*(gammaDD00*gammaDD22 - ((gammaDD02)*(gammaDD02))); // gammaUU11
+#include "compute_cmax_cmin_dirn1.h"
             break;
         case 2:
-            gammaUUii = tmp_4*(gammaDD00*gammaDD11 - ((gammaDD01)*(gammaDD01))); // gammaUU22
+#include "compute_cmax_cmin_dirn2.h"
             break;
         default:
-            printf("Invalid parameter flux_dirn!"); gammaUUii = 1.0/0.0;
+            printf("Invalid parameter flux_dirn!"); *cmax = 1.0/0.0; *cmin = 1.0/0.0;
             break;
     }
-    // We have passed the lapse alpha at the current point and betaU[flux_dirn] at the current poitn
-    // into the function.
-    // a = 1/(alpha^2)
-    const REAL a = 1.0/(alpha*alpha);
-    // b = 2 beta^i / alpha^2
-    const REAL b = 2.0 * betaUi /(alpha*alpha);
-    // c = -g^{ii} + (beta^i)^2 / alpha^2
-    const REAL c = - gammaUUii + betaUi*betaUi/(alpha*alpha);
-
-    // Now, we are free to solve the quadratic equation as usual. We take care to avoid passing a
-    // negative value to the sqrt function.
-    REAL detm = b*b - 4.0*a*c;
-
-    // Based on a trick from Roland Haas:
-    // detm = sqrt(MAX(0,detm))
-    detm = sqrt(0.5*(detm + fabs(detm)));
-    const REAL cplus  = 0.5*(-b/a + detm/a);
-    const REAL cminus = 0.5*(-b/a - detm/a);
-
-    *cmax = 0.5*(cplus + fabs(cplus)); // MAX(cplus, 0)
-    *cmin = -0.5*(cminus - fabs(cminus)); // -MIN(cminus, 0)
 }
 
 REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l, REAL cmin, REAL cmax) {
