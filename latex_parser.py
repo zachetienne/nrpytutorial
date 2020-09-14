@@ -324,23 +324,7 @@ class Parser:
             if variable == 'Gamma':
                 self.lexer.token = 'TENSOR'
                 array = self._array()
-                if 'GammaUDD' not in Parser.namespace:
-                    if self.dimension is None:
-                        sentence = self.lexer.sentence
-                        position = self.lexer.index - len(self.lexer.lexeme)
-                        raise ParseError('cannot instantiate from inference', sentence, position)
-                    index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
-                    self.parse(self._generate_christoffel(self.dimension, array.args[1:]))
-                    # rearrange namespace ordering for variable dependence
-                    reordered = OrderedDict({'GammaUDD': self.namespace['GammaUDD']})
-                    if sys.version_info >= (3, 2):
-                        self.namespace.move_to_end('GammaUDD', False)
-                    else:
-                        self.namespace.pop('GammaUDD')
-                        reordered.update(self.namespace)
-                        self.namespace = reordered
-                    self.lexer.initialize(sentence, index)
-                    self.lexer.lex()
+                self._instantiate_christoffel(array)
                 return array
             self.expect('SYMBOL')
             if self.accept('UNDERSCORE'):
@@ -733,6 +717,25 @@ class Parser:
                 else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
             self.namespace[name] = Tensor(function, dimension, symmetry)
         return function
+
+    def _instantiate_christoffel(self, array):
+        if 'GammaUDD' in Parser.namespace: return
+        if self.dimension is None:
+            sentence = self.lexer.sentence
+            position = self.lexer.index - len(self.lexer.lexeme)
+            raise ParseError('cannot instantiate from inference', sentence, position)
+        index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
+        self.parse(self._generate_christoffel(self.dimension, array.args[1:]))
+        # rearrange namespace ordering for variable dependence
+        # reordered = OrderedDict({'GammaUDD': self.namespace['GammaUDD']})
+        # if sys.version_info >= (3, 2):
+        #     self.namespace.move_to_end('GammaUDD', False)
+        # else:
+        #     self.namespace.pop('GammaUDD')
+        #     reordered.update(self.namespace)
+        #     self.namespace = reordered
+        self.lexer.initialize(sentence, index)
+        self.lexer.lex()
 
     @staticmethod
     def _generate_christoffel(dimension, indices):
