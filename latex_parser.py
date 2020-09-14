@@ -85,6 +85,7 @@ class Lexer:
         self.sentence = sentence
         self.token    = None
         self.lexeme   = None
+        self.marker   = None
         self.index    = position
 
     def tokenize(self):
@@ -106,7 +107,7 @@ class Lexer:
     def lex(self):
         """ Retrieve Next Token
 
-            :return: next token in iterator
+            :return: next token
         """
         try:
             self.token = next(self.tokenize())
@@ -115,14 +116,20 @@ class Lexer:
             self.lexeme = ''
         return self.token
 
-    def reset(self, position=0):
-        """ Reset Token Iterator
-
-            :arg: reset position [default: 0]
+    def mark(self):
+        """ Mark Iterator Position
+        
+            :return: previous position
         """
+        self.marker = self.index - len(self.lexeme)
+        return self.marker
+
+    def reset(self):
+        """ Reset Token Iterator """
         if not self.sentence:
             raise RuntimeError('cannot reset uninitialized lexer')
-        self.initialize(self.sentence, position)
+        self.initialize(self.sentence, self.marker)
+        self.lex()
 
     def update(self, namespace):
         """ Update Tensor Pattern
@@ -555,22 +562,21 @@ class Parser:
                 position = self.lexer.index - len(self.lexer.lexeme)
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
-        mark_1 = self.lexer.index - len(self.lexer.lexeme)
+        marker_1 = self.lexer.mark()
         order, array = len(indices), self._array()
-        mark_2 = self.lexer.index
-        equation[0] += ' ' + self.lexer.sentence[mark_1:mark_2]
-        equation[3] += ' ' + self.lexer.sentence[mark_1:mark_2]
+        marker_2 = self.lexer.index
+        equation[0] += ' ' + self.lexer.sentence[marker_1:marker_2]
+        equation[3] += ' ' + self.lexer.sentence[marker_1:marker_2]
         tensor = self.namespace[str(array.args[0])]
         if location == 'RHS':
             if equation[2]:
-                index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
+                sentence, index = self.lexer.sentence, self.lexer.mark()
                 if config: config = '% ' + ';\n'.join(config) + ';\n'
                 self.parse(config + ''.join(equation))
                 self.lexer.initialize(sentence, index)
                 self.lexer.lex()
             else:
-                # TODO: MODIFY RESET BEHAVIOR TO SHORTEN THE FOLLOWING PROCEDURE
-                index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
+                sentence, index = self.lexer.sentence, self.lexer.mark()
                 self.parse(self._generate_gradient(tensor, [index[0] for index in indices]))
                 self.lexer.initialize(sentence, index)
                 self.lexer.lex()
@@ -677,7 +683,7 @@ class Parser:
         if self.accept('LABEL'):
             self.expect('LEFT_BRACE')
             tensor = self.lexer.lexeme
-            self.lexer.lex()
+            self.expect('TENSOR')
             self.expect('RIGHT_BRACE')
             return tensor + label[1:]
         sentence = self.lexer.sentence
@@ -694,12 +700,12 @@ class Parser:
                 else 'tilde' if 'tilde' in name \
                 else None
             return '%s{%s}' % (prefix, name[:-len(prefix)]) if prefix else name
-        mark_1 = self.lexer.index - len(self.lexer.lexeme)
+        marker_1 = self.lexer.mark()
         for token in self.lexer.tokenize():
             if token == 'LINE_BREAK': break
-        mark_2 = self.lexer.index
-        assignment = self.lexer.sentence[mark_1:mark_2].strip()
-        self.lexer.reset(mark_1); self.lexer.lex()
+        marker_2 = self.lexer.index
+        assignment = self.lexer.sentence[marker_1:marker_2]
+        self.lexer.reset()
         nameset = set(re.match(r'[^UD]*', tensor).group() for tensor in self.namespace)
         nameset.add('Gamma') # reserved keyword for christoffel symbol
         nameset = set(expand_notation(name) for name in nameset)
@@ -719,12 +725,12 @@ class Parser:
         return function
 
     def _instantiate_christoffel(self, array):
-        if 'GammaUDD' in Parser.namespace: return
+        # if 'GammaUDD' in Parser.namespace: return
         if self.dimension is None:
             sentence = self.lexer.sentence
             position = self.lexer.index - len(self.lexer.lexeme)
             raise ParseError('cannot instantiate from inference', sentence, position)
-        index, sentence = self.lexer.index - len(self.lexer.lexeme), self.lexer.sentence
+        sentence, index = self.lexer.sentence, self.lexer.mark()
         self.parse(self._generate_christoffel(self.dimension, array.args[1:]))
         # rearrange namespace ordering for variable dependence
         # reordered = OrderedDict({'GammaUDD': self.namespace['GammaUDD']})
@@ -829,7 +835,6 @@ class Tensor:
     @staticmethod
     def _sgn(sequence):
         """ Permutation Signature (Parity)"""
-
         cycle_length = 0
         for n, i in enumerate(sequence[:-1]):
             for j in sequence[(n + 1):]:
@@ -840,7 +845,6 @@ class Tensor:
     @staticmethod
     def notation(function):
         """ Tensor Notation for Array Indexing """
-
         fields = [str(arg) for arg in function.args]
         suffix = ''.join(['[' + n + ']' for n in fields[1:]])
         return fields[0] + suffix
@@ -848,7 +852,6 @@ class Tensor:
     @staticmethod
     def latex_format(name, indexing):
         """ Tensor Notation for LaTeX Formatting """
-
         latex = [re.split('[UD]', name)[0], [], []]
         U_count, D_count = 0, 0
         for index, position in indexing:
