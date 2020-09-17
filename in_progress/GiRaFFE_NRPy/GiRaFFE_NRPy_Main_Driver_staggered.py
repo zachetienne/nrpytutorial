@@ -218,31 +218,25 @@ void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restr
 
 #define WORKAROUND_ENABLED
 
-void workaround_Valencia_to_Drift_velocity(const paramstruct *params,REAL *auxevol_gfs,const int baseGF, const int *GFoffsets, const int numGFs) {
+void workaround_Valencia_to_Drift_velocity(const paramstruct *params, REAL *vU0, const REAL *alpha, const REAL *betaU0) {
 #include "set_Cparameters.h"
-    // Converts Valencia 3-velocities to Drift 3-velocities for testing. The variable arguments
-    // must be the GFs to be converted, e.g. VALENCIAVU0GF
-    // This function must be called once for each reconstruction! i.e.
+    // Converts Valencia 3-velocities to Drift 3-velocities for testing. The variable argument
+    // vu0 is any Valencia 3-velocity component or reconstruction thereof.
 #pragma omp parallel for
-    for(int n = 0; n<numGFs; n++) {
-        int GF = baseGF+GFoffsets[n];
-        for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
-            auxevol_gfs[IDX4ptS(GF,ii)] = auxevol_gfs[IDX4ptS(ALPHAGF,ii)]*auxevol_gfs[IDX4ptS(GF,ii)]-auxevol_gfs[IDX4ptS(BETAU0GF+GFoffsets[n],ii)];
-        }
+    for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;ii++) {
+        // Here, we modify the velocity in place.
+        vU0[ii] = alpha[ii]*vU0[ii]-betaU0[ii];
     }
 }
 
-void workaround_Drift_to_Valencia_velocity(const paramstruct *params,REAL *auxevol_gfs,const int baseGF, const int *GFoffsets, const int numGFs) {
+void workaround_Drift_to_Valencia_velocity(const paramstruct *params, REAL *vU0, const REAL *alpha, const REAL *betaU0) {
 #include "set_Cparameters.h"
-    // Converts Drift 3-velocities to Valencia 3-velocities for testing. The variable arguments
-    // must be the GFs to be converted, e.g. VALENCIAVU0GF
-    // This function must be called once for each reconstruction! i.e.
+    // Converts Drift 3-velocities to Valencia 3-velocities for testing. The variable argument
+    // vu0 is any drift (i.e. IllinoisGRMHD's definition) 3-velocity component or reconstruction thereof.
 #pragma omp parallel for
-    for(int n = 0; n<numGFs; n++) {
-        int GF = baseGF+GFoffsets[n];
-        for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2*NUM_EVOL_GFS;ii++) {
-            auxevol_gfs[IDX4ptS(GF,ii)] = (auxevol_gfs[IDX4ptS(GF,ii)]+auxevol_gfs[IDX4ptS(BETAU0GF+GFoffsets[n],ii)])/auxevol_gfs[IDX4ptS(ALPHAGF,ii)];
-        }
+    for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;ii++) {
+        // Here, we modify the velocity in place.
+        vU0[ii] = (vU0[ii]+betaU0[ii])/alpha[ii];
     }
 }
 
@@ -349,9 +343,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
       out_prims_r[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LRU2GF;
       out_prims_l[ww].gf = auxevol_gfs + Nxxp2NG012*VALENCIAV_LLU2GF;
     ww++;
-#ifdef WORKAROUND_ENABLED
-    int GFoffsets_for_workaround[3]; int numGFs_for_workaround;
-#endif /*WORKAROUND_ENABLED*/
 
     // Prims are defined AT ALL GRIDPOINTS, so we set the # of ghostzones to zero:
     for(int i=0;i<NUM_RECONSTRUCT_GFS;i++) for(int j=1;j<=3;j++) { in_prims[i].gz_lo[j]=0; in_prims[i].gz_hi[j]=0; }
@@ -388,17 +379,23 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BY_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
 #ifdef WORKAROUND_ENABLED
-  GFoffsets_for_workaround[0]=0;GFoffsets_for_workaround[1]=1;GFoffsets_for_workaround[2]=2;
-  numGFs_for_workaround = 3;
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAVU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
 #ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAVU0GF,  GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^x face values to be consistent with BX_STAGGER.
@@ -461,21 +458,27 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=VYL;       ww++;
   num_prims_to_reconstruct=ww;
 #ifdef WORKAROUND_ENABLED
-  GFoffsets_for_workaround[0]=0;GFoffsets_for_workaround[1]=1;GFoffsets_for_workaround[2]=-1;
-  numGFs_for_workaround = 2;
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
 #endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
 #ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LLU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RLU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LRU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RRU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RRU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RRU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LRU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LRU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RLU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RLU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LLU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LLU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
 #endif /*WORKAROUND_ENABLED*/
   ww=0;
   // Reconstruct other primitives last!
@@ -489,17 +492,23 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BZ_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
 #ifdef WORKAROUND_ENABLED
-  GFoffsets_for_workaround[0]=0;GFoffsets_for_workaround[1]=1;GFoffsets_for_workaround[2]=2;
-  numGFs_for_workaround = 3;
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAVU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
 #ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAVU0GF,  GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^y face values to be consistent with BY_STAGGER.
@@ -604,21 +613,27 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=VZL;       ww++;
   num_prims_to_reconstruct=ww;
 #ifdef WORKAROUND_ENABLED
-  GFoffsets_for_workaround[0]=1;GFoffsets_for_workaround[1]=2;GFoffsets_for_workaround[2]=-1;
-  numGFs_for_workaround = 2;
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
 #ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LLU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RLU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LRU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RRU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RRU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RRU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LRU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LRU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RLU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RLU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LLU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LLU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   // Reconstruct other primitives last!
   ww=0;
@@ -632,17 +647,23 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BY_STAGGER; ww++;
   num_prims_to_reconstruct=ww;
 #ifdef WORKAROUND_ENABLED
-  GFoffsets_for_workaround[0]=0;GFoffsets_for_workaround[1]=1;GFoffsets_for_workaround[2]=2;
-  numGFs_for_workaround = 3;
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAVU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
 #ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAVU0GF,  GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^z face values to be consistent with BZ_STAGGER.
@@ -719,21 +740,27 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BZ_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
 #ifdef WORKAROUND_ENABLED
-  GFoffsets_for_workaround[0]=0;GFoffsets_for_workaround[1]=2;GFoffsets_for_workaround[2]=-1;
-  numGFs_for_workaround = 2;
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Valencia_to_Drift_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
 #ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LLU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RLU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_LRU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs,VALENCIAV_RRU0GF,GFoffsets_for_workaround,numGFs_for_workaround);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RRU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RRU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LRU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LRU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RLU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RLU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LLU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
+  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LLU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
 #endif /*WORKAROUND_ENABLED*/
 
   /*****************************************
