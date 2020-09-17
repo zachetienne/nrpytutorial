@@ -105,6 +105,18 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double B_lU0         = Bl0[index];
                 const double B_lU1         = Bl1[index];
                 const double B_lflux_dirn  = Blflux_dirn[index];
+                // We will also need need the square root of the metric determinant here at this point:
+                const REAL gxx = gamma_faceDD00[index];
+                const REAL gxy = gamma_faceDD01[index];
+                const REAL gxz = gamma_faceDD02[index];
+                const REAL gyy = gamma_faceDD11[index];
+                const REAL gyz = gamma_faceDD12[index];
+                const REAL gzz = gamma_faceDD22[index];
+                const REAL sqrtgammaDET = sqrt( gxx*gyy*gzz
+                                             -  gxx*gyz*gyz
+                                             +2*gxy*gxz*gyz
+                                             -  gyy*gxz*gxz
+                                             -  gzz*gxy*gxy );
 
                 // *******************************
                 // REPEAT ABOVE, but at i+1, which corresponds to point (i+1/2,j,k)
@@ -123,6 +135,19 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const double B_lU0_p1         = Bl0[indexp1];
                 const double B_lU1_p1         = Bl1[indexp1];
                 const double B_lflux_dirn_p1  = Blflux_dirn[indexp1];
+                // We will also need need the square root of the metric determinant here at this point:
+                const REAL gxx_p1 = gamma_faceDD00[indexp1];
+                const REAL gxy_p1 = gamma_faceDD01[indexp1];
+                const REAL gxz_p1 = gamma_faceDD02[indexp1];
+                const REAL gyy_p1 = gamma_faceDD11[indexp1];
+                const REAL gyz_p1 = gamma_faceDD12[indexp1];
+                const REAL gzz_p1 = gamma_faceDD22[indexp1];
+                const REAL sqrtgammaDET_p1 = sqrt( gxx*gyy*gzz
+                                                -  gxx*gyz*gyz
+                                                +2*gxy*gxz*gyz
+                                                -  gyy*gxz*gxz
+                                                -  gzz*gxy*gxy );
+
                 // *******************************
 
                 // DEBUGGING:
@@ -150,8 +175,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
                 // Therefore since we want [F_HLL^x(B^y)]_z,
                 // we will code     (v^x           B^y   - v^y           B^x) on both left and right faces.
-                const REAL F0B1_r = (Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
-                const REAL F0B1_l = (Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
+                const REAL F0B1_r = sqrtgammaDET*(Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
+                const REAL F0B1_l = sqrtgammaDET*(Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
 
                 // Compute the state vector for these terms:
                 const REAL U_r = B_rflux_dirn;
@@ -169,8 +194,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // ************************************
                 // REPEAT ABOVE, but at point i+1
                 // Calculate the flux vector on each face for each component of the E-field:
-                const REAL F0B1_r_p1 = (Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
-                const REAL F0B1_l_p1 = (Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
+                const REAL F0B1_r_p1 = sqrtgammaDET_p1*(Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
+                const REAL F0B1_l_p1 = sqrtgammaDET_p1*(Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
 
                 // Compute the state vector for this flux direction
                 const REAL U_r_p1 = B_rflux_dirn_p1;
