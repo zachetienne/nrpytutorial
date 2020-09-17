@@ -55,7 +55,7 @@ add_test WeylScal4NRPy/tests/test_WeylScal4NRPy.py
 
 # TODO: add your tests here
 echo "Starting doctest unit tests!"
-for file in latex_parser.py expr_tree.py tensor_rotation.py cse_helpers.py indexedexp.py loop.py finite_difference_helpers.py; do
+for file in expr_tree.py tensor_rotation.py cse_helpers.py indexedexp.py loop.py finite_difference_helpers.py; do
     echo Running doctest on file: $file
     $PYTHONEXEC -m doctest $file
     echo Doctest of $file finished.
