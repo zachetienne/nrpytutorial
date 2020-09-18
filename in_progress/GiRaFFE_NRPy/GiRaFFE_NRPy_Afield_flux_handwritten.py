@@ -73,7 +73,7 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                                        const REAL *Blflux_dirn,
                                        const REAL *gamma_faceDD00, const REAL *gamma_faceDD01, const REAL *gamma_faceDD02,
                                        const REAL *gamma_faceDD11, const REAL *gamma_faceDD12, const REAL *gamma_faceDD22,
-                                       const REAL *beta_faceU0, const REAL *alpha,
+                                       const REAL *beta_faceU0, const REAL *beta_faceU1, const REAL *alpha_face,
                                        REAL *A2_rhs,const REAL SIGN,const int flux_dirn) {
     // This function is written to be generic and compute the contribution for all three AD RHSs.
     // However, for convenience, the notation used in the function itself is for the contribution
@@ -94,17 +94,20 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // Now, we read in memory. We need the x and y components of velocity and magnetic field on both
                 // the left and right sides of the interface at *both* faces.
                 // Here, the point (i0,i1,i2) corresponds to the point (i-1/2,j,k)
-                const int index            = IDX3S(i0,i1,i2);
-                const double Valenciav_rU0 = Vr0[index];
-                const double Valenciav_rU1 = Vr1[index];
-                const double B_rU0         = Br0[index];
-                const double B_rU1         = Br1[index];
-                const double B_rflux_dirn  = Brflux_dirn[index];
-                const double Valenciav_lU0 = Vl0[index];
-                const double Valenciav_lU1 = Vl1[index];
-                const double B_lU0         = Bl0[index];
-                const double B_lU1         = Bl1[index];
-                const double B_lflux_dirn  = Blflux_dirn[index];
+                const int index           = IDX3S(i0,i1,i2);
+                const double alpha        = alpha_face[index];
+                const double betaU0       = beta_faceU0[index];
+                const double betaU1       = beta_faceU1[index];
+                const double v_rU0        = alpha*Vr0[index]-betaU0;
+                const double v_rU1        = alpha*Vr1[index]-betaU1;
+                const double B_rU0        = Br0[index];
+                const double B_rU1        = Br1[index];
+                const double B_rflux_dirn = Brflux_dirn[index];
+                const double v_lU0        = alpha*Vl0[index]-betaU0;
+                const double v_lU1        = alpha*Vl1[index]-betaU1;
+                const double B_lU0        = Bl0[index];
+                const double B_lU1        = Bl1[index];
+                const double B_lflux_dirn = Blflux_dirn[index];
                 // We will also need need the square root of the metric determinant here at this point:
                 const REAL gxx = gamma_faceDD00[index];
                 const REAL gxy = gamma_faceDD01[index];
@@ -124,17 +127,20 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 //     algorithm is generalized so that any flux_dirn or velocity/magnetic
                 //     field component can be computed via permuting the inputs into this
                 //     function.
-                const int indexp1             = IDX3S(i0+(flux_dirn==0),i1+(flux_dirn==1),i2+(flux_dirn==2));
-                const double Valenciav_rU0_p1 = Vr0[indexp1];
-                const double Valenciav_rU1_p1 = Vr1[indexp1];
-                const double B_rU0_p1         = Br0[indexp1];
-                const double B_rU1_p1         = Br1[indexp1];
-                const double B_rflux_dirn_p1  = Brflux_dirn[indexp1];
-                const double Valenciav_lU0_p1 = Vl0[indexp1];
-                const double Valenciav_lU1_p1 = Vl1[indexp1];
-                const double B_lU0_p1         = Bl0[indexp1];
-                const double B_lU1_p1         = Bl1[indexp1];
-                const double B_lflux_dirn_p1  = Blflux_dirn[indexp1];
+                const int indexp1            = IDX3S(i0+(flux_dirn==0),i1+(flux_dirn==1),i2+(flux_dirn==2));
+                const double alpha_p1        = alpha_face[indexp1];
+                const double betaU0_p1       = beta_faceU0[indexp1];
+                const double betaU1_p1       = beta_faceU1[indexp1];
+                const double v_rU0_p1        = alpha_p1*Vr0[indexp1]-betaU0_p1;
+                const double v_rU1_p1        = alpha_p1*Vr1[indexp1]-betaU1_p1;
+                const double B_rU0_p1        = Br0[indexp1];
+                const double B_rU1_p1        = Br1[indexp1];
+                const double B_rflux_dirn_p1 = Brflux_dirn[indexp1];
+                const double v_lU0_p1        = alpha_p1*Vl0[indexp1]-betaU0_p1;
+                const double v_lU1_p1        = alpha_p1*Vl1[indexp1]-betaU1_p1;
+                const double B_lU0_p1        = Bl0[indexp1];
+                const double B_lU1_p1        = Bl1[indexp1];
+                const double B_lflux_dirn_p1 = Blflux_dirn[indexp1];
                 // We will also need need the square root of the metric determinant here at this point:
                 const REAL gxx_p1 = gamma_faceDD00[indexp1];
                 const REAL gxy_p1 = gamma_faceDD01[indexp1];
@@ -142,11 +148,11 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 const REAL gyy_p1 = gamma_faceDD11[indexp1];
                 const REAL gyz_p1 = gamma_faceDD12[indexp1];
                 const REAL gzz_p1 = gamma_faceDD22[indexp1];
-                const REAL sqrtgammaDET_p1 = sqrt( gxx*gyy*gzz
-                                                -  gxx*gyz*gyz
-                                                +2*gxy*gxz*gyz
-                                                -  gyy*gxz*gxz
-                                                -  gzz*gxy*gxy );
+                const REAL sqrtgammaDET_p1 = sqrt( gxx_p1*gyy_p1*gzz_p1
+                                                -  gxx_p1*gyz_p1*gyz_p1
+                                                +2*gxy_p1*gxz_p1*gyz_p1
+                                                -  gyy_p1*gxz_p1*gxz_p1
+                                                -  gzz_p1*gxy_p1*gxy_p1 );
 
                 // *******************************
 
@@ -175,8 +181,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // [F^i(B^j)]_k = \sqrt{\gamma} (v^i B^j - v^j B^i)
                 // Therefore since we want [F_HLL^x(B^y)]_z,
                 // we will code     (v^x           B^y   - v^y           B^x) on both left and right faces.
-                const REAL F0B1_r = sqrtgammaDET*(Valenciav_rU0*B_rU1 - Valenciav_rU1*B_rU0);
-                const REAL F0B1_l = sqrtgammaDET*(Valenciav_lU0*B_lU1 - Valenciav_lU1*B_lU0);
+                const REAL F0B1_r = sqrtgammaDET*(v_rU0*B_rU1 - v_rU1*B_rU0);
+                const REAL F0B1_l = sqrtgammaDET*(v_lU0*B_lU1 - v_lU1*B_lU0);
 
                 // Compute the state vector for these terms:
                 const REAL U_r = B_rflux_dirn;
@@ -184,9 +190,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
 
                 REAL cmin,cmax;
                 // Basic HLLE solver:
-                find_cmax_cmin(gamma_faceDD00[index],gamma_faceDD01[index],gamma_faceDD02[index],
-                               gamma_faceDD11[index],gamma_faceDD12[index],gamma_faceDD22[index],
-                               beta_faceU0[index],alpha[index],flux_dirn,
+                find_cmax_cmin(gxx,gxy,gxz,
+                               gyy,gyz,gzz,
+                               betaU0,alpha,flux_dirn,
                                &cmax, &cmin);
                 const REAL FHLL_0B1 = HLLE_solve(F0B1_r, F0B1_l, U_r, U_l, cmin, cmax);
 
@@ -194,8 +200,8 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 // ************************************
                 // REPEAT ABOVE, but at point i+1
                 // Calculate the flux vector on each face for each component of the E-field:
-                const REAL F0B1_r_p1 = sqrtgammaDET_p1*(Valenciav_rU0_p1*B_rU1_p1 - Valenciav_rU1_p1*B_rU0_p1);
-                const REAL F0B1_l_p1 = sqrtgammaDET_p1*(Valenciav_lU0_p1*B_lU1_p1 - Valenciav_lU1_p1*B_lU0_p1);
+                const REAL F0B1_r_p1 = sqrtgammaDET_p1*(v_rU0_p1*B_rU1_p1 - v_rU1_p1*B_rU0_p1);
+                const REAL F0B1_l_p1 = sqrtgammaDET_p1*(v_lU0_p1*B_lU1_p1 - v_lU1_p1*B_lU0_p1);
 
                 // Compute the state vector for this flux direction
                 const REAL U_r_p1 = B_rflux_dirn_p1;
@@ -203,9 +209,9 @@ void calculate_E_field_flat_all_in_one(const paramstruct *params,
                 //const REAL U_r_p1 = B_rU1_p1;
                 //const REAL U_l_p1 = B_lU1_p1;
                 // Basic HLLE solver, but at the next point:
-                find_cmax_cmin(gamma_faceDD00[indexp1],gamma_faceDD01[indexp1],gamma_faceDD02[indexp1],
-                               gamma_faceDD11[indexp1],gamma_faceDD12[indexp1],gamma_faceDD22[indexp1],
-                               beta_faceU0[indexp1],alpha[indexp1],flux_dirn,
+                find_cmax_cmin(gxx_p1,gxy_p1,gxz_p1,
+                               gyy_p1,gyz_p1,gzz_p1,
+                               betaU0_p1,alpha_p1,flux_dirn,
                                &cmax, &cmin);
                 const REAL FHLL_0B1p1 = HLLE_solve(F0B1_r_p1, F0B1_l_p1, U_r_p1, U_l_p1, cmin, cmax);
                 // ************************************
