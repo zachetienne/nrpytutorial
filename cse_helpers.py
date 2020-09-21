@@ -10,6 +10,8 @@
 
 from expr_tree import ExprTree  # NRPy+: Contains expression tree data structure class definitions and manipulation functions
 import sympy as sp              # SymPy: The Python computer algebra package upon which NRPy+ depends
+import sys                      # Standard Python module for multiplatform OS-level functions
+from collections import OrderedDict
 
 def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=False, debug=False):
     """ Perform CSE Preprocessing
@@ -26,36 +28,36 @@ def cse_preprocess(expr_list, prefix='', declare=False, factor=True, negative=Fa
         >>> from sympy.abc import x, y, z
         >>> expr = -x/12 - y/12 + z
         >>> cse_preprocess(expr)
-        (_Rational_1_12*(-x - y) + z, {_Rational_1_12: 1/12})
+        (_Rational_1_12*(-x - y) + z, OrderedDict([(_Rational_1_12, 1/12)]))
 
         >>> cse_preprocess(expr, declare=True)
-        (_Rational_1_12*(_NegativeOne_*x + _NegativeOne_*y) + z, {_Rational_1_12: 1/12, _NegativeOne_: -1})
+        (_Rational_1_12*(_NegativeOne_*x + _NegativeOne_*y) + z, OrderedDict([(_Rational_1_12, 1/12), (_NegativeOne_, -1)]))
 
         >>> expr = -x/12 - y/12 + z
         >>> cse_preprocess(expr, declare=True, negative=True)
-        (_NegativeOne_*_Rational_1_12*(x + y) + z, {_Rational_1_12: 1/12, _NegativeOne_: -1})
+        (_NegativeOne_*_Rational_1_12*(x + y) + z, OrderedDict([(_Rational_1_12, 1/12), (_NegativeOne_, -1)]))
 
         >>> cse_preprocess(expr, factor=False)
-        ((-_Rational_1_12)*x + (-_Rational_1_12)*y + z, {_Rational_1_12: 1/12})
+        ((-_Rational_1_12)*x + (-_Rational_1_12)*y + z, OrderedDict([(_Rational_1_12, 1/12)]))
 
         >>> cse_preprocess(expr, prefix='FD')
-        (FD_Rational_1_12*(-x - y) + z, {FD_Rational_1_12: 1/12})
+        (FD_Rational_1_12*(-x - y) + z, OrderedDict([(FD_Rational_1_12, 1/12)]))
 
         >>> from sympy import exp
         >>> expr = exp(3*x + 3*y)
         >>> cse_preprocess(expr)
-        (exp(_Integer_3*(x + y)), {_Integer_3: 3})
+        (exp(_Integer_3*(x + y)), OrderedDict([(_Integer_3, 3)]))
 
         >>> from sympy import Mul
         >>> expr = Mul((-1)**3, (3*x + 3*y), evaluate=False)
         >>> cse_preprocess(expr, declare=True)
-        (_Integer_3*_NegativeOne_*(x + y), {_NegativeOne_: -1, _Integer_3: 3})
+        (_Integer_3*_NegativeOne_*(x + y), OrderedDict([(_NegativeOne_, -1), (_Integer_3, 3)]))
     """
     if not isinstance(expr_list, list):
         expr_list = [expr_list]
     expr_list = expr_list[:]
     _NegativeOne_ = sp.Symbol(prefix + '_NegativeOne_')
-    map_sym_to_rat, map_rat_to_sym = {}, {}
+    map_sym_to_rat, map_rat_to_sym = OrderedDict(), OrderedDict()
     for i, expr in enumerate(expr_list):
         tree = ExprTree(expr)
         # Search through expression tree for rational(s)

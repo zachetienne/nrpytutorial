@@ -20,6 +20,8 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
+import sys  # Standard Python module for multiplatform OS-level functions
+
 class ExprTree:
     """ Symbolic (N-Ary) Expression Tree
 
