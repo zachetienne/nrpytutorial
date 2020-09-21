@@ -55,16 +55,30 @@ add_test WeylScal4NRPy/tests/test_WeylScal4NRPy.py
 
 # TODO: add your tests here
 echo "Starting doctest unit tests!"
-for file in expr_tree.py tensor_rotation.py cse_helpers.py indexedexp.py loop.py finite_difference_helpers.py; do
+failed_unittest=0
+for file in expr_tree.py cse_helpers.py indexedexp.py loop.py finite_difference_helpers.py; do
     echo Running doctest on file: $file
     $PYTHONEXEC -m doctest $file
+    if [ $? == 1 ]
+    then
+        failed_unittest=1
+    fi
     echo Doctest of $file finished.
+done
+for file in tests/test_latex_parser.py; do
+    echo Running unittest on file: $file
+    $PYTHONEXEC $file
+    if [ $? == 1 ]
+    then
+        failed_unittest=1
+    fi
+    echo Unittest of $file finished.
 done
 
 # Checking failed_tests.txt to see what failed
 contents=$(<$failed_tests_file)
 
-if [ "$contents" == $"Failures:" ]
+if [ "$contents" == $"Failures:" ] && [ $failed_unittest == 0 ]
 then
   printf "All tests passed!\n\n"
   exit 0

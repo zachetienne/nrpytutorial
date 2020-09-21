@@ -195,4 +195,4 @@ def simple_loop(options, interior):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    sys.exit(doctest.testmod()[0])

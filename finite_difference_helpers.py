@@ -854,3 +854,7 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
 
     return Coutput
 #################################
+
+if __name__ == "__main__":
+    import doctest
+    sys.exit(doctest.testmod()[0])

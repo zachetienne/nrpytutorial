@@ -497,3 +497,7 @@ def LeviCivitaTensorDDD_dim3_rank3(sqrtgammaDET):
             for k in range(3):
                 LeviCivitaTensorDDD[i][j][k] = LeviCivitaSymbolDDD[i][j][k] * sqrtgammaDET
     return LeviCivitaTensorDDD
+
+if __name__ == "__main__":
+    import doctest
+    sys.exit(doctest.testmod()[0])

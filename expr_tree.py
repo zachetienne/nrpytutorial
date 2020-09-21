@@ -28,8 +28,8 @@ class ExprTree:
         >>> tree = ExprTree(cos(a + b)**2)
         >>> print(tree)
         ExprTree(cos(a + b)**2)
-        >>> repr(tree)
-        '[cos(a + b)**2, cos(a + b), a + b, a, b, 2]'
+        >>> [node.expr for node in tree.preorder()]
+        [cos(a + b)**2, cos(a + b), a + b, a, b, 2]
     """
 
     def __init__(self, expr):
@@ -47,8 +47,8 @@ class ExprTree:
             >>> tree = ExprTree(cos(a + b)**2)
             >>> tree.root.expr = sin(a*b)**2
             >>> tree.build(tree.root, clear=True)
-            >>> repr(tree)
-            '[sin(a*b)**2, sin(a*b), a*b, a, b, 2]'
+            >>> [node.expr for node in tree.preorder()]
+            [sin(a*b)**2, sin(a*b), a*b, a, b, 2]
         """
         if clear: del node.children[:]
         for arg in node.expr.args:
@@ -141,4 +141,4 @@ class ExprTree:
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    sys.exit(doctest.testmod()[0])
