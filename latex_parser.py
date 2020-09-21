@@ -7,11 +7,11 @@ from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff, var
 from collections import OrderedDict
+from functional import uniquify
 from expr_tree import ExprTree
 from inspect import currentframe
 from warnings import warn
-import indexedexp as ixp
-import re
+import indexedexp as ixp, re
 
 class Lexer:
     """ LaTeX Lexer
@@ -564,8 +564,7 @@ class Parser:
                 symmetry = self.lexer.lexeme
                 self.expect('SYMMETRY')
             else: symmetry = None
-            tensor = Tensor(function, dimension, symmetry,
-                invertible=(symmetry == 'metric'), permutation=(symmetry == 'permutation'))
+            tensor = Tensor(function, dimension, symmetry, invertible=(symmetry == 'metric'))
             self.namespace[tensor.symbol] = tensor
             if tensor.inverse and tensor.rank == 2:
                 inverse = tensor.symbol.replace('U', 'D') if 'U' in tensor.symbol else tensor.symbol.replace('D', 'U')
@@ -708,9 +707,7 @@ class Parser:
                else 'hat'   if 'hat'   in symbol \
                else 'tilde' if 'tilde' in symbol \
                else None
-        metric = '\\tilde{\\gamma}' if diacritic == 'tilde' \
-            else '\\%s{g}' % diacritic if diacritic \
-            else 'g'
+        metric = '\\%s{g}' % diacritic if diacritic else 'g'
         if diacritic: symbol = '\\%s{%s}' % (diacritic, symbol[:-len(diacritic)])
         indices = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indices]
         bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x not in indices)
@@ -775,25 +772,25 @@ class ParseError(Exception):
 class Tensor:
     """ Tensor Structure """
 
-    def __init__(self, function, dimension, symmetry=None, permutation=False, invertible=False):
-        self.function = function
-        self.symbol = str(function.args[0])
-        self.rank = len(function.args) - 1
+    def __init__(self, function, dimension, symmetry=None, invertible=False):
+        self.function  = function
+        self.symbol    = str(function.args[0])
+        self.rank      = len(function.args) - 1
         self.dimension = dimension
-        self.symmetry  = 'sym01' if symmetry == 'metric' \
-                    else 'nosym' if symmetry == 'permutation' \
-                    else symmetry
-        self.indexing = list(zip(function.args[1:], re.findall(r'[UD]', self.symbol)))
+        self.symmetry  = 'sym01' if symmetry == 'metric' else symmetry
+        self.indexing  = list(zip(function.args[1:], re.findall(r'[UD]', self.symbol)))
         # avoid repeated instantiation of the same derivative
         if '_d' in self.symbol and self.symbol in Parser.namespace:
             self.struct = Parser.namespace[self.symbol]
-        elif permutation:
+        elif symmetry == 'permutation':
             # instantiate permutation or Levi-Civita symbol using parity
             index = [chr(105 + n) for n in range(self.rank)]
             prefix = '[' * self.rank + 'sgn([' + ', '.join(index) + '])'
             suffix = ''.join(' for %s in range(%d)]' % (index[self.rank - i], dimension) for i in range(1, self.rank + 1))
             self.struct = eval(prefix + suffix, {'sgn': self._sgn})
-        else: self.struct = ixp.declare_indexedexp(self.rank, self.symbol, self.symmetry, self.dimension)
+        else:
+            self.struct = ixp.declare_indexedexp(self.rank, self.symbol, self.symmetry, self.dimension)
+        if self.symmetry is None: self.symmetry = 'undef'
         if invertible and self.rank > 0 and self.symmetry == 'sym01':
             if   self.dimension == 2:
                 self.inverse = ixp.symm_matrix_inverter2x2(self.struct)[0]
@@ -857,8 +854,7 @@ class Tensor:
 def _summation(equation, dimension):
     var, expr = equation
     # construct a tuple list of every LHS free index
-    LHS, RHS = set(zip(re.findall(r'\[([a-zA-Z]+)\]', var),
-        re.findall(r'[UD]', var))), []
+    LHS, RHS = zip(re.findall(r'\[([a-zA-Z]+)\]', var), re.findall(r'[UD]', var)), []
     # iterate over every subexpression containing a product
     for product in re.split(r'\s[\+\-]\s', expr):
         # extract every index present in the subexpression
@@ -867,7 +863,7 @@ def _summation(equation, dimension):
         pos_list = re.findall(r'[UD]', product)
         free_index, bound_index = [], []
         # iterate over every unique index in the subexpression
-        for idx in set(idx_list):
+        for idx in sorted(uniquify((idx_list))):
             count = U = D = 0; index_tuple = []
             # count index occurrence and position occurrence
             for idx_, pos_ in zip(idx_list, pos_list):
@@ -886,7 +882,7 @@ def _summation(equation, dimension):
                 bound_index.append(idx)
             # identify every free index on the RHS
             else: free_index.extend(index_tuple)
-        RHS.append(set(free_index))
+        RHS.append(sorted(uniquify(free_index)))
         summation = product
         # generate implied summation over every bound index
         for idx in bound_index:
@@ -894,6 +890,7 @@ def _summation(equation, dimension):
                 (summation, idx, dimension)
         expr = expr.replace(product, summation)
     if LHS:
+        LHS = sorted(uniquify(LHS))
         for i in range(len(RHS)):
             if LHS != RHS[i]:
                 # raise exception upon violation of the following rule:
