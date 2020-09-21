@@ -44,7 +44,7 @@ def flatten(iterable):
     """
     return chain(*iterable)
 
-def reduce(f, iterable):
+def reduce(f, iterable, initializer=None):
     """ Reduction Operation
 
         >>> reduce(lambda x, y: x + y, [1, 2, 3, 4, 5])
@@ -58,10 +58,19 @@ def reduce(f, iterable):
         4
     """
     iterable = iter(iterable)
-    result = next(iterable)
+    result = next(iterable) if initializer is None \
+        else initializer
     for element in iterable:
         result = f(result, element)
     return result
+
+def uniquify(iterable):
+    """ Uniquify Iterable
+
+        >>> uniquify(([1, 1, 2, 3, 3, 3, 4, 5, 5]))
+        [1, 2, 3, 4, 5]
+    """
+    return reduce(lambda l, x: l if x in l else l + [x], iterable, [])
 
 def product(*iterable, **kwargs):
     """ Cartesian Product
