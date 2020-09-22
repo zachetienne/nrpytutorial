@@ -2,7 +2,8 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# import sys; sys.path.append('..')
+# pylint: disable=import-error
+import sys; sys.path.append('..')
 from latex_parser import OverrideWarning, parse_expr, parse
 from warnings import filterwarnings
 import unittest, sys
@@ -31,7 +32,7 @@ class TestParser(unittest.TestCase):
     def test_example_1(self):
         self.assertEqual(
             parse(r"""
-                % h^\mu_\nu [4]: nosym;
+                % hUD [4]: nosym;
                 h = h^\mu{}_\mu
             """),
             ['hUD', 'h']
@@ -43,10 +44,10 @@ class TestParser(unittest.TestCase):
     def test_example_2(self):
         self.assertEqual(
             parse(r"""
-                % g^{\mu\nu} [3]: metric, v_\nu [3];
+                % gUU [3]: metric, vD [3]: nosym;
                 v^\mu = g^{\mu\nu} v_\nu
             """),
-            ['gUU', 'gDD', 'vD', 'vU']
+            ['gDD', 'gdet', 'gUU', 'vD', 'vU']
         )
         self.assertEqual(str(vU),
             '[gUU00*vD0 + gUU01*vD1 + gUU02*vD2, gUU01*vD0 + gUU11*vD1 + gUU12*vD2, gUU02*vD0 + gUU12*vD1 + gUU22*vD2]'
@@ -55,13 +56,13 @@ class TestParser(unittest.TestCase):
     def test_example_3(self):
         self.assertEqual(
             parse(r"""
-                % g_{ab} [2]: metric, R^{ab} [2]: sym01;
+                % gDD [2]: metric, RUU [2]: sym01;
                 \begin{align*}
                     R &= g_{ab} R^{ab} \\
                     G^{ab} &= R^{ab} - \frac{1}{2}g^{ab}R
                 \end{align*}
             """),
-            ['gDD', 'gUU', 'RUU', 'R', 'GUU']
+            ['gUU', 'gdet', 'gDD', 'RUU', 'R', 'GUU']
         )
         self.assertEqual(str(R),
             'RUU00*gDD00 + 2*RUU01*gDD01 + RUU11*gDD11'
@@ -73,7 +74,7 @@ class TestParser(unittest.TestCase):
     def test_example_4(self):
         self.assertEqual(
             parse(r"""
-                % \epsilon_{ijk} [3]: permutation, v^j [3], w^k [3];
+                % epsilonDDD [3]: permutation, vU [3]: nosym, wU [3]: nosym;
                 u_i = \epsilon_{ijk} v^j w^k
             """),
             ['epsilonDDD', 'vU', 'wU', 'uD']
@@ -85,10 +86,10 @@ class TestParser(unittest.TestCase):
     def test_example_5(self):
         self.assertEqual(
             parse(r"""
-                % F^{\mu\nu} [4]: anti01;
+                % FUU [4]: anti01;
                 J^\mu = (4\pi k)^{-1} \nabla_\nu F^{\mu\nu}
             """, debug=True),
-            ['FUU', 'FUU_dD', 'gUU', 'gDD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU']
+            ['FUU', 'FUU_dD', 'gDD', 'gdet', 'gUU', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU']
         )
         self.assertEqual(GammaUDD,
             '[[[sum([gUU[mu][c]*gDD_dD[a][c][b]/2 for c in range(4)]) - sum([gUU[mu][c]*gDD_dD[b][a][c]/2 for c in range(4)]) + sum([gUU[mu][c]*gDD_dD[c][b][a]/2 for c in range(4)]) for a in range(4)] for b in range(4)] for mu in range(4)]'
