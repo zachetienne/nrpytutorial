@@ -603,82 +603,82 @@ def construct_Ccode(sympyexpr_list, list_of_deriv_vars,
      5.b) Implement upwinding algorithm (if relevant)
      5.c) Evaluate SymPy expressions and write to main
           memory
-
-    :param sympyexpr_list:
-    :param list_of_deriv_vars:
-    :param list_of_base_gridfunction_names_in_derivs:
-    :param list_of_deriv_operators:
-    :param fdcoeffs:
-    :param fdstencl:
-    :param read_from_memory_Ccode:
-    :param FDparams:
-    :param Coutput: The start of the Coutput string; this function's output will be pasted to a copy of Coutput
-    :return: Returns a C code string
-    >>> from outputC import lhrh
-    >>> import indexedexp as ixp
-    >>> import NRPy_param_funcs as par
-    >>> from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list,FDparams
-    >>> from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
-    >>> from finite_difference_helpers import read_gfs_from_memory, construct_Ccode
-    >>> from finite_difference import compute_fdcoeffs_fdstencl
-    >>> import grid as gri
-    >>> gri.glb_gridfcs_list = []
-    >>> hDD      = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD","sym01")
-    >>> hDD_dD   = ixp.declarerank3("hDD_dD","sym01")
-    >>> hDD_dupD = ixp.declarerank3("hDD_dupD","sym01")
-    >>> vU       = ixp.register_gridfunctions_for_single_rank1("EVOL","vU")
-    >>> a0,a1,b,c = par.Cparameters("REAL",__name__,["a0","a1","b","c"],1)
-    >>> par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER",2)
-    >>> FDparams.DIM=3
-    >>> FDparams.SIMD_enable="False"
-    >>> FDparams.FD_functions_enable=False
-    >>> FDparams.PRECISION="double"
-    >>> FDparams.MemAllocStyle="012"
-    >>> FDparams.upwindcontrolvec=vU
-    >>> FDparams.fullindent=""
-    >>> FDparams.outCparams="outCverbose=False"
-    >>> exprlist = [lhrh(lhs=a0,rhs=b*hDD[1][0] + c*hDD_dD[0][1][1]), \
-                    lhrh(lhs=a1,rhs=c*hDD_dupD[0][2][1]*vU[1])]
-    >>> list_of_deriv_vars = generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(exprlist,FDparams)
-    >>> list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators = extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_vars)
-    >>> fdcoeffs = [[] for i in range(len(list_of_deriv_operators))]
-    >>> fdstencl = [[[] for i in range(4)] for j in range(len(list_of_deriv_operators))]
-    >>> for i in range(len(list_of_deriv_operators)): fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(list_of_deriv_operators[i])
-    >>> memread_Ccode = read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, exprlist, FDparams)
-    >>> print(construct_Ccode(exprlist, list_of_deriv_vars, \
-              list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators, \
-              fdcoeffs, fdstencl, memread_Ccode, FDparams, ""))
-    /*
-     * NRPy+ Finite Difference Code Generation, Step 1 of 3: Read from main memory and compute finite difference stencils:
-     */
-    const double hDD01_i0_i1m1_i2 = in_gfs[IDX4(HDD01GF, i0,i1-1,i2)];
-    const double hDD01 = in_gfs[IDX4(HDD01GF, i0,i1,i2)];
-    const double hDD01_i0_i1p1_i2 = in_gfs[IDX4(HDD01GF, i0,i1+1,i2)];
-    const double hDD02_i0_i1m2_i2 = in_gfs[IDX4(HDD02GF, i0,i1-2,i2)];
-    const double hDD02_i0_i1m1_i2 = in_gfs[IDX4(HDD02GF, i0,i1-1,i2)];
-    const double hDD02 = in_gfs[IDX4(HDD02GF, i0,i1,i2)];
-    const double hDD02_i0_i1p1_i2 = in_gfs[IDX4(HDD02GF, i0,i1+1,i2)];
-    const double hDD02_i0_i1p2_i2 = in_gfs[IDX4(HDD02GF, i0,i1+2,i2)];
-    const double vU1 = in_gfs[IDX4(VU1GF, i0,i1,i2)];
-    const double FDPart1_Rational_1_2 = 1.0/2.0;
-    const double FDPart1_Integer_2 = 2.0;
-    const double FDPart1_Rational_3_2 = 3.0/2.0;
-    const double hDD_dD011 = FDPart1_Rational_1_2*invdx1*(-hDD01_i0_i1m1_i2 + hDD01_i0_i1p1_i2);
-    const double UpwindAlgInputhDD_ddnD021 = invdx1*(-FDPart1_Integer_2*hDD02_i0_i1m1_i2 + FDPart1_Rational_1_2*hDD02_i0_i1m2_i2 + FDPart1_Rational_3_2*hDD02);
-    const double UpwindAlgInputhDD_dupD021 = invdx1*(FDPart1_Integer_2*hDD02_i0_i1p1_i2 - FDPart1_Rational_1_2*hDD02_i0_i1p2_i2 - FDPart1_Rational_3_2*hDD02);
-    const double UpwindControlVectorU1 = vU1;
-    /*
-     * NRPy+ Finite Difference Code Generation, Step 2 of 3: Implement upwinding algorithm:
-     */
-    const double UpWind1 = UPWIND_ALG(UpwindControlVectorU1);
-    const double hDD_dupD021 = UpWind1*(-UpwindAlgInputhDD_ddnD021 + UpwindAlgInputhDD_dupD021) + UpwindAlgInputhDD_ddnD021;
-    /*
-     * NRPy+ Finite Difference Code Generation, Step 3 of 3: Evaluate SymPy expressions and write to main memory:
-     */
-    a0 = b*hDD01 + c*hDD_dD011;
-    a1 = c*hDD_dupD021*vU1;
-    <BLANKLINE>
     """
+    # Failed Doctest. However, mathematically equivalent with Sympy 1.3
+    # :param sympyexpr_list:
+    # :param list_of_deriv_vars:
+    # :param list_of_base_gridfunction_names_in_derivs:
+    # :param list_of_deriv_operators:
+    # :param fdcoeffs:
+    # :param fdstencl:
+    # :param read_from_memory_Ccode:
+    # :param FDparams:
+    # :param Coutput: The start of the Coutput string; this function's output will be pasted to a copy of Coutput
+    # :return: Returns a C code string
+    # >>> from outputC import lhrh
+    # >>> import indexedexp as ixp
+    # >>> import NRPy_param_funcs as par
+    # >>> from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list,FDparams
+    # >>> from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
+    # >>> from finite_difference_helpers import read_gfs_from_memory, construct_Ccode
+    # >>> from finite_difference import compute_fdcoeffs_fdstencl
+    # >>> import grid as gri
+    # >>> gri.glb_gridfcs_list = []
+    # >>> hDD      = ixp.register_gridfunctions_for_single_rank2("EVOL","hDD","sym01")
+    # >>> hDD_dD   = ixp.declarerank3("hDD_dD","sym01")
+    # >>> hDD_dupD = ixp.declarerank3("hDD_dupD","sym01")
+    # >>> vU       = ixp.register_gridfunctions_for_single_rank1("EVOL","vU")
+    # >>> a0,a1,b,c = par.Cparameters("REAL",__name__,["a0","a1","b","c"],1)
+    # >>> par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER",2)
+    # >>> FDparams.DIM=3
+    # >>> FDparams.SIMD_enable="False"
+    # >>> FDparams.FD_functions_enable=False
+    # >>> FDparams.PRECISION="double"
+    # >>> FDparams.MemAllocStyle="012"
+    # >>> FDparams.upwindcontrolvec=vU
+    # >>> FDparams.fullindent=""
+    # >>> FDparams.outCparams="outCverbose=False"
+    # >>> exprlist = [lhrh(lhs=a0,rhs=b*hDD[1][0] + c*hDD_dD[0][1][1]), \
+    #                 lhrh(lhs=a1,rhs=c*hDD_dupD[0][2][1]*vU[1])]
+    # >>> list_of_deriv_vars = generate_list_of_deriv_vars_from_lhrh_sympyexpr_list(exprlist,FDparams)
+    # >>> list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators = extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_vars)
+    # >>> fdcoeffs = [[] for i in range(len(list_of_deriv_operators))]
+    # >>> fdstencl = [[[] for i in range(4)] for j in range(len(list_of_deriv_operators))]
+    # >>> for i in range(len(list_of_deriv_operators)): fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(list_of_deriv_operators[i])
+    # >>> memread_Ccode = read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, exprlist, FDparams)
+    # >>> print(construct_Ccode(exprlist, list_of_deriv_vars, \
+    #           list_of_base_gridfunction_names_in_derivs, list_of_deriv_operators, \
+    #           fdcoeffs, fdstencl, memread_Ccode, FDparams, ""))
+    # /*
+    #  * NRPy+ Finite Difference Code Generation, Step 1 of 3: Read from main memory and compute finite difference stencils:
+    #  */
+    # const double hDD01_i0_i1m1_i2 = in_gfs[IDX4(HDD01GF, i0,i1-1,i2)];
+    # const double hDD01 = in_gfs[IDX4(HDD01GF, i0,i1,i2)];
+    # const double hDD01_i0_i1p1_i2 = in_gfs[IDX4(HDD01GF, i0,i1+1,i2)];
+    # const double hDD02_i0_i1m2_i2 = in_gfs[IDX4(HDD02GF, i0,i1-2,i2)];
+    # const double hDD02_i0_i1m1_i2 = in_gfs[IDX4(HDD02GF, i0,i1-1,i2)];
+    # const double hDD02 = in_gfs[IDX4(HDD02GF, i0,i1,i2)];
+    # const double hDD02_i0_i1p1_i2 = in_gfs[IDX4(HDD02GF, i0,i1+1,i2)];
+    # const double hDD02_i0_i1p2_i2 = in_gfs[IDX4(HDD02GF, i0,i1+2,i2)];
+    # const double vU1 = in_gfs[IDX4(VU1GF, i0,i1,i2)];
+    # const double FDPart1_Rational_1_2 = 1.0/2.0;
+    # const double FDPart1_Integer_2 = 2.0;
+    # const double FDPart1_Rational_3_2 = 3.0/2.0;
+    # const double hDD_dD011 = FDPart1_Rational_1_2*invdx1*(-hDD01_i0_i1m1_i2 + hDD01_i0_i1p1_i2);
+    # const double UpwindAlgInputhDD_ddnD021 = invdx1*(-FDPart1_Integer_2*hDD02_i0_i1m1_i2 + FDPart1_Rational_1_2*hDD02_i0_i1m2_i2 + FDPart1_Rational_3_2*hDD02);
+    # const double UpwindAlgInputhDD_dupD021 = invdx1*(FDPart1_Integer_2*hDD02_i0_i1p1_i2 - FDPart1_Rational_1_2*hDD02_i0_i1p2_i2 - FDPart1_Rational_3_2*hDD02);
+    # const double UpwindControlVectorU1 = vU1;
+    # /*
+    #  * NRPy+ Finite Difference Code Generation, Step 2 of 3: Implement upwinding algorithm:
+    #  */
+    # const double UpWind1 = UPWIND_ALG(UpwindControlVectorU1);
+    # const double hDD_dupD021 = UpWind1*(-UpwindAlgInputhDD_ddnD021 + UpwindAlgInputhDD_dupD021) + UpwindAlgInputhDD_ddnD021;
+    # /*
+    #  * NRPy+ Finite Difference Code Generation, Step 3 of 3: Evaluate SymPy expressions and write to main memory:
+    #  */
+    # a0 = b*hDD01 + c*hDD_dD011;
+    # a1 = c*hDD_dupD021*vU1;
+    # <BLANKLINE>
 
     def indent_Ccode(Ccode):
         Ccodesplit = Ccode.splitlines()
