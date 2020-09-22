@@ -56,7 +56,7 @@ add_test WeylScal4NRPy/tests/test_WeylScal4NRPy.py
 # TODO: add your tests here
 echo "Starting doctest unit tests!"
 failed_unittest=0
-for file in expr_tree.py cse_helpers.py indexedexp.py loop.py finite_difference_helpers.py; do
+for file in expr_tree.py indexedexp.py loop.py finite_difference_helpers.py; do
     echo Running doctest on file: $file
     $PYTHONEXEC -m doctest $file
     if [ $? == 1 ]
@@ -65,6 +65,17 @@ for file in expr_tree.py cse_helpers.py indexedexp.py loop.py finite_difference_
     fi
     echo Doctest of $file finished.
 done
+$PYTHONEXEC -c "import sys, sympy; major, minor, _ = sympy.__version__.split('.'); sys.exit(int(major) == 1 or int(minor) <= 3)"
+if [ $? == 1 ]
+then
+    echo Running doctest on file: cse_helpers.py
+    $PYTHONEXEC -m doctest cse_helpers.py
+    if [ $? == 1 ]
+    then
+        failed_unittest=1
+    fi
+    echo Doctest of cse_helpers.py finished.
+fi
 for file in tests/test_latex_parser.py; do
     echo Running unittest on file: $file
     $PYTHONEXEC $file
