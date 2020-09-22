@@ -65,8 +65,8 @@ for file in expr_tree.py indexedexp.py loop.py finite_difference_helpers.py; do
     fi
     echo Doctest of $file finished.
 done
-$PYTHONEXEC -c "import sys, sympy; major, minor, _ = sympy.__version__.split('.'); sys.exit(int(major) == 1 or int(minor) <= 3)"
-if [ $? == 1 ]
+$PYTHONEXEC -c "import sys, sympy; major, minor = int(sympy.__version__.split('.')[0]), int(sympy.__version__.split('.')[1]); sys.exit(major == 1 and minor <= 3)"
+if [ $? == 0 ]
 then
     echo Running doctest on file: cse_helpers.py
     $PYTHONEXEC -m doctest cse_helpers.py
