@@ -3,7 +3,7 @@
 # Email:  ksible *at* outlook *dot* com
 
 # pylint: disable=import-error
-import sys; sys.path.append('..')
+# import sys; sys.path.append('..')
 from latex_parser import OverrideWarning, parse_expr, parse
 from warnings import filterwarnings
 import unittest, sys
@@ -86,13 +86,34 @@ class TestParser(unittest.TestCase):
     def test_example_5(self):
         self.assertEqual(
             parse(r"""
+                % gUU [4]: metric, deltaUU [4]: kronecker;
+                \begin{align*}
+                    g^{\mu\nu} &= \delta^{\mu\nu} \\
+                    g^{0 0} &= -\left(1 - \frac{\mathop{r_s}}{r}\right) \\
+                    g^{1 1} &=  \left(1 - \frac{\mathop{r_s}}{r}\right)^{-1} \\
+                    g^{2 2} &= r^{{2}} \\
+                    g^{3 3} &= r^{{2}} \sin^2(\theta)
+                \end{align*}
+            """),
+            ['gDD', 'gdet', 'gUU', 'deltaUU']
+        )
+        self.assertEqual(str(deltaUU),
+            '[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]'
+        )
+        self.assertEqual(str(gUU),
+            '[[-1 + r_s/r, 0, 0, 0], [0, 1/(1 - r_s/r), 0, 0], [0, 0, r**2, 0], [0, 0, 0, r**2*sin(theta)**2]]'
+        )
+
+    def test_example_6(self):
+        self.assertEqual(
+            parse(r"""
                 % FUU [4]: anti01;
                 J^\mu = (4\pi k)^{-1} \nabla_\nu F^{\mu\nu}
-            """, debug=True),
+            """, evaluate=False),
             ['FUU', 'FUU_dD', 'gDD', 'gdet', 'gUU', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU']
         )
         self.assertEqual(GammaUDD,
-            '[[[sum([gUU[mu][c]*gDD_dD[a][c][b]/2 for c in range(4)]) - sum([gUU[mu][c]*gDD_dD[b][a][c]/2 for c in range(4)]) + sum([gUU[mu][c]*gDD_dD[c][b][a]/2 for c in range(4)]) for a in range(4)] for b in range(4)] for mu in range(4)]'
+            '[[[sum([gUU[nu][c]*gDD_dD[a][c][b]/2 for c in range(4)]) - sum([gUU[nu][c]*gDD_dD[b][a][c]/2 for c in range(4)]) + sum([gUU[nu][c]*gDD_dD[c][b][a]/2 for c in range(4)]) for a in range(4)] for b in range(4)] for nu in range(4)]'
         )
         self.assertEqual(FUU_cdD,
             '[[[sum([FUU[b][nu]*GammaUDD[mu][b][a] for b in range(4)]) + sum([FUU[mu][b]*GammaUDD[nu][b][a] for b in range(4)]) + FUU_dD[mu][nu][a] for a in range(4)] for mu in range(4)] for nu in range(4)]'
@@ -110,5 +131,6 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_example_3'))
     suite.addTest(TestParser('test_example_4'))
     suite.addTest(TestParser('test_example_5'))
+    suite.addTest(TestParser('test_example_6'))
     result = unittest.TextTestRunner().run(suite)
     sys.exit(not result.wasSuccessful())

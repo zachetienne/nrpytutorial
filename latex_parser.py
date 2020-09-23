@@ -2,15 +2,20 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# pylint: disable=attribute-defined-outside-init
+# pylint: disable=attribute-defined-outside-init,exec-used
 from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
-from sympy import pi, exp, log, sqrt, expand, diff, var
+from sympy import pi, exp, log, sqrt, expand, diff
 from collections import OrderedDict
-from functional import uniquify
+from functional import chain, uniquify
 from expr_tree import ExprTree
 from inspect import currentframe
-import indexedexp as ixp, warnings, re
+import indexedexp as ixp
+import re, warnings
+
+sympy_env = {'sin': sin, 'cos': cos, 'tan': tan, 'sinh': sinh, 'cosh': cosh, 'tanh': tanh,
+    'asin': asin, 'acos': acos, 'atan': atan, 'asinh': asinh, 'acosh': acosh, 'atanh': atanh,
+    'pi': pi, 'exp': exp, 'log': log, 'sqrt': sqrt}
 
 class Lexer:
     """ LaTeX Lexer
@@ -24,7 +29,7 @@ class Lexer:
             r'\\[eE]psilon', r'\\[zZ]eta', r'\\[eE]ta', r'\\[tT]heta', r'\\[iI]ota', r'\\[kK]appa', r'\\[lL]ambda',
             r'\\[mM]u', r'\\[nN]u', r'\\[xX]i', r'\\[oO]mikron', r'\\[pP]i', r'\\[Rr]ho', r'\\[sS]igma', r'\\[tT]au',
             r'\\[uU]psilon', r'\\[pP]hi', r'\\[cC]hi', r'\\[pP]si', r'\\[oO]mega'))
-        symmetry = r'nosym|(?:sym|anti)[0-9]+(?:_(?:sym|anti)[0-9]+)*|metric|permutation'
+        symmetry = r'nosym|(?:sym|anti)[0-9]+(?:_(?:sym|anti)[0-9]+)*|metric|permutation|kronecker'
         # define a regex pattern for every token, create a named capture group for
         # every pattern, join together the resulting pattern list using a pipe symbol
         # for regex alternation, and compile the generated regular expression
@@ -144,15 +149,15 @@ class Parser:
         <OPERATOR>      -> <PARDRV> | <COVDRV>
         <SQRT>          -> <SQRT_CMD> [ '[' <INTEGER> ']' ] '{' <EXPRESSION> '}'
         <FRAC>          -> <FRAC_CMD> '{' <EXPRESSION> '}' '{' <EXPRESSION> '}'
-        <NLOG>          -> <NLOG_CMD> [ '_' <INTEGER> | { <INTEGER> } ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
-        <TRIG>          -> <TRIG_CMD> [ '^' <INTEGER> | { <INTEGER> } ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
+        <NLOG>          -> <NLOG_CMD> [ '_' ( <INTEGER> | { <INTEGER> } ) ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
+        <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> { <PARDRV_OP> '_' <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <CONFIG>        -> '%' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> { ',' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> }*
         <VARIABLE>      -> <SYMBOL> | <DIACRITIC> '{' <SYMBOL> '}' | <MATHOP> '{' <SYMBOL> { <SYMBOL> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <VARIABLE> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
-        <LOWER_INDEX>   -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
-        <UPPER_INDEX>   -> <SYMBOL> | '{' { <SYMBOL> }+ '}'
+        <LOWER_INDEX>   -> <SYMBOL> | <INTEGER> | '{' { <SYMBOL> | <INTEGER> }* [ ',' { <SYMBOL> }+ ] '}'
+        <UPPER_INDEX>   -> <SYMBOL> | <INTEGER> | '{' { <SYMBOL> | <INTEGER> }+ '}'
     """
 
     namespace = OrderedDict()
@@ -160,6 +165,7 @@ class Parser:
     def __init__(self):
         self.lexer     = Lexer()
         self.namespace = OrderedDict()
+        self.unevaled  = OrderedDict()
         self.dimension = None
 
     def parse(self, sentence, expression=False):
@@ -188,14 +194,18 @@ class Parser:
         self.lexer.lex()
         if expression:
             return self._expression()
-        return self._root()
+        root = self._root()
+        for key in chain(*root):
+            if key in sympy_env:
+                sympy_env.pop(key)
+        return root
 
     # <ROOT> -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
     def _root(self):
         self._structure()
         while self.accept('LINE_BREAK'):
             self._structure()
-        return self.namespace
+        return self.namespace, self.unevaled
 
     # <STRUCTURE> -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
     def _structure(self):
@@ -217,19 +227,18 @@ class Parser:
     def _assignment(self):
         variable = self._covdrv('LHS') if self.peek('COVDRV_OP') \
               else self._tensor()
-        if variable.func == Function('Tensor'):
-            variable = Tensor.array_format(variable)
-        else: variable = str(variable)
+        indexed  = variable.func == Function('Tensor')
+        variable = Tensor.array_format(variable) if indexed else str(variable)
         self.expect('EQUAL')
         expr = self._expression()
         # distribute over every parenthetical expression
         tree = ExprTree(expand(expr))
-        tensorial = False
-        for subtree in tree.preorder():
-            subexpr = subtree.expr
-            if subexpr.func == Function('Tensor'):
-                tensorial = True
-        if tensorial:
+        if not indexed:
+            for subtree in tree.preorder():
+                subexpr = subtree.expr
+                if subexpr.func == Function('Tensor'):
+                    indexed = True
+        if indexed:
             # iterate through every tensor function
             expr = str(tree.root.expr)
             for subtree in tree.preorder():
@@ -240,8 +249,8 @@ class Parser:
                     expr = expr.replace(str(subexpr), func)
             # perform implied summation on tensorial equation
             expanded = _summation((variable, expr), self.dimension)
-            # update namespace and lexer with expanded equation
-            self.namespace.update(expanded)
+            # update unevalued with expanded equation
+            self.unevaled.update(expanded)
         else: self.namespace.update({variable: expr})
 
     # <EXPRESSION> -> <TERM> { ( '+' | '-' ) <TERM> }*
@@ -301,7 +310,7 @@ class Parser:
                 ('RATIONAL', 'DECIMAL', 'INTEGER', 'PI')):
             return self._number()
         if any(self.peek(token) for token in
-                ('SYMBOL', 'DIACRITIC')):
+                ('SYMBOL', 'DIACRITIC', 'MATHOP')):
             function = self._tensor()
             if function.func == Function('Tensor'):
                 symbol = str(function.args[0])
@@ -568,8 +577,8 @@ class Parser:
             self.expect('COLON')
             symmetry = self.lexer.lexeme
             self.expect('SYMMETRY')
-            self._instantiate_tensor(Tensor(variable, dimension), symmetry,
-                invertible=(symmetry == 'metric'), permutation=(symmetry == 'permutation'))
+            self._instantiate_tensor(Tensor(variable, dimension), symmetry, invertible=(symmetry == 'metric'),
+                permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
 
     # <TENSOR> -> <VARIABLE> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
@@ -590,7 +599,9 @@ class Parser:
             if self.accept('LEFT_BRACE'):
                 if self.accept('LEFT_BRACE'):
                     self.lexer.reset()
-                    return var(''.join(symbol))
+                    symbol = ''.join(symbol)
+                    sympy_env[symbol] = Symbol(symbol)
+                    return sympy_env[symbol]
                 self.lexer.reset()
                 self.lexer.lex()
             index = self._upper_index()
@@ -605,7 +616,9 @@ class Parser:
                     tensor = Tensor(function, self.dimension)
                     return self._instantiate_derivative(tensor, order, indices)
             return Function('Tensor')(Symbol(''.join(symbol)), *indices)
-        return var(''.join(symbol))
+        symbol = ''.join(symbol)
+        sympy_env[symbol] = Symbol(symbol)
+        return sympy_env[symbol]
 
     # <LOWER_INDEX> -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
     def _lower_index(self):
@@ -635,13 +648,13 @@ class Parser:
         indices = []
         def append_index():
             index = self._strip(self.lexer.lexeme)
-            self.expect('SYMBOL')
+            self.lexer.lex()
             indices.append(Symbol(index))
-        if self.peek('SYMBOL'):
+        if self.peek('SYMBOL') or self.peek('INTEGER'):
             append_index()
             return indices
         if self.accept('LEFT_BRACE'):
-            while self.peek('SYMBOL'):
+            while self.peek('SYMBOL') or self.peek('INTEGER'):
                 append_index()
             self.expect('RIGHT_BRACE')
             return indices
@@ -678,7 +691,7 @@ class Parser:
         raise ParseError('unexpected \'%s\' at position %d' %
             (sentence[position], position), sentence, position)
 
-    def _instantiate_tensor(self, tensor, symmetry, invertible=False, permutation=False):
+    def _instantiate_tensor(self, tensor, symmetry, invertible=False, permutation=False, kronecker=False):
         def sgn(sequence):
             """ Permutation Signature (Parity)"""
             cycle_length = 0
@@ -707,7 +720,13 @@ class Parser:
             prefix = '[' * rank + 'sgn([' + ', '.join(index) + '])'
             suffix = ''.join(' for %s in range(%d)]' % (index[rank - i], dimension) for i in range(1, rank + 1))
             array  = eval(prefix + suffix, {'sgn': sgn})
-        else: array = ixp.declare_indexedexp(rank, symbol, symmetry, dimension)
+        elif kronecker:
+            if rank != 2:
+                raise TensorError('invalid rank for kronecker delta')
+            array = ixp.declare_indexedexp(rank=rank, dimension=dimension)
+            for i in range(dimension): array[i][i] = 1
+        else:
+            array = ixp.declare_indexedexp(rank, symbol, symmetry, dimension)
         if invertible:
             inverse_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
             if dimension == 2:
@@ -874,6 +893,8 @@ class Tensor:
 
 def _summation(equation, dimension):
     var, expr = equation
+    # count every index on LHS to determine the rank
+    rank = len(re.findall(r'\[[^\]]+\]', var))
     # construct a tuple list of every LHS free index
     LHS, RHS = zip(re.findall(r'\[([a-zA-Z]+)\]', var), re.findall(r'[UD]', var)), []
     # iterate over every subexpression containing a product
@@ -921,7 +942,9 @@ def _summation(equation, dimension):
         # generate tensor instantiation with implied summation
         for idx, _ in LHS:
             expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
-    return {var.split('[')[0]: expr}
+    if rank == len(re.findall(r'\[[^0-9\]]+\]', var)):
+        return {var.split('[')[0]: expr}
+    return {re.sub(r'\[[^0-9\]]+\]', '[:]', var): expr}
 
 class TensorError(Exception):
     """ Invalid Tensor Indexing or Dimension """
@@ -936,29 +959,27 @@ def parse_expr(sentence):
     """
     return Parser().parse(sentence, expression=True)
 
-def parse(sentence, debug=False):
+def parse(sentence, evaluate=True):
     """ Convert LaTeX Sentence to SymPy Expression
 
         :arg:    latex sentence (raw string)
-        :arg:    debug mode [default: disabled]
+        :arg:    evaluate mode [default: enabled]
         :return: namespace
     """
-    namespace = Parser().parse(sentence)
-    if not debug:
-        # update global scope with tensor namespace
-        globals().update(namespace)
-        for var in namespace:
-            if isinstance(namespace[var], str):
-                # evaluate each implied summation
-                namespace[var] = eval(namespace[var])
-                globals()[var] = namespace[var]
-        # update static namespace for persistance
+    namespace, unevaled = Parser().parse(sentence)
+    if evaluate:
+        # update namespace with SymPy environment
+        namespace.update(sympy_env)
+        for key in unevaled:
+            if isinstance(unevaled[key], str):
+                # evaluate each implied summation and update namespace
+                exec('%s = %s' % (key, unevaled[key]), namespace)
+        # remove SymPy environment from namespace
+        for key in sympy_env: namespace.pop(key)
+        # update (static) class namespace for global persistance
         Parser.namespace.update(namespace)
+    else: namespace.update(unevaled)
     # inject namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)
     return list(namespace.keys())
-
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
