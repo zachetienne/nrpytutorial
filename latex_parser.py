@@ -6,16 +6,16 @@
 from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff
-from collections import OrderedDict
-from functional import chain, uniquify
-from expr_tree import ExprTree
 from inspect import currentframe
+from collections import OrderedDict
+from expr_tree import ExprTree
+from functional import uniquify
 import indexedexp as ixp
 import re, warnings
 
-sympy_env = {'sin': sin, 'cos': cos, 'tan': tan, 'sinh': sinh, 'cosh': cosh, 'tanh': tanh,
-    'asin': asin, 'acos': acos, 'atan': atan, 'asinh': asinh, 'acosh': acosh, 'atanh': atanh,
-    'pi': pi, 'exp': exp, 'log': log, 'sqrt': sqrt}
+sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', cosh), ('tanh', tanh),
+    ('asin', asin), ('acos', acos), ('atan', atan), ('asinh', asinh), ('acosh', acosh), ('atanh', atanh),
+    ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt))
 
 class Lexer:
     """ LaTeX Lexer
@@ -152,7 +152,7 @@ class Parser:
         <NLOG>          -> <NLOG_CMD> [ '_' ( <INTEGER> | { <INTEGER> } ) ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> { <PARDRV_OP> '_' <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+        <COVDRV>        -> { <COVDRV_OP> ( '^' | '_' ) <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <CONFIG>        -> '%' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> { ',' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> }*
         <VARIABLE>      -> <SYMBOL> | <DIACRITIC> '{' <SYMBOL> '}' | <MATHOP> '{' <SYMBOL> { <SYMBOL> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <VARIABLE> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
@@ -194,11 +194,7 @@ class Parser:
         self.lexer.lex()
         if expression:
             return self._expression()
-        root = self._root()
-        for key in chain(*root):
-            if key in sympy_env:
-                sympy_env.pop(key)
-        return root
+        return self._root()
 
     # <ROOT> -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
     def _root(self):
@@ -399,7 +395,7 @@ class Parser:
         self.expect('RIGHT_BRACE')
         return numerator / denominator
 
-    # <NLOG> -> <NLOG_CMD> [ '_' <INTEGER> | { <INTEGER> } ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
+    # <NLOG> -> <NLOG_CMD> [ '_' ( <INTEGER> | { <INTEGER> } ) ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
     def _nlog(self):
         func = self.lexer.lexeme[1:]
         self.expect('NLOG_CMD')
@@ -430,7 +426,7 @@ class Parser:
         if func == 'ln': return log(expr)
         return log(expr, base)
 
-    # <TRIG> -> <TRIG_CMD> [ '^' <INTEGER> | { <INTEGER> } ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
+    # <TRIG> -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
     def _trig(self):
         func = self.lexer.lexeme[1:]
         self.expect('TRIG_CMD')
@@ -600,8 +596,9 @@ class Parser:
                 if self.accept('LEFT_BRACE'):
                     self.lexer.reset()
                     symbol = ''.join(symbol)
-                    sympy_env[symbol] = Symbol(symbol)
-                    return sympy_env[symbol]
+                    if symbol not in self.namespace:
+                        self.namespace[symbol] = Symbol(symbol)
+                    return Symbol(symbol)
                 self.lexer.reset()
                 self.lexer.lex()
             index = self._upper_index()
@@ -617,8 +614,9 @@ class Parser:
                     return self._instantiate_derivative(tensor, order, indices)
             return Function('Tensor')(Symbol(''.join(symbol)), *indices)
         symbol = ''.join(symbol)
-        sympy_env[symbol] = Symbol(symbol)
-        return sympy_env[symbol]
+        if symbol not in self.namespace:
+            self.namespace[symbol] = Symbol(symbol)
+        return Symbol(symbol)
 
     # <LOWER_INDEX> -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
     def _lower_index(self):
@@ -968,18 +966,20 @@ def parse(sentence, evaluate=True):
     """
     namespace, unevaled = Parser().parse(sentence)
     if evaluate:
-        # update namespace with SymPy environment
-        namespace.update(sympy_env)
+        global_env = dict(sympy_env)
+        global_env.update(namespace)
         for key in unevaled:
-            if isinstance(unevaled[key], str):
-                # evaluate each implied summation and update namespace
-                exec('%s = %s' % (key, unevaled[key]), namespace)
-        # remove SymPy environment from namespace
-        for key in sympy_env: namespace.pop(key)
-        # update (static) class namespace for global persistance
-        Parser.namespace.update(namespace)
+            # evaluate each implied summation and update namespace
+            exec('%s = %s' % (key, unevaled[key]), global_env)
+            symbol = key.split('[')[0]
+            namespace.update({symbol: global_env[symbol]})
     else: namespace.update(unevaled)
-    # inject namespace into the previous stack frame
+    # remove every symbol from updated namespace (only useful for evaluation)
+    for symbol in [key for key in namespace if isinstance(namespace[key], Symbol)]:
+        namespace.pop(symbol)
+    # update (static) class namespace for global persistance
+    Parser.namespace.update(namespace)
+    # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)
     return list(namespace.keys())
