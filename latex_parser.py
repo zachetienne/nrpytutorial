@@ -29,7 +29,7 @@ class Lexer:
             r'\\[eE]psilon', r'\\[zZ]eta', r'\\[eE]ta', r'\\[tT]heta', r'\\[iI]ota', r'\\[kK]appa', r'\\[lL]ambda',
             r'\\[mM]u', r'\\[nN]u', r'\\[xX]i', r'\\[oO]mikron', r'\\[pP]i', r'\\[Rr]ho', r'\\[sS]igma', r'\\[tT]au',
             r'\\[uU]psilon', r'\\[pP]hi', r'\\[cC]hi', r'\\[pP]si', r'\\[oO]mega'))
-        symmetry = r'nosym|(?:sym|anti)[0-9]+(?:_(?:sym|anti)[0-9]+)*|metric|permutation|kronecker'
+        symmetry = r'nosym|(?:sym|anti)[0-9]+(?:_(?:sym|anti)[0-9]+)*|const|metric|permutation|kronecker'
         # define a regex pattern for every token, create a named capture group for
         # every pattern, join together the resulting pattern list using a pipe symbol
         # for regex alternation, and compile the generated regular expression
@@ -153,10 +153,13 @@ class Parser:
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <SYMBOL> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> { <PARDRV_OP> '_' <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> { <COVDRV_OP> ( '^' | '_' ) <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <CONFIG>        -> '%' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> { ',' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> }*
+                        # TODO: ADD DIACRITIC SUPPORT ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' )
+        <CONFIG>        -> '%' { <VARIABLE> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> { ',' { <VARIABLE> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> }*
         <VARIABLE>      -> <SYMBOL> | <DIACRITIC> '{' <SYMBOL> '}' | <MATHOP> '{' <SYMBOL> { <SYMBOL> | <INTEGER> | <UNDERSCORE> }* '}'
+                        # TODO: SYMBOL -> LETTER, VARIABLE -> SYMBOL
         <TENSOR>        -> <VARIABLE> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
         <LOWER_INDEX>   -> <SYMBOL> | <INTEGER> | '{' { <SYMBOL> | <INTEGER> }* [ ',' { <SYMBOL> }+ ] '}'
+                        # TODO: ADD SEMICOLON (COVARIANT DERIVATIVE) NOTATION
         <UPPER_INDEX>   -> <SYMBOL> | <INTEGER> | '{' { <SYMBOL> | <INTEGER> }+ '}'
     """
 
@@ -193,7 +196,13 @@ class Parser:
         self.lexer.initialize(sentence)
         self.lexer.lex()
         if expression:
-            return self._expression()
+            tree = ExprTree(self._expression())
+            for subtree in tree.preorder():
+                subexpr, rank = subtree.expr, len(subtree.expr.args)
+                if subexpr.func == Function('Tensor') and rank == 1:
+                    subtree.expr = subexpr.args[0]
+                    del subtree.children[:]
+            return tree.reconstruct()
         return self._root()
 
     # <ROOT> -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
@@ -223,31 +232,39 @@ class Parser:
     def _assignment(self):
         variable = self._covdrv('LHS') if self.peek('COVDRV_OP') \
               else self._tensor()
-        indexed  = variable.func == Function('Tensor')
-        variable = Tensor.array_format(variable) if indexed else str(variable)
+        indexed  = variable.func == Function('Tensor') and len(variable.args) > 1
+        variable = Tensor.array_format(variable) if indexed else str(variable.args[0])
         self.expect('EQUAL')
-        expr = self._expression()
-        # distribute over every parenthetical expression
-        tree = ExprTree(expand(expr))
+        tree = ExprTree(self._expression())
         if not indexed:
             for subtree in tree.preorder():
-                subexpr = subtree.expr
-                if subexpr.func == Function('Tensor'):
+                subexpr, rank = subtree.expr, len(subtree.expr.args)
+                if subexpr.func == Function('Tensor') and rank > 1:
                     indexed = True
         if indexed:
+            # distribute over every parenthetical expression
+            tree = ExprTree(expand(tree.root.expr))
             # iterate through every tensor function
             expr = str(tree.root.expr)
             for subtree in tree.preorder():
                 subexpr = subtree.expr
-                if subexpr.func == Function('Tensor'):
+                if subexpr.func in (Function('Tensor'), Function('Constant')):
                     # replace function notation with array notation
                     func = Tensor.array_format(subexpr)
+                    if subexpr.func == Function('Constant'):
+                        self.namespace[func] = subexpr.args[0]
                     expr = expr.replace(str(subexpr), func)
             # perform implied summation on tensorial equation
             expanded = _summation((variable, expr), self.dimension)
             # update unevalued with expanded equation
             self.unevaled.update(expanded)
-        else: self.namespace.update({variable: expr})
+        else:
+            for subtree in tree.preorder():
+                subexpr, rank = subtree.expr, len(subtree.expr.args)
+                if subexpr.func == Function('Tensor') and rank == 1:
+                    subtree.expr = subexpr.args[0]
+                    del subtree.children[:]
+            self.namespace.update({variable: tree.reconstruct()})
 
     # <EXPRESSION> -> <TERM> { ( '+' | '-' ) <TERM> }*
     def _expression(self):
@@ -311,7 +328,7 @@ class Parser:
             if function.func == Function('Tensor'):
                 symbol = str(function.args[0])
                 # reserved keyword for christoffel symbol
-                if 'Gamma' in symbol and symbol not in self.namespace:
+                if 'Gamma' in symbol:
                     self._instantiate_christoffel(function)
             return function
         if any(self.peek(token) for token in
@@ -477,30 +494,30 @@ class Parser:
                 subexpr = subtree.expr
                 if subexpr.func == Function('Tensor'):
                     # insert temporary symbol '_x' for symbolic differentiation
-                    subtree.expr = Function('Tensor')(Symbol('_x'), *subexpr.args)
-                    tree.build(subtree)
+                    subtree.expr = Function('_Tensor')(subexpr, Symbol('_x'))
+                    del subtree.children[:]
             expr = tree.reconstruct()
             # differentiate the expression, including product rule expansion
             tree = ExprTree(diff(expr, Symbol('_x')))
             for subtree in tree.preorder():
                 subexpr = subtree.expr
                 if subexpr.func == Derivative:
-                    # instantiate each derivative and update namespace
-                    order, function = len(indices), subexpr.args[0]
-                    indices = list(function.args[2:]) + indices
-                    tensor = Tensor(function, self.dimension)
-                    subtree.expr = self._instantiate_derivative(tensor, order, indices)
-                    tree.build(subtree)
-                elif subexpr.func == Function('Tensor'):
                     # remove temporary symbol '_x' from tensor function
-                    subtree.expr = Function('Tensor')(*subexpr.args[1:])
-                    tree.build(subtree)
+                    symbol, order = subexpr.args[0].args[0].args[0], len(indices)
+                    _indices = list(subexpr.args[0].args[0].args[1:]) + indices
+                    # instantiate partial derivative and update namespace
+                    subtree.expr = self._instantiate_derivative(symbol, order, _indices)
+                    del subtree.children[:]
+                elif subexpr.func == Function('_Tensor'):
+                    # remove temporary symbol '_x' from tensor function
+                    subtree.expr = subexpr.args[0]
+                    del subtree.children[:]
             return tree.reconstruct()
         # instantiate partial derivative and update namespace
-        order, function = len(indices), self._tensor()
-        indices = list(function.args[1:]) + indices
-        tensor = Tensor(function, self.dimension)
-        return self._instantiate_derivative(tensor, order, indices)
+        function = self._tensor()
+        symbol, order = function.args[0], len(indices)
+        _indices = list(function.args[1:]) + indices
+        return self._instantiate_derivative(symbol, order, _indices)
 
     # <COVDRV> -> { <COVDRV_OP> ( '^' | '_' ) <SYMBOL> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _covdrv(self, location):
@@ -529,12 +546,15 @@ class Parser:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
+        # instantiate covariant derivative and update namespace
         marker_1 = self.lexer.mark()
-        order, function = len(indices), self._tensor()
+        function = self._tensor()
         marker_2 = self.lexer.index
+        symbol, order = function.args[0], len(indices)
+        _indices = list(function.args[1:]) + [index[0] for index in indices]
+        covariant = [index[1] for index in indices]
         equation[0] += ' ' + self.lexer.sentence[marker_1:marker_2]
         equation[3] += ' ' + self.lexer.sentence[marker_1:marker_2]
-        tensor = Tensor(function, self.dimension)
         if location == 'RHS':
             if equation[2]:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
@@ -544,13 +564,12 @@ class Parser:
                 self.lexer.lex()
             else:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                self.parse(self._generate_covdrv(tensor, [index[0] for index in indices]))
+                self.parse(self._generate_covdrv(Tensor(function, self.dimension), [index[0] for index in indices]))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
-        return self._instantiate_derivative(tensor, order, list(function.args[1:]) +
-            [index[0] for index in indices], [index[1] for index in indices])
+        return self._instantiate_derivative(symbol, order, _indices, covariant)
 
-    # <CONFIG> -> '%' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> { ',' { <VARIABLE> }+ '[' <INTEGER> ']' ':' <SYMMETRY> }*
+    # <CONFIG> -> '%' { <VARIABLE> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> { ',' { <VARIABLE> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> }*
     def _config(self):
         self.expect('COMMENT')
         while True:
@@ -562,17 +581,20 @@ class Parser:
                 if self.peek('EULER'):
                     self.lexer.token = 'SYMBOL'
             variable = ''.join(variable)
-            self.expect('LEFT_BRACKET')
-            dimension = self.lexer.lexeme
-            self.expect('INTEGER')
-            dimension = int(dimension)
-            if self.dimension and self.dimension != dimension:
-                raise TensorError('inconsistent tensor dimension')
-            self.dimension = dimension
-            self.expect('RIGHT_BRACKET')
+            if self.accept('LEFT_BRACKET'):
+                dimension = self.lexer.lexeme
+                self.expect('INTEGER')
+                dimension = int(dimension)
+                if self.dimension and self.dimension != dimension:
+                    raise TensorError('inconsistent tensor dimension')
+                self.dimension = dimension
+                self.expect('RIGHT_BRACKET')
+            else: dimension = None
             self.expect('COLON')
             symmetry = self.lexer.lexeme
             self.expect('SYMMETRY')
+            if symmetry != 'const' and not dimension:
+                raise TensorError('dimension only omittable for constant')
             self._instantiate_tensor(Tensor(variable, dimension), symmetry, invertible=(symmetry == 'metric'),
                 permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
@@ -585,20 +607,21 @@ class Parser:
             index, order = self._lower_index()
             indices.extend(index)
             symbol.extend((len(index) - order) * ['D'])
-            function = Function('Tensor')(Symbol(''.join(symbol)), *indices)
             if order > 0:
-                tensor = Tensor(function, self.dimension)
-                return self._instantiate_derivative(tensor, order, indices)
-            return function
+                return self._instantiate_derivative(''.join(symbol), order, indices)
         self.lexer.mark()
         if self.accept('CARET'):
             if self.accept('LEFT_BRACE'):
                 if self.accept('LEFT_BRACE'):
                     self.lexer.reset()
                     symbol = ''.join(symbol)
-                    if symbol not in self.namespace:
-                        self.namespace[symbol] = Symbol(symbol)
-                    return Symbol(symbol)
+                    function = Function('Tensor')(symbol, *indices)
+                    if symbol in self.namespace:
+                        if isinstance(self.namespace[symbol], Function('Constant')):
+                            return self.namespace[symbol]
+                    elif not indices:
+                        self.namespace[symbol] = function
+                    return function
                 self.lexer.reset()
                 self.lexer.lex()
             index = self._upper_index()
@@ -608,15 +631,16 @@ class Parser:
                 index, order = self._lower_index()
                 indices.extend(index)
                 symbol.extend((len(index) - order) * ['D'])
-                function = Function('Tensor')(Symbol(''.join(symbol)), *indices)
                 if order > 0:
-                    tensor = Tensor(function, self.dimension)
-                    return self._instantiate_derivative(tensor, order, indices)
-            return Function('Tensor')(Symbol(''.join(symbol)), *indices)
+                    return self._instantiate_derivative(''.join(symbol), order, indices)
         symbol = ''.join(symbol)
-        if symbol not in self.namespace:
+        function = Function('Tensor')(symbol, *indices)
+        if symbol in self.namespace:
+            if isinstance(self.namespace[symbol], Function('Constant')):
+                return self.namespace[symbol]
+        elif not indices:
             self.namespace[symbol] = Symbol(symbol)
-        return Symbol(symbol)
+        return function
 
     # <LOWER_INDEX> -> <SYMBOL> | '{' { <SYMBOL> }* [ ',' { <SYMBOL> }+ ] '}'
     def _lower_index(self):
@@ -698,64 +722,56 @@ class Parser:
                     if i == j: return 0
                     cycle_length += i > j
             return (-1)**cycle_length
-        symbol, rank, dimension = tensor.symbol, tensor.rank, tensor.dimension
-        symmetry = 'sym01' if symmetry == 'metric' \
-              else None    if symmetry == 'nosym' \
-              else symmetry
-        if symbol in self.namespace:
-            # avoid repeated instantiation
-            array = self.namespace[symbol]
-        elif symbol in Parser.namespace:
-            # pylint: disable=unused-argument
-            def formatwarning(message, category, filename=None, lineno=None, file=None, line=None):
-                return '%s: %s\n' % (category.__name__, message)
-            warnings.formatwarning = formatwarning
-            # throw warning whenever duplicate namespace variable
-            warnings.warn(symbol, OverrideWarning)
-        if permutation:
-            # instantiate permutation or Levi-Civita symbol using parity
-            index  = [chr(105 + n) for n in range(rank)]
-            prefix = '[' * rank + 'sgn([' + ', '.join(index) + '])'
-            suffix = ''.join(' for %s in range(%d)]' % (index[rank - i], dimension) for i in range(1, rank + 1))
-            array  = eval(prefix + suffix, {'sgn': sgn})
-        elif kronecker:
-            if rank != 2:
-                raise TensorError('invalid rank for kronecker delta')
-            array = ixp.declare_indexedexp(rank=rank, dimension=dimension)
-            for i in range(dimension): array[i][i] = 1
-        else:
-            array = ixp.declare_indexedexp(rank, symbol, symmetry, dimension)
-        if invertible:
-            inverse_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
-            if dimension == 2:
-                inverse, determinant = ixp.symm_matrix_inverter2x2(array)
-            elif dimension == 3:
-                inverse, determinant = ixp.symm_matrix_inverter3x3(array)
-            elif dimension == 4:
-                inverse, determinant = ixp.symm_matrix_inverter4x4(array)
-            self.namespace[inverse_symbol] = inverse
-            if symbol[-2:] == 'DD':
-                self.namespace[symbol[:-2] + 'det'] = determinant
-            else:
-                if dimension == 2:
-                    _, determinant = ixp.symm_matrix_inverter2x2(inverse)
-                elif dimension == 3:
-                    _, determinant = ixp.symm_matrix_inverter3x3(inverse)
-                elif dimension == 4:
-                    _, determinant = ixp.symm_matrix_inverter4x4(inverse)
-                self.namespace[symbol[:-2] + 'det'] = determinant
-        self.namespace[symbol] = array
+        symbol, rank = tensor.symbol, tensor.rank
+        if symbol not in self.namespace:
+            if rank > 0:
+                symmetry = 'sym01' if symmetry == 'metric' \
+                      else None    if symmetry == 'nosym' \
+                      else symmetry
+                dimension = tensor.dimension
+                if permutation:
+                    # instantiate permutation or Levi-Civita symbol using parity
+                    index  = [chr(105 + n) for n in range(rank)]
+                    prefix = '[' * rank + 'sgn([' + ', '.join(index) + '])'
+                    suffix = ''.join(' for %s in range(%d)]' % (index[rank - i], dimension) for i in range(1, rank + 1))
+                    array  = eval(prefix + suffix, {'sgn': sgn})
+                elif kronecker:
+                    if rank != 2:
+                        raise TensorError('cannot instantiate kronecker delta of rank ' + str(rank))
+                    array = ixp.declare_indexedexp(rank=rank, dimension=dimension)
+                    for i in range(dimension): array[i][i] = 1
+                else:
+                    array = ixp.declare_indexedexp(rank, symbol, symmetry, dimension)
+                if invertible:
+                    if rank != 2:
+                        raise TensorError('cannot invert tensor of rank ' + str(rank))
+                    inverse_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
+                    if dimension == 2:
+                        inverse, determinant = ixp.symm_matrix_inverter2x2(array)
+                    elif dimension == 3:
+                        inverse, determinant = ixp.symm_matrix_inverter3x3(array)
+                    elif dimension == 4:
+                        inverse, determinant = ixp.symm_matrix_inverter4x4(array)
+                    self.namespace[inverse_symbol] = inverse
+                    self.namespace[symbol[:-2] + 'det'] = determinant \
+                        if symbol[-2:] == 'DD' else (determinant)**(-1)
+            else: array = Function('Constant')(Symbol(symbol, real=True))
+            if symbol in Parser.namespace:
+                # pylint: disable=unused-argument
+                def formatwarning(message, category, filename=None, lineno=None, file=None, line=None):
+                    return '%s: %s\n' % (category.__name__, message)
+                warnings.formatwarning = formatwarning
+                # throw warning whenever duplicate namespace variable
+                warnings.warn(symbol, OverrideWarning)
+            self.namespace[symbol] = array
 
-    def _instantiate_derivative(self, tensor, order, indices, covariant=None):
+    def _instantiate_derivative(self, symbol, order, indices, covariant=None):
         prefix, suffix = '_cd' if covariant else '_d', ''.join(covariant) if covariant else order * 'D'
-        symbol = tensor.symbol + ('' if prefix in tensor.symbol else prefix) + suffix
-        function, rank = Function('Tensor')(Symbol(symbol), *indices), tensor.rank
+        symbol, rank = str(symbol) + ('' if prefix in str(symbol) else prefix) + suffix, len(indices) - order
+        function = Function('Tensor')(symbol, *indices)
         if not covariant:
-            if order == 2:
-                if symmetry and symmetry != 'nosym':
-                    symmetry = tensor.symmetry + '_sym%d%d' % (rank, rank + order - 1)
-                else: symmetry = 'sym%d%d' % (rank, rank + order - 1)
-            self._instantiate_tensor(Tensor(function, self.dimension), 'nosym')
+            symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+            self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
         return function
 
     def _instantiate_christoffel(self, function):
@@ -974,9 +990,6 @@ def parse(sentence, evaluate=True):
             symbol = key.split('[')[0]
             namespace.update({symbol: global_env[symbol]})
     else: namespace.update(unevaled)
-    # remove every symbol from updated namespace (only useful for evaluation)
-    for symbol in [key for key in namespace if isinstance(namespace[key], Symbol)]:
-        namespace.pop(symbol)
     # update (static) class namespace for global persistance
     Parser.namespace.update(namespace)
     # inject updated namespace into the previous stack frame

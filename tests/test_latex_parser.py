@@ -29,6 +29,30 @@ class TestParser(unittest.TestCase):
             'x + y - tanh(x*y)'
         )
 
+    def test_assignment_1(self):
+        self.assertEqual(
+            parse(r"""
+                % vU [4]: nosym, wU [4]: nosym;
+                T^{ij}_k = (v^i w^j)_{,k}
+            """, evaluate=False),
+            ['vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD']
+        )
+        self.assertEqual(str(TUUD),
+            '[[[vU[i]*wU_dD[j][k] + wU[j]*vU_dD[i][k] for i in range(4)] for j in range(4)] for k in range(4)]'
+        )
+
+    def test_assignment_2(self):
+        self.assertEqual(
+            parse(r"""
+                % v [4]: const;
+                T_k = (v w)_{,k}
+            """, evaluate=False),
+            ['v', 'w', 'w_dD', 'TD']
+        )
+        self.assertEqual(str(TD),
+            '[v*w_dD[k] for k in range(4)]'
+        )
+
     def test_example_1(self):
         self.assertEqual(
             parse(r"""
@@ -95,7 +119,7 @@ class TestParser(unittest.TestCase):
                     g^{3 3} &= r^{{2}} \sin^2(\theta)
                 \end{align*}
             """),
-            ['gDD', 'gdet', 'gUU', 'deltaUU']
+            ['gDD', 'gdet', 'gUU', 'deltaUU', 'r_s', 'r', 'theta']
         )
         self.assertEqual(str(deltaUU),
             '[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]'
@@ -110,7 +134,7 @@ class TestParser(unittest.TestCase):
                 % FUU [4]: anti01;
                 J^\mu = (4\pi k)^{-1} \nabla_\nu F^{\mu\nu}
             """, evaluate=False),
-            ['FUU', 'FUU_dD', 'gDD', 'gdet', 'gUU', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU']
+            ['FUU', 'k', 'FUU_dD', 'gDD', 'gdet', 'gUU', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU']
         )
         self.assertEqual(GammaUDD,
             '[[[sum([gUU[nu][c]*gDD_dD[a][c][b]/2 for c in range(4)]) - sum([gUU[nu][c]*gDD_dD[b][a][c]/2 for c in range(4)]) + sum([gUU[nu][c]*gDD_dD[c][b][a]/2 for c in range(4)]) for a in range(4)] for b in range(4)] for nu in range(4)]'
@@ -126,6 +150,8 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(TestParser('test_expression_1'))
     suite.addTest(TestParser('test_expression_2'))
+    suite.addTest(TestParser('test_assignment_1'))
+    suite.addTest(TestParser('test_assignment_2'))
     suite.addTest(TestParser('test_example_1'))
     suite.addTest(TestParser('test_example_2'))
     suite.addTest(TestParser('test_example_3'))
