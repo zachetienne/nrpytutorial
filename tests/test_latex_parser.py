@@ -128,7 +128,7 @@ class TestParser(unittest.TestCase):
             '[[-1 + r_s/r, 0, 0, 0], [0, 1/(1 - r_s/r), 0, 0], [0, 0, r**2, 0], [0, 0, 0, r**2*sin(theta)**2]]'
         )
 
-    def test_example_6(self):
+    def test_example_6_1(self):
         self.assertEqual(
             parse(r"""
                 % FUU [4]: anti01;
@@ -146,6 +146,24 @@ class TestParser(unittest.TestCase):
             '[sum([FUU_cdD[mu][nu][nu]/(4*pi*k) for nu in range(4)]) for mu in range(4)]'
         )
 
+    def test_example_6_2(self):
+        self.assertEqual(
+            parse(r"""
+                % FUU [4]: anti01;
+                J^\mu = (4\pi k)^{-1} \hat{\nabla}_\nu F^{\mu\nu}
+            """, evaluate=False),
+            ['FUU', 'k', 'FUU_dD', 'ghatDD', 'ghatdet', 'ghatUU', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU']
+        )
+        self.assertEqual(GammahatUDD,
+            '[[[sum([ghatUU[nu][c]*ghatDD_dD[a][c][b]/2 for c in range(4)]) - sum([ghatUU[nu][c]*ghatDD_dD[b][a][c]/2 for c in range(4)]) + sum([ghatUU[nu][c]*ghatDD_dD[c][b][a]/2 for c in range(4)]) for a in range(4)] for b in range(4)] for nu in range(4)]'
+        )
+        self.assertEqual(FUU_cdhatD,
+            '[[[sum([FUU[b][nu]*GammahatUDD[mu][b][a] for b in range(4)]) + sum([FUU[mu][b]*GammahatUDD[nu][b][a] for b in range(4)]) + FUU_dD[mu][nu][a] for a in range(4)] for mu in range(4)] for nu in range(4)]'
+        )
+        self.assertEqual(JU,
+            '[sum([FUU_cdhatD[mu][nu][nu]/(4*pi*k) for nu in range(4)]) for mu in range(4)]'
+        )
+
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(TestParser('test_expression_1'))
@@ -157,6 +175,7 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_example_3'))
     suite.addTest(TestParser('test_example_4'))
     suite.addTest(TestParser('test_example_5'))
-    suite.addTest(TestParser('test_example_6'))
+    suite.addTest(TestParser('test_example_6_1'))
+    suite.addTest(TestParser('test_example_6_2'))
     result = unittest.TextTestRunner().run(suite)
     sys.exit(not result.wasSuccessful())
