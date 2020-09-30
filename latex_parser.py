@@ -152,8 +152,8 @@ class Parser:
         <NLOG>          -> <NLOG_CMD> [ '_' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> { <PARDRV_OP> '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <COVDRV>        -> { <COVDRV_OP> ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-                        # TODO: ADD DIACRITIC SUPPORT ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' )
+        <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+                        # TODO: FIX HIGHER ORDER COVARIANT DERIVATIVE
         <CONFIG>        -> '%' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> { ',' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> }*
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
@@ -228,7 +228,13 @@ class Parser:
 
     # <ASSIGNMENT> -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
     def _assignment(self):
-        variable = self._covdrv('LHS') if self.peek('COVDRV_OP') else self._tensor()
+        covdrv = self.peek('COVDRV_OP')
+        self.lexer.mark()
+        if self.accept('DIACRITIC'):
+            self.expect('LEFT_BRACE')
+            covdrv = self.peek('COVDRV_OP')
+            self.lexer.reset()
+        variable = self._covdrv('LHS') if covdrv else self._tensor()
         indexed  = variable.func == Function('Tensor') and len(variable.args) > 1
         variable = Tensor.array_format(variable) if indexed else str(variable.args[0])
         self.expect('EQUAL')
@@ -317,6 +323,13 @@ class Parser:
 
     # <ATOM> -> <NUMBER> | <TENSOR> | <COMMAND> | <OPERATOR>
     def _atom(self):
+        self.lexer.mark()
+        if self.accept('DIACRITIC'):
+            self.expect('LEFT_BRACE')
+            if self.peek('COVDRV_OP'):
+                self.lexer.reset()
+                return self._operator()
+            self.lexer.reset()
         if any(self.peek(token) for token in
                 ('RATIONAL', 'DECIMAL', 'INTEGER', 'PI')):
             return self._number()
@@ -382,7 +395,7 @@ class Parser:
         operator = self.lexer.lexeme
         if self.peek('PARDRV_OP'):
             return self._pardrv()
-        if self.peek('COVDRV_OP'):
+        if self.peek('COVDRV_OP') or self.peek('DIACRITIC'):
             return self._covdrv('RHS')
         sentence, position = self.lexer.sentence, self.lexer.mark()
         raise ParseError('unsupported operator \'%s\' at position %d' %
@@ -509,31 +522,50 @@ class Parser:
                     symbol, order = subexpr.args[0].args[0].args[0], len(indexing)
                     _indexing = list(subexpr.args[0].args[0].args[1:]) + indexing
                     # instantiate partial derivative and update namespace
-                    subtree.expr = self._instantiate_derivative(symbol, order, _indexing)
+                    symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
+                    function, rank = Function('Tensor')(symbol, *_indexing), len(_indexing) - order
+                    symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+                    self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+                    subtree.expr = function
                     del subtree.children[:]
                 elif subexpr.func == Function('_Tensor'):
                     # remove temporary symbol '_x' from tensor function
                     subtree.expr = subexpr.args[0]
                     del subtree.children[:]
             return tree.reconstruct()
-        # instantiate partial derivative and update namespace
         function = self._tensor()
         symbol, order = function.args[0], len(indexing)
-        _indexing = list(function.args[1:]) + indexing
-        return self._instantiate_derivative(symbol, order, _indexing)
+        indexing = list(function.args[1:]) + indexing
+        # instantiate partial derivative and update namespace
+        symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
+        function, rank = Function('Tensor')(symbol, *indexing), len(indexing) - order
+        symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+        self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+        return function
 
-    # <COVDRV> -> { <COVDRV_OP> ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+    # <COVDRV> -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _covdrv(self, location):
-        indexing, config, equation = [], [], ['', ' = ', '', '']
-        while self.accept('COVDRV_OP'):
-            equation[0] += '\\nabla'
-            equation[3] += '\\nabla'
+        config, indexing, diacritic = [], [], ''
+        equation = ['', ' = ', '', '']
+        while self.peek('COVDRV_OP') or self.peek('DIACRITIC'):
+            lexeme = self.lexer.lexeme[1:]
+            operator = '\\nabla'
+            if self.accept('DIACRITIC'):
+                diacritic = lexeme
+                operator = '\\%s{\\nabla}' % diacritic
+                self.expect('LEFT_BRACE')
+                self.expect('COVDRV_OP')
+                self.expect('RIGHT_BRACE')
+            else: self.expect('COVDRV_OP')
+            equation[0] += operator
+            equation[3] += operator
             if self.accept('CARET'):
                 index = self.lexer.lexeme
                 equation[0] += '^' + index
                 bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x != index)
-                equation[2] += 'g^{%s %s} ' % (index, bound_index)
-                config.append(equation[2] + '[%d]: metric' % self.dimension)
+                metric = '\\%s{g}' % diacritic if diacritic else 'g'
+                equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
+                config.append('%sUU [%d]: metric' % (metric, self.dimension))
                 equation[3] += '_' + bound_index
                 index = self._strip(index)
                 self.expect('LETTER')
@@ -553,9 +585,6 @@ class Parser:
         marker_1 = self.lexer.mark()
         function = self._tensor()
         marker_2 = self.lexer.index
-        symbol, order = function.args[0], len(indexing)
-        _indexing = list(function.args[1:]) + [index[0] for index in indexing]
-        covariant = [index[1] for index in indexing]
         equation[0] += ' ' + self.lexer.sentence[marker_1:marker_2]
         equation[3] += ' ' + self.lexer.sentence[marker_1:marker_2]
         if location == 'RHS':
@@ -567,10 +596,14 @@ class Parser:
                 self.lexer.lex()
             else:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                self.parse(self._generate_covdrv(Tensor(function, self.dimension), [index[0] for index in indexing]))
+                self.parse(self._generate_covdrv(Tensor(function, self.dimension),
+                    [index[0] for index in indexing], diacritic))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
-        return self._instantiate_derivative(symbol, order, _indexing, covariant)
+        symbol, suffix = str(function.args[0]), ''.join([index[1] for index in indexing])
+        symbol = symbol + ('' if '_cd' in symbol else '_cd' + diacritic) + suffix
+        indexing = list(function.args[1:]) + [index[0] for index in indexing]
+        return Function('Tensor')(symbol, *indexing)
 
     # <CONFIG> -> '%' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> { ',' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> }*
     def _config(self):
@@ -611,7 +644,11 @@ class Parser:
             indexing.extend(index)
             symbol.extend((len(index) - order) * ['D'])
             if order > 0:
-                return self._instantiate_derivative(''.join(symbol), order, indexing)
+                symbol = ''.join(symbol) + ('' if '_d' in ''.join(symbol) else '_d') + order * 'D'
+                function, rank = Function('Tensor')(symbol, *indexing), len(indexing) - order
+                symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+                self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+                return function
         self.lexer.mark()
         if self.accept('CARET'):
             if self.accept('LEFT_BRACE'):
@@ -635,7 +672,11 @@ class Parser:
                 indexing.extend(index)
                 symbol.extend((len(index) - order) * ['D'])
                 if order > 0:
-                    return self._instantiate_derivative(''.join(symbol), order, indexing)
+                    symbol = ''.join(symbol) + ('' if '_d' in ''.join(symbol) else '_d') + order * 'D'
+                    function, rank = Function('Tensor')(symbol, *indexing), len(indexing) - order
+                    symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+                    self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+                    return function
         symbol = ''.join(symbol)
         function = Function('Tensor')(symbol, *indexing)
         if symbol in self.namespace:
@@ -769,15 +810,6 @@ class Parser:
                 warnings.warn(symbol, OverrideWarning)
             self.namespace[symbol] = array
 
-    def _instantiate_derivative(self, symbol, order, indexing, covariant=None):
-        prefix, suffix = '_cd' if covariant else '_d', ''.join(covariant) if covariant else order * 'D'
-        symbol, rank = str(symbol) + ('' if prefix in str(symbol) else prefix) + suffix, len(indexing) - order
-        function = Function('Tensor')(symbol, *indexing)
-        if not covariant:
-            symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
-            self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
-        return function
-
     @staticmethod
     def _generate_christoffel(function, dimension):
         symbol, indexing = '\\' + str(function.args[0])[:-3], function.args[1:]
@@ -793,7 +825,7 @@ class Parser:
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index, dim = dimension))
 
     @staticmethod
-    def _generate_covdrv(tensor, indexing):
+    def _generate_covdrv(tensor, indexing, diacritic=''):
         order, LHS, RHS = len(indexing), str(tensor), ''
         while order > 0:
             indexing = [str(index[0]) for index in tensor.indexing] + \
@@ -805,7 +837,9 @@ class Parser:
             diff_index = indexing[len(indexing) - order]
             if len(str(diff_index)) > 1:
                 diff_index = '\\' + str(diff_index)
-            LHS = '\\nabla_%s %s' % (diff_index, LHS)
+            if diacritic:
+                LHS = '\\%s{\\nabla}_%s %s' % (diacritic, diff_index, LHS)
+            else: LHS = '\\nabla_%s %s' % (diff_index, LHS)
             RHS += '\\partial_%s %s' % (diff_index, str(tensor))
             for index, position in tensor.indexing:
                 alphabet = (chr(97 + n) for n in range(26))
@@ -815,9 +849,13 @@ class Parser:
                 if len(str(index)) > 1:
                     index = '\\' + str(index)
                 if position == 'U':
-                    RHS += ' + \\Gamma^%s_{%s %s} %s' % (index, bound_index, diff_index, tensor_latex)
+                    if diacritic:
+                        RHS += ' + \\%s{\\Gamma}^%s_{%s %s} %s' % (diacritic, index, bound_index, diff_index, tensor_latex)
+                    else: RHS += ' + \\Gamma^%s_{%s %s} %s' % (index, bound_index, diff_index, tensor_latex)
                 else:
-                    RHS += ' - \\Gamma^%s_{%s %s} %s' % (bound_index, index, diff_index, tensor_latex)
+                    if diacritic:
+                        RHS += ' - \\%s{\\Gamma}^%s_{%s %s} %s' % (diacritic, index, bound_index, diff_index, tensor_latex)
+                    else: RHS += ' - \\Gamma^%s_{%s %s} %s' % (index, bound_index, diff_index, tensor_latex)
             order -= 1
         return LHS + ' = ' + RHS
 
