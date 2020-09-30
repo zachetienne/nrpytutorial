@@ -38,6 +38,7 @@
 import NRPy_param_funcs as par
 import indexedexp as ixp
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
+import grid as gri               # NRPy+: Functions having to do with numerical grids
 import reference_metric as rfm
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
@@ -45,7 +46,7 @@ rfm.reference_metric()
 # Step 1a: Set commonly used parameters.
 thismodule = __name__
 
-def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,M,KerrSchild_radial_shift):
+def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,M,KerrSchild_radial_shift,stagger = False):
 
     # <a id='step2'></a>
     #
@@ -164,3 +165,7 @@ def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,M,KerrSchild_radial_shift):
         for j in range(3):
             for k in range(3):
                 ValenciavU[i] += LeviCivitaTensorUUU[i][j][k]*ED[j]*BD[k]/B2
+
+    if stagger:
+        for i in range(3):
+            AD[i] = AD[i].subs(rfm.xx[(i+1)%3],rfm.xx[(i+1)%3] + sp.Rational(1,2)*gri.dxx[(i+1)%3]).subs(rfm.xx[(i+2)%3],rfm.xx[(i+2)%3] + sp.Rational(1,2)*gri.dxx[(i+2)%3])
