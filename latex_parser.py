@@ -23,8 +23,7 @@ class Lexer:
         The following class will tokenize a LaTeX sentence for parsing.
     """
 
-    def __init__(self, namespace=None):
-        if namespace is None: namespace = {}
+    def __init__(self):
         greek_pattern = '|'.join(letter for letter in (r'\\[aA]lpha', r'\\[bB]eta', r'\\[gG]amma', r'\\[dD]elta',
             r'\\[eE]psilon', r'\\[zZ]eta', r'\\[eE]ta', r'\\[tT]heta', r'\\[iI]ota', r'\\[kK]appa', r'\\[lL]ambda',
             r'\\[mM]u', r'\\[nN]u', r'\\[xX]i', r'\\[oO]mikron', r'\\[pP]i', r'\\[Rr]ho', r'\\[sS]igma', r'\\[tT]au',
