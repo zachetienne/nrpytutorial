@@ -6,10 +6,10 @@
 from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff
+from functional import chain, uniquify
 from inspect import currentframe
 from collections import OrderedDict
 from expr_tree import ExprTree
-from functional import uniquify
 import indexedexp as ixp
 import re, warnings
 
@@ -152,7 +152,6 @@ class Parser:
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> { <PARDRV_OP> '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-                        # TODO: FIX HIGHER ORDER COVARIANT DERIVATIVE
         <CONFIG>        -> '%' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> { ',' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> }*
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
@@ -560,19 +559,19 @@ class Parser:
             equation[3] += operator
             if self.accept('CARET'):
                 index = self.lexer.lexeme
-                equation[0] += '^' + index
+                equation[0] += '^' + index + ' '
                 bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x != index)
                 metric = '\\%s{g}' % diacritic if diacritic else 'g'
                 equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
                 config.append('%sUU [%d]: metric' % (metric, self.dimension))
-                equation[3] += '_' + bound_index
+                equation[3] += '_' + bound_index + ' '
                 index = self._strip(index)
                 self.expect('LETTER')
                 indexing.append((Symbol(index), 'U'))
             elif self.accept('UNDERSCORE'):
                 index = self.lexer.lexeme
-                equation[0] += '_' + index
-                equation[3] += '_' + index
+                equation[0] += '_' + index + ' '
+                equation[3] += '_' + index + ' '
                 index = self._strip(index)
                 self.expect('LETTER')
                 indexing.append((Symbol(index), 'D'))
@@ -584,8 +583,8 @@ class Parser:
         marker_1 = self.lexer.mark()
         function = self._tensor()
         marker_2 = self.lexer.index
-        equation[0] += ' ' + self.lexer.sentence[marker_1:marker_2]
-        equation[3] += ' ' + self.lexer.sentence[marker_1:marker_2]
+        equation[0] += self.lexer.sentence[marker_1:marker_2]
+        equation[3] += self.lexer.sentence[marker_1:marker_2]
         if location == 'RHS':
             if equation[2]:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
@@ -595,8 +594,7 @@ class Parser:
                 self.lexer.lex()
             else:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                self.parse(self._generate_covdrv(Tensor(function, self.dimension),
-                    [index[0] for index in indexing], diacritic))
+                self.parse(self._generate_covdrv(Tensor(function, self.dimension), indexing, diacritic))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
         symbol, suffix = str(function.args[0]), ''.join([index[1] for index in indexing])
@@ -824,39 +822,38 @@ class Parser:
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index, dim = dimension))
 
     @staticmethod
-    def _generate_covdrv(tensor, indexing, diacritic=''):
-        order, LHS, RHS = len(indexing), str(tensor), ''
-        while order > 0:
-            indexing = [str(index[0]) for index in tensor.indexing] + \
-                [str(index) for index in indexing]
-            for i, index in enumerate(indexing):
-                if index in indexing[:i]:
-                    alphabet = (chr(97 + n) for n in range(26))
-                    indexing[i] = next(x for x in alphabet if x not in indexing)
-            diff_index = indexing[len(indexing) - order]
-            if len(str(diff_index)) > 1:
-                diff_index = '\\' + str(diff_index)
-            if diacritic:
-                LHS = '\\%s{\\nabla}_%s %s' % (diacritic, diff_index, LHS)
-            else: LHS = '\\nabla_%s %s' % (diff_index, LHS)
-            RHS += '\\partial_%s %s' % (diff_index, str(tensor))
-            for index, position in tensor.indexing:
+    def _generate_covdrv(tensor, diff_indexing, diacritic=''):
+        indexing = [str(index[0]) for index in chain(tensor.indexing, diff_indexing)]
+        alphabet, order, LHS = (chr(97 + n) for n in range(26)), len(diff_indexing), ''
+        for i, index in enumerate(indexing):
+            if index in indexing[:i]:
+                indexing[i] = next(x for x in alphabet if x not in indexing)
+        for diff_index in indexing[-order:]:
+            if len(diff_index) > 1:
+                diff_index = '\\' + diff_index
+            LHS += ('\\%s{\\nabla}' % diacritic if diacritic else '\\nabla') + ('_%s ' % diff_index)
+        LHS += str(tensor)
+        def generate_RHS(symbol, order, indexing):
+            if order == 0:
+                return Tensor.latex_format(symbol,
+                    [(index, position) for index, (_, position) in zip(indexing, tensor.indexing)])
+            diff_index, RHS = indexing[len(indexing) - order], ''
+            if len(diff_index) > 1:
+                diff_index = '\\' + diff_index
+            latex = generate_RHS(symbol, order - 1, indexing)
+            RHS += '\\partial_%s (%s)' % (diff_index, latex)
+            for index, (_, position) in zip(indexing, tensor.indexing):
                 alphabet = (chr(97 + n) for n in range(26))
-                bound_index  = next(x for x in alphabet if x not in indexing)
-                tensor_latex = Tensor.latex_format(tensor.symbol,
-                    [(bound_index, _index[1]) if _index[0] == index else _index for _index in tensor.indexing])
+                bound_index = next(x for x in alphabet if x not in indexing)
+                latex = generate_RHS(symbol, order - 1,
+                    [bound_index if i == str(index) else i for i in indexing])
                 if len(str(index)) > 1:
                     index = '\\' + str(index)
-                if position == 'U':
-                    if diacritic:
-                        RHS += ' + \\%s{\\Gamma}^%s_{%s %s} %s' % (diacritic, index, bound_index, diff_index, tensor_latex)
-                    else: RHS += ' + \\Gamma^%s_{%s %s} %s' % (index, bound_index, diff_index, tensor_latex)
-                else:
-                    if diacritic:
-                        RHS += ' - \\%s{\\Gamma}^%s_{%s %s} %s' % (diacritic, index, bound_index, diff_index, tensor_latex)
-                    else: RHS += ' - \\Gamma^%s_{%s %s} %s' % (index, bound_index, diff_index, tensor_latex)
-            order -= 1
-        return LHS + ' = ' + RHS
+                RHS += ' + ' if position == 'U' else ' - '
+                RHS += '\\%s{\\Gamma}' % diacritic if diacritic else '\\Gamma'
+                RHS += '^%s_{%s %s} (%s)' % (index, bound_index, diff_index, latex)
+            return RHS
+        return LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
 
     @staticmethod
     def _strip(symbol):
