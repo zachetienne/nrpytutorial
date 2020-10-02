@@ -2,9 +2,11 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# pylint: disable=import-error
+# pylint: disable=import-error,protected-access
 # import sys; sys.path.append('..')
-from latex_parser import OverrideWarning, parse_expr, parse
+from latex_parser import Tensor, OverrideWarning
+from latex_parser import Parser, parse_expr, parse
+from sympy import Function, Symbol
 from warnings import filterwarnings
 import unittest, sys
 
@@ -27,6 +29,45 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             str(parse_expr(expr)),
             'x + y - tanh(x*y)'
+        )
+
+    def test_expression_3(self):
+        tensor = Tensor(Function('Tensor')(Symbol('TUU'), Symbol('mu'), Symbol('nu')), 4)
+        self.assertEqual(
+            Parser._generate_covdrv(tensor, [('beta', 'D')]),
+            r'\nabla_\beta T^{\mu \nu} = \partial_\beta (T^{\mu \nu}) + \Gamma^\mu_{a \beta} (T^{a \nu}) + \Gamma^\nu_{a \beta} (T^{\mu a})'
+        )
+        tensor = Tensor(Function('Tensor')(Symbol('TUD'), Symbol('mu'), Symbol('nu')), 4)
+        self.assertEqual(
+            Parser._generate_covdrv(tensor, [('beta', 'D')]),
+            r'\nabla_\beta T^\mu_\nu = \partial_\beta (T^\mu_\nu) + \Gamma^\mu_{a \beta} (T^a_\nu) - \Gamma^a_{\nu \beta} (T^\mu_a)'
+        )
+        tensor = Tensor(Function('Tensor')(Symbol('TDD'), Symbol('mu'), Symbol('nu')), 4)
+        self.assertEqual(
+            Parser._generate_covdrv(tensor, [('beta', 'D')]),
+            r'\nabla_\beta T_{\mu \nu} = \partial_\beta (T_{\mu \nu}) - \Gamma^a_{\mu \beta} (T_{a \nu}) - \Gamma^a_{\nu \beta} (T_{\mu a})'
+        )
+
+    def test_expression_4(self):
+        tensor = Tensor(Function('Tensor')(Symbol('vU'), Symbol('mu')), 4)
+        self.assertEqual(
+            Parser._generate_covdrv(tensor, [('a', 'U'), ('b', 'D')]),
+            r'\nabla_a \nabla_b v^\mu = \partial_a (\partial_b (v^\mu) + \Gamma^\mu_{c b} (v^c)) + \Gamma^\mu_{c a} (\partial_b (v^c) + \Gamma^c_{d b} (v^d))'
+        )
+
+    def test_expression_5(self):
+        self.assertEqual(
+            parse(r"""
+                % vU [4]: nosym;
+                T^{\mu\nu} = \nabla^\nu v^\mu
+            """, evaluate=False),
+            ['vU', 'gDD', 'gdet', 'gUU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU']
+        )
+        self.assertEqual(str(vU_cdU),
+            '[[sum([gUU[nu][a]*vU_cdD[mu][a] for a in range(4)]) for mu in range(4)] for nu in range(4)]'
+        )
+        self.assertEqual(str(vU_cdD),
+            '[[sum([vU[b]*GammaUDD[mu][b][a] for b in range(4)]) + vU_dD[mu][a] for a in range(4)] for mu in range(4)]'
         )
 
     def test_assignment_1(self):
@@ -168,6 +209,9 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(TestParser('test_expression_1'))
     suite.addTest(TestParser('test_expression_2'))
+    suite.addTest(TestParser('test_expression_3'))
+    suite.addTest(TestParser('test_expression_4'))
+    suite.addTest(TestParser('test_expression_5'))
     suite.addTest(TestParser('test_assignment_1'))
     suite.addTest(TestParser('test_assignment_2'))
     suite.addTest(TestParser('test_example_1'))
