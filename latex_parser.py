@@ -45,7 +45,6 @@ class Lexer:
               ('EQUAL',          r'\='),
               ('CARET',          r'\^'),
               ('UNDERSCORE',     r'\_'),
-              ('COLON',          r'\:'),
               ('COMMA',          r'\,'),
               ('COMMENT',        r'\%'),
               ('LEFT_PAREN',     r'\('),
@@ -67,6 +66,10 @@ class Lexer:
               ('NLOG_CMD',       r'\\ln|\\log'),
               ('PARDRV_OP',      r'\\partial'),
               ('COVDRV_OP',      r'\\nabla'),
+              ('DEFN_MACRO',     r'def'),
+              ('EVAL_MACRO',     r'eval'),
+              ('PARSE_MACRO',    r'parse'),
+              ('REDEF_MACRO',    r'redef'),
               ('DIACRITIC',      r'\\hat|\\tilde|\\bar'),
               ('SYMMETRY',       r'const|metric|permutation|kronecker|' + symmetry),
               ('MATHOP',         r'\\mathop'),
@@ -135,6 +138,7 @@ class Parser:
         LaTeX Extended BNF Grammar:
         <ROOT>          -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
         <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
+        <CONFIG>        -> '%' ( <DEFINE> | <EVAL> | <PARSE> | <REDEF> )
         <ENVIRONMENT>   -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
         <ASSIGNMENT>    -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
@@ -152,7 +156,10 @@ class Parser:
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> { <PARDRV_OP> '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <CONFIG>        -> '%' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> { ',' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> }*
+        <DEFINE>        -> <DEFN_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
+        <EVAL>          -> <EVAL_MACRO> { <SYMBOL> }+
+        <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT>
+        <REDEF>         -> <REDEF_MACRO> { <SYMBOL> }+
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
         <LOWER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }* [ ',' { <LETTER> }+ ] '}'
@@ -215,6 +222,23 @@ class Parser:
         elif self.peek('BEGIN_ALIGN'):
             self._environment()
         else: self._assignment()
+
+    # <CONFIG> -> '%' ( <DEFINE> | <EVAL> | <PARSE> | <REDEF> )
+    def _config(self):
+        self.expect('COMMENT')
+        macro = self.lexer.lexeme
+        if self.peek('DEFN_MACRO'):
+            self._define()
+        elif self.peek('EVAL_MACRO'):
+            self._eval()
+        elif self.peek('PARSE_MACRO'):
+            self._parse()
+        elif self.peek('REDEF_MACRO'):
+            self._redef()
+        else:
+            sentence, position = self.lexer.sentence, self.lexer.mark()
+            raise ParseError('unsupported macro \'%s\' at position %d' %
+                (macro, position), sentence, position)
 
     # <ENVIRONMENT> -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
     def _environment(self):
@@ -563,7 +587,7 @@ class Parser:
                 bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x != index)
                 metric = '\\%s{g}' % diacritic if diacritic else 'g'
                 equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
-                config.append('%sUU [%d]: metric' % (metric, self.dimension))
+                config.append('metric %sUU (%d)' % (metric, self.dimension))
                 equation[3] += '_' + bound_index + ' '
                 index = self._strip(index)
                 self.expect('LETTER')
@@ -588,7 +612,7 @@ class Parser:
         if location == 'RHS':
             if equation[2]:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                if config: config = '% ' + ';\n'.join(config) + ';\n'
+                if config: config = '% def ' + ';\n'.join(config) + ';\n'
                 self.parse(config + ''.join(equation))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
@@ -602,10 +626,14 @@ class Parser:
         indexing = list(function.args[1:]) + [index[0] for index in indexing]
         return Function('Tensor')(symbol, *indexing)
 
-    # <CONFIG> -> '%' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> { ',' { <SYMBOL> }+ [ '[' <INTEGER> ']' ] ':' <SYMMETRY> }*
-    def _config(self):
-        self.expect('COMMENT')
+    # <DEFINE> -> <DEFN_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
+    def _define(self):
+        self.expect('DEFN_MACRO')
         while True:
+            symmetry = self.lexer.lexeme
+            if self.peek('SYMMETRY'):
+                self.lexer.lex()
+            else: symmetry = None
             symbol = []
             if self.peek('EULER'):
                 self.lexer.token = 'LETTER'
@@ -614,23 +642,35 @@ class Parser:
                 if self.peek('EULER'):
                     self.lexer.token = 'LETTER'
             symbol = ''.join(symbol)
-            if self.accept('LEFT_BRACKET'):
+            if self.accept('LEFT_PAREN'):
                 dimension = self.lexer.lexeme
                 self.expect('INTEGER')
                 dimension = int(dimension)
                 if self.dimension and self.dimension != dimension:
                     raise TensorError('inconsistent tensor dimension')
                 self.dimension = dimension
-                self.expect('RIGHT_BRACKET')
+                self.expect('RIGHT_PAREN')
             else: dimension = None
-            self.expect('COLON')
-            symmetry = self.lexer.lexeme
-            self.expect('SYMMETRY')
             if symmetry != 'const' and not dimension:
                 raise TensorError('dimension only omittable for constant')
             self._instantiate_tensor(Tensor(symbol, dimension), symmetry, invertible=(symmetry == 'metric'),
                 permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
+
+    # <EVAL> -> <EVAL_MACRO> { <SYMBOL> }+
+    def _eval(self):
+        pass
+
+    # <PARSE> -> <PARSE_MACRO> <ASSIGNMENT>
+    def _parse(self):
+        self.expect('COMMENT')
+        self.expect('PROMPT')
+        self.expect('PARSE_MACRO')
+        self._assignment()
+
+    # <REDEF> -> <REDEF_MACRO> { <SYMBOL> }+
+    def _redef(self):
+        pass
 
     # <TENSOR> -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
     def _tensor(self):
@@ -750,7 +790,7 @@ class Parser:
                 symbol.extend([self.lexer.lexeme])
                 self.lexer.lex()
             self.expect('RIGHT_BRACE')
-            return ''.join(symbol)
+            return ''.join(symbol).replace('\\', '')
         sentence, position = self.lexer.sentence, self.lexer.mark()
         raise ParseError('unexpected \'%s\' at position %d' %
             (sentence[position], position), sentence, position)
@@ -782,8 +822,7 @@ class Parser:
                         raise TensorError('cannot instantiate kronecker delta of rank ' + str(rank))
                     array = ixp.declare_indexedexp(rank=rank, dimension=dimension)
                     for i in range(dimension): array[i][i] = 1
-                else:
-                    array = ixp.declare_indexedexp(rank, symbol, symmetry, dimension)
+                else: array = ixp.declare_indexedexp(rank, symbol, symmetry, dimension)
                 if invertible:
                     if rank != 2:
                         raise TensorError('cannot invert tensor of rank ' + str(rank))
@@ -818,7 +857,7 @@ class Parser:
         if diacritic: symbol = '\\%s{%s}' % (diacritic, symbol[:-len(diacritic)])
         indexing = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indexing]
         bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x not in indexing)
-        return (('% {metric}UU [{dim}]: metric;\n{symbol}^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} {metric}^{{{i1} {bound_index}}}({metric}_{{{i3} {bound_index},{i2}}} + {metric}_{{{bound_index} {i2},{i3}}} - {metric}_{{{i2} {i3},{bound_index}}})')
+        return (('% def metric {metric}UU ({dim});\n{symbol}^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} {metric}^{{{i1} {bound_index}}}({metric}_{{{i3} {bound_index},{i2}}} + {metric}_{{{bound_index} {i2},{i3}}} - {metric}_{{{i2} {i3},{bound_index}}})')
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index, dim = dimension))
 
     @staticmethod
@@ -857,6 +896,10 @@ class Parser:
                     RHS += '^%s_{%s %s} (%s)' % (bound_index, index, diff_index, latex)
             return RHS
         return LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
+
+    @staticmethod
+    def ignore_override():
+        warnings.filterwarnings('ignore', category=OverrideWarning)
 
     @staticmethod
     def _strip(symbol):
