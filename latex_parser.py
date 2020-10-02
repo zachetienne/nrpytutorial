@@ -851,7 +851,10 @@ class Parser:
                     index = '\\' + str(index)
                 RHS += ' + ' if position == 'U' else ' - '
                 RHS += '\\%s{\\Gamma}' % diacritic if diacritic else '\\Gamma'
-                RHS += '^%s_{%s %s} (%s)' % (index, bound_index, diff_index, latex)
+                if position == 'U':
+                    RHS += '^%s_{%s %s} (%s)' % (index, bound_index, diff_index, latex)
+                else:
+                    RHS += '^%s_{%s %s} (%s)' % (bound_index, index, diff_index, latex)
             return RHS
         return LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
 
