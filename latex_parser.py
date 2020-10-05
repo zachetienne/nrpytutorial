@@ -66,10 +66,9 @@ class Lexer:
               ('NLOG_CMD',       r'\\ln|\\log'),
               ('PARDRV_OP',      r'\\partial'),
               ('COVDRV_OP',      r'\\nabla'),
-              ('DEFN_MACRO',     r'def'),
-              ('EVAL_MACRO',     r'eval'),
+              ('DEFINE_MACRO',   r'define'),
+              ('UPDATE_MACRO',   r'update'),
               ('PARSE_MACRO',    r'parse'),
-              ('REDEF_MACRO',    r'redef'),
               ('DIACRITIC',      r'\\hat|\\tilde|\\bar'),
               ('SYMMETRY',       r'const|metric|permutation|kronecker|' + symmetry),
               ('MATHOP',         r'\\mathop'),
@@ -138,7 +137,7 @@ class Parser:
         LaTeX Extended BNF Grammar:
         <ROOT>          -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
         <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
-        <CONFIG>        -> '%' ( <DEFINE> | <EVAL> | <PARSE> | <REDEF> )
+        <CONFIG>        -> '%' ( <DEFINE> | <UPDATE> | <PARSE> )
         <ENVIRONMENT>   -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
         <ASSIGNMENT>    -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
@@ -156,10 +155,9 @@ class Parser:
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> { <PARDRV_OP> '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <DEFINE>        -> <DEFN_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
-        <EVAL>          -> <EVAL_MACRO> { <SYMBOL> }+
+        <DEFINE>        -> <DEFINE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
+        <UPDATE>        -> <UPDATE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT>
-        <REDEF>         -> <REDEF_MACRO> { <SYMBOL> }+
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
         <LOWER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }* [ ',' { <LETTER> }+ ] '}'
@@ -172,7 +170,6 @@ class Parser:
     def __init__(self):
         self.lexer     = Lexer()
         self.namespace = OrderedDict()
-        self.unevaled  = OrderedDict()
         self.dimension = None
 
     def parse(self, sentence, expression=False):
@@ -211,9 +208,9 @@ class Parser:
     # <ROOT> -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
     def _root(self):
         self._structure()
-        while self.accept('LINE_BREAK'):
+        while self.accept('LINE_BREAK') or self.peek('COMMENT'):
             self._structure()
-        return self.namespace, self.unevaled
+        return self.namespace
 
     # <STRUCTURE> -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
     def _structure(self):
@@ -223,22 +220,20 @@ class Parser:
             self._environment()
         else: self._assignment()
 
-    # <CONFIG> -> '%' ( <DEFINE> | <EVAL> | <PARSE> | <REDEF> )
+    # <CONFIG> -> '%' ( <DEFINE> | <UPDATE> | <PARSE> )
     def _config(self):
         self.expect('COMMENT')
         macro = self.lexer.lexeme
-        if self.peek('DEFN_MACRO'):
+        if self.peek('DEFINE_MACRO'):
             self._define()
-        elif self.peek('EVAL_MACRO'):
-            self._eval()
+        elif self.peek('UPDATE_MACRO'):
+            self._update()
         elif self.peek('PARSE_MACRO'):
             self._parse()
-        elif self.peek('REDEF_MACRO'):
-            self._redef()
         else:
             sentence, position = self.lexer.sentence, self.lexer.mark()
-            raise ParseError('unsupported macro \'%s\' at position %d' %
-                (macro, position), sentence, position)
+            raise ParseError('unsupported macro at position %d' %
+                position, sentence, position)
 
     # <ENVIRONMENT> -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
     def _environment(self):
@@ -279,9 +274,13 @@ class Parser:
                         self.namespace[func] = subexpr.args[0]
                     expr = expr.replace(str(subexpr), func)
             # perform implied summation on indexed expression
-            expanded = _summation((variable, expr), self.dimension)
-            # update unevaled with expanded summation
-            self.unevaled.update(expanded)
+            summation = self._summation((variable, expr), self.dimension)
+            global_env = dict(sympy_env)
+            global_env.update(self.namespace)
+            # evaluate each implied summation and update namespace
+            exec('%s = %s' % summation, global_env)
+            symbol = variable.split('[')[0]
+            self.namespace.update({symbol: global_env[symbol]})
         else:
             # replace each tensor function with symbol whenever scalar
             for subtree in tree.preorder():
@@ -291,6 +290,8 @@ class Parser:
                         subtree.expr = subexpr.args[0]
                         del subtree.children[:]
             self.namespace.update({variable: tree.reconstruct()})
+        # update (static) class namespace for global persistance
+        Parser.namespace.update(self.namespace)
 
     # <EXPRESSION> -> <TERM> { ( '+' | '-' ) <TERM> }*
     def _expression(self):
@@ -612,7 +613,7 @@ class Parser:
         if location == 'RHS':
             if equation[2]:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                if config: config = '% def ' + ';\n'.join(config) + ';\n'
+                if config: config = '% define ' + ';\n'.join(config) + ';\n'
                 self.parse(config + ''.join(equation))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
@@ -626,9 +627,9 @@ class Parser:
         indexing = list(function.args[1:]) + [index[0] for index in indexing]
         return Function('Tensor')(symbol, *indexing)
 
-    # <DEFINE> -> <DEFN_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
+    # <DEFINE> -> <DEFINE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
     def _define(self):
-        self.expect('DEFN_MACRO')
+        self.expect('DEFINE_MACRO')
         while True:
             symmetry = self.lexer.lexeme
             if self.peek('SYMMETRY'):
@@ -657,20 +658,39 @@ class Parser:
                 permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
 
-    # <EVAL> -> <EVAL_MACRO> { <SYMBOL> }+
-    def _eval(self):
-        pass
+    # <UPDATE> -> <UPDATE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
+    def _update(self):
+        self.expect('UPDATE_MACRO')
+        symmetry = self.lexer.lexeme
+        if self.peek('SYMMETRY'):
+            self.lexer.lex()
+        symbol = []
+        if self.peek('EULER'):
+            self.lexer.token = 'LETTER'
+        while any(self.peek(token) for token in ('LETTER', 'DIACRITIC', 'MATHOP')):
+            symbol.append(self._symbol())
+            if self.peek('EULER'):
+                self.lexer.token = 'LETTER'
+        symbol = ''.join(symbol)
+        if symbol not in self.namespace:
+            raise TensorError('cannot update undefined tensor \'%s\'' % symbol)
+        array, dimension = self.namespace[symbol], self.dimension
+        if symmetry == 'metric':
+            inverse_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
+            if dimension == 2:
+                inverse, determinant = ixp.symm_matrix_inverter2x2(array)
+            elif dimension == 3:
+                inverse, determinant = ixp.symm_matrix_inverter3x3(array)
+            elif dimension == 4:
+                inverse, determinant = ixp.symm_matrix_inverter4x4(array)
+            self.namespace[inverse_symbol] = inverse
+            self.namespace[symbol[:-2] + 'det'] = determinant \
+                if symbol[-2:] == 'DD' else (determinant)**(-1)
 
     # <PARSE> -> <PARSE_MACRO> <ASSIGNMENT>
     def _parse(self):
-        self.expect('COMMENT')
-        self.expect('PROMPT')
         self.expect('PARSE_MACRO')
         self._assignment()
-
-    # <REDEF> -> <REDEF_MACRO> { <SYMBOL> }+
-    def _redef(self):
-        pass
 
     # <TENSOR> -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
     def _tensor(self):
@@ -857,7 +877,7 @@ class Parser:
         if diacritic: symbol = '\\%s{%s}' % (diacritic, symbol[:-len(diacritic)])
         indexing = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indexing]
         bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x not in indexing)
-        return (('% def metric {metric}UU ({dim});\n{symbol}^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} {metric}^{{{i1} {bound_index}}}({metric}_{{{i3} {bound_index},{i2}}} + {metric}_{{{bound_index} {i2},{i3}}} - {metric}_{{{i2} {i3},{bound_index}}})')
+        return (('% define metric {metric}UU ({dim});\n{symbol}^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} {metric}^{{{i1} {bound_index}}}({metric}_{{{i3} {bound_index},{i2}}} + {metric}_{{{bound_index} {i2},{i3}}} - {metric}_{{{i2} {i3},{bound_index}}})')
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index, dim = dimension))
 
     @staticmethod
@@ -896,6 +916,62 @@ class Parser:
                     RHS += '^%s_{%s %s} (%s)' % (bound_index, index, diff_index, latex)
             return RHS
         return LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
+
+    @staticmethod
+    def _summation(equation, dimension):
+        var, expr = equation
+        # count every index on LHS to determine the rank
+        rank = len(re.findall(r'\[[^\]]+\]', var))
+        # construct a tuple list of every LHS free index
+        LHS, RHS = zip(re.findall(r'\[([a-zA-Z]+)\]', var), re.findall(r'[UD]', var)), []
+        # iterate over every subexpression containing a product
+        for product in re.split(r'\s[\+\-]\s', expr):
+            # extract every index present in the subexpression
+            idx_list = re.findall(r'\[([a-zA-Z]+)\]', product)
+            # extract every index position (ex: U or D)
+            pos_list = re.findall(r'[UD]', product)
+            free_index, bound_index = [], []
+            # iterate over every unique index in the subexpression
+            for idx in sorted(uniquify((idx_list))):
+                count = U = D = 0; index_tuple = []
+                # count index occurrence and position occurrence
+                for idx_, pos_ in zip(idx_list, pos_list):
+                    if idx_ == idx:
+                        index_tuple.append((idx_, pos_))
+                        if pos_ == 'U': U += 1
+                        if pos_ == 'D': D += 1
+                        count += 1
+                # identify every bound index on the RHS
+                if count > 1:
+                    if count != 2 or U != D:
+                        # raise exception upon violation of the following rule:
+                        # a bound index must appear exactly once as a superscript
+                        # and exactly once as a subscript in any single term
+                        raise TensorError('illegal bound index')
+                    bound_index.append(idx)
+                # identify every free index on the RHS
+                else: free_index.extend(index_tuple)
+            RHS.append(sorted(uniquify(free_index)))
+            summation = product
+            # generate implied summation over every bound index
+            for idx in bound_index:
+                summation = 'sum([%s for %s in range(%d)])' % \
+                    (summation, idx, dimension)
+            expr = expr.replace(product, summation)
+        if LHS:
+            LHS = sorted(uniquify(LHS))
+            for i in range(len(RHS)):
+                if LHS != RHS[i]:
+                    # raise exception upon violation of the following rule:
+                    # a free index must appear in every term with the same
+                    # position and cannot be summed over in any term
+                    raise TensorError('unbalanced free index')
+            # generate tensor instantiation with implied summation
+            for idx, _ in LHS:
+                expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
+        if rank == len(re.findall(r'\[[^0-9\]]+\]', var)):
+            return (var.split('[')[0], expr)
+        return (re.sub(r'\[[^0-9\]]+\]', '[:]', var), expr)
 
     @staticmethod
     def ignore_override():
@@ -981,61 +1057,6 @@ class Tensor:
         if self.indexing is None: return self.symbol
         return self.latex_format(self.symbol, self.indexing)
 
-def _summation(equation, dimension):
-    var, expr = equation
-    # count every index on LHS to determine the rank
-    rank = len(re.findall(r'\[[^\]]+\]', var))
-    # construct a tuple list of every LHS free index
-    LHS, RHS = zip(re.findall(r'\[([a-zA-Z]+)\]', var), re.findall(r'[UD]', var)), []
-    # iterate over every subexpression containing a product
-    for product in re.split(r'\s[\+\-]\s', expr):
-        # extract every index present in the subexpression
-        idx_list = re.findall(r'\[([a-zA-Z]+)\]', product)
-        # extract every index position (ex: U or D)
-        pos_list = re.findall(r'[UD]', product)
-        free_index, bound_index = [], []
-        # iterate over every unique index in the subexpression
-        for idx in sorted(uniquify((idx_list))):
-            count = U = D = 0; index_tuple = []
-            # count index occurrence and position occurrence
-            for idx_, pos_ in zip(idx_list, pos_list):
-                if idx_ == idx:
-                    index_tuple.append((idx_, pos_))
-                    if pos_ == 'U': U += 1
-                    if pos_ == 'D': D += 1
-                    count += 1
-            # identify every bound index on the RHS
-            if count > 1:
-                if count != 2 or U != D:
-                    # raise exception upon violation of the following rule:
-                    # a bound index must appear exactly once as a superscript
-                    # and exactly once as a subscript in any single term
-                    raise TensorError('illegal bound index')
-                bound_index.append(idx)
-            # identify every free index on the RHS
-            else: free_index.extend(index_tuple)
-        RHS.append(sorted(uniquify(free_index)))
-        summation = product
-        # generate implied summation over every bound index
-        for idx in bound_index:
-            summation = 'sum([%s for %s in range(%d)])' % \
-                (summation, idx, dimension)
-        expr = expr.replace(product, summation)
-    if LHS:
-        LHS = sorted(uniquify(LHS))
-        for i in range(len(RHS)):
-            if LHS != RHS[i]:
-                # raise exception upon violation of the following rule:
-                # a free index must appear in every term with the same
-                # position and cannot be summed over in any term
-                raise TensorError('unbalanced free index')
-        # generate tensor instantiation with implied summation
-        for idx, _ in LHS:
-            expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
-    if rank == len(re.findall(r'\[[^0-9\]]+\]', var)):
-        return {var.split('[')[0]: expr}
-    return {re.sub(r'\[[^0-9\]]+\]', '[:]', var): expr}
-
 class TensorError(Exception):
     """ Invalid Tensor Indexing or Dimension """
 class OverrideWarning(UserWarning):
@@ -1049,25 +1070,13 @@ def parse_expr(sentence):
     """
     return Parser().parse(sentence, expression=True)
 
-def parse(sentence, evaluate=True):
+def parse(sentence):
     """ Convert LaTeX Sentence to SymPy Expression
 
         :arg:    latex sentence (raw string)
-        :arg:    evaluate mode [default: enabled]
         :return: namespace
     """
-    namespace, unevaled = Parser().parse(sentence)
-    if evaluate:
-        global_env = dict(sympy_env)
-        global_env.update(namespace)
-        for key in unevaled:
-            # evaluate each implied summation and update namespace
-            exec('%s = %s' % (key, unevaled[key]), global_env)
-            symbol = key.split('[')[0]
-            namespace.update({symbol: global_env[symbol]})
-    else: namespace.update(unevaled)
-    # update (static) class namespace for global persistance
-    Parser.namespace.update(namespace)
+    namespace = Parser().parse(sentence)
     # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)

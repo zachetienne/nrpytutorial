@@ -58,46 +58,40 @@ class TestParser(unittest.TestCase):
     def test_expression_5(self):
         self.assertEqual(
             parse(r"""
-                % def vU (4);
+                % define vU (4);
                 T^{\mu\nu} = \nabla^\nu v^\mu
-            """, evaluate=False),
+            """),
             ['vU', 'gDD', 'gdet', 'gUU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU']
-        )
-        self.assertEqual(str(vU_cdU),
-            '[[sum([gUU[nu][a]*vU_cdD[mu][a] for a in range(4)]) for mu in range(4)] for nu in range(4)]'
-        )
-        self.assertEqual(str(vU_cdD),
-            '[[sum([vU[b]*GammaUDD[mu][b][a] for b in range(4)]) + vU_dD[mu][a] for a in range(4)] for mu in range(4)]'
         )
 
     def test_assignment_1(self):
         self.assertEqual(
             parse(r"""
-                % def vU (4), wU (4);
+                % define vU (2), wU (2);
                 T^{ij}_k = (v^i w^j)_{,k}
-            """, evaluate=False),
+            """),
             ['vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD']
         )
-        self.assertEqual(str(TUUD),
-            '[[[vU[i]*wU_dD[j][k] + wU[j]*vU_dD[i][k] for i in range(4)] for j in range(4)] for k in range(4)]'
+        self.assertEqual(str(TUUD[0][0][0]),
+            'vU0*wU_dD00 + vU_dD00*wU0'
         )
 
     def test_assignment_2(self):
         self.assertEqual(
             parse(r"""
-                % def vU (4), const w;
+                % define vU (2), const w;
                 T^i_k = (v^i w)_{,k}
-            """, evaluate=False),
+            """),
             ['vU', 'w', 'vU_dD', 'TUD']
         )
         self.assertEqual(str(TUD),
-            '[[w*vU_dD[i][k] for i in range(4)] for k in range(4)]'
+            '[[vU_dD00*w, vU_dD10*w], [vU_dD01*w, vU_dD11*w]]'
         )
 
     def test_example_1(self):
         self.assertEqual(
             parse(r"""
-                % def nosym hUD (4);
+                % define nosym hUD (4);
                 h = h^\mu{}_\mu
             """),
             ['hUD', 'h']
@@ -109,7 +103,7 @@ class TestParser(unittest.TestCase):
     def test_example_2(self):
         self.assertEqual(
             parse(r"""
-                % def metric gUU (3), vD (3);
+                % define metric gUU (3), vD (3);
                 v^\mu = g^{\mu\nu} v_\nu
             """),
             ['gDD', 'gdet', 'gUU', 'vD', 'vU']
@@ -121,7 +115,7 @@ class TestParser(unittest.TestCase):
     def test_example_3(self):
         self.assertEqual(
             parse(r"""
-                % def metric gDD (2), sym01 RUU (2);
+                % define metric gDD (2), sym01 RUU (2);
                 \begin{align*}
                     R &= g_{ab} R^{ab} \\
                     G^{ab} &= R^{ab} - \frac{1}{2}g^{ab}R
@@ -139,8 +133,8 @@ class TestParser(unittest.TestCase):
     def test_example_4(self):
         self.assertEqual(
             parse(r"""
-                % def permutation epsilonDDD (3);
-                % def vU (3), wU (3);
+                % define permutation epsilonDDD (3);
+                % define vU (3), wU (3);
                 u_i = \epsilon_{ijk} v^j w^k
             """),
             ['epsilonDDD', 'vU', 'wU', 'uD']
@@ -152,60 +146,41 @@ class TestParser(unittest.TestCase):
     def test_example_5(self):
         self.assertEqual(
             parse(r"""
-                % def metric gUU [4], kronecker deltaUU [4];
+                % define metric gUU (4), kronecker deltaUU (4);
                 % parse g^{\mu\nu} = \delta^{\mu\nu};
                 \begin{align*}
                     g^{0 0} &= -\left(1 - \frac{\mathop{r_s}}{r}\right) \\
                     g^{1 1} &=  \left(1 - \frac{\mathop{r_s}}{r}\right)^{-1} \\
                     g^{2 2} &= r^{{2}} \\
                     g^{3 3} &= r^{{2}} \sin^2(\theta)
-                \end{align*};
-                % eval gUU;
-                % redef metric gUU
+                \end{align*}
+                % update metric gUU
             """),
             ['gDD', 'gdet', 'gUU', 'deltaUU', 'r_s', 'r', 'theta']
         )
-        self.assertEqual(str(deltaUU),
-            '[[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]'
-        )
         self.assertEqual(str(gUU),
             '[[-1 + r_s/r, 0, 0, 0], [0, 1/(1 - r_s/r), 0, 0], [0, 0, r**2, 0], [0, 0, 0, r**2*sin(theta)**2]]'
+        )
+        self.assertEqual(str(gdet),
+            '(1 - r_s/r)/(r**4*(-1 + r_s/r)*sin(theta)**2)'
         )
 
     def test_example_6_1(self):
         self.assertEqual(
             parse(r"""
-                % def anti01 FUU (4), const k;
+                % define anti01 FUU (4), const k;
                 J^\mu = (4\pi k)^{-1} \nabla_\nu F^{\mu\nu}
-            """, evaluate=False),
+            """),
             ['FUU', 'k', 'FUU_dD', 'gDD', 'gdet', 'gUU', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU']
-        )
-        self.assertEqual(GammaUDD,
-            '[[[sum([gUU[nu][c]*gDD_dD[a][c][b]/2 for c in range(4)]) - sum([gUU[nu][c]*gDD_dD[b][a][c]/2 for c in range(4)]) + sum([gUU[nu][c]*gDD_dD[c][b][a]/2 for c in range(4)]) for a in range(4)] for b in range(4)] for nu in range(4)]'
-        )
-        self.assertEqual(FUU_cdD,
-            '[[[sum([FUU[b][nu]*GammaUDD[mu][b][a] for b in range(4)]) + sum([FUU[mu][b]*GammaUDD[nu][b][a] for b in range(4)]) + FUU_dD[mu][nu][a] for a in range(4)] for mu in range(4)] for nu in range(4)]'
-        )
-        self.assertEqual(JU,
-            '[sum([FUU_cdD[mu][nu][nu]/(4*pi*k) for nu in range(4)]) for mu in range(4)]'
         )
 
     def test_example_6_2(self):
         self.assertEqual(
             parse(r"""
-                % def anti01 FUU (4), const k;
+                % define anti01 FUU (4), const k;
                 J^\mu = (4\pi k)^{-1} \hat{\nabla}_\nu F^{\mu\nu}
-            """, evaluate=False),
+            """),
             ['FUU', 'k', 'FUU_dD', 'ghatDD', 'ghatdet', 'ghatUU', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU']
-        )
-        self.assertEqual(GammahatUDD,
-            '[[[sum([ghatUU[nu][c]*ghatDD_dD[a][c][b]/2 for c in range(4)]) - sum([ghatUU[nu][c]*ghatDD_dD[b][a][c]/2 for c in range(4)]) + sum([ghatUU[nu][c]*ghatDD_dD[c][b][a]/2 for c in range(4)]) for a in range(4)] for b in range(4)] for nu in range(4)]'
-        )
-        self.assertEqual(FUU_cdhatD,
-            '[[[sum([FUU[b][nu]*GammahatUDD[mu][b][a] for b in range(4)]) + sum([FUU[mu][b]*GammahatUDD[nu][b][a] for b in range(4)]) + FUU_dD[mu][nu][a] for a in range(4)] for mu in range(4)] for nu in range(4)]'
-        )
-        self.assertEqual(JU,
-            '[sum([FUU_cdhatD[mu][nu][nu]/(4*pi*k) for nu in range(4)]) for mu in range(4)]'
         )
 
 if __name__ == '__main__':
@@ -221,7 +196,7 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_example_2'))
     suite.addTest(TestParser('test_example_3'))
     suite.addTest(TestParser('test_example_4'))
-    # suite.addTest(TestParser('test_example_5'))
+    suite.addTest(TestParser('test_example_5'))
     suite.addTest(TestParser('test_example_6_1'))
     suite.addTest(TestParser('test_example_6_2'))
     result = unittest.TextTestRunner().run(suite)
