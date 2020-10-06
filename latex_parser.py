@@ -712,12 +712,12 @@ class Parser:
                 if self.accept('LEFT_BRACE'):
                     self.lexer.reset()
                     symbol = ''.join(symbol)
-                    function = Function('Tensor')(symbol, *indexing)
+                    function = Function('Tensor')(symbol)
                     if symbol in self.namespace:
                         if isinstance(self.namespace[symbol], Function('Constant')):
                             return self.namespace[symbol]
                     elif not indexing:
-                        self.namespace[symbol] = function
+                        self.namespace[symbol] = Symbol(symbol)
                     return function
                 self.lexer.reset()
                 self.lexer.lex()
@@ -748,7 +748,7 @@ class Parser:
         indexing = []
         def append_index():
             index = self._strip(self.lexer.lexeme)
-            self.expect('LETTER')
+            self.lexer.lex()
             indexing.append(Symbol(index))
         order = 0
         if self.peek('LETTER') or self.peek('INTEGER'):
