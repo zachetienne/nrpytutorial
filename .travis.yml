@@ -56,19 +56,19 @@ matrix:
       python: pypy3.5-6.0
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
 
-    - name: "Windows Python 3.8.2 (only Windows test; note Travis considers Windows unsupported/experimental)"
+    - name: "Windows Python 3.9 (only Windows test; note Travis considers Windows unsupported/experimental)"
       os: windows           # Windows 10.0.17134 N/A Build 17134
       language: sh          # 'language: python' is an error on Travis CI Windows
       before_install:
         - choco install python
-        - export PATH="/c/Python38:/c/Python38/Scripts:$PATH"
+        - export PATH="/c/Python39:/c/Python39/Scripts:$PATH"
         - ls /c/ProgramData/chocolatey/lib/mingw/tools/install/mingw64/opt/bin/
         - python -m ensurepip
         - python -m pip install --upgrade pip wheel
       install:
         - pip3 install mpmath sympy
       env:
-        - PATH=/c/Python38:/c/Python38/Scripts:$PATH
+        - PATH=/c/Python39:/c/Python39/Scripts:$PATH
         - PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
       script: ./UnitTesting/run_NRPy_UnitTests.sh python
 
