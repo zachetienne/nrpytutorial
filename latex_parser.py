@@ -15,7 +15,7 @@ import re, warnings
 
 sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', cosh), ('tanh', tanh),
     ('asin', asin), ('acos', acos), ('atan', atan), ('asinh', asinh), ('acosh', acosh), ('atanh', atanh),
-    ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt))
+    ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt), ('diff', diff))
 
 class Lexer:
     """ LaTeX Lexer
@@ -69,6 +69,7 @@ class Lexer:
               ('DEFINE_MACRO',   r'define'),
               ('UPDATE_MACRO',   r'update'),
               ('PARSE_MACRO',    r'parse'),
+              ('BASIS_KWRD',     r'basis'),
               ('DIACRITIC',      r'\\hat|\\tilde|\\bar'),
               ('SYMMETRY',       r'const|metric|permutation|kronecker|' + symmetry),
               ('MATHOP',         r'\\mathop'),
@@ -153,9 +154,10 @@ class Parser:
         <FRAC>          -> <FRAC_CMD> '{' <EXPRESSION> '}' '{' <EXPRESSION> '}'
         <NLOG>          -> <NLOG_CMD> [ '_' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
-        <PARDRV>        -> { <PARDRV_OP> '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+        <PARDRV>        -> { <PARDRV_OP> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <DEFINE>        -> <DEFINE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
+        <DEFINE>        -> <DEFINE_MACRO> ( <BASIS> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
+        <BASIS>         -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
         <UPDATE>        -> <UPDATE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT>
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
@@ -210,6 +212,8 @@ class Parser:
         self._structure()
         while self.accept('LINE_BREAK') or self.peek('COMMENT'):
             self._structure()
+        if 'basis' in self.namespace:
+            self.namespace.pop('basis')
         return self.namespace
 
     # <STRUCTURE> -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
@@ -268,6 +272,14 @@ class Parser:
             expr = str(tree.root.expr)
             for subtree in tree.preorder():
                 subexpr = subtree.expr
+                if subexpr.func == Derivative:
+                    derivative = 'diff(' + str(subexpr.args[0])
+                    for index in subexpr.args[1:]:
+                        if 'basis' in self.namespace and index[0] not in self.namespace['basis']:
+                            derivative += ', (basis[%s], %s)' % (index[0], index[1])
+                        else: derivative += ', (%s, %s)' % (index[0], index[1])
+                    derivative += ')'
+                    expr = expr.replace(str(subexpr), derivative)
                 if subexpr.func in (Function('Tensor'), Function('Constant')):
                     func = Tensor.array_format(subexpr)
                     if subexpr.func == Function('Constant'):
@@ -518,53 +530,59 @@ class Parser:
         if exponent == -1: return trig(expr)
         return trig(expr) ** exponent
 
-    # <PARDRV> -> { <PARDRV_OP> '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+    # <PARDRV> -> { <PARDRV_OP> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _pardrv(self):
-        indexing = []
+        indexing, order = [], 1
         while self.accept('PARDRV_OP'):
+            if self.accept('CARET'):
+                order = self.lexer.lexeme
+                self.expect('INTEGER')
             self.expect('UNDERSCORE')
             index = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
-            indexing.append(Symbol(index))
+            indexing.extend(int(order)*[Symbol(index)])
         if self.accept('LEFT_PAREN'):
-            tree = ExprTree(self._expression())
+            derivative = Derivative(self._expression(), *indexing)
+            # tree = ExprTree(self._expression())
             self.expect('RIGHT_PAREN')
-            for subtree in tree.preorder():
-                subexpr = subtree.expr
-                if subexpr.func == Function('Tensor'):
-                    # insert temporary symbol '_x' for symbolic differentiation
-                    subtree.expr = Function('_Tensor')(subexpr, Symbol('_x'))
-                    del subtree.children[:]
-            expr = tree.reconstruct()
-            # differentiate the expression, including product rule expansion
-            tree = ExprTree(diff(expr, Symbol('_x')))
-            for subtree in tree.preorder():
-                subexpr = subtree.expr
-                if subexpr.func == Derivative:
-                    # remove temporary symbol '_x' from tensor function
-                    symbol, order = subexpr.args[0].args[0].args[0], len(indexing)
-                    _indexing = list(subexpr.args[0].args[0].args[1:]) + indexing
-                    # instantiate partial derivative and update namespace
-                    symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
-                    function, rank = Function('Tensor')(symbol, *_indexing), len(_indexing) - order
-                    symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
-                    self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
-                    subtree.expr = function
-                    del subtree.children[:]
-                elif subexpr.func == Function('_Tensor'):
-                    # remove temporary symbol '_x' from tensor function
-                    subtree.expr = subexpr.args[0]
-                    del subtree.children[:]
-            return tree.reconstruct()
-        function = self._tensor()
-        symbol, order = function.args[0], len(indexing)
-        indexing = list(function.args[1:]) + indexing
-        # instantiate partial derivative and update namespace
-        symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
-        function, rank = Function('Tensor')(symbol, *indexing), len(indexing) - order
-        symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
-        self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
-        return function
+            return derivative
+            # for subtree in tree.preorder():
+            #     subexpr = subtree.expr
+            #     if subexpr.func == Function('Tensor'):
+            #         # insert temporary symbol '_x' for symbolic differentiation
+            #         subtree.expr = Function('_Tensor')(subexpr, Symbol('_x'))
+            #         del subtree.children[:]
+            # expr = tree.reconstruct()
+            # # differentiate the expression, including product rule expansion
+            # tree = ExprTree(diff(expr, Symbol('_x')))
+            # for subtree in tree.preorder():
+            #     subexpr = subtree.expr
+            #     if subexpr.func == Derivative:
+            #         # remove temporary symbol '_x' from tensor function
+            #         symbol, order = subexpr.args[0].args[0].args[0], len(indexing)
+            #         _indexing = list(subexpr.args[0].args[0].args[1:]) + indexing
+            #         # instantiate partial derivative and update namespace
+            #         symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
+            #         function, rank = Function('Tensor')(symbol, *_indexing), len(_indexing) - order
+            #         symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+            #         self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+            #         subtree.expr = function
+            #         del subtree.children[:]
+            #     elif subexpr.func == Function('_Tensor'):
+            #         # remove temporary symbol '_x' from tensor function
+            #         subtree.expr = subexpr.args[0]
+            #         del subtree.children[:]
+            # return tree.reconstruct()
+        return Derivative(self._tensor(), *indexing)
+        # function = self._tensor()
+        # symbol, order = function.args[0], len(indexing)
+        # indexing = list(function.args[1:]) + indexing
+        # # instantiate partial derivative and update namespace
+        # symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
+        # function, rank = Function('Tensor')(symbol, *indexing), len(indexing) - order
+        # symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+        # self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+        # return function
 
     # <COVDRV> -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _covdrv(self, location):
@@ -627,9 +645,11 @@ class Parser:
         indexing = list(function.args[1:]) + [index[0] for index in indexing]
         return Function('Tensor')(symbol, *indexing)
 
-    # <DEFINE> -> <DEFINE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }*
+    # <DEFINE> -> <DEFINE_MACRO> ( <BASIS> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
     def _define(self):
         self.expect('DEFINE_MACRO')
+        if self.peek('BASIS_KWRD'):
+            self._basis(); return
         while True:
             symmetry = self.lexer.lexeme
             if self.peek('SYMMETRY'):
@@ -657,6 +677,22 @@ class Parser:
             self._instantiate_tensor(Tensor(symbol, dimension), symmetry, invertible=(symmetry == 'metric'),
                 permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
+
+    # <BASIS> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
+    def _basis(self):
+        self.expect('BASIS_KWRD')
+        if 'basis' not in self.namespace:
+            self.namespace['basis'] = []
+        self.expect('LEFT_BRACKET')
+        while True:
+            symbol = self._strip(self.lexer.lexeme)
+            self.expect('LETTER')
+            if symbol in self.namespace['basis']:
+                raise ParseError('duplicate basis symbol \'%s\' at position %d' %
+                    (sentence[position], position), sentence, position)
+            self.namespace['basis'].append(Symbol(symbol))
+            if not self.accept('COMMA'): break
+        self.expect('RIGHT_BRACKET')
 
     # <UPDATE> -> <UPDATE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
     def _update(self):
@@ -877,7 +913,7 @@ class Parser:
         if diacritic: symbol = '\\%s{%s}' % (diacritic, symbol[:-len(diacritic)])
         indexing = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indexing]
         bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x not in indexing)
-        return (('% define metric {metric}UU ({dim});\n{symbol}^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} {metric}^{{{i1} {bound_index}}}({metric}_{{{i3} {bound_index},{i2}}} + {metric}_{{{bound_index} {i2},{i3}}} - {metric}_{{{i2} {i3},{bound_index}}})')
+        return (('% define metric {metric}UU ({dim});\n{symbol}^{i1}_{{{i2}{i3}}} = \\frac{{1}}{{2}} {metric}^{{{i1} {bound_index}}}(\\partial_{i2} {metric}_{{{i3} {bound_index}}} + \\partial_{i3} {metric}_{{{bound_index} {i2}}} - \\partial_{bound_index} {metric}_{{{i2} {i3}}})')
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index, dim = dimension))
 
     @staticmethod
@@ -930,6 +966,8 @@ class Parser:
             idx_list = re.findall(r'\[([a-zA-Z]+)\]', product)
             # extract every index position (ex: U or D)
             pos_list = re.findall(r'[UD]', product)
+            if len(idx_list) != len(pos_list):
+                pos_list.extend((len(idx_list) - len(pos_list))*['D'])
             free_index, bound_index = [], []
             # iterate over every unique index in the subexpression
             for idx in sorted(uniquify((idx_list))):
@@ -967,7 +1005,7 @@ class Parser:
                     # position and cannot be summed over in any term
                     raise TensorError('unbalanced free index')
             # generate tensor instantiation with implied summation
-            for idx, _ in LHS:
+            for idx, _ in reversed(LHS):
                 expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
         if rank == len(re.findall(r'\[[^0-9\]]+\]', var)):
             return (var.split('[')[0], expr)

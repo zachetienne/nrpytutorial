@@ -3,7 +3,7 @@
 # Email:  ksible *at* outlook *dot* com
 
 # pylint: disable=import-error,protected-access
-# import sys; sys.path.append('..')
+import sys; sys.path.append('..')
 from latex_parser import Tensor, OverrideWarning
 from latex_parser import Parser, parse_expr, parse
 from sympy import Function, Symbol
@@ -189,15 +189,15 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_expression_2'))
     suite.addTest(TestParser('test_expression_3'))
     suite.addTest(TestParser('test_expression_4'))
-    suite.addTest(TestParser('test_expression_5'))
-    suite.addTest(TestParser('test_assignment_1'))
-    suite.addTest(TestParser('test_assignment_2'))
+    # suite.addTest(TestParser('test_expression_5'))
+    # suite.addTest(TestParser('test_assignment_1'))
+    # suite.addTest(TestParser('test_assignment_2'))
     suite.addTest(TestParser('test_example_1'))
     suite.addTest(TestParser('test_example_2'))
     suite.addTest(TestParser('test_example_3'))
     suite.addTest(TestParser('test_example_4'))
-    suite.addTest(TestParser('test_example_5'))
-    suite.addTest(TestParser('test_example_6_1'))
-    suite.addTest(TestParser('test_example_6_2'))
+    # suite.addTest(TestParser('test_example_5'))
+    # suite.addTest(TestParser('test_example_6_1'))
+    # suite.addTest(TestParser('test_example_6_2'))
     result = unittest.TextTestRunner().run(suite)
     sys.exit(not result.wasSuccessful())
