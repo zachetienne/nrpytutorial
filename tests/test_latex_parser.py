@@ -3,7 +3,7 @@
 # Email:  ksible *at* outlook *dot* com
 
 # pylint: disable=import-error,protected-access
-import sys; sys.path.append('..')
+# import sys; sys.path.append('..')
 from latex_parser import Tensor, OverrideWarning
 from latex_parser import Parser, parse_expr, parse
 from sympy import Function, Symbol

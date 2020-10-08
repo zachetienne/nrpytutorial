@@ -212,8 +212,6 @@ class Parser:
         self._structure()
         while self.accept('LINE_BREAK') or self.peek('COMMENT'):
             self._structure()
-        if 'basis' in self.namespace:
-            self.namespace.pop('basis')
         return self.namespace
 
     # <STRUCTURE> -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
@@ -479,8 +477,7 @@ class Parser:
                 base = int(base)
             else: base = 10
         if self.peek('LETTER'):
-            expr = self.lexer.lexeme
-            self.expect('LETTER')
+            expr = self._tensor()
         elif self.peek('INTEGER'):
             expr = self.lexer.lexeme
             self.expect('INTEGER')
@@ -515,8 +512,7 @@ class Parser:
         elif func == 'sin':  trig = asin  if exponent == -1 else sin
         elif func == 'tan':  trig = atan  if exponent == -1 else tan
         if self.peek('LETTER'):
-            expr = self.lexer.lexeme
-            self.expect('LETTER')
+            expr = self._tensor()
         elif self.peek('INTEGER'):
             expr = self.lexer.lexeme
             self.expect('INTEGER')
@@ -688,6 +684,7 @@ class Parser:
             symbol = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
             if symbol in self.namespace['basis']:
+                sentence, position = self.lexer.sentence, self.lexer.mark()
                 raise ParseError('duplicate basis symbol \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
             self.namespace['basis'].append(Symbol(symbol))
@@ -892,7 +889,7 @@ class Parser:
                     self.namespace[inverse_symbol] = inverse
                     self.namespace[symbol[:-2] + 'det'] = determinant \
                         if symbol[-2:] == 'DD' else (determinant)**(-1)
-            else: array = Function('Constant')(Symbol(symbol, real=True))
+            else: array = Function('Constant')(Symbol(symbol)) # TODO: , real=True))
             if symbol in Parser.namespace:
                 # pylint: disable=unused-argument
                 def formatwarning(message, category, filename=None, lineno=None, file=None, line=None):
@@ -989,7 +986,7 @@ class Parser:
                     bound_index.append(idx)
                 # identify every free index on the RHS
                 else: free_index.extend(index_tuple)
-            RHS.append(sorted(uniquify(free_index)))
+            RHS.append(uniquify(free_index))
             summation = product
             # generate implied summation over every bound index
             for idx in bound_index:
@@ -997,9 +994,9 @@ class Parser:
                     (summation, idx, dimension)
             expr = expr.replace(product, summation)
         if LHS:
-            LHS = sorted(uniquify(LHS))
+            LHS = uniquify(LHS)
             for i in range(len(RHS)):
-                if LHS != RHS[i]:
+                if sorted(LHS) != sorted(RHS[i]):
                     # raise exception upon violation of the following rule:
                     # a free index must appear in every term with the same
                     # position and cannot be summed over in any term
@@ -1115,6 +1112,7 @@ def parse(sentence):
         :return: namespace
     """
     namespace = Parser().parse(sentence)
+    if 'basis' in namespace: namespace.pop('basis')
     # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)
