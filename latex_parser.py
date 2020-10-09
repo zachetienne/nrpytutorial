@@ -37,6 +37,7 @@ class Lexer:
               ('RATIONAL',       r'[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
               ('DECIMAL',        r'[0-9]+\.[0-9]+'),
               ('INTEGER',        r'\-?[0-9]+'),
+              ('NABLA',          r'\\nabla'),
               ('PI',             r'\\pi'),
               ('EULER',          r'e'),
               ('PLUS',           r'\+'),
@@ -44,7 +45,6 @@ class Lexer:
               ('DIVIDE',         r'\/'),
               ('EQUAL',          r'\='),
               ('CARET',          r'\^'),
-              ('UNDERSCORE',     r'\_'),
               ('COMMA',          r'\,'),
               ('COMMENT',        r'\%'),
               ('LEFT_PAREN',     r'\('),
@@ -60,16 +60,19 @@ class Lexer:
               ('LINE_BREAK',     r'(?:\;|\\\\|\\cr)'),
               ('BEGIN_ALIGN',    r'\\begin{align\*?}'),
               ('END_ALIGN',      r'\\end{align\*?}'),
+              ('PARTIAL',        r'\\partial'),
               ('SQRT_CMD',       r'\\sqrt'),
               ('FRAC_CMD',       r'\\frac'),
               ('TRIG_CMD',       r'\\sinh|\\cosh|\\tanh|\\sin|\\cos|\\tan'),
               ('NLOG_CMD',       r'\\ln|\\log'),
-              ('PARDRV_OP',      r'\\partial'),
-              ('COVDRV_OP',      r'\\nabla'),
+              ('VPHANTOM',       r'\\vphantom'),
               ('DEFINE_MACRO',   r'define'),
               ('UPDATE_MACRO',   r'update'),
               ('PARSE_MACRO',    r'parse'),
               ('BASIS_KWRD',     r'basis'),
+              ('DERIV_KWRD',     r'deriv'),
+              ('DERIV_TYPE',     r'symbolic|_d'),
+              ('UNDERSCORE',     r'\_'),
               ('DIACRITIC',      r'\\hat|\\tilde|\\bar'),
               ('SYMMETRY',       r'const|metric|permutation|kronecker|' + symmetry),
               ('MATHOP',         r'\\mathop'),
@@ -139,6 +142,7 @@ class Parser:
         <ROOT>          -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
         <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
         <CONFIG>        -> '%' ( <DEFINE> | <UPDATE> | <PARSE> )
+        <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT>
         <ENVIRONMENT>   -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
         <ASSIGNMENT>    -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
@@ -154,25 +158,24 @@ class Parser:
         <FRAC>          -> <FRAC_CMD> '{' <EXPRESSION> '}' '{' <EXPRESSION> '}'
         <NLOG>          -> <NLOG_CMD> [ '_' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
-        <PARDRV>        -> { <PARDRV_OP> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <COVDRV>        -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <DEFINE>        -> <DEFINE_MACRO> ( <BASIS> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
-        <BASIS>         -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
-        <UPDATE>        -> <UPDATE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
-        <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT>
+        <PARDRV>        -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { <PARTIAL> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+        <COVDRV>        -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { ( <NABLA> | <DIACRITIC> '{' <NABLA> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+        <DEFINE>        -> <DEFINE_MACRO> ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
+        <GLOBAL>        -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET> | <DERIV_KWRD> <DERIV_TYPE>
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
         <LOWER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }* [ ',' { <LETTER> }+ ] '}'
-                        # TODO: ADD SEMICOLON (COVARIANT DERIVATIVE) NOTATION
+                        
         <UPPER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }+ '}'
     """
+    # TODO: CHANGE NAMESPACE MAPPING: SYMBOL -> CLASS<TENSOR>
 
     namespace = OrderedDict()
 
     def __init__(self):
         self.lexer     = Lexer()
         self.namespace = OrderedDict()
-        self.dimension = None
+        self.dimension = None # TODO: REMOVE
 
     def parse(self, sentence, expression=False):
         """ Parse LaTeX Sentence
@@ -195,6 +198,8 @@ class Parser:
                 subexpr, indexing = sentence[i_1:i_2], sentence[i_2:i_3][3:-1]
                 operator = ''.join('\\nabla_' + index for index in indexing)
                 sentence = sentence.replace(sentence[i_1:i_3], operator + ' ' + subexpr)
+        if 'basis' not in self.namespace:
+            self.namespace['basis'] = []
         self.lexer.initialize(sentence)
         self.lexer.lex()
         if expression:
@@ -237,6 +242,11 @@ class Parser:
             raise ParseError('unsupported macro at position %d' %
                 position, sentence, position)
 
+    # <PARSE> -> <PARSE_MACRO> <ASSIGNMENT>
+    def _parse(self):
+        self.expect('PARSE_MACRO')
+        self._assignment()
+
     # <ENVIRONMENT> -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
     def _environment(self):
         self.expect('BEGIN_ALIGN')
@@ -247,11 +257,11 @@ class Parser:
 
     # <ASSIGNMENT> -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
     def _assignment(self):
-        covdrv = self.peek('COVDRV_OP')
+        covdrv = self.peek('NABLA')
         self.lexer.mark()
         if self.accept('DIACRITIC'):
             self.expect('LEFT_BRACE')
-            covdrv = self.peek('COVDRV_OP')
+            covdrv = self.peek('NABLA')
             self.lexer.reset()
         variable = self._covdrv('LHS') if covdrv else self._tensor()
         indexed  = variable.func == Function('Tensor') and len(variable.args) > 1
@@ -273,7 +283,10 @@ class Parser:
                 if subexpr.func == Derivative:
                     derivative = 'diff(' + str(subexpr.args[0])
                     for index in subexpr.args[1:]:
-                        if 'basis' in self.namespace and index[0] not in self.namespace['basis']:
+                        if index[0] not in self.namespace['basis']:
+                            if not self.namespace['basis']:
+                                sentence, position = self.lexer.sentence, self.lexer.mark()
+                                raise ParseError('cannot differentiate symbolically without basis', sentence, position)
                             derivative += ', (basis[%s], %s)' % (index[0], index[1])
                         else: derivative += ', (%s, %s)' % (index[0], index[1])
                     derivative += ')'
@@ -316,9 +329,9 @@ class Parser:
     # <TERM> -> <FACTOR> { [ '/' ] <FACTOR> }*
     def _term(self):
         expr = self._factor()
-        while any(self.peek(token) for token in ('LEFT_PAREN', 'PARDRV_OP', 'COVDRV_OP',
-                'LETTER', 'RATIONAL', 'DECIMAL', 'INTEGER', 'PI', 'EULER', 'DIACRITIC',
-                'DIVIDE', 'COMMAND', 'SQRT_CMD', 'FRAC_CMD', 'TRIG_CMD', 'NLOG_CMD')):
+        while any(self.peek(token) for token in ('LEFT_PAREN', 'PARTIAL',
+                'LETTER', 'RATIONAL', 'DECIMAL', 'INTEGER', 'NABLA', 'PI', 'EULER', 'DIACRITIC',
+                'DIVIDE', 'COMMAND', 'SQRT_CMD', 'FRAC_CMD', 'TRIG_CMD', 'NLOG_CMD', 'VPHANTOM')):
             if self.accept('DIVIDE'):
                 expr /= self._factor()
             else: expr *= self._factor()
@@ -359,7 +372,7 @@ class Parser:
         self.lexer.mark()
         if self.accept('DIACRITIC'):
             self.expect('LEFT_BRACE')
-            if self.peek('COVDRV_OP'):
+            if self.peek('NABLA'):
                 self.lexer.reset()
                 return self._operator()
             self.lexer.reset()
@@ -384,7 +397,7 @@ class Parser:
                 ('COMMAND', 'SQRT_CMD', 'FRAC_CMD', 'NLOG_CMD', 'TRIG_CMD')):
             return self._command()
         if any(self.peek(token) for token in
-                ('PARDRV_OP', 'COVDRV_OP')):
+                ('VPHANTOM', 'PARTIAL', 'NABLA')):
             return self._operator()
         sentence, position = self.lexer.sentence, self.lexer.mark()
         raise ParseError('unexpected \'%s\' at position %d' %
@@ -426,9 +439,22 @@ class Parser:
     # <OPERATOR> -> <PARDRV> | <COVDRV>
     def _operator(self):
         operator = self.lexer.lexeme
-        if self.peek('PARDRV_OP'):
+        self.lexer.mark()
+        if self.accept('VPHANTOM'):
+            self.lexer.lex()
+            self.lexer.lex()
+            self.lexer.lex()
+            operator = self.lexer.lexeme
+            if self.peek('PARTIAL'):
+                self.lexer.reset()
+                return self._pardrv()
+            if self.peek('NABLA') or self.peek('DIACRITIC'):
+                self.lexer.reset()
+                return self._covdrv('RHS')
+            self.lexer.reset()
+        if self.peek('PARTIAL'):
             return self._pardrv()
-        if self.peek('COVDRV_OP') or self.peek('DIACRITIC'):
+        if self.peek('NABLA') or self.peek('DIACRITIC'):
             return self._covdrv('RHS')
         sentence, position = self.lexer.sentence, self.lexer.mark()
         raise ParseError('unsupported operator \'%s\' at position %d' %
@@ -526,10 +552,18 @@ class Parser:
         if exponent == -1: return trig(expr)
         return trig(expr) ** exponent
 
-    # <PARDRV> -> { <PARDRV_OP> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+    # <PARDRV> -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { <PARTIAL> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _pardrv(self):
+        if 'deriv' not in self.namespace:
+            self.namespace['deriv'] = 'symbolic'
+        deriv_type = self.namespace['deriv']
+        if self.accept('VPHANTOM'):
+            self.expect('LEFT_BRACE')
+            deriv_type = self.lexer.lexeme
+            self.expect('DERIV_TYPE')
+            self.expect('RIGHT_BRACE')
         indexing, order = [], 1
-        while self.accept('PARDRV_OP'):
+        while self.accept('PARTIAL'):
             if self.accept('CARET'):
                 order = self.lexer.lexeme
                 self.expect('INTEGER')
@@ -537,63 +571,77 @@ class Parser:
             index = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
             indexing.extend(int(order)*[Symbol(index)])
+        if all(index in self.namespace['basis'] for index in indexing):
+            deriv_type = 'symbolic'
         if self.accept('LEFT_PAREN'):
-            derivative = Derivative(self._expression(), *indexing)
-            # tree = ExprTree(self._expression())
-            self.expect('RIGHT_PAREN')
-            return derivative
-            # for subtree in tree.preorder():
-            #     subexpr = subtree.expr
-            #     if subexpr.func == Function('Tensor'):
-            #         # insert temporary symbol '_x' for symbolic differentiation
-            #         subtree.expr = Function('_Tensor')(subexpr, Symbol('_x'))
-            #         del subtree.children[:]
-            # expr = tree.reconstruct()
-            # # differentiate the expression, including product rule expansion
-            # tree = ExprTree(diff(expr, Symbol('_x')))
-            # for subtree in tree.preorder():
-            #     subexpr = subtree.expr
-            #     if subexpr.func == Derivative:
-            #         # remove temporary symbol '_x' from tensor function
-            #         symbol, order = subexpr.args[0].args[0].args[0], len(indexing)
-            #         _indexing = list(subexpr.args[0].args[0].args[1:]) + indexing
-            #         # instantiate partial derivative and update namespace
-            #         symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
-            #         function, rank = Function('Tensor')(symbol, *_indexing), len(_indexing) - order
-            #         symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
-            #         self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
-            #         subtree.expr = function
-            #         del subtree.children[:]
-            #     elif subexpr.func == Function('_Tensor'):
-            #         # remove temporary symbol '_x' from tensor function
-            #         subtree.expr = subexpr.args[0]
-            #         del subtree.children[:]
-            # return tree.reconstruct()
-        return Derivative(self._tensor(), *indexing)
-        # function = self._tensor()
-        # symbol, order = function.args[0], len(indexing)
-        # indexing = list(function.args[1:]) + indexing
-        # # instantiate partial derivative and update namespace
-        # symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
-        # function, rank = Function('Tensor')(symbol, *indexing), len(indexing) - order
-        # symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
-        # self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
-        # return function
+            if deriv_type == 'symbolic':
+                derivative = Derivative(self._expression(), *indexing)
+                self.expect('RIGHT_PAREN')
+                return derivative
+            if deriv_type == '_d':
+                tree = ExprTree(self._expression())
+                self.expect('RIGHT_PAREN')
+                for subtree in tree.preorder():
+                    subexpr = subtree.expr
+                    if subexpr.func == Function('Tensor'):
+                        # insert temporary symbol '_x' for symbolic differentiation
+                        subtree.expr = Function('_Tensor')(subexpr, Symbol('_x'))
+                        del subtree.children[:]
+                expr = tree.reconstruct()
+                # differentiate the expression, including product rule expansion
+                tree = ExprTree(diff(expr, Symbol('_x')))
+                for subtree in tree.preorder():
+                    subexpr = subtree.expr
+                    if subexpr.func == Derivative:
+                        # remove temporary symbol '_x' from tensor function
+                        symbol, order = subexpr.args[0].args[0].args[0], len(indexing)
+                        _indexing = list(subexpr.args[0].args[0].args[1:]) + indexing
+                        # instantiate partial derivative and update namespace
+                        symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
+                        function, rank = Function('Tensor')(symbol, *_indexing), len(_indexing) - order
+                        symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+                        self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+                        subtree.expr = function
+                        del subtree.children[:]
+                    elif subexpr.func == Function('_Tensor'):
+                        # remove temporary symbol '_x' from tensor function
+                        subtree.expr = subexpr.args[0]
+                        del subtree.children[:]
+                return tree.reconstruct()
+        if deriv_type == 'symbolic':
+            return Derivative(self._tensor(), *indexing)
+        function = self._tensor()
+        symbol, order = function.args[0], len(indexing)
+        indexing = list(function.args[1:]) + indexing
+        # instantiate partial derivative and update namespace
+        symbol = str(symbol) + ('' if '_d' in str(symbol) else '_d') + order * 'D'
+        function, rank = Function('Tensor')(symbol, *indexing), len(indexing) - order
+        symmetry = 'sym%d%d' % (rank, rank + order - 1) if order == 2 else 'nosym'
+        self._instantiate_tensor(Tensor(function, self.dimension), symmetry)
+        return function
 
-    # <COVDRV> -> { ( <COVDRV_OP> | <DIACRITIC> '{' <COVDRV_OP> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
+    # <COVDRV> -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { ( <NABLA> | <DIACRITIC> '{' <NABLA> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _covdrv(self, location):
+        if 'deriv' not in self.namespace:
+            self.namespace['deriv'] = 'symbolic'
+        deriv_type = self.namespace['deriv']
+        if self.accept('VPHANTOM'):
+            self.expect('LEFT_BRACE')
+            deriv_type = self.lexer.lexeme
+            self.expect('DERIV_TYPE')
+            self.expect('RIGHT_BRACE')
         config, indexing, diacritic = [], [], ''
         equation = ['', ' = ', '', '']
-        while self.peek('COVDRV_OP') or self.peek('DIACRITIC'):
+        while self.peek('NABLA') or self.peek('DIACRITIC'):
             lexeme = self.lexer.lexeme[1:]
             operator = '\\nabla'
             if self.accept('DIACRITIC'):
                 diacritic = lexeme
                 operator = '\\%s{\\nabla}' % diacritic
                 self.expect('LEFT_BRACE')
-                self.expect('COVDRV_OP')
+                self.expect('NABLA')
                 self.expect('RIGHT_BRACE')
-            else: self.expect('COVDRV_OP')
+            else: self.expect('NABLA')
             equation[0] += operator
             equation[3] += operator
             if self.accept('CARET'):
@@ -627,13 +675,16 @@ class Parser:
         if location == 'RHS':
             if equation[2]:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
+                # TODO: ONLY REDEFINE METRIC ONCE IF NOT ALREADY DEFINED (SAME FOR CHRISTOFFEL)
                 if config: config = '% define ' + ';\n'.join(config) + ';\n'
+                if deriv_type != 'symbolic':
+                    config = '% define deriv ' + deriv_type + ';\n' + config
                 self.parse(config + ''.join(equation))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
             else:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                self.parse(self._generate_covdrv(Tensor(function, self.dimension), indexing, diacritic))
+                self.parse(self._generate_covdrv(Tensor(function, self.dimension), indexing, deriv_type, diacritic))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
         symbol, suffix = str(function.args[0]), ''.join([index[1] for index in indexing])
@@ -641,11 +692,11 @@ class Parser:
         indexing = list(function.args[1:]) + [index[0] for index in indexing]
         return Function('Tensor')(symbol, *indexing)
 
-    # <DEFINE> -> <DEFINE_MACRO> ( <BASIS> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
+    # <DEFINE> -> <DEFINE_MACRO> ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
     def _define(self):
         self.expect('DEFINE_MACRO')
-        if self.peek('BASIS_KWRD'):
-            self._basis(); return
+        if self.peek('BASIS_KWRD') or self.peek('DERIV_KWRD'):
+            return self._global()
         while True:
             symmetry = self.lexer.lexeme
             if self.peek('SYMMETRY'):
@@ -673,6 +724,31 @@ class Parser:
             self._instantiate_tensor(Tensor(symbol, dimension), symmetry, invertible=(symmetry == 'metric'),
                 permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
+
+    # <GLOBAL> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET> | <DERIV_KWRD> <DERIV_TYPE>
+    def _global(self):
+        if self.accept('BASIS_KWRD'):
+            if 'basis' not in self.namespace:
+                self.namespace['basis'] = []
+            self.expect('LEFT_BRACKET')
+            while True:
+                symbol = self._strip(self.lexer.lexeme)
+                self.expect('LETTER')
+                if symbol in self.namespace['basis']:
+                    sentence, position = self.lexer.sentence, self.lexer.mark()
+                    raise ParseError('duplicate basis symbol \'%s\' at position %d' %
+                        (sentence[position], position), sentence, position)
+                self.namespace['basis'].append(Symbol(symbol))
+                if not self.accept('COMMA'): break
+            self.expect('RIGHT_BRACKET')
+        elif self.accept('DERIV_KWRD'):
+            deriv_type = self.lexer.lexeme
+            self.expect('DERIV_TYPE')
+            self.namespace['deriv'] = deriv_type
+        else:
+            sentence, position = self.lexer.sentence, self.lexer.mark()
+            raise ParseError('unexpected keyword at position %d' %
+                position, sentence, position)
 
     # <BASIS> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
     def _basis(self):
@@ -719,11 +795,6 @@ class Parser:
             self.namespace[inverse_symbol] = inverse
             self.namespace[symbol[:-2] + 'det'] = determinant \
                 if symbol[-2:] == 'DD' else (determinant)**(-1)
-
-    # <PARSE> -> <PARSE_MACRO> <ASSIGNMENT>
-    def _parse(self):
-        self.expect('PARSE_MACRO')
-        self._assignment()
 
     # <TENSOR> -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
     def _tensor(self):
@@ -790,6 +861,7 @@ class Parser:
         if self.accept('LEFT_BRACE'):
             while self.peek('LETTER') or self.peek('INTEGER'):
                 append_index()
+            # TODO: ADD SEMICOLON NOTATION FOR COVARIANT DERIVATIVE
             if self.accept('COMMA'):
                 while self.peek('LETTER'):
                     order += 1
@@ -914,9 +986,9 @@ class Parser:
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index, dim = dimension))
 
     @staticmethod
-    def _generate_covdrv(tensor, diff_indexing, diacritic=''):
-        indexing = [str(index[0]) for index in chain(tensor.indexing, diff_indexing)]
-        alphabet, order, LHS = (chr(97 + n) for n in range(26)), len(diff_indexing), ''
+    def _generate_covdrv(tensor, deriv_indexing, deriv_type, diacritic=''):
+        indexing = [str(index[0]) for index in chain(tensor.indexing, deriv_indexing)]
+        alphabet, order, LHS = (chr(97 + n) for n in range(26)), len(deriv_indexing), ''
         for i, index in enumerate(indexing):
             if index in indexing[:i]:
                 indexing[i] = next(x for x in alphabet if x not in indexing)
@@ -948,7 +1020,8 @@ class Parser:
                 else:
                     RHS += '^%s_{%s %s} (%s)' % (bound_index, index, diff_index, latex)
             return RHS
-        return LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
+        config = '% define deriv ' + deriv_type + ';\n' if deriv_type != 'symbolic' else ''
+        return config + LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
 
     @staticmethod
     def _summation(equation, dimension):
@@ -1112,7 +1185,8 @@ def parse(sentence):
         :return: namespace
     """
     namespace = Parser().parse(sentence)
-    if 'basis' in namespace: namespace.pop('basis')
+    if 'basis' in namespace: del namespace['basis']
+    if 'deriv' in namespace: del namespace['deriv']
     # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)
