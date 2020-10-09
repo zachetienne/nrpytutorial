@@ -165,17 +165,18 @@ class Parser:
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
         <LOWER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }* [ ',' { <LETTER> }+ ] '}'
-                        
         <UPPER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }+ '}'
     """
     # TODO: CHANGE NAMESPACE MAPPING: SYMBOL -> CLASS<TENSOR>
 
-    namespace = OrderedDict()
+    __namespace = OrderedDict()
+    __retention = True
+    __dimension = None
 
     def __init__(self):
         self.lexer     = Lexer()
         self.namespace = OrderedDict()
-        self.dimension = None # TODO: REMOVE
+        self.dimension = Parser.__dimension if Parser.__retention else None
 
     def parse(self, sentence, expression=False):
         """ Parse LaTeX Sentence
@@ -210,14 +211,15 @@ class Parser:
                     subtree.expr = subexpr.args[0]
                     del subtree.children[:]
             return tree.reconstruct()
-        return self._root()
+        self._root()
+        Parser.__dimension = self.dimension
+        return self.namespace
 
     # <ROOT> -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
     def _root(self):
         self._structure()
         while self.accept('LINE_BREAK') or self.peek('COMMENT'):
             self._structure()
-        return self.namespace
 
     # <STRUCTURE> -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
     def _structure(self):
@@ -298,8 +300,9 @@ class Parser:
                     expr = expr.replace(str(subexpr), func)
             # perform implied summation on indexed expression
             summation = self._summation((variable, expr), self.dimension)
+            Parser.__namespace.update(self.namespace)
             global_env = dict(sympy_env)
-            global_env.update(self.namespace)
+            global_env.update(Parser.__namespace)
             # evaluate each implied summation and update namespace
             exec('%s = %s' % summation, global_env)
             symbol = variable.split('[')[0]
@@ -314,7 +317,7 @@ class Parser:
                         del subtree.children[:]
             self.namespace.update({variable: tree.reconstruct()})
         # update (static) class namespace for global persistance
-        Parser.namespace.update(self.namespace)
+        Parser.__namespace.update(self.namespace)
 
     # <EXPRESSION> -> <TERM> { ( '+' | '-' ) <TERM> }*
     def _expression(self):
@@ -795,6 +798,7 @@ class Parser:
             self.namespace[inverse_symbol] = inverse
             self.namespace[symbol[:-2] + 'det'] = determinant \
                 if symbol[-2:] == 'DD' else (determinant)**(-1)
+            Parser.__namespace.update(self.namespace)
 
     # <TENSOR> -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
     def _tensor(self):
@@ -930,7 +934,8 @@ class Parser:
                     cycle_length += i > j
             return (-1)**cycle_length
         symbol, rank = tensor.symbol, tensor.rank
-        if symbol not in self.namespace:
+        if (Parser.__retention and symbol not in Parser.__namespace) or \
+                (not Parser.__retention and symbol not in self.namespace):
             if rank > 0:
                 symmetry = 'sym01' if symmetry == 'metric' \
                       else None    if symmetry == 'nosym' \
@@ -961,8 +966,9 @@ class Parser:
                     self.namespace[inverse_symbol] = inverse
                     self.namespace[symbol[:-2] + 'det'] = determinant \
                         if symbol[-2:] == 'DD' else (determinant)**(-1)
-            else: array = Function('Constant')(Symbol(symbol)) # TODO: , real=True))
-            if symbol in Parser.namespace:
+            else: array = Function('Constant')(Symbol(symbol))
+            # TODO: CHANGE SYMBOL TO REAL NUMBER FOR PERFORMANCE BOOST
+            if symbol in Parser.__namespace:
                 # pylint: disable=unused-argument
                 def formatwarning(message, category, filename=None, lineno=None, file=None, line=None):
                     return '%s: %s\n' % (category.__name__, message)
@@ -1086,6 +1092,14 @@ class Parser:
         warnings.filterwarnings('ignore', category=OverrideWarning)
 
     @staticmethod
+    def clear_namespace():
+        Parser.__namespace.clear()
+
+    @staticmethod
+    def continue_parsing(option):
+        Parser.__retention = option
+
+    @staticmethod
     def _strip(symbol):
         return symbol[1:] if symbol[0] == '\\' else symbol
 
@@ -1190,4 +1204,4 @@ def parse(sentence):
     # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)
-    return list(namespace.keys())
+    return tuple(namespace.keys())
