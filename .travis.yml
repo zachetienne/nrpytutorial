@@ -6,7 +6,7 @@ matrix:
     - name: "JUPYTER NOTEBOOK TESTS: SymPy-dev Ubuntu Linux Bionic Python 3.8.3 (Python 3 + latest *development* SymPy)"
       os: linux
       dist: bionic
-      python: 3.8.3
+      python: 3.9.0
       install:
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install mpmath jupyter matplotlib scipy
