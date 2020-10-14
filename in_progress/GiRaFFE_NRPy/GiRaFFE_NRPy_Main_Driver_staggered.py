@@ -118,7 +118,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     Af.GiRaFFE_NRPy_Afield_flux(os.path.join(out_dir, subdir))
 
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
-                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
+                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi,write_cmax_cmin=True)
 
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))

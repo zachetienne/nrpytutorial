@@ -4,6 +4,7 @@ import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import os, sys           # Standard Python modules for multiplatform OS-level functions
+import GiRaFFE_NRPy.GiRaFFE_NRPy_Characteristic_Speeds as chsp # GRFFE: the characteristic speeds
 
 par.set_parval_from_str("grid::DIM", 3)
 DIM = par.parval_from_str("grid::DIM")
@@ -54,7 +55,6 @@ def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul):
 def calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
                           Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi):
 
-    import GiRaFFE_NRPy.GiRaFFE_NRPy_Characteristic_Speeds as chsp
     chsp.find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face)
 
     global Stilde_fluxD
@@ -113,7 +113,7 @@ for dirn in range(3):
 
 def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=None, gamma_faceDD=None, beta_faceU=None,
                                     Valenciav_rU=None, B_rU=None, Valenciav_lU=None, B_lU=None, sqrt4pi=None,
-                                    outCparams = "outCverbose=False,CSE_sorting=none"):
+                                    outCparams = "outCverbose=False,CSE_sorting=none", write_cmax_cmin=False):
     if not inputs_provided:
         # We will pass values of the gridfunction on the cell faces into the function. This requires us
         # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
@@ -142,6 +142,11 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
                              "Stilde_fluxD1",
                              "Stilde_fluxD2"
                             ]
+
+        if write_cmax_cmin:
+            Stilde_flux_to_print = Stilde_flux_to_print + [chsp.cmax,chsp.cmin]
+            name_suffixes = ["_x","_y","_z"]
+            Stilde_flux_names = Stilde_flux_names + ["cmax"+name_suffixes[flux_dirn],"cmin"+name_suffixes[flux_dirn]]
 
         desc = "Compute the flux term of all 3 components of tilde{S}_i on the right face in the " + str(flux_dirn) + "direction."
         name = "calculate_Stilde_flux_D" + str(flux_dirn)
