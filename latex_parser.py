@@ -2,7 +2,6 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# pylint: disable=attribute-defined-outside-init,exec-used
 from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff
@@ -13,6 +12,7 @@ from expr_tree import ExprTree
 import indexedexp as ixp
 import re, warnings
 
+# pylint: disable = attribute-defined-outside-init, protected-access, exec-used
 sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', cosh), ('tanh', tanh),
     ('asin', asin), ('acos', acos), ('atan', atan), ('asinh', asinh), ('acosh', acosh), ('atanh', atanh),
     ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt), ('diff', diff))
@@ -46,6 +46,7 @@ class Lexer:
               ('EQUAL',          r'\='),
               ('CARET',          r'\^'),
               ('COMMA',          r'\,'),
+              ('COLON',          r'\:'),
               ('COMMENT',        r'\%'),
               ('LEFT_PAREN',     r'\('),
               ('RIGHT_PAREN',    r'\)'),
@@ -69,6 +70,7 @@ class Lexer:
               ('DEFINE_MACRO',   r'define'),
               ('ASSIGN_MACRO',   r'assign'),
               ('PARSE_MACRO',    r'parse'),
+              ('INDEX_KWRD',     r'index'),
               ('BASIS_KWRD',     r'basis'),
               ('DERIV_KWRD',     r'deriv'),
               ('DERIV_TYPE',     r'symbolic|_d'),
@@ -161,13 +163,15 @@ class Parser:
         <PARDRV>        -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { <PARTIAL> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { ( <NABLA> | <DIACRITIC> '{' <NABLA> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <DEFINE>        -> <DEFINE_MACRO> ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] ) { ',' ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] ) }*
-        <GLOBAL>        -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET> | <DERIV_KWRD> <DERIV_TYPE>
+        <GLOBAL>        -> <BASIS_KWRD> <BASIS> | <DERIV_KWRD> <DERIV_TYPE> | <INDEX_KWRD> <RANGE>
+        <BASIS>         -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
+        <RANGE>         -> ( <LETTER> | '[' <LETTER> '-' <LETTER> ']' ) '=' <INTEGER> ':' <INTEGER>
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
         <LOWER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }* [ ',' { <LETTER> }+ ] '}'
         <UPPER_INDEX>   -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }+ '}'
     """
-    # TODO: CHANGE NAMESPACE MAPPING: SYMBOL -> CLASS<TENSOR>
+    # TODO: CHANGE NAMESPACE MAPPING: SYMBOL -> CLASS<TENSOR>, STATIC SUMMATION
 
     __namespace = OrderedDict()
     __retention = True
@@ -199,8 +203,12 @@ class Parser:
                 subexpr, indexing = sentence[i_1:i_2], sentence[i_2:i_3][3:-1]
                 operator = ''.join('\\nabla_' + index for index in indexing)
                 sentence = sentence.replace(sentence[i_1:i_3], operator + ' ' + subexpr)
-        if 'basis' not in self.namespace:
-            self.namespace['basis'] = []
+        if 'basis' not in Parser.__namespace:
+            Parser.__namespace['basis'] = []
+        if 'deriv' not in Parser.__namespace:
+            Parser.__namespace['deriv'] = 'symbolic'
+        if 'index' not in Parser.__namespace:
+            Parser.__namespace['index'] = {chr(105 + n): (0, 3) for n in range(4)}
         self.lexer.initialize(sentence)
         self.lexer.lex()
         if expression:
@@ -266,7 +274,7 @@ class Parser:
             self.lexer.reset()
         variable = self._covdrv('LHS') if covdrv else self._tensor()
         indexed  = variable.func == Function('Tensor') and len(variable.args) > 1
-        variable = Tensor.array_format(variable) if indexed else str(variable.args[0])
+        variable = Tensor(variable, self.dimension).array_format() if indexed else str(variable.args[0])
         self.expect('EQUAL')
         tree = ExprTree(self._expression())
         if not indexed:
@@ -284,8 +292,8 @@ class Parser:
                 if subexpr.func == Derivative:
                     derivative = 'diff(' + str(subexpr.args[0])
                     for index in subexpr.args[1:]:
-                        if index[0] not in self.namespace['basis']:
-                            if not self.namespace['basis']:
+                        if index[0] not in Parser.__namespace['basis']:
+                            if not Parser.__namespace['basis']:
                                 sentence, position = self.lexer.sentence, self.lexer.mark()
                                 raise ParseError('cannot differentiate symbolically without basis', sentence, position)
                             derivative += ', (basis[%s], %s)' % (index[0], index[1])
@@ -293,7 +301,7 @@ class Parser:
                     derivative += ')'
                     expr = expr.replace(str(subexpr), derivative)
                 if subexpr.func in (Function('Tensor'), Function('Constant')):
-                    func = Tensor.array_format(subexpr)
+                    func = Tensor(subexpr, self.dimension).array_format()
                     if subexpr.func == Function('Constant'):
                         self.namespace[func] = subexpr.args[0]
                     expr = expr.replace(str(subexpr), func)
@@ -556,9 +564,7 @@ class Parser:
 
     # <PARDRV> -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { <PARTIAL> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _pardrv(self):
-        if 'deriv' not in self.namespace:
-            self.namespace['deriv'] = 'symbolic'
-        deriv_type = self.namespace['deriv']
+        deriv_type = Parser.__namespace['deriv']
         if self.accept('VPHANTOM'):
             self.expect('LEFT_BRACE')
             deriv_type = self.lexer.lexeme
@@ -573,7 +579,7 @@ class Parser:
             index = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
             indexing.extend(int(order)*[Symbol(index)])
-        if all(index in self.namespace['basis'] for index in indexing):
+        if all(index in Parser.__namespace['basis'] for index in indexing):
             deriv_type = 'symbolic'
         if self.accept('LEFT_PAREN'):
             if deriv_type == 'symbolic':
@@ -624,9 +630,7 @@ class Parser:
 
     # <COVDRV> -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { ( <NABLA> | <DIACRITIC> '{' <NABLA> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
     def _covdrv(self, location):
-        if 'deriv' not in self.namespace:
-            self.namespace['deriv'] = 'symbolic'
-        deriv_type = self.namespace['deriv']
+        deriv_type = Parser.__namespace['deriv']
         if self.accept('VPHANTOM'):
             self.expect('LEFT_BRACE')
             deriv_type = self.lexer.lexeme
@@ -645,6 +649,8 @@ class Parser:
                 self.expect('RIGHT_BRACE')
             else: self.expect('NABLA')
             equation[0] += operator
+            if deriv_type != 'symbolic':
+                operator = '\\vphantom{%s} \\nabla' % deriv_type
             equation[3] += operator
             if self.accept('CARET'):
                 index = self.lexer.lexeme
@@ -675,11 +681,10 @@ class Parser:
         equation[0] += self.lexer.sentence[marker_1:marker_2]
         equation[3] += self.lexer.sentence[marker_1:marker_2]
         if location == 'RHS':
+            global_deriv = Parser.__namespace['deriv']
             if equation[2]:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
                 if config: config = '% define ' + ';\n'.join(config) + ';\n'
-                if deriv_type != 'symbolic':
-                    config = '% define deriv ' + deriv_type + ';\n' + config
                 self.parse(config + ''.join(equation))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
@@ -688,6 +693,7 @@ class Parser:
                 self.parse(self._generate_covdrv(Tensor(function, self.dimension), indexing, deriv_type, diacritic))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
+            Parser.__namespace['deriv'] = global_deriv
         symbol, suffix = str(function.args[0]), ''.join([index[1] for index in indexing])
         symbol = symbol + ('' if '_cd' in symbol else '_cd' + diacritic) + suffix
         indexing = list(function.args[1:]) + [index[0] for index in indexing]
@@ -697,7 +703,7 @@ class Parser:
     def _define(self):
         self.expect('DEFINE_MACRO')
         while True:
-            if any(self.peek(kwrd) for kwrd in ('BASIS_KWRD', 'DERIV_KWRD')):
+            if any(self.peek(kwrd) for kwrd in ('BASIS_KWRD', 'DERIV_KWRD', 'INDEX_KWRD')):
                 self._global()
             else:
                 symmetry = self.lexer.lexeme
@@ -727,26 +733,16 @@ class Parser:
                     permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
 
-    # <GLOBAL> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET> | <DERIV_KWRD> <DERIV_TYPE>
+    # <GLOBAL> -> <BASIS_KWRD> <BASIS> | <DERIV_KWRD> <DERIV_TYPE> | <INDEX_KWRD> <RANGE>
     def _global(self):
         if self.accept('BASIS_KWRD'):
-            if 'basis' not in self.namespace:
-                self.namespace['basis'] = []
-            self.expect('LEFT_BRACKET')
-            while True:
-                symbol = self._strip(self.lexer.lexeme)
-                self.expect('LETTER')
-                if symbol in self.namespace['basis']:
-                    sentence, position = self.lexer.sentence, self.lexer.mark()
-                    raise ParseError('duplicate basis symbol \'%s\' at position %d' %
-                        (sentence[position], position), sentence, position)
-                self.namespace['basis'].append(Symbol(symbol))
-                if not self.accept('COMMA'): break
-            self.expect('RIGHT_BRACKET')
+            self._basis()
         elif self.accept('DERIV_KWRD'):
             deriv_type = self.lexer.lexeme
             self.expect('DERIV_TYPE')
-            self.namespace['deriv'] = deriv_type
+            Parser.__namespace['deriv'] = deriv_type
+        elif self.accept('INDEX_KWRD'):
+            self._range()
         else:
             sentence, position = self.lexer.sentence, self.lexer.mark()
             raise ParseError('unexpected keyword at position %d' %
@@ -754,20 +750,38 @@ class Parser:
 
     # <BASIS> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
     def _basis(self):
-        self.expect('BASIS_KWRD')
-        if 'basis' not in self.namespace:
-            self.namespace['basis'] = []
         self.expect('LEFT_BRACKET')
         while True:
             symbol = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
-            if symbol in self.namespace['basis']:
+            if symbol in Parser.__namespace['basis']:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
                 raise ParseError('duplicate basis symbol \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
-            self.namespace['basis'].append(Symbol(symbol))
+            Parser.__namespace['basis'].append(Symbol(symbol))
             if not self.accept('COMMA'): break
         self.expect('RIGHT_BRACKET')
+
+    # <RANGE> -> ( <LETTER> | '[' <LETTER> '-' <LETTER> ']' ) '=' <INTEGER> ':' <INTEGER>
+    def _range(self):
+        if self.accept('LEFT_BRACKET'):
+            index_1 = self._strip(self.lexer.lexeme)
+            self.expect('LETTER')
+            self.expect('MINUS')
+            index_2 = self._strip(self.lexer.lexeme)
+            self.expect('LETTER')
+            index = [chr(i) for i in range(ord(index_1), ord(index_2) + 1)]
+            self.expect('RIGHT_BRACKET')
+        else:
+            index = [self._strip(self.lexer.lexeme)]
+            self.expect('LETTER')
+        self.expect('EQUAL')
+        start = self.lexer.lexeme
+        self.expect('INTEGER')
+        self.expect('COLON')
+        stop  = self.lexer.lexeme
+        self.expect('INTEGER')
+        Parser.__namespace['index'].update({i: (int(start), int(stop) + 1) for i in index})
 
     # <ASSIGN> -> <ASSIGN_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
     def _assign(self):
@@ -804,7 +818,7 @@ class Parser:
         indexing = []
         symbol = list(self._strip(self._symbol()))
         if self.accept('UNDERSCORE'):
-            index, order = self._lower_index()
+            index, order, _ = self._lower_index()
             indexing.extend(index)
             symbol.extend((len(index) - order) * ['D'])
             if order > 0:
@@ -832,7 +846,7 @@ class Parser:
             indexing.extend(index)
             symbol.extend(len(index) * ['U'])
             if self.accept('UNDERSCORE'):
-                index, order = self._lower_index()
+                index, order, _ = self._lower_index()
                 indexing.extend(index)
                 symbol.extend((len(index) - order) * ['D'])
                 if order > 0:
@@ -852,7 +866,7 @@ class Parser:
 
     # <LOWER_INDEX> -> <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }* [ ',' { <LETTER> }+ ] '}'
     def _lower_index(self):
-        indexing = []
+        indexing, covariant = [], False
         def append_index():
             index = self._strip(self.lexer.lexeme)
             self.lexer.lex()
@@ -860,7 +874,7 @@ class Parser:
         order = 0
         if self.peek('LETTER') or self.peek('INTEGER'):
             append_index()
-            return indexing, order
+            return indexing, order, covariant
         if self.accept('LEFT_BRACE'):
             while self.peek('LETTER') or self.peek('INTEGER'):
                 append_index()
@@ -869,8 +883,13 @@ class Parser:
                 while self.peek('LETTER'):
                     order += 1
                     append_index()
+            elif self.accept('SEMICOLON'):
+                covariant = True
+                while self.peek('LETTER'):
+                    order += 1
+                    append_index()
             self.expect('RIGHT_BRACE')
-            return indexing, order
+            return indexing, order, covariant
         sentence, position = self.lexer.sentence, self.lexer.mark()
         raise ParseError('unexpected \'%s\' at position %d' %
             (sentence[position], position), sentence, position)
@@ -990,9 +1009,9 @@ class Parser:
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index, dim = dimension))
 
     @staticmethod
-    def _generate_covdrv(tensor, deriv_indexing, deriv_type, diacritic=''):
-        indexing = [str(index[0]) for index in chain(tensor.indexing, deriv_indexing)]
-        alphabet, order, LHS = (chr(97 + n) for n in range(26)), len(deriv_indexing), ''
+    def _generate_covdrv(tensor, deriv_index, deriv_type, diacritic=''):
+        indexing = [str(index[0]) for index in chain(tensor.indexing, deriv_index)]
+        alphabet, order, LHS = (chr(97 + n) for n in range(26)), len(deriv_index), ''
         for i, index in enumerate(indexing):
             if index in indexing[:i]:
                 indexing[i] = next(x for x in alphabet if x not in indexing)
@@ -1003,8 +1022,9 @@ class Parser:
         LHS += str(tensor)
         def generate_RHS(symbol, order, indexing):
             if order == 0:
-                return Tensor.latex_format(symbol,
-                    [(index, position) for index, (_, position) in zip(indexing, tensor.indexing)])
+                _tensor = Tensor(tensor.symbol, tensor.dimension)
+                _tensor.indexing = [(index, position) for index, (_, position) in zip(indexing, tensor.indexing)]
+                return _tensor.latex_format()
             diff_index, RHS = indexing[len(indexing) - order], ''
             if len(diff_index) > 1:
                 diff_index = '\\' + diff_index
@@ -1024,8 +1044,9 @@ class Parser:
                 else:
                     RHS += '^%s_{%s %s} (%s)' % (bound_index, index, diff_index, latex)
             return RHS
-        config = '% define deriv ' + deriv_type + ';\n' if deriv_type != 'symbolic' else ''
-        return config + LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
+        if deriv_type != 'symbolic':
+            LHS = '% define deriv ' + deriv_type + ';\n' + LHS
+        return LHS + ' = ' + generate_RHS(tensor.symbol, order, indexing)
 
     @staticmethod
     def _summation(equation, dimension):
@@ -1067,8 +1088,11 @@ class Parser:
             summation = product
             # generate implied summation over every bound index
             for idx in bound_index:
-                summation = 'sum([%s for %s in range(%d)])' % \
-                    (summation, idx, dimension)
+                start, stop = 0, dimension
+                if idx in Parser.__namespace['index']:
+                    start, stop = Parser.__namespace['index'][idx]
+                summation = 'sum([%s for %s in range(%d, %d)])' % \
+                    (summation, idx, start, stop)
             expr = expr.replace(product, summation)
         if LHS:
             LHS = uniquify(LHS)
@@ -1080,7 +1104,10 @@ class Parser:
                     raise TensorError('unbalanced free index')
             # generate tensor instantiation with implied summation
             for idx, _ in reversed(LHS):
-                expr = '[%s for %s in range(%d)]' % (expr, idx, dimension)
+                start, stop = 0, dimension
+                if idx in Parser.__namespace['index']:
+                    start, stop = Parser.__namespace['index'][idx]
+                expr = '[%s for %s in range(%d, %d)]' % (expr, idx, start, stop)
         if rank == len(re.findall(r'\[[^0-9\]]+\]', var)):
             return (var.split('[')[0], expr)
         return (re.sub(r'\[[^0-9\]]+\]', '[:]', var), expr)
@@ -1096,6 +1123,10 @@ class Parser:
     @staticmethod
     def continue_parsing(option):
         Parser.__retention = option
+        if not option:
+            for kwrd in ('basis', 'deriv', 'index'):
+                if kwrd in Parser.__namespace:
+                    del Parser.__namespace[kwrd]
 
     @staticmethod
     def _strip(symbol):
@@ -1126,7 +1157,7 @@ class Tensor:
     """ Tensor Structure """
 
     def __init__(self, function, dimension):
-        if isinstance(function, Function('Tensor')):
+        if isinstance(function, (Function('Tensor'), Function('Constant'))):
             self.function  = function
             self.dimension = dimension
             self.symbol    = str(function.args[0])
@@ -1139,19 +1170,17 @@ class Tensor:
             self.rank      = len(re.findall(r'[UD]', self.symbol))
             self.indexing  = None
 
-    @staticmethod
-    def array_format(function):
+    def array_format(self):
         """ Tensor Notation for Array Formatting """
-        fields = [str(arg) for arg in function.args]
-        suffix = ''.join(['[' + n + ']' for n in fields[1:]])
-        return fields[0] + suffix
+        if not self.indexing:
+            return self.symbol
+        return self.symbol + ''.join(['[' + str(index) + ']' for index, _ in self.indexing])
 
-    @staticmethod
-    def latex_format(symbol, indexing):
+    def latex_format(self):
         """ Tensor Notation for LaTeX Formatting """
-        latex = [re.split('[UD]', symbol)[0], [], []]
+        latex = [re.split('[UD]', self.symbol)[0], [], []]
         U_count, D_count = 0, 0
-        for index, position in indexing:
+        for index, position in self.indexing:
             index = str(index)
             if len(index) > 1:
                 index = '\\' + index
@@ -1175,7 +1204,7 @@ class Tensor:
 
     def __str__(self):
         if self.indexing is None: return self.symbol
-        return self.latex_format(self.symbol, self.indexing)
+        return self.latex_format()
 
 class TensorError(Exception):
     """ Invalid Tensor Indexing or Dimension """
@@ -1197,8 +1226,6 @@ def parse(sentence):
         :return: namespace
     """
     namespace = Parser().parse(sentence)
-    if 'basis' in namespace: del namespace['basis']
-    if 'deriv' in namespace: del namespace['deriv']
     # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
     frame.f_globals.update(namespace)

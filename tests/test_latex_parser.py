@@ -66,7 +66,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             parse(r"""
                 % define vU (2), wU (2);
-                T^{ij}_k = \vphantom{_d} \partial_k (v^i w^j)
+                T^{ab}_c = \vphantom{_d} \partial_c (v^a w^b)
             """),
             ('vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD')
         )
@@ -78,7 +78,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             parse(r"""
                 % define vU (2), const w;
-                T^i_k = \vphantom{_d} \partial_k (v^i w)
+                T^a_c = \vphantom{_d} \partial_c (v^a w)
             """),
             ('vU', 'w', 'vU_dD', 'TUD')
         )
@@ -103,7 +103,6 @@ class TestParser(unittest.TestCase):
             v_1 = y\sqrt{x};
             T_{\mu\nu} = (\partial_\nu v_\mu)\,\partial^2_x (y\sqrt{x})
         """)
-        # T_{\mu\nu} = (\partial_\nu v_\mu)\,\partial^2_x (x^{{2}} + 2x)
         self.assertEqual(str(TDD),
             '[[-vD_dD00*y/(4*x**(3/2)), -vD_dD01*y/(4*x**(3/2))], [-vD_dD10*y/(4*x**(3/2)), -vD_dD11*y/(4*x**(3/2))]]'
         )
@@ -150,6 +149,19 @@ class TestParser(unittest.TestCase):
         self.assertEqual(RDD[0][1], 0)
         self.assertEqual(str(R),
             '2/r**2'
+        )
+
+    def test_assignment_6(self):
+        self.assertEqual(
+            parse(r"""
+                % define metric gDD (4);
+                % define index [i-j] = 1:3;
+                \gamma_{ij} = g_{ij}
+            """),
+            ('gUU', 'gdet', 'gDD', 'gammaDD')
+        )
+        self.assertEqual(str(gammaDD),
+            '[[gDD11, gDD12, gDD13], [gDD12, gDD22, gDD23], [gDD13, gDD23, gDD33]]'
         )
 
     def test_example_1(self):
@@ -294,6 +306,7 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_assignment_3'))
     suite.addTest(TestParser('test_assignment_4'))
     suite.addTest(TestParser('test_assignment_5'))
+    suite.addTest(TestParser('test_assignment_6'))
     suite.addTest(TestParser('test_example_1'))
     suite.addTest(TestParser('test_example_2'))
     suite.addTest(TestParser('test_example_3'))
