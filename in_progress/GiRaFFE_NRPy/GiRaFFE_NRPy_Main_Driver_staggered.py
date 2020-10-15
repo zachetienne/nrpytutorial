@@ -240,31 +240,6 @@ void workaround_Drift_to_Valencia_velocity(const paramstruct *params, REAL *vU0,
     }
 }
 
-void calculate_GRFFE_characteristic_speeds(const paramstruct *restrict params,
-                                           const REAL *alpha, const REAL *betaU2,
-                                           const REAL *gammaDD00, const REAL *gammaDD01, const REAL *gammaDD02,
-                                           const REAL *gammaDD11, const REAL *gammaDD12, const REAL *gammaDD22,
-                                           REAL *cmax_z, REAL *cmin_z) {
-#include "set_Cparameters.h"
-    for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
-       const int index = IDX3S(i,j,k);
-       const double alpha_face = alpha[index];
-       const double beta_faceU2 = betaU2[index];
-       const double gamma_faceDD00 = gammaDD00[index];
-       const double gamma_faceDD01 = gammaDD01[index];
-       const double gamma_faceDD02 = gammaDD02[index];
-       const double gamma_faceDD11 = gammaDD11[index];
-       const double gamma_faceDD12 = gammaDD12[index];
-       const double gamma_faceDD22 = gammaDD22[index];
-       const double tmp_3 = ((beta_faceU2)*(beta_faceU2))/((alpha_face)*(alpha_face)*(alpha_face)*(alpha_face));
-       const double tmp_4 = (1.0/((alpha_face)*(alpha_face)));
-       const double tmp_7 = tmp_4*(((beta_faceU2)*(beta_faceU2))*tmp_4 - (gamma_faceDD00*gamma_faceDD11 - ((gamma_faceDD01)*(gamma_faceDD01)))/(gamma_faceDD00*gamma_faceDD11*gamma_faceDD22 - gamma_faceDD00*((gamma_faceDD12)*(gamma_faceDD12)) - ((gamma_faceDD01)*(gamma_faceDD01))*gamma_faceDD22 + 2*gamma_faceDD01*gamma_faceDD02*gamma_faceDD12 - ((gamma_faceDD02)*(gamma_faceDD02))*gamma_faceDD11));
-       const double tmp_8 = ((alpha_face)*(alpha_face))*sqrt(2*tmp_3 - 2*tmp_7 + (1.0/2.0)*fabs(4*tmp_3 - 4*tmp_7));
-       cmax_z[index] = -1.0/2.0*beta_faceU2 + (1.0/4.0)*tmp_8 + (1.0/2.0)*fabs(-beta_faceU2 + (1.0/2.0)*tmp_8);
-       cmin_z[index] = (1.0/2.0)*beta_faceU2 + (1.0/4.0)*tmp_8 + (1.0/2.0)*fabs(-beta_faceU2 - 1.0/2.0*tmp_8);
-    }
-}
-
 void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
     // First thing's first: initialize the RHSs to zero!
@@ -407,13 +382,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD0_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D0(params,auxevol_gfs,rhs_gfs);
-  // Calculate the characteristic speeds for the upcoming vector potential evolution:
-  calculate_GRFFE_characteristic_speeds(params,
-                                        auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD11GF, auxevol_gfs+Nxxp2NG012*GAMMADD12GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF,
-                                        auxevol_gfs+Nxxp2NG012*CMAX_XGF, auxevol_gfs+Nxxp2NG012*CMIN_XGF);
 
   // Note that we have already reconstructed vx and vy along the x-direction,
   //   at (i-1/2,j,k). That result is stored in v{x,y}{r,l}.  Bx_stagger data
@@ -520,13 +488,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D1(params,auxevol_gfs,rhs_gfs);
-  // Calculate the characteristic speeds for the upcoming vector potential evolution:
-  calculate_GRFFE_characteristic_speeds(params,
-                                        auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD22GF, auxevol_gfs+Nxxp2NG012*GAMMADD02GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD00GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD01GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF,
-                                        auxevol_gfs+Nxxp2NG012*CMAX_YGF, auxevol_gfs+Nxxp2NG012*CMIN_YGF);
 
   /*****************************************
    * COMPUTING RHS OF A_z, BOOKKEEPING NOTE:
@@ -675,12 +636,6 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D2(params,auxevol_gfs,rhs_gfs);
-  calculate_GRFFE_characteristic_speeds(params,
-                                        auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD00GF, auxevol_gfs+Nxxp2NG012*GAMMADD01GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD02GF, auxevol_gfs+Nxxp2NG012*GAMMADD11GF,
-                                        auxevol_gfs+Nxxp2NG012*GAMMADD12GF, auxevol_gfs+Nxxp2NG012*GAMMADD22GF,
-                                        auxevol_gfs+Nxxp2NG012*CMAX_ZGF, auxevol_gfs+Nxxp2NG012*CMIN_ZGF);
 
   // in_prims[{VYR,VYL,VZR,VZL}].gz_{lo,hi} ghostzones are not set correcty.
   //    We fix this below.

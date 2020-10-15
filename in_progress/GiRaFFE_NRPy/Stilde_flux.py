@@ -129,6 +129,24 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
         B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
         sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
 
+    global Memory_Read, Memory_Write # This is to satisfy Python's scoping rules to allow us to
+                                     # conditionally modify these global values inside the function.
+    if write_cmax_cmin:
+        # In the staggered case, we will also want to output cmax and cmin
+        # If we want to write cmax and cmin, we will need to be able to change auxevol_gfs:
+        input_params_for_Stilde_flux = "const paramstruct *params,REAL *auxevol_gfs,REAL *rhs_gfs"
+        # In the staggered case, we will also want to output cmax and cmin:
+        for var in ["cmax","cmin"]:
+            Memory_Read += "REAL "+var+" = 0;\n"
+        # Then we will write them to gridfunctions determined by the direction in which we interpolated:
+        name_suffixes = ["_X","_Y","_Z"]
+        for dirn in range(3):
+            for var in ["cmax","cmin"]:
+                Memory_Write[dirn] += "auxevol_gfs[IDX4S(CMAX"+name_suffixes[dirn]+"GF, i0, i1, i2)] = cmax;\n"
+                Memory_Write[dirn] += "auxevol_gfs[IDX4S(CMIN"+name_suffixes[dirn]+"GF, i0, i1, i2)] = cmin;\n"
+    else:
+        input_params_for_Stilde_flux = "const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs"
+
     for flux_dirn in range(3):
         calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
                               Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
@@ -145,14 +163,13 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
 
         if write_cmax_cmin:
             Stilde_flux_to_print = Stilde_flux_to_print + [chsp.cmax,chsp.cmin]
-            name_suffixes = ["_x","_y","_z"]
-            Stilde_flux_names = Stilde_flux_names + ["cmax"+name_suffixes[flux_dirn],"cmin"+name_suffixes[flux_dirn]]
+            Stilde_flux_names = Stilde_flux_names + ["cmax","cmin"]
 
         desc = "Compute the flux term of all 3 components of tilde{S}_i on the right face in the " + str(flux_dirn) + "direction."
         name = "calculate_Stilde_flux_D" + str(flux_dirn)
         Ccode_function = outCfunction(
             outfile  = "returnstring", desc=desc, name=name,
-            params   ="const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs",
+            params   = input_params_for_Stilde_flux,
             body     =  Memory_Read \
                        +outputC(Stilde_flux_to_print,Stilde_flux_names,"returnstring",params=outCparams).replace("IDX4","IDX4S")\
                        +Memory_Write[flux_dirn],
