@@ -97,8 +97,7 @@ class TestParser(unittest.TestCase):
 
     def test_assignment_4(self):
         parse(r"""
-            % define basis [x, y];
-            % define deriv _d;
+            % define basis [x, y], deriv _d;
             % define vD (2);
             v_0 = x^{{2}} + 2x;
             v_1 = y\sqrt{x};
@@ -112,14 +111,13 @@ class TestParser(unittest.TestCase):
     def test_assignment_5(self):
         parse(r"""
             % define basis [\theta, \phi];
-            % define metric gDD (2), kronecker deltaDD (2);
-            % define const r;
+            % define const r, kronecker deltaDD (2);
             % parse g_{\mu\nu} = \delta_{\mu\nu};
             \begin{align*}
                 g_{0 0} &= r^{{2}} \\
                 g_{1 1} &= r^{{2}} \sin^2(\theta)
             \end{align*}
-            % update metric gDD;
+            % assign metric gDD;
             \begin{align*}
                 R^\alpha_{\beta\mu\nu} &= \partial_\mu \Gamma^\alpha_{\beta\nu} - \partial_\nu \Gamma^\alpha_{\beta\mu} + \Gamma^\alpha_{\mu\gamma}\Gamma^\gamma_{\beta\nu} - \Gamma^\alpha_{\nu\sigma}\Gamma^\sigma_{\beta\mu} \\
                 R_{\alpha\beta\mu\nu} &= g_{\alpha a} R^a_{\beta\mu\nu} \\
@@ -211,7 +209,7 @@ class TestParser(unittest.TestCase):
 
     def test_example_5(self):
         parse(r"""
-            % define metric gDD (4), kronecker deltaDD (4);
+            % define kronecker deltaDD (4);
             % define const G, const M;
             % parse g_{\mu\nu} = \delta_{\mu\nu};
             \begin{align}
@@ -220,7 +218,7 @@ class TestParser(unittest.TestCase):
                 g_{2 2} &= r^{{2}} \\
                 g_{3 3} &= r^{{2}} \sin^2\theta
             \end{align}
-            % update metric gDD
+            % assign metric gDD
         """)
         self.assertEqual(str(gdet),
             'r**4*(2*G*M/r - 1)*sin(theta)**2/(-2*G*M/r + 1)'

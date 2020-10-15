@@ -67,7 +67,7 @@ class Lexer:
               ('NLOG_CMD',       r'\\ln|\\log'),
               ('VPHANTOM',       r'\\vphantom'),
               ('DEFINE_MACRO',   r'define'),
-              ('UPDATE_MACRO',   r'update'),
+              ('ASSIGN_MACRO',   r'assign'),
               ('PARSE_MACRO',    r'parse'),
               ('BASIS_KWRD',     r'basis'),
               ('DERIV_KWRD',     r'deriv'),
@@ -141,7 +141,7 @@ class Parser:
         LaTeX Extended BNF Grammar:
         <ROOT>          -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
         <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
-        <CONFIG>        -> '%' ( <DEFINE> | <UPDATE> | <PARSE> )
+        <CONFIG>        -> '%' ( <DEFINE> | <ASSIGN> | <PARSE> )
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT>
         <ENVIRONMENT>   -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
         <ASSIGNMENT>    -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
@@ -160,7 +160,7 @@ class Parser:
         <TRIG>          -> <TRIG_CMD> [ '^' ( <INTEGER> | { <INTEGER> } ) ] ( <LETTER> | <INTEGER> | '(' <EXPRESSION> ')' )
         <PARDRV>        -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { <PARTIAL> [ '^' <INTEGER> ] '_' <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
         <COVDRV>        -> [ <VPHANTOM> '{' <DERIV_TYPE> '}' ] { ( <NABLA> | <DIACRITIC> '{' <NABLA> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | '(' <EXPRESSION> ')' )
-        <DEFINE>        -> <DEFINE_MACRO> ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
+        <DEFINE>        -> <DEFINE_MACRO> ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] ) { ',' ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] ) }*
         <GLOBAL>        -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET> | <DERIV_KWRD> <DERIV_TYPE>
         <SYMBOL>        -> <LETTER> | <DIACRITIC> '{' <LETTER> '}' | <MATHOP> '{' <LETTER> { <LETTER> | <INTEGER> | <UNDERSCORE> }* '}'
         <TENSOR>        -> <SYMBOL> [ ( '_' <LOWER_INDEX> ) | ( '^' <UPPER_INDEX> [ '_' <LOWER_INDEX> ] ) ]
@@ -229,16 +229,15 @@ class Parser:
             self._environment()
         else: self._assignment()
 
-    # <CONFIG> -> '%' ( <DEFINE> | <UPDATE> | <PARSE> )
+    # <CONFIG> -> '%' ( <DEFINE> | <ASSIGN> | <PARSE> )
     def _config(self):
         self.expect('COMMENT')
-        macro = self.lexer.lexeme
-        if self.peek('DEFINE_MACRO'):
-            self._define()
-        elif self.peek('UPDATE_MACRO'):
-            self._update()
-        elif self.peek('PARSE_MACRO'):
+        if self.peek('PARSE_MACRO'):
             self._parse()
+        elif self.peek('DEFINE_MACRO'):
+            self._define()
+        elif self.peek('ASSIGN_MACRO'):
+            self._assign()
         else:
             sentence, position = self.lexer.sentence, self.lexer.mark()
             raise ParseError('unsupported macro at position %d' %
@@ -678,7 +677,6 @@ class Parser:
         if location == 'RHS':
             if equation[2]:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                # TODO: ONLY REDEFINE METRIC ONCE IF NOT ALREADY DEFINED (SAME FOR CHRISTOFFEL)
                 if config: config = '% define ' + ';\n'.join(config) + ';\n'
                 if deriv_type != 'symbolic':
                     config = '% define deriv ' + deriv_type + ';\n' + config
@@ -695,37 +693,38 @@ class Parser:
         indexing = list(function.args[1:]) + [index[0] for index in indexing]
         return Function('Tensor')(symbol, *indexing)
 
-    # <DEFINE> -> <DEFINE_MACRO> ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] { ',' [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] }* )
+    # <DEFINE> -> <DEFINE_MACRO> ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] ) { ',' ( <GLOBAL> | [ <SYMMETRY> ] { <SYMBOL> }+ [ '(' <INTEGER> ')' ] ) }*
     def _define(self):
         self.expect('DEFINE_MACRO')
-        if self.peek('BASIS_KWRD') or self.peek('DERIV_KWRD'):
-            return self._global()
         while True:
-            symmetry = self.lexer.lexeme
-            if self.peek('SYMMETRY'):
-                self.lexer.lex()
-            else: symmetry = None
-            symbol = []
-            if self.peek('EULER'):
-                self.lexer.token = 'LETTER'
-            while any(self.peek(token) for token in ('LETTER', 'DIACRITIC', 'MATHOP')):
-                symbol.append(self._symbol())
+            if any(self.peek(kwrd) for kwrd in ('BASIS_KWRD', 'DERIV_KWRD')):
+                self._global()
+            else:
+                symmetry = self.lexer.lexeme
+                if self.peek('SYMMETRY'):
+                    self.lexer.lex()
+                else: symmetry = None
+                symbol = []
                 if self.peek('EULER'):
                     self.lexer.token = 'LETTER'
-            symbol = ''.join(symbol)
-            if self.accept('LEFT_PAREN'):
-                dimension = self.lexer.lexeme
-                self.expect('INTEGER')
-                dimension = int(dimension)
-                if self.dimension and self.dimension != dimension:
-                    raise TensorError('inconsistent tensor dimension')
-                self.dimension = dimension
-                self.expect('RIGHT_PAREN')
-            else: dimension = None
-            if symmetry != 'const' and not dimension:
-                raise TensorError('dimension only omittable for constant')
-            self._instantiate_tensor(Tensor(symbol, dimension), symmetry, invertible=(symmetry == 'metric'),
-                permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
+                while any(self.peek(token) for token in ('LETTER', 'DIACRITIC', 'MATHOP')):
+                    symbol.append(self._symbol())
+                    if self.peek('EULER'):
+                        self.lexer.token = 'LETTER'
+                symbol = ''.join(symbol)
+                if self.accept('LEFT_PAREN'):
+                    dimension = self.lexer.lexeme
+                    self.expect('INTEGER')
+                    dimension = int(dimension)
+                    if self.dimension and self.dimension != dimension:
+                        raise TensorError('inconsistent tensor dimension')
+                    self.dimension = dimension
+                    self.expect('RIGHT_PAREN')
+                else: dimension = None
+                if symmetry != 'const' and not dimension:
+                    raise TensorError('dimension only omittable for constant')
+                self._instantiate_tensor(Tensor(symbol, dimension), symmetry, invertible=(symmetry == 'metric'),
+                    permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
             if not self.accept('COMMA'): break
 
     # <GLOBAL> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET> | <DERIV_KWRD> <DERIV_TYPE>
@@ -770,9 +769,9 @@ class Parser:
             if not self.accept('COMMA'): break
         self.expect('RIGHT_BRACKET')
 
-    # <UPDATE> -> <UPDATE_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
-    def _update(self):
-        self.expect('UPDATE_MACRO')
+    # <ASSIGN> -> <ASSIGN_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
+    def _assign(self):
+        self.expect('ASSIGN_MACRO')
         symmetry = self.lexer.lexeme
         if self.peek('SYMMETRY'):
             self.lexer.lex()
@@ -967,7 +966,6 @@ class Parser:
                     self.namespace[symbol[:-2] + 'det'] = determinant \
                         if symbol[-2:] == 'DD' else (determinant)**(-1)
             else: array = Function('Constant')(Symbol(symbol))
-            # TODO: CHANGE SYMBOL TO REAL NUMBER FOR PERFORMANCE BOOST
             if symbol in Parser.__namespace:
                 # pylint: disable=unused-argument
                 def formatwarning(message, category, filename=None, lineno=None, file=None, line=None):
@@ -1137,7 +1135,7 @@ class Tensor:
         else:
             self.function  = None
             self.dimension = dimension
-            self.symbol    = function
+            self.symbol    = str(function)
             self.rank      = len(re.findall(r'[UD]', self.symbol))
             self.indexing  = None
 
@@ -1149,9 +1147,9 @@ class Tensor:
         return fields[0] + suffix
 
     @staticmethod
-    def latex_format(name, indexing):
+    def latex_format(symbol, indexing):
         """ Tensor Notation for LaTeX Formatting """
-        latex = [re.split('[UD]', name)[0], [], []]
+        latex = [re.split('[UD]', symbol)[0], [], []]
         U_count, D_count = 0, 0
         for index, position in indexing:
             index = str(index)
