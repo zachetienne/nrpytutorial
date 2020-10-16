@@ -70,24 +70,29 @@ def calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
         Ul = U
         Stilde_fluxD[mom_comp] = HLLE_solver(chsp.cmax, chsp.cmin, Fr, Fl, Ur, Ul)
 
-Memory_Read = ""
-# Read in all the inputs:
-for var in ["GAMMA_FACEDD00", "GAMMA_FACEDD01", "GAMMA_FACEDD02",
-            "GAMMA_FACEDD11", "GAMMA_FACEDD12", "GAMMA_FACEDD22",
-            "BETA_FACEU0", "BETA_FACEU1", "BETA_FACEU2","ALPHA_FACE",
-            "B_RU0","B_RU1","B_RU2","B_LU0","B_LU1","B_LU2",
-            "VALENCIAV_RU0","VALENCIAV_RU1","VALENCIAV_RU2",
-            "VALENCIAV_LU0","VALENCIAV_LU1","VALENCIAV_LU2"]:
-    lhsvar = var.lower().replace("dd","DD").replace("u","U").replace("b_","B_").replace("valencia","Valencia")
-    # e.g.,
-    # const REAL gammaDD00dD0 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)];
-    Memory_Read += "const REAL "+lhsvar+" = auxevol_gfs[IDX4S("+var+"GF,i0,i1,i2)];\n"
-
-# Storage for the outputs:
-for var in ["Stilde_fluxD0","Stilde_fluxD1","Stilde_fluxD2"]:
-    # e.g.,
-    # REAL Stilde_fluxD0 = 0;
-    Memory_Read += "REAL "+var+" = 0;\n"
+def write_C_Code_to_read_memory(write_cmax_cmin=False):
+    Memory_Read = ""
+    # Read in all the inputs:
+    for var in ["GAMMA_FACEDD00", "GAMMA_FACEDD01", "GAMMA_FACEDD02",
+                "GAMMA_FACEDD11", "GAMMA_FACEDD12", "GAMMA_FACEDD22",
+                "BETA_FACEU0", "BETA_FACEU1", "BETA_FACEU2","ALPHA_FACE",
+                "B_RU0","B_RU1","B_RU2","B_LU0","B_LU1","B_LU2",
+                "VALENCIAV_RU0","VALENCIAV_RU1","VALENCIAV_RU2",
+                "VALENCIAV_LU0","VALENCIAV_LU1","VALENCIAV_LU2"]:
+        lhsvar = var.lower().replace("dd","DD").replace("u","U").replace("b_","B_").replace("valencia","Valencia")
+        # e.g.,
+        # const REAL gammaDD00dD0 = auxevol_gfs[IDX4S(GAMMA_FACEDD00GF,i0,i1,i2)];
+        Memory_Read += "const REAL "+lhsvar+" = auxevol_gfs[IDX4S("+var+"GF,i0,i1,i2)];\n"
+    # Storage for the outputs:
+    for var in ["Stilde_fluxD0","Stilde_fluxD1","Stilde_fluxD2"]:
+        # e.g.,
+        # REAL Stilde_fluxD0 = 0;
+        Memory_Read += "REAL "+var+" = 0;\n"
+    if write_cmax_cmin:
+        # In the staggered case, we will also want to output cmax and cmin:
+        for var in ["cmax","cmin"]:
+            Memory_Read += "REAL "+var+" = 0;\n"
+    return Memory_Read
 
 # This quick function returns a nearby point for memory access. We need this because derivatives are not local operations.
 def idxm1(dirn):
@@ -98,18 +103,25 @@ def idxm1(dirn):
     if dirn==2:
         return "i0, i1, i2-1"
 
-# Write the outputs:
-Memory_Write = []
-for dirn in range(3):
-    for comp in range(3):
-        Memory_Write.append("")
-        # e.g.,
-        # rhs_gfs[IDX4S(STILDED0GF, i0, i1, i2)] += invdx0*Stilde_fluxD0;
-        # (Note that the invdx0 gets substituted separately! It shouldn't necessarily match Stilde!)
-        Memory_Write[dirn] += "rhs_gfs[IDX4S(STILDED"+str(comp)+"GF, i0, i1, i2)] += invdx"+str(dirn)+"*Stilde_fluxD"+str(comp)+";\n"
-        # e.g.,
-        # rhs_gfs[IDX4S(STILDED0GF, i0-1, i1, i2)] -= invdx0*Stilde_fluxD0;
-        Memory_Write[dirn] += "rhs_gfs[IDX4S(STILDED"+str(comp)+"GF, "+idxm1(dirn)+")] -= invdx"+str(dirn)+"*Stilde_fluxD"+str(comp)+";\n"
+def write_C_code_to_write_results(write_cmax_cmin=False):
+    # Write the outputs:
+    Memory_Write = []
+    for dirn in range(3):
+        for comp in range(3):
+            Memory_Write.append("")
+            # e.g.,
+            # rhs_gfs[IDX4S(STILDED0GF, i0, i1, i2)] += invdx0*Stilde_fluxD0;
+            # (Note that the invdx0 gets substituted separately! It shouldn't necessarily match Stilde!)
+            Memory_Write[dirn] += "rhs_gfs[IDX4S(STILDED"+str(comp)+"GF, i0, i1, i2)] += invdx"+str(dirn)+"*Stilde_fluxD"+str(comp)+";\n"
+            # e.g.,
+            # rhs_gfs[IDX4S(STILDED0GF, i0-1, i1, i2)] -= invdx0*Stilde_fluxD0;
+            Memory_Write[dirn] += "rhs_gfs[IDX4S(STILDED"+str(comp)+"GF, "+idxm1(dirn)+")] -= invdx"+str(dirn)+"*Stilde_fluxD"+str(comp)+";\n"
+    if write_cmax_cmin:
+        name_suffixes = ["_X","_Y","_Z"]
+        for dirn in range(3):
+            for var in ["cmax","cmin"]:
+                Memory_Write[dirn] += "auxevol_gfs[IDX4S("+var.upper()+name_suffixes[dirn]+"GF, i0, i1, i2)] = cmax;\n"
+    return Memory_Write
 
 def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=None, gamma_faceDD=None, beta_faceU=None,
                                     Valenciav_rU=None, B_rU=None, Valenciav_lU=None, B_lU=None, sqrt4pi=None,
@@ -129,21 +141,12 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
         B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
         sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
 
-    global Memory_Read, Memory_Write # This is to satisfy Python's scoping rules to allow us to
-                                     # conditionally modify these global values inside the function.
+    Memory_Read = write_C_Code_to_read_memory()
+    Memory_Write = write_C_code_to_write_results()
     if write_cmax_cmin:
         # In the staggered case, we will also want to output cmax and cmin
         # If we want to write cmax and cmin, we will need to be able to change auxevol_gfs:
         input_params_for_Stilde_flux = "const paramstruct *params,REAL *auxevol_gfs,REAL *rhs_gfs"
-        # In the staggered case, we will also want to output cmax and cmin:
-        for var in ["cmax","cmin"]:
-            Memory_Read += "REAL "+var+" = 0;\n"
-        # Then we will write them to gridfunctions determined by the direction in which we interpolated:
-        name_suffixes = ["_X","_Y","_Z"]
-        for dirn in range(3):
-            for var in ["cmax","cmin"]:
-                Memory_Write[dirn] += "auxevol_gfs[IDX4S(CMAX"+name_suffixes[dirn]+"GF, i0, i1, i2)] = cmax;\n"
-                Memory_Write[dirn] += "auxevol_gfs[IDX4S(CMIN"+name_suffixes[dirn]+"GF, i0, i1, i2)] = cmin;\n"
     else:
         input_params_for_Stilde_flux = "const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs"
 
