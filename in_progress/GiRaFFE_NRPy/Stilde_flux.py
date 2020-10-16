@@ -120,7 +120,7 @@ def write_C_code_to_write_results(write_cmax_cmin=False):
         name_suffixes = ["_X","_Y","_Z"]
         for dirn in range(3):
             for var in ["cmax","cmin"]:
-                Memory_Write[dirn] += "auxevol_gfs[IDX4S("+var.upper()+name_suffixes[dirn]+"GF, i0, i1, i2)] = cmax;\n"
+                Memory_Write[dirn] += "auxevol_gfs[IDX4S("+var.upper()+name_suffixes[dirn]+"GF, i0, i1, i2)] = "+var+";\n"
     return Memory_Write
 
 def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=None, gamma_faceDD=None, beta_faceU=None,
@@ -141,8 +141,8 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
         B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
         sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
 
-    Memory_Read = write_C_Code_to_read_memory()
-    Memory_Write = write_C_code_to_write_results()
+    Memory_Read = write_C_Code_to_read_memory(write_cmax_cmin)
+    Memory_Write = write_C_code_to_write_results(write_cmax_cmin)
     if write_cmax_cmin:
         # In the staggered case, we will also want to output cmax and cmin
         # If we want to write cmax and cmin, we will need to be able to change auxevol_gfs:
