@@ -65,7 +65,7 @@ class TestParser(unittest.TestCase):
     def test_assignment_1(self):
         self.assertEqual(
             parse(r"""
-                % define vU (2), wU (2);
+                % define vU (2D), wU (2D);
                 T^{ab}_c = \vphantom{_d} \partial_c (v^a w^b)
             """),
             ('vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD')
@@ -77,7 +77,7 @@ class TestParser(unittest.TestCase):
     def test_assignment_2(self):
         self.assertEqual(
             parse(r"""
-                % define vU (2), const w;
+                % define vU (2D), const w;
                 T^a_c = \vphantom{_d} \partial_c (v^a w)
             """),
             ('vU', 'w', 'vU_dD', 'TUD')
@@ -96,21 +96,24 @@ class TestParser(unittest.TestCase):
         )
 
     def test_assignment_4(self):
-        parse(r"""
-            % define basis [x, y], deriv _d;
-            % define vD (2);
-            v_0 = x^{{2}} + 2x;
-            v_1 = y\sqrt{x};
-            T_{\mu\nu} = (\partial_\nu v_\mu)\,\partial^2_x (y\sqrt{x})
-        """)
+        self.assertEqual(
+            parse(r"""
+                % define basis [x, y], deriv _d;
+                % define vD (2D);
+                v_0 = x^{{2}} + 2x;
+                v_1 = y\sqrt{x};
+                T_{\mu\nu} = (\partial_\nu v_\mu)\,\partial^2_x v_0
+            """),
+            ('vD', 'x', 'y', 'vD_dD', 'TDD')
+        )
         self.assertEqual(str(TDD),
-            '[[-vD_dD00*y/(4*x**(3/2)), -vD_dD01*y/(4*x**(3/2))], [-vD_dD10*y/(4*x**(3/2)), -vD_dD11*y/(4*x**(3/2))]]'
+            '[[2*vD_dD00, 2*vD_dD01], [2*vD_dD10, 2*vD_dD11]]'
         )
 
     def test_assignment_5(self):
         parse(r"""
             % define basis [\theta, \phi];
-            % define const r, kronecker deltaDD (2);
+            % define const r, kronecker deltaDD (2D);
             % parse g_{\mu\nu} = \delta_{\mu\nu};
             \begin{align*}
                 g_{0 0} &= r^{{2}} \\
@@ -152,10 +155,11 @@ class TestParser(unittest.TestCase):
         )
 
     def test_assignment_6(self):
+        # TODO: FIX AFTER IMPLEMENTING PARTIAL INDEXING
         self.assertEqual(
             parse(r"""
-                % define metric gDD (4);
                 % define index [i-j] = 1:3;
+                % define metric gDD (4D);
                 \gamma_{ij} = g_{ij}
             """),
             ('gUU', 'gdet', 'gDD', 'gammaDD')
@@ -163,11 +167,22 @@ class TestParser(unittest.TestCase):
         self.assertEqual(str(gammaDD),
             '[[gDD11, gDD12, gDD13], [gDD12, gDD22, gDD23], [gDD13, gDD23, gDD33]]'
         )
+        self.assertEqual(
+            parse(r"""
+                % define index [i-j] = 0:1;
+                % define nosym TUU (3D), vD (2D);
+                w^\mu = T^{\mu i} v_i
+            """),
+            ('TUU', 'vD', 'wU')
+        )
+        self.assertEqual(str(wU),
+            '[TUU00*vD0 + TUU01*vD1, TUU10*vD0 + TUU11*vD1, TUU20*vD0 + TUU21*vD1]'
+        )
 
     def test_example_1(self):
         self.assertEqual(
             parse(r"""
-                % define nosym hUD (4);
+                % define nosym hUD (4D);
                 h = h^\mu{}_\mu
             """),
             ('hUD', 'h')
@@ -179,7 +194,7 @@ class TestParser(unittest.TestCase):
     def test_example_2(self):
         self.assertEqual(
             parse(r"""
-                % define metric gUU (3), vD (3);
+                % define metric gUU (3D), vD (3D);
                 v^\mu = g^{\mu\nu} v_\nu
             """),
             ('gDD', 'gdet', 'gUU', 'vD', 'vU')
@@ -191,8 +206,8 @@ class TestParser(unittest.TestCase):
     def test_example_3(self):
         self.assertEqual(
             parse(r"""
-                % define permutation epsilonDDD (3);
-                % define vU (3), wU (3);
+                % define permutation epsilonDDD (3D);
+                % define vU (3D), wU (3D);
                 u_i = \epsilon_{ijk} v^j w^k
             """),
             ('epsilonDDD', 'vU', 'wU', 'uD')
@@ -221,7 +236,7 @@ class TestParser(unittest.TestCase):
 
     def test_example_5(self):
         parse(r"""
-            % define kronecker deltaDD (4);
+            % define kronecker deltaDD (4D);
             % define const G, const M;
             % parse g_{\mu\nu} = \delta_{\mu\nu};
             \begin{align}
@@ -299,20 +314,21 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_expression_1'))
     suite.addTest(TestParser('test_expression_2'))
     suite.addTest(TestParser('test_expression_3'))
-    suite.addTest(TestParser('test_expression_4'))
-    suite.addTest(TestParser('test_expression_5'))
+    suite.addTest(TestParser('test_expression_4')) # BROKEN
+    suite.addTest(TestParser('test_expression_5')) # BROKEN
     suite.addTest(TestParser('test_assignment_1'))
     suite.addTest(TestParser('test_assignment_2'))
-    suite.addTest(TestParser('test_assignment_3'))
+    suite.addTest(TestParser('test_assignment_3')) # BROKEN
     suite.addTest(TestParser('test_assignment_4'))
-    suite.addTest(TestParser('test_assignment_5'))
+    suite.addTest(TestParser('test_assignment_5')) # BROKEN
     suite.addTest(TestParser('test_assignment_6'))
     suite.addTest(TestParser('test_example_1'))
     suite.addTest(TestParser('test_example_2'))
     suite.addTest(TestParser('test_example_3'))
-    suite.addTest(TestParser('test_example_4_1'))
-    suite.addTest(TestParser('test_example_4_2'))
-    suite.addTest(TestParser('test_example_5'))
-    suite.addTest(TestParser('test_example_6'))
+    suite.addTest(TestParser('test_example_4_1')) # BROKEN
+    suite.addTest(TestParser('test_example_4_2')) # BROKEN
+    suite.addTest(TestParser('test_example_5')) # BROKEN
+    suite.addTest(TestParser('test_example_6')) # BROKEN
+    suite.addTest(TestParser('test_assignment_4'))
     result = unittest.TextTestRunner().run(suite)
     sys.exit(not result.wasSuccessful())
