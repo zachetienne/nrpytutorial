@@ -772,12 +772,12 @@ class Parser:
             index = [self._strip(self.lexer.lexeme)]
             self.expect('LETTER')
         self.expect('EQUAL')
-        start = self.lexer.lexeme
+        lower = self.lexer.lexeme
         self.expect('INTEGER')
         self.expect('COLON')
-        stop  = self.lexer.lexeme
+        upper = self.lexer.lexeme
         self.expect('INTEGER')
-        Parser.__namespace['index'].update({i: (int(start), int(stop) + 1) for i in index})
+        Parser.__namespace['index'].update({i: (int(lower), int(upper) + 1) for i in index})
 
     # <ASSIGN> -> <ASSIGN_MACRO> [ <SYMMETRY> ] { <SYMBOL> }+
     def _assign(self):
@@ -1010,28 +1010,27 @@ class Parser:
         rank = len(re.findall(r'\[[^\]]+\]', LHS))
         # construct a tuple list of every LHS free index
         free_index_LHS = zip(re.findall(r'\[([a-zA-Z]+)\]', LHS), re.findall(r'[UD]', LHS))
-        # construct a tuple list of every RHS free index and
-        # replace every tensor function with array notation
+        # construct a tuple list of every RHS free index
         free_index_RHS = []
         for element in iterable:
             summation, idx_map = str(element), {}
             tree = ExprTree(element)
             for subtree in tree.preorder():
                 subexpr = subtree.expr
+                # replace every tensor function with array notation
                 if subexpr.func == Function('Tensor'):
                     symbol = str(subexpr.args[0])
                     dimension = self.namespace[symbol].dimension
+                    tensor = Tensor(subexpr, dimension)
                     for index in subexpr.args[1:]:
-                        index = str(index)
-                        if index in Parser.__namespace['index']:
-                            _range = Parser.__namespace['index'][index]
-                        else: _range = (0, dimension)
-                        if index in idx_map and _range != idx_map[index]:
+                        if str(index) in Parser.__namespace['index']:
+                            lower, upper = Parser.__namespace['index'][str(index)]
+                        else: lower, upper = (0, dimension)
+                        if str(index) in idx_map and (lower, upper) != idx_map[str(index)]:
                             sentence, position = self.lexer.sentence, self.lexer.mark()
                             raise ParseError('inconsistent indexing range for index \'%s\'' %
                                 index, sentence, position)
-                        idx_map[index] = _range
-                    tensor = Tensor(subexpr, dimension)
+                        idx_map[str(index)] = (lower, upper)
                     summation = summation.replace(str(subexpr), tensor.array_format())
                 elif subexpr.func == Function('Constant'):
                     symbol = str(subexpr.args[0])
@@ -1091,6 +1090,23 @@ class Parser:
             # generate tensor instantiation with implied summation
             for idx, _ in reversed(free_index_LHS):
                 RHS = '[%s for %s in range(%d, %d)]' % (RHS, idx, *idx_map[idx])
+        # shift tensor indexing forward whenever dimension > upper bound
+        for subtree in tree.preorder():
+            subexpr = subtree.expr
+            if subexpr.func == Function('Tensor'):
+                symbol = str(subexpr.args[0])
+                dimension = self.namespace[symbol].dimension
+                tensor = Tensor(subexpr, dimension)
+                array_format = tensor.array_format()
+                for index in subexpr.args[1:]:
+                    if str(index) in Parser.__namespace['index']:
+                        _, upper = Parser.__namespace['index'][str(index)]
+                        if dimension > upper:
+                            shift = dimension - upper
+                            for i, (idx, pos) in enumerate(tensor.indexing):
+                                if str(idx) == str(index):
+                                    tensor.indexing[i] = ('%s + %s' % (idx, shift), pos)
+                RHS = RHS.replace(array_format, tensor.array_format())
         if rank == len(re.findall(r'\[[^0-9\]]+\]', LHS)):
             return (LHS.split('[')[0], RHS), len(free_index_LHS)
         dimension = self.namespace[LHS.split('[')[0]].dimension
