@@ -1041,7 +1041,7 @@ class Parser:
                 pos_list.extend((len(idx_list) - len(pos_list)) * ['D'])
             free_index, bound_index = [], []
             # iterate over every unique index in the subexpression
-            for idx in sorted(uniquify((idx_list))):
+            for idx in uniquify((idx_list)):
                 count = U = D = 0; index_tuple = []
                 # count index occurrence and position occurrence
                 for idx_, pos_ in zip(idx_list, pos_list):
@@ -1066,7 +1066,7 @@ class Parser:
         # count every index on LHS to determine the rank
         rank = len(re.findall(r'\[[^\]]+\]', LHS))
         # construct a tuple list of every LHS free index
-        free_index_LHS = zip(re.findall(r'\[([a-zA-Z]+)\]', LHS), re.findall(r'[UD]', LHS))
+        free_index_LHS, _ = separate_indexing(LHS)
         # construct a tuple list of every RHS free index
         free_index_RHS = []
         for element in iterable:
@@ -1110,7 +1110,6 @@ class Parser:
             for idx in bound_index:
                 modified = 'sum(%s for %s in range(%d, %d))' % (modified, idx, *idx_map[idx])
             RHS = RHS.replace(original, modified)
-        free_index_LHS = uniquify(free_index_LHS)
         for i in range(len(free_index_RHS)):
             if sorted(free_index_LHS) != sorted(free_index_RHS[i]):
                 # raise exception upon violation of the following rule:
