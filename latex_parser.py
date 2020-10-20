@@ -1083,7 +1083,8 @@ class Parser:
                     argument = replace_function(str(argument), argument, idx_map)
                     free_index, _ = separate_indexing(argument)
                     for idx, _ in reversed(free_index):
-                        dimension = idx_map[idx][1] - idx_map[idx][0]
+                        lower, upper = idx_map[idx]
+                        dimension = upper - lower
                     if not free_index: dimension = 0
                     for index, order in subexpr.args[1:]:
                         if str(index) in self._namespace['index']:
@@ -1108,7 +1109,8 @@ class Parser:
             free_index_RHS.append(free_index)
             # generate implied summation over every bound index
             for idx in bound_index:
-                modified = 'sum(%s for %s in range(%d, %d))' % (modified, idx, *idx_map[idx])
+                lower, upper = idx_map[idx]
+                modified = 'sum(%s for %s in range(%d, %d))' % (modified, idx, lower, upper)
             RHS = RHS.replace(original, modified)
         for i in range(len(free_index_RHS)):
             if sorted(free_index_LHS) != sorted(free_index_RHS[i]):
@@ -1118,8 +1120,9 @@ class Parser:
                 raise TensorError('unbalanced free index')
         # generate tensor instantiation with implied summation
         for idx, _ in reversed(free_index_LHS):
-            RHS = '[%s for %s in range(%d, %d)]' % (RHS, idx, *idx_map[idx])
-            LHS_dimension = idx_map[idx][1] - idx_map[idx][0]
+            lower, upper = idx_map[idx]
+            RHS = '[%s for %s in range(%d, %d)]' % (RHS, idx, lower, upper)
+            LHS_dimension = upper - lower
         if not free_index_LHS: LHS_dimension = 0
         # shift tensor indexing forward whenever dimension > upper bound
         for subtree in tree.preorder():
