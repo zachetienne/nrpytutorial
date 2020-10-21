@@ -68,7 +68,7 @@ class TestParser(unittest.TestCase):
                 % define vU (2D), wU (2D);
                 T^{ab}_c = \vphantom{_d} \partial_c (v^a w^b)
             """),
-            {'vU', 'wU', 'TUUD', 'vU_dD', 'wU_dD'}
+            ('vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD')
         )
         self.assertEqual(str(TUUD[0][0][0]),
             'vU0*wU_dD00 + vU_dD00*wU0'
@@ -81,7 +81,7 @@ class TestParser(unittest.TestCase):
                 % define vU (2D), const w;
                 T^a_c = \vphantom{_d} \partial_c (v^a w)
             """),
-            {'vU', 'w', 'TUD', 'vU_dD'}
+            ('vU', 'w', 'vU_dD', 'TUD')
         )
         self.assertEqual(str(TUD),
             '[[vU_dD00*w, vU_dD01*w], [vU_dD10*w, vU_dD11*w]]'
@@ -94,7 +94,7 @@ class TestParser(unittest.TestCase):
                 % define metric gDD (4D), vU (4D);
                 T^{\mu\nu} = \vphantom{_d} \nabla^\nu v^\mu
             """),
-            {'gUU', 'gdet', 'gDD', 'vU', 'TUU', 'vU_dD', 'GammaUDD', 'gDD_dD', 'vU_cdD', 'vU_cdU'}
+            ('gUU', 'gdet', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU')
         )
 
     def test_assignment_4(self):
@@ -107,7 +107,7 @@ class TestParser(unittest.TestCase):
                 v_1 = y\sqrt{x};
                 T_{\mu\nu} = (\partial_\nu v_\mu)\,\partial^2_x v_0
             """),
-            {'vD', 'x', 'y', 'TDD', 'vD_dD'}
+            ('vD', 'x', 'y', 'vD_dD', 'TDD')
         )
         self.assertEqual(str(TDD),
             '[[2*vD_dD00, 2*vD_dD01], [2*vD_dD10, 2*vD_dD11]]'
@@ -165,7 +165,7 @@ class TestParser(unittest.TestCase):
                 % define metric gDD (4D);
                 \gamma_{ij} = g_{ij}
             """),
-            {'gUU', 'gdet', 'gDD', 'gammaDD'}
+            ('gUU', 'gdet', 'gDD', 'gammaDD')
         )
         self.assertEqual(str(gammaDD),
             '[[gDD11, gDD12, gDD13], [gDD12, gDD22, gDD23], [gDD13, gDD23, gDD33]]'
@@ -177,7 +177,7 @@ class TestParser(unittest.TestCase):
                 % define nosym TUU (3D), vD (2D);
                 w^\mu = T^{\mu i} v_i
             """),
-            {'TUU', 'vD', 'wU'}
+            ('TUU', 'vD', 'wU')
         )
         self.assertEqual(str(wU),
             '[TUU01*vD0 + TUU02*vD1, TUU11*vD0 + TUU12*vD1, TUU21*vD0 + TUU22*vD1]'
@@ -190,7 +190,7 @@ class TestParser(unittest.TestCase):
                 % define nosym hUD (4D);
                 h = h^\mu{}_\mu
             """),
-            {'hUD', 'h'}
+            ('hUD', 'h')
         )
         self.assertEqual(str(h),
             'hUD00 + hUD11 + hUD22 + hUD33'
@@ -203,7 +203,7 @@ class TestParser(unittest.TestCase):
                 % define metric gUU (3D), vD (3D);
                 v^\mu = g^{\mu\nu} v_\nu
             """),
-            {'gDD', 'gdet', 'gUU', 'vD', 'vU'}
+            ('gDD', 'gdet', 'gUU', 'vD', 'vU')
         )
         self.assertEqual(str(vU),
             '[gUU00*vD0 + gUU01*vD1 + gUU02*vD2, gUU01*vD0 + gUU11*vD1 + gUU12*vD2, gUU02*vD0 + gUU12*vD1 + gUU22*vD2]'
@@ -217,7 +217,7 @@ class TestParser(unittest.TestCase):
                 % define vU (3D), wU (3D);
                 u_i = \epsilon_{ijk} v^j w^k
             """),
-            {'epsilonDDD', 'vU', 'wU', 'uD'}
+            ('epsilonDDD', 'vU', 'wU', 'uD')
         )
         self.assertEqual(str(uD),
             '[vU1*wU2 - vU2*wU1, -vU0*wU2 + vU2*wU0, vU0*wU1 - vU1*wU0]'
@@ -230,7 +230,7 @@ class TestParser(unittest.TestCase):
                 % define anti01 FUU (4D), metric gDD (4D), const k;
                 J^\mu = (4\pi k)^{-1} \vphantom{_d} \nabla_\nu F^{\mu\nu}
             """),
-            {'FUU', 'gUU', 'gdet', 'gDD', 'k', 'JU', 'FUU_dD', 'GammaUDD', 'gDD_dD', 'FUU_cdD'}
+            ('FUU', 'gUU', 'gdet', 'gDD', 'k', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU')
         )
 
     def test_example_4_2(self):
@@ -240,7 +240,7 @@ class TestParser(unittest.TestCase):
                 % define anti01 FUU (4D), metric ghatDD (4D), const k;
                 J^\mu = (4\pi k)^{-1} \vphantom{_d} \hat{\nabla}_\nu F^{\mu\nu}
             """),
-            {'FUU', 'ghatUU', 'ghatdet', 'ghatDD', 'k', 'JU', 'FUU_dD', 'GammahatUDD', 'ghatDD_dD', 'FUU_cdhatD'}
+            ('FUU', 'ghatUU', 'ghatdet', 'ghatDD', 'k', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU')
         )
 
     def test_example_5(self):

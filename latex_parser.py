@@ -1339,13 +1339,13 @@ def parse(sentence, verbose=False):
     """
     if not Parser.continue_parsing:
         Parser.clear_namespace()
-    keyset_1 = set(Parser._namespace.keys())
+    _namespace = Parser._namespace.copy()
     namespace = Parser(verbose).parse(sentence)
     kwrd_dict = {}
     for kwrd in ('basis', 'deriv', 'index'):
         kwrd_dict[kwrd] = namespace[kwrd]
         del namespace[kwrd]
-    keyset_2 = set(namespace.keys())
+    key_diff = tuple(key for key in namespace if key not in _namespace)
     # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
     for key in namespace:
@@ -1356,7 +1356,6 @@ def parse(sentence, verbose=False):
         else:
             frame.f_globals[key] = namespace[key]
     namespace.update(kwrd_dict)
-    keydiff = keyset_2.difference(keyset_1)
     if verbose:
-        return {namespace[key] for key in keydiff}
-    return keydiff
+        return tuple(namespace[key] for key in key_diff)
+    return key_diff
