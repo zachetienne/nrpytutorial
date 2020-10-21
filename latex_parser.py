@@ -1262,8 +1262,8 @@ class ParseError(Exception):
                     position += len(sentence) - len(substring)
                     break
                 length += len(substring)
-            super().__init__('%s\n%s^\n' % (sentence, (12 + position) * ' ') + message)
-        else: super().__init__(message)
+            super(ParseError, self).__init__('%s\n%s^\n' % (sentence, (12 + position) * ' ') + message)
+        else: super(ParseError, self).__init__(message)
 
 class Tensor:
     """ Tensor Structure """
