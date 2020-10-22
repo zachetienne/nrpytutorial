@@ -19,7 +19,7 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
-import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import indexedexpNRPyPN as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 
 # Step 1: Declare several global variables used
 #         throughout NRPyPN

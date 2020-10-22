@@ -10,31 +10,20 @@ import re                        # Standard Python module for regular expression
 
 thismodule = __name__
 
-def declare_indexedexp(rank, symbol=None, dimension=None):
-    """ Generate an indexed expression of specified rank and dimension
-    """
-    if not dimension or dimension == -1:
-        dimension = 3  # default to 3 dimension
-    if symbol is not None:
-        if not isinstance(symbol, str) or not re.match(r'[\w_]', symbol):
-            raise ValueError('symbol must be an alphabetic string')
-    if dimension is not None:
-        if not isinstance(dimension, int) or not dimension > 0:
-            raise ValueError('dimension must be a positive integer')
-    loop_index = ['str(%s)' % chr(97 + n) for n in range(rank)]
-    indexing = ' + '.join(loop_index)
-    interior = 'sympify(0)' if not symbol \
-          else 'sympify(\'%s\' + %s)' % (symbol, indexing)
-    indexedexp = '[' * rank + interior
-    for i in range(1, rank + 1):
-        indexedexp += ' for %s in range(%s)]' % (loop_index[rank - i][4:-1], dimension)
-    return eval(indexedexp, {'sympify': sp.sympify}, {})
-
 def zerorank1(DIM=-1):
-    return declare_indexedexp(rank=1, dimension=DIM)
+    if DIM == -1:
+        DIM = 3  # default to 3D
+    return [sp.sympify(0) for i in range(DIM)]
 
-def declarerank1(symbol, DIM=-1):
-    return declare_indexedexp(rank=1, symbol=symbol, dimension=DIM)
+def zerorank3(DIM=-1):
+    if DIM == -1:
+        DIM = 3  # default to 3D
+    return [[[sp.sympify(0) for i in range(DIM)] for j in range(DIM)] for k in range(DIM)]
+
+def declarerank1(objname, DIM=-1):
+    if DIM==-1:
+        DIM = 3  # default to 3D
+    return [sp.sympify(objname + str(i)) for i in range(DIM)]
 
 class NonInvertibleMatrixError(ZeroDivisionError):
     """ Matrix Not Invertible; Division By Zero """
