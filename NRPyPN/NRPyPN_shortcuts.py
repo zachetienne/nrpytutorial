@@ -40,7 +40,7 @@ chi1U = ixp.declarerank1('chi1U')
 chi2U = ixp.declarerank1('chi2U')
 
 # Euler-Mascheroni gamma constant:
-gamma_EulerMascheroni = sp.symbols('gamma_EulerMascheroni',real=True)
+gamma_EulerMascheroni = sp.EulerGamma
 
 # Derived quantities used in Damour et al papers:
 n12U = ixp.zerorank1()
@@ -114,5 +114,5 @@ def num_eval(expr,
 .subs(S2U[0],nS2U0).subs(S2U[1],nS2U1).subs(S2U[2],nS2U2)\
 .subs(chi1U[0],nchi1x).subs(chi1U[1],nchi1y).subs(chi1U[2],nchi1z)\
 .subs(chi2U[0],nchi2x).subs(chi2U[1],nchi2y).subs(chi2U[2],nchi2z)\
-.subs(r,nr).subs(q,nr).subs(sp.pi,sp.N(sp.pi)\
-.subs(gamma_EulerMascheroni,0.5772156649015328606065120900824024310421))
+.subs(r,nr).subs(q,nr).subs(sp.pi,sp.N(sp.pi))\
+.subs(gamma_EulerMascheroni,sp.N(sp.EulerGamma))

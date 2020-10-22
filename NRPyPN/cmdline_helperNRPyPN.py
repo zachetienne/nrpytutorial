@@ -8,6 +8,9 @@
 # Basic functions:
 # Execute_input_string(): Executes an input string and redirects
 #            output from stdout & stderr to desired destinations.
+# delete_existing_files(file_or_wildcard):
+#          Runs del file_or_wildcard in Windows, or
+#                rm file_or_wildcard in Linux/MacOS
 
 # Authors: Brandon Clark
 #          Zach Etienne
@@ -44,6 +47,17 @@ def Execute_input_string(input_string, file_to_redirect_stdout=os.devnull, verbo
     end = time.time()
     if verbose:
         print("(BENCH): Finished executing in "+str(end-start)+" seconds.")
+
+# delete_existing_files(file_or_wildcard):
+#          Runs del file_or_wildcard in Windows, or
+#                rm file_or_wildcard in Linux/MacOS
+def delete_existing_files(file_or_wildcard):
+    delete_string = ""
+    if os.name == "nt":
+        delete_string += "del " + file_or_wildcard
+    else:
+        delete_string += "rm -f " + file_or_wildcard
+    os.system(delete_string)
 
 def output_Jupyter_notebook_to_LaTeXed_PDF(notebookname,location_of_template_file=os.path.join("."),verbose=True):
     Execute_input_string(r"jupyter nbconvert --to latex --template "
