@@ -142,10 +142,10 @@ class Parser:
 
         LaTeX Extended BNF Grammar:
         <ROOT>          -> <STRUCTURE> { <LINE_BREAK> <STRUCTURE> }*
-        <STRUCTURE>     -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
+        <STRUCTURE>     -> <CONFIG> | <ASSIGNMENT> | <ENVIRONMENT>
         <CONFIG>        -> '%' ( <DEFINE> | <ASSIGN> | <PARSE> )
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT>
-        <ENVIRONMENT>   -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
+        <ENVIRONMENT>   -> <BEGIN_ALIGN> ( <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <CONFIG> | <ASSIGNMENT> ) }* <END_ALIGN>
         <ASSIGNMENT>    -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
         <TERM>          -> <FACTOR> { [ '/' ] <FACTOR> }*
@@ -229,7 +229,7 @@ class Parser:
         while self.accept('LINE_BREAK') or self.peek('COMMENT'):
             self._structure()
 
-    # <STRUCTURE> -> <CONFIG> | <ENVIRONMENT> | <ASSIGNMENT>
+    # <STRUCTURE> -> <CONFIG> | <ASSIGNMENT> | <ENVIRONMENT>
     def _structure(self):
         if self.peek('COMMENT'):
             self._config()
@@ -256,12 +256,16 @@ class Parser:
         self.expect('PARSE_MACRO')
         self._assignment()
 
-    # <ENVIRONMENT> -> <BEGIN_ALIGN> <ASSIGNMENT> { <LINE_BREAK> <ASSIGNMENT> }* <END_ALIGN>
+    # <ENVIRONMENT> -> <BEGIN_ALIGN> ( <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <CONFIG> | <ASSIGNMENT> ) }* <END_ALIGN>
     def _environment(self):
         self.expect('BEGIN_ALIGN')
-        self._assignment()
+        if self.peek('COMMENT'):
+            self._config()
+        else: self._assignment()
         while self.accept('LINE_BREAK'):
-            self._assignment()
+            if self.peek('COMMENT'):
+                self._config()
+            else: self._assignment()
         self.expect('END_ALIGN')
 
     # <ASSIGNMENT> -> ( <TENSOR> | <COVDRV> ) = <EXPRESSION>
@@ -376,7 +380,7 @@ class Parser:
             tensor = Tensor(self._tensor(), None)
             symbol, indexing = tensor.symbol, tensor.indexing
             if symbol[:5] == 'Gamma': # reserved keyword for christoffel symbol
-                metric = 'gamma' if symbol[5:] == 'tilde' else 'g'
+                metric = 'gamma' if symbol[5:-3] == 'tilde' else 'g'
                 if (metric + symbol[5:-3] + 'DD') not in self._namespace:
                     raise ParseError('cannot generate christoffel symbol without defined metric \'%s\'' %
                         (metric + symbol[5:-3]), sentence, position)
@@ -774,6 +778,7 @@ class Parser:
     # <BASIS> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
     def _basis(self):
         self.expect('LEFT_BRACKET')
+        self._namespace['basis'].clear()
         while True:
             symbol = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
@@ -1286,6 +1291,7 @@ class Tensor:
     def latex_format(self):
         """ Tensor Notation for LaTeX Formatting """
         latex = [re.split('[UD]', self.symbol)[0], [], []]
+        if len(latex[0]) > 1: latex[0] = '\\' + latex[0]
         U_count, D_count = 0, 0
         for index, position in self.indexing:
             index = str(index)
