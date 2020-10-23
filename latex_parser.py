@@ -81,6 +81,7 @@ class Lexer:
               ('LETTER',         r'[a-zA-Z]|' + greek_pattern),
               ('COMMAND',        r'\\[a-z]+')]]))
 
+    # TODO: CHANGE PERM AND KRON TO INFERENCE, FIX _D INDEX ISSUE, ADD OPERATOR SUPPORT, FIX MATHOP SYMBOL ISSUE
     def initialize(self, sentence, position=0):
         """ Initialize Lexer
 
@@ -678,7 +679,7 @@ class Parser:
                 index = self.lexer.lexeme
                 equation[0] += '^' + index + ' '
                 bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x != index)
-                prefix = '\\' if len(metric[diacritic]) > 1 else ''
+                prefix = '\\' if len(self._namespace['metric'][diacritic]) > 1 else ''
                 metric = '\\%s{%s}' % (diacritic, prefix + self._namespace['metric'][diacritic]) if diacritic \
                     else prefix + self._namespace['metric'][diacritic]
                 equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
