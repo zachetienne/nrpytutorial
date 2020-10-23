@@ -778,7 +778,7 @@ class Parser:
     # <BASIS> -> <BASIS_KWRD> <LEFT_BRACKET> <LETTER> [ ',' <LETTER> ]* <RIGHT_BRACKET>
     def _basis(self):
         self.expect('LEFT_BRACKET')
-        self._namespace['basis'].clear()
+        del self._namespace['basis'][:]
         while True:
             symbol = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
