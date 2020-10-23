@@ -183,6 +183,8 @@ class Parser:
             self._namespace['deriv'] = 'symbolic'
         if 'index' not in self._namespace:
             self._namespace['index'] = {chr(105 + n): (0, 3) for n in range(4)}
+        if 'metric' not in self._namespace:
+            self._namespace['metric'] = {'': 'g', 'bar': 'g', 'hat': 'g', 'tilde': 'gamma'}
         def excepthook(exception_type, exception, traceback):
             if not debug:
                 print('%s: %s' % (exception_type.__name__, exception))
@@ -380,12 +382,12 @@ class Parser:
             tensor = Tensor(self._tensor(), None)
             symbol, indexing = tensor.symbol, tensor.indexing
             if symbol[:5] == 'Gamma': # reserved keyword for christoffel symbol
-                metric = 'gamma' if symbol[5:-3] == 'tilde' else 'g'
-                if (metric + symbol[5:-3] + 'DD') not in self._namespace:
+                metric = self._namespace['metric'][symbol[5:-3]] + symbol[5:-3]
+                if metric + 'DD' not in self._namespace:
                     raise ParseError('cannot generate christoffel symbol without defined metric \'%s\'' %
-                        (metric + symbol[5:-3]), sentence, position)
+                        metric, sentence, position)
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                self.parse(self._generate_christoffel(tensor.function))
+                self.parse(self._generate_christoffel(tensor.function, self._namespace['metric']))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
             if symbol not in self._namespace:
@@ -664,10 +666,10 @@ class Parser:
                 self.expect('NABLA')
                 self.expect('RIGHT_BRACE')
             else: self.expect('NABLA')
-            metric = 'gamma' if diacritic == 'tilde' else 'g'
-            if (metric + diacritic + 'DD') not in self._namespace:
+            metric = self._namespace['metric'][diacritic] + diacritic
+            if metric + 'DD' not in self._namespace:
                 raise ParseError('cannot generate covariant derivative without defined metric \'%s\'' %
-                    (metric + diacritic), sentence, position)
+                    metric, sentence, position)
             equation[0] += operator
             if deriv_type != 'symbolic':
                 operator = '\\vphantom{%s} \\nabla' % deriv_type
@@ -676,9 +678,9 @@ class Parser:
                 index = self.lexer.lexeme
                 equation[0] += '^' + index + ' '
                 bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x != index)
-                metric = '\\%s{g}' % diacritic if diacritic in ('bar', 'hat') \
-                    else '\\%s{\\gamma}' % diacritic if diacritic == 'tilde' \
-                    else 'g'
+                prefix = '\\' if len(metric[diacritic]) > 1 else ''
+                metric = '\\%s{%s}' % (diacritic, prefix + self._namespace['metric'][diacritic]) if diacritic \
+                    else prefix + self._namespace['metric'][diacritic]
                 equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
                 equation[3] += '_' + bound_index + ' '
                 index = self._strip(index)
@@ -755,6 +757,14 @@ class Parser:
                 if symmetry == 'const':
                     self._namespace[symbol] = Function('Constant')(Symbol(symbol))
                 else:
+                    if symmetry == 'metric':
+                        diacritical = False
+                        for diacritic in ('bar', 'hat', 'tilde'):
+                            if diacritic in symbol:
+                                self._namespace['metric'][diacritic] = symbol.split(diacritic)[0]
+                                diacritical = True
+                        if not diacritical:
+                            self._namespace['metric'][''] = re.split(r'[UD]', symbol)[0]
                     tensor = Tensor(Function('Tensor')(symbol), dimension)
                     self._define_tensor(tensor, symmetry, invertible=(symmetry == 'metric'),
                         permutation=(symmetry == 'permutation'), kronecker=(symmetry == 'kronecker'))
@@ -830,6 +840,14 @@ class Parser:
         tensor = self._namespace[symbol]
         structure, dimension = tensor.structure, tensor.dimension
         if symmetry == 'metric':
+            if symmetry == 'metric':
+                diacritical = False
+                for diacritic in ('bar', 'hat', 'tilde'):
+                    if diacritic in symbol:
+                        self._namespace['metric'][diacritic] = symbol.split(diacritic)[0]
+                        diacritical = True
+                if not diacritical:
+                    self._namespace['metric'][''] = re.split(r'[UD]', symbol)[0]
             inverse_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
             if dimension == 2:
                 inverse, determinant = ixp.symm_matrix_inverter2x2(structure)
@@ -1171,15 +1189,15 @@ class Parser:
         return (re.sub(r'\[[^0-9\]]+\]', '[:]', LHS), RHS), LHS_dimension
 
     @staticmethod
-    def _generate_christoffel(function):
+    def _generate_christoffel(function, metric):
         symbol, indexing = '\\' + str(function.args[0])[:-3], function.args[1:]
         diacritic = 'bar'   if 'bar'   in symbol \
                else 'hat'   if 'hat'   in symbol \
                else 'tilde' if 'tilde' in symbol \
-               else None
-        metric = '\\%s{g}' % diacritic if diacritic in ('bar', 'hat') \
-            else '\\%s{\\gamma}' % diacritic if diacritic == 'tilde' \
-            else 'g'
+               else ''
+        prefix = '\\' if len(metric[diacritic]) > 1 else ''
+        metric = '\\%s{%s}' % (diacritic, prefix + metric[diacritic]) if diacritic \
+            else prefix + metric[diacritic]
         if diacritic: symbol = '\\%s{%s}' % (diacritic, symbol[:-len(diacritic)])
         indexing = [('\\' if len(str(index)) > 1 else '') + str(index) for index in indexing]
         bound_index = next(x for x in (chr(97 + n) for n in range(26)) if x not in indexing)
@@ -1348,7 +1366,7 @@ def parse(sentence, verbose=False):
     _namespace = Parser._namespace.copy()
     namespace = Parser(verbose).parse(sentence)
     kwrd_dict = {}
-    for kwrd in ('basis', 'deriv', 'index'):
+    for kwrd in ('basis', 'deriv', 'index', 'metric'):
         kwrd_dict[kwrd] = namespace[kwrd]
         del namespace[kwrd]
     key_diff = tuple(key for key in namespace if key not in _namespace)
