@@ -36,10 +36,6 @@
 
 # Step 0: Add NRPy's directory to the path
 # https://stackoverflow.com/questions/16780014/import-file-from-parent-directory
-import os,sys                    # Standard Python modules for multiplatform OS-level functions
-nrpy_dir_path = os.path.join("..")
-if nrpy_dir_path not in sys.path:
-    sys.path.append(nrpy_dir_path)
 import sympy as sp                        # SymPy: The Python computer algebra package upon which NRPy+ depends
 from NRPyPN_shortcuts import Pt,Pr,nU,div # NRPyPN: shortcuts for e.g., vector operations
 

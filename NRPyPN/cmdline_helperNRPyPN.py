@@ -17,7 +17,7 @@
 #          zachetie **at** gmail **dot* com
 #          Kevin Lituchy
 
-import io, os, shlex, subprocess, sys, time, multiprocessing, getpass, platform
+import io, os, shlex, subprocess, sys, time
 
 
 # Execute_input_string(): Executes an input string and redirects

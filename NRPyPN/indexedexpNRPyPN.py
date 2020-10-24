@@ -6,7 +6,6 @@
 # Step 1: Load needed modules
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import sys                       # Standard Python module for multiplatform OS-level functions
-import re                        # Standard Python module for regular expressions
 
 thismodule = __name__
 

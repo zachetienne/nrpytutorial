@@ -16,7 +16,6 @@
 
 # Step 0: Add NRPy's directory to the path
 # https://stackoverflow.com/questions/16780014/import-file-from-parent-directory
-import os,sys                    # Standard Python modules for multiplatform OS-level functions
 import sympy as sp                   # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexpNRPyPN as ixp             # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 from NRPyPN_shortcuts import div,dot # NRPyPN: shortcuts for e.g., vector operations
