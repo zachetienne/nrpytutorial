@@ -75,6 +75,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     gri.register_gridfunctions("AUXEVOL","cmax_z")
     gri.register_gridfunctions("AUXEVOL","cmin_z")
 
+#     gri.register_gridfumctions("AUXEVOL","cf") # Needed only for ADM-BSSN-ADM workaround
+
     subdir = "RHSs"
     stgsrc.GiRaFFE_NRPy_Source_Terms(os.path.join(out_dir,subdir))
 
@@ -167,6 +169,65 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         loopopts ="AllPoints",
         rel_path_for_Cparams=os.path.join("../"))
 
+    # Generate a kernel to convert to BSSN:
+    import BSSN.BSSN_in_terms_of_ADM as BitoA
+    BitoA.gammabarDD_hDD(gammaDD)
+    BitoA.cf_from_gammaDD(gammaDD)
+
+    # We'll convert the metric in place to ensure compatibility with our metric face interpolator
+    values_to_print = [
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD00"),rhs=BitoA.gammabarDD[0][0]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD01"),rhs=BitoA.gammabarDD[0][1]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD02"),rhs=BitoA.gammabarDD[0][2]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD11"),rhs=BitoA.gammabarDD[1][1]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=BitoA.gammabarDD[1][2]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=BitoA.gammabarDD[1][2]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD22"),rhs=BitoA.gammabarDD[2][2]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","psi6_temp"),rhs=BitoA.cf)
+                      ]
+
+    desc = "Convert ADM metric to BSSN"
+    name = "Workaround_ADM_to_BSSN"
+    outCfunction(
+        outfile  = os.path.join(out_dir,name+".h"), desc=desc, name=name,
+        params   ="const paramstruct *params,REAL *auxevol_gfs",
+        body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
+        loopopts ="AllPoints",
+        rel_path_for_Cparams=os.path.join("./"))
+
+    alpha_is_here = 10000 # If this doesn't get reset, this should throw an error
+    for i in range(len(gri.glb_gridfcs_list)):
+        if "alpha" in gri.glb_gridfcs_list[i].name:
+            alpha_is_here = i
+            break
+    gri.glb_gridfcs_list.pop(i)
+    import BSSN.ADM_in_terms_of_BSSN as AB
+
+    # We'll convert the metric in place to ensure compatibility with our metric face interpolator
+    AB.ADM_in_terms_of_BSSN()
+    values_to_print = [
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD00"),rhs=AB.gammaDD[0][0]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD01"),rhs=AB.gammaDD[0][1]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD02"),rhs=AB.gammaDD[0][2]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD11"),rhs=AB.gammaDD[1][1]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=AB.gammaDD[1][2]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=AB.gammaDD[1][2]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD22"),rhs=AB.gammaDD[2][2])
+                      ]
+    C_code_kernel = fin.FD_outputC("returnstring",values_to_print,params=outCparams)\
+                       .replace("IDX4","IDX4S").replace("HDD","GAMMADD").replace("in_gfs","auxevol_gfs")\
+                       .replace("CFGF","PSI6_TEMPGF")
+    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PSI6_TEMPGF","CFGF")
+
+    desc = "Convert BSSN metric to ADM"
+    name = "Workaround_BSSN_to_ADM"
+    outCfunction(
+        outfile  = os.path.join(out_dir,name+".h"), desc=desc, name=name,
+        params   ="const paramstruct *params,REAL *auxevol_gfs",
+        body     = C_code_kernel+"\n"+C_face_kernel,
+        loopopts ="AllPoints",
+        rel_path_for_Cparams=os.path.join("./"))
+
     # Write out the main driver itself:
     with open(os.path.join(out_dir,"GiRaFFE_NRPy_Main_Driver.h"),"w") as file:
         file.write(r"""// Structure to track ghostzones for PPM:
@@ -179,6 +240,8 @@ static const int VX=0,VY=1,VZ=2,
   BX_CENTER=3,BY_CENTER=4,BZ_CENTER=5,BX_STAGGER=6,BY_STAGGER=7,BZ_STAGGER=8,
   VXR=9,VYR=10,VZR=11,VXL=12,VYL=13,VZL=14;  //<-- Be _sure_ to define MAXNUMVARS appropriately!
 const int NUM_RECONSTRUCT_GFS = 15;
+
+#define WORKAROUND_ENABLED
 
 // Include ALL functions needed for evolution
 #include "PPM/reconstruct_set_of_prims_PPM_GRFFE_NRPy.c"
@@ -195,6 +258,8 @@ const int NUM_RECONSTRUCT_GFS = 15;
 #include "boundary_conditions/GiRaFFE_boundary_conditions.h"
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
+#include "Workaround_ADM_to_BSSN.h"
+#include "Workaround_BSSN_to_ADM.h"
 
 void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
 #include "set_Cparameters.h"
@@ -215,8 +280,6 @@ void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restr
           sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
     fclose(out2D);
 }
-
-#define WORKAROUND_ENABLED
 
 void workaround_Valencia_to_Drift_velocity(const paramstruct *params, REAL *vU0, const REAL *alpha, const REAL *betaU0) {
 #include "set_Cparameters.h"
@@ -327,7 +390,13 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 
   int flux_dirn;
   flux_dirn=0;
+#ifdef WORKAROUND_ENABLED
+  Workaround_ADM_to_BSSN(params,auxevol_gfs);
+#endif /*WORKAROUND_ENABLED*/
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
+#ifdef WORKAROUND_ENABLED
+  Workaround_BSSN_to_ADM(params,auxevol_gfs);
+#endif /*WORKAROUND_ENABLED*/
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   /* There are two stories going on here:
@@ -388,7 +457,13 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   //   are defined at (i+1/2,j,k).
   // Next goal: reconstruct Bx, vx and vy at (i+1/2,j+1/2,k).
   flux_dirn=1;
+#ifdef WORKAROUND_ENABLED
+  Workaround_ADM_to_BSSN(params,auxevol_gfs);
+#endif /*WORKAROUND_ENABLED*/
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
+#ifdef WORKAROUND_ENABLED
+  Workaround_BSSN_to_ADM(params,auxevol_gfs);
+#endif /*WORKAROUND_ENABLED*/
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   // in_prims[{VXR,VXL,VYR,VYL}].gz_{lo,hi} ghostzones are set to all zeros, which
@@ -547,7 +622,13 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   in_prims[VZL]=out_prims_l[VZ];
 
   flux_dirn=2;
+#ifdef WORKAROUND_ENABLED
+  Workaround_ADM_to_BSSN(params,auxevol_gfs);
+#endif /*WORKAROUND_ENABLED*/
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
+#ifdef WORKAROUND_ENABLED
+  Workaround_BSSN_to_ADM(params,auxevol_gfs);
+#endif /*WORKAROUND_ENABLED*/
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   /* There are two stories going on here:
@@ -680,9 +761,8 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
                          auxevol_gfs+Nxxp2NG012*CMIN_ZGF,
                          rhs_gfs+Nxxp2NG012*AD0GF);
 
-  // We reprise flux_dirn=1 to finish up computations of Ai_rhs's!
+  // We reprise flux_dirn=0 to finish up computations of Ai_rhs's!
   flux_dirn=0;
-  interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   ww=0;
