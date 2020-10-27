@@ -24,7 +24,7 @@ class TestParser(unittest.TestCase):
         )
 
     def test_expression_2(self):
-        expr = r'e^{\ln x} + \sin(\sin^{-1} y) - \tanh(xy)'
+        expr = r'e^{{\ln x}} + \sin(\sin^{-1} y) - \tanh(xy)'
         self.assertEqual(
             str(parse_expr(expr)),
             'x + y - tanh(x*y)'
@@ -66,7 +66,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define vU (2D), wU (2D);
-                T^{ab}_c = \vphantom{_d} \partial_c (v^a w^b)
+                T^{ab}_c = \vphantom{variable} \partial_c (v^a w^b)
             """)),
             {'vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD'}
         )
@@ -79,7 +79,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define vU (2D), const w;
-                T^a_c = \vphantom{_d} \partial_c (v^a w)
+                T^a_c = \vphantom{variable} \partial_c (v^a w)
             """)),
             {'vU', 'w', 'vU_dD', 'TUD'}
         )
@@ -92,7 +92,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define metric gDD (4D), vU (4D);
-                T^{\mu\nu} = \vphantom{_d} \nabla^\nu v^\mu
+                T^{\mu\nu} = \vphantom{variable} \nabla^\nu v^\mu
             """)),
             {'gUU', 'gdet', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
         )
@@ -101,7 +101,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define basis [x, y], deriv _d;
+                % define basis [x, y], deriv variable;
                 % define vD (2D);
                 v_0 = x^{{2}} + 2x;
                 v_1 = y\sqrt{x};
@@ -117,7 +117,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         parse(r"""
             % define basis [\theta, \phi];
-            % define const r, kronecker deltaDD (2D);
+            % define const r, deltaDD (2D);
             % parse g_{\mu\nu} = \delta_{\mu\nu};
             \begin{align*}
                 g_{0 0} &= r^{{2}} \\
@@ -213,7 +213,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define permutation epsilonDDD (3D);
+                % define epsilonDDD (3D);
                 % define vU (3D), wU (3D);
                 u_i = \epsilon_{ijk} v^j w^k
             """)),
@@ -228,7 +228,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define anti01 FUU (4D), metric gDD (4D), const k;
-                J^\mu = (4\pi k)^{-1} \vphantom{_d} \nabla_\nu F^{\mu\nu}
+                J^\mu = (4\pi k)^{-1} \vphantom{variable} \nabla_\nu F^{\mu\nu}
             """)),
             {'FUU', 'gUU', 'gdet', 'gDD', 'k', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
         )
@@ -238,7 +238,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define anti01 FUU (4D), metric ghatDD (4D), const k;
-                J^\mu = (4\pi k)^{-1} \vphantom{_d} \hat{\nabla}_\nu F^{\mu\nu}
+                J^\mu = (4\pi k)^{-1} \vphantom{variable} \hat{\nabla}_\nu F^{\mu\nu}
             """)),
             {'FUU', 'ghatUU', 'ghatdet', 'ghatDD', 'k', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
         )
@@ -246,7 +246,7 @@ class TestParser(unittest.TestCase):
     def test_example_5(self):
         Parser.clear_namespace()
         parse(r"""
-            % define kronecker deltaDD (4D);
+            % define deltaDD (4D);
             % define const G, const M;
             % parse g_{\mu\nu} = \delta_{\mu\nu};
             \begin{align}
