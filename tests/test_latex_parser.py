@@ -243,7 +243,7 @@ class TestParser(unittest.TestCase):
             {'FUU', 'ghatUU', 'ghatdet', 'ghatDD', 'k', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
         )
 
-    def test_example_5(self):
+    def test_example_5_1(self):
         Parser.clear_namespace()
         parse(r"""
             % define deltaDD (4D);
@@ -273,7 +273,7 @@ class TestParser(unittest.TestCase):
             'r**4*(2*G*M/r - 1)*sin(theta)**2/(-2*G*M/r + 1)'
         )
 
-    def test_example_6(self):
+    def test_example_5_2(self):
         parse(r"""
             % define basis [t, r, \theta, \phi];
             \begin{align}
@@ -330,6 +330,38 @@ class TestParser(unittest.TestCase):
             all(component == 0 for component in (row for row in simplify(Matrix(GDD))))
         )
 
+    def test_example_6_1(self):
+        parse(r"""
+            % define basis [r, \theta, \phi];
+            \begin{align}
+                \gamma_{ij} &= g_{ij} \\
+                % assign metric gammaDD;
+                \beta_i &= g_{0 i} \\
+                \alpha &= \sqrt{\gamma^{ij}\beta_i\beta_j - g_{0 0}} \\
+                K_{ij} &= \frac{1}{2\alpha}\left(\nabla_i \beta_j + \nabla_j \beta_i\right) \\
+                K &= \gamma^{ij} K_{ij}
+            \end{align}
+        """)
+        self.assertEqual(True,
+            all(component == 0 for component in (row for row in simplify(Matrix(KDD))))
+        )
+
+    def test_example_6_2(self):
+        parse(r"""
+            \begin{align}
+                K^{ij} &= \gamma^{ik} \gamma^{jl} K_{kl} \\
+                R_{ij} &= \partial_k \Gamma^k_{ij} - \partial_j \Gamma^k_{ik}
+                    + \Gamma^k_{ij}\Gamma^l_{kl} - \Gamma^l_{ik}\Gamma^k_{lj} \\
+                R &= \gamma^{ij} R_{ij} \\
+                E &= \frac{1}{16\pi}\left(R + K^{{2}} - K_{ij}K^{ij}\right) \\
+                p_i &= \frac{1}{8\pi}\left(D_j \gamma^{jk} K_{ki} - D_i K\right)
+            \end{align}
+        """)
+        self.assertEqual(simplify(E), 0)
+        self.assertEqual(True,
+            all(component == 0 for component in pD)
+        )
+
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     suite.addTest(TestParser('test_expression_1'))
@@ -348,7 +380,9 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_example_3'))
     suite.addTest(TestParser('test_example_4_1'))
     suite.addTest(TestParser('test_example_4_2'))
-    suite.addTest(TestParser('test_example_5'))
-    suite.addTest(TestParser('test_example_6'))
+    suite.addTest(TestParser('test_example_5_1'))
+    suite.addTest(TestParser('test_example_5_2'))
+    suite.addTest(TestParser('test_example_6_1'))
+    suite.addTest(TestParser('test_example_6_2'))
     result = unittest.TextTestRunner().run(suite)
     sys.exit(not result.wasSuccessful())
