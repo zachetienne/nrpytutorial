@@ -169,21 +169,26 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         loopopts ="AllPoints",
         rel_path_for_Cparams=os.path.join("../"))
 
+    import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
+    # First calculate the conformal factor psi^4 = detgamma^(1/3)
+    _gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaUU unused.
+    psi4factor = gri.register_gridfunctions("AUXEVOL","psi4factor")
+    psi4 = sp.cbrt(gammaDET)
+    # Rescale gammaDD: gammabarDD = gammaDD/psi4
+    gammabarDD = ixp.zerorank2(DIM=3)
+    for i in range(3):
+        for j in range(3):
+            gammabarDD[i][j] = gammaDD[i][j]/psi4
     # Generate a kernel to convert to BSSN:
-    import BSSN.BSSN_in_terms_of_ADM as BitoA
-    BitoA.gammabarDD_hDD(gammaDD)
-    BitoA.cf_from_gammaDD(gammaDD)
-
     # We'll convert the metric in place to ensure compatibility with our metric face interpolator
     values_to_print = [
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD00"),rhs=BitoA.gammabarDD[0][0]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD01"),rhs=BitoA.gammabarDD[0][1]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD02"),rhs=BitoA.gammabarDD[0][2]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD11"),rhs=BitoA.gammabarDD[1][1]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=BitoA.gammabarDD[1][2]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=BitoA.gammabarDD[1][2]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD22"),rhs=BitoA.gammabarDD[2][2]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","psi6_temp"),rhs=BitoA.cf)
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD00"),rhs=gammabarDD[0][0]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD01"),rhs=gammabarDD[0][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD02"),rhs=gammabarDD[0][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=gammabarDD[1][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=gammabarDD[1][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=gammabarDD[2][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","psi4factor"),rhs=psi4)
                       ]
 
     desc = "Convert ADM metric to BSSN"
@@ -195,29 +200,25 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         loopopts ="AllPoints",
         rel_path_for_Cparams=os.path.join("./"))
 
-    alpha_is_here = 10000 # If this doesn't get reset, this should throw an error
-    for i in range(len(gri.glb_gridfcs_list)):
-        if "alpha" in gri.glb_gridfcs_list[i].name:
-            alpha_is_here = i
-            break
-    gri.glb_gridfcs_list.pop(i)
-    import BSSN.ADM_in_terms_of_BSSN as AB
-
+    rescaled_gammaDD = ixp.zerorank2(DIM=3)
+    for i in range(3):
+        for j in range(3):
+            # Here, gammaDD actually represents gammabarDD, but recall that we converted in place.
+            rescaled_gammaDD[i][j] = gammaDD[i][j]*psi4factor
     # We'll convert the metric in place to ensure compatibility with our metric face interpolator
-    AB.ADM_in_terms_of_BSSN()
     values_to_print = [
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD00"),rhs=AB.gammaDD[0][0]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD01"),rhs=AB.gammaDD[0][1]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD02"),rhs=AB.gammaDD[0][2]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD11"),rhs=AB.gammaDD[1][1]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=AB.gammaDD[1][2]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD12"),rhs=AB.gammaDD[1][2]),
-                       lhrh(lhs=gri.gfaccess("in_gfs","gammaDD22"),rhs=AB.gammaDD[2][2])
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD00"),rhs=rescaled_gammaDD[0][0]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD01"),rhs=rescaled_gammaDD[0][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD02"),rhs=rescaled_gammaDD[0][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=rescaled_gammaDD[1][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=rescaled_gammaDD[1][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=rescaled_gammaDD[2][2])
                       ]
+
     C_code_kernel = fin.FD_outputC("returnstring",values_to_print,params=outCparams)\
-                       .replace("IDX4","IDX4S").replace("HDD","GAMMADD").replace("in_gfs","auxevol_gfs")\
-                       .replace("CFGF","PSI6_TEMPGF")
-    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PSI6_TEMPGF","CFGF")
+                       .replace("IDX4","IDX4S")
+    # .replace("in_gfs","auxevol_gfs")
+    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PSI4FACTORGF","PSI6_TEMPGF")
 
     desc = "Convert BSSN metric to ADM"
     name = "Workaround_BSSN_to_ADM"

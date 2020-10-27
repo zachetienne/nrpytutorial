@@ -77,11 +77,11 @@ const int num_metric_gfs = 10;
         for (int i2 = NGHOSTS;i2 < Nxx2+NGHOSTS+1;i2++) {
             for (int i1 = NGHOSTS;i1 < Nxx1+NGHOSTS+1;i1++) {
                 for (int i0 = NGHOSTS;i0 < Nxx0+NGHOSTS+1;i0++) {
-                    Qm2 = auxevol_gfs[IDX4S(PSI6_TEMPGF,i0-2*kronecker_delta[flux_dirn][0],i1-2*kronecker_delta[flux_dirn][1],i2-2*kronecker_delta[flux_dirn][2])];
-                    Qm1 = auxevol_gfs[IDX4S(PSI6_TEMPGF,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
-                    Qp0 = auxevol_gfs[IDX4S(PSI6_TEMPGF,i0,i1,i2)];
-                    Qp1 = auxevol_gfs[IDX4S(PSI6_TEMPGF,i0+kronecker_delta[flux_dirn][0],i1+kronecker_delta[flux_dirn][1],i2+kronecker_delta[flux_dirn][2])];
-                    auxevol_gfs[IDX4S(CFGF,i0,i1,i2)] = COMPUTE_FCVAL(Qm2,Qm1,Qp0,Qp1);
+                    Qm2 = auxevol_gfs[IDX4S(PSI4FACTORGF,i0-2*kronecker_delta[flux_dirn][0],i1-2*kronecker_delta[flux_dirn][1],i2-2*kronecker_delta[flux_dirn][2])];
+                    Qm1 = auxevol_gfs[IDX4S(PSI4FACTORGF,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
+                    Qp0 = auxevol_gfs[IDX4S(PSI4FACTORGF,i0,i1,i2)];
+                    Qp1 = auxevol_gfs[IDX4S(PSI4FACTORGF,i0+kronecker_delta[flux_dirn][0],i1+kronecker_delta[flux_dirn][1],i2+kronecker_delta[flux_dirn][2])];
+                    auxevol_gfs[IDX4S(PSI6_TEMPGF,i0,i1,i2)] = COMPUTE_FCVAL(Qm2,Qm1,Qp0,Qp1);
                 }
             }
         }
