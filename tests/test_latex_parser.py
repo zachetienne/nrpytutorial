@@ -38,6 +38,11 @@ class TestParser(unittest.TestCase):
         )
 
     def test_expression_4(self):
+        tensor = Tensor(Function('Tensor')(Symbol('T')), 4)
+        self.assertEqual(
+            Parser._generate_covdrv(tensor, [('beta', 'D')], 'symbolic'),
+            r'\nabla_\beta T = \partial_\beta (T)'
+        )
         tensor = Tensor(Function('Tensor')(Symbol('TUU'), Symbol('mu'), Symbol('nu')), 4)
         self.assertEqual(
             Parser._generate_covdrv(tensor, [('beta', 'D')], 'symbolic'),
@@ -59,6 +64,28 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             Parser._generate_covdrv(tensor, [('a', 'U'), ('b', 'D')], 'symbolic'),
             r'\nabla_a \nabla_b v^\mu = \partial_a (\partial_b (v^\mu) + \Gamma^\mu_{c b} (v^c)) + \Gamma^\mu_{c a} (\partial_b (v^c) + \Gamma^c_{d b} (v^d))'
+        )
+
+    def test_expression_6(self):
+        tensor = Tensor(Function('Tensor')(Symbol('g')), dimension=3, weight=2)
+        self.assertEqual(
+            Parser._generate_liedrv(tensor, 'beta', 'symbolic'),
+            r'\mathcal{L}_\beta g = \beta^i \partial_i g + (2)(\partial_i \beta^i) g'
+        )
+        tensor = Tensor(Function('Tensor')(Symbol('gUU'), Symbol('i'), Symbol('j')), 3)
+        self.assertEqual(
+            Parser._generate_liedrv(tensor, 'beta', 'symbolic'),
+            r'\mathcal{L}_\beta g^{i j} = \beta^k \partial_k g^{i j} - (\partial_k \beta^i) g^{k j} - (\partial_k \beta^j) g^{i k}'
+        )
+        tensor = Tensor(Function('Tensor')(Symbol('gUD'), Symbol('i'), Symbol('j')), 3)
+        self.assertEqual(
+            Parser._generate_liedrv(tensor, 'beta', 'symbolic'),
+            r'\mathcal{L}_\beta g^i_j = \beta^k \partial_k g^i_j - (\partial_k \beta^i) g^k_j + (\partial_j \beta^k) g^i_k'
+        )
+        tensor = Tensor(Function('Tensor')(Symbol('gDD'), Symbol('i'), Symbol('j')), 3)
+        self.assertEqual(
+            Parser._generate_liedrv(tensor, 'beta', 'symbolic'),
+            r'\mathcal{L}_\beta g_{i j} = \beta^k \partial_k g_{i j} + (\partial_i \beta^k) g_{k j} + (\partial_j \beta^k) g_{i k}'
         )
 
     def test_assignment_1(self):
@@ -369,6 +396,7 @@ if __name__ == '__main__':
     suite.addTest(TestParser('test_expression_3'))
     suite.addTest(TestParser('test_expression_4'))
     suite.addTest(TestParser('test_expression_5'))
+    suite.addTest(TestParser('test_expression_6'))
     suite.addTest(TestParser('test_assignment_1'))
     suite.addTest(TestParser('test_assignment_2'))
     suite.addTest(TestParser('test_assignment_3'))
