@@ -172,8 +172,9 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
     # First calculate the conformal factor psi^4 = detgamma^(1/3)
     _gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaUU unused.
-    psi4factor = gri.register_gridfunctions("AUXEVOL","psi4factor")
+    phi = gri.register_gridfunctions("AUXEVOL","phi")
     psi4 = sp.cbrt(gammaDET)
+    phi_expression = sp.Rational(1,4)*sp.log(psi4)
     # Rescale gammaDD: gammabarDD = gammaDD/psi4
     gammabarDD = ixp.zerorank2(DIM=3)
     for i in range(3):
@@ -188,7 +189,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=gammabarDD[1][1]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=gammabarDD[1][2]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=gammabarDD[2][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","psi4factor"),rhs=psi4)
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","phi"),rhs=phi_expression)
                       ]
 
     desc = "Convert ADM metric to BSSN"
@@ -204,7 +205,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     for i in range(3):
         for j in range(3):
             # Here, gammaDD actually represents gammabarDD, but recall that we converted in place.
-            rescaled_gammaDD[i][j] = gammaDD[i][j]*psi4factor
+            rescaled_gammaDD[i][j] = gammaDD[i][j]*sp.exp(4*phi)
     # We'll convert the metric in place to ensure compatibility with our metric face interpolator
     values_to_print = [
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD00"),rhs=rescaled_gammaDD[0][0]),
@@ -218,7 +219,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     C_code_kernel = fin.FD_outputC("returnstring",values_to_print,params=outCparams)\
                        .replace("IDX4","IDX4S")
     # .replace("in_gfs","auxevol_gfs")
-    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PSI4FACTORGF","PSI6_TEMPGF")
+    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PHIGF","PSI6_TEMPGF")
 
     desc = "Convert BSSN metric to ADM"
     name = "Workaround_BSSN_to_ADM"
