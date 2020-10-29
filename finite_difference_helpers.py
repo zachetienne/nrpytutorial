@@ -586,7 +586,7 @@ def add_FD_func_to_outC_function_dict(list_of_deriv_vars,
             outFDstr = outFDstr.replace("retval = ", "return ")
             add_to_Cfunction_dict(desc=" * (__FD_OPERATOR_FUNC__) Finite difference operator for "+str(op).replace("dDD", "second derivative: ").
                                   replace("dD", "first derivative: ").replace("dKOD", "Kreiss-Oliger derivative: ").
-                                  replace("dupD", "upwinded derivative: ").replace("ddnD", "downwinded derivative: "),
+                                  replace("dupD", "upwinded derivative: ").replace("ddnD", "downwinded derivative: ") + " direction. In Cartesian coordinates, directions 0,1,2 correspond to x,y,z directions, respectively.",
                                   type="static " + Ctype + " _NOINLINE _UNUSED",
                                   name=func_prefix+"f_" + str(op), opts="DisableCparameters",
                                   params=outfunc_params, preloop="", body=outFDstr)

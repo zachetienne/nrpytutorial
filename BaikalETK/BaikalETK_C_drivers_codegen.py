@@ -252,10 +252,11 @@ void BaikalETK_BoundaryConditions_aux_gfs(CCTK_ARGUMENTS) {
   CCTK_INT ierr CCTK_ATTRIBUTE_UNUSED = 0;
 
   CCTK_INT bndsize[6];
-  CCTK_INT is_ghostbnd[6];
-  CCTK_INT is_symbnd[6];
-  CCTK_INT is_physbnd[6];
-  GetBoundarySizesAndTypes(cctkGH, 6, bndsize, is_ghostbnd, is_symbnd, is_physbnd);
+  CCTK_INT is_internal[6];
+  CCTK_INT is_staggered[6];
+  CCTK_INT shiftout[6];
+
+  GetBoundarySpecification(6, bndsize, is_internal, is_staggered, shiftout);
 
 """
     for gf in aux_gfs_list:

@@ -168,16 +168,6 @@ USES FUNCTION SymmetryTableHandleForGrid
 CCTK_INT FUNCTION Boundary_SelectVarForBC(CCTK_POINTER_TO_CONST IN GH, CCTK_INT IN faces, CCTK_INT IN boundary_width, CCTK_INT IN table_handle, CCTK_STRING IN var_name, CCTK_STRING IN bc_name)
 USES FUNCTION Boundary_SelectVarForBC
 
-# Needed to determine boundary sizes for applying boundary conditions to BSSN constraint gridfunctions
-CCTK_INT FUNCTION GetBoundarySizesAndTypes \
-  (CCTK_POINTER_TO_CONST IN cctkGH,        \
-   CCTK_INT IN size,                       \
-   CCTK_INT OUT ARRAY bndsize,             \
-   CCTK_INT OUT ARRAY is_ghostbnd,         \
-   CCTK_INT OUT ARRAY is_symbnd,           \
-   CCTK_INT OUT ARRAY is_physbnd)
-REQUIRES FUNCTION GetBoundarySizesAndTypes
-
 # Needed for EinsteinEvolve/NewRad outer boundary condition driver:
 CCTK_INT FUNCTION                         \
     NewRad_Apply                          \
