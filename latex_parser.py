@@ -32,10 +32,13 @@ class Lexer:
         # every pattern, join together the resulting pattern list using a pipe symbol
         # for regex alternation, and compile the generated regular expression
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in
-            [ ('SPACE_DELIM',   r'(?:\s|\\,|\{\})+|\&'),
+            [ ('ALIAS_MACRO',   r'alias'),
+              ('SPACE_DELIM',   r'(?:\s|\\,|\{\})+'),
+              ('REPLACEMENT',   r'[^,;%]+->[^,;%]+'),
+              ('ALIGN_DELIM',   r'\&'),
               ('DIMENSION',     r'[2-9][0-9]*D'),
               ('VARIABLE',      r'[a-zA-Z]+[UD]+'),
-              ('RATIONAL',      r'\-?[0-9]+\/[1-9]+|\\frac{[0-9]+}{[1-9]+}'),
+              ('RATIONAL',      r'\-?[0-9]+\/\-?[1-9][0-9]*'),
               ('DECIMAL',       r'\-?[0-9]+\.[0-9]+'),
               ('INTEGER',       r'\-?[0-9]+'),
               ('PI',            r'\\pi'),
@@ -64,10 +67,11 @@ class Lexer:
               ('PAR_SYM',       r'\\partial'),
               ('COV_SYM',       r'\\nabla|D'),
               ('LIE_SYM',       r'\\mathcal\{L\}'),
-              ('SQRT_CMD',      r'\\sqrt'),
+              ('FUNC_CMD',      r'\\exp'),
               ('FRAC_CMD',      r'\\frac'),
-              ('TRIG_CMD',      r'\\sinh|\\cosh|\\tanh|\\sin|\\cos|\\tan'),
+              ('SQRT_CMD',      r'\\sqrt'),
               ('NLOG_CMD',      r'\\ln|\\log'),
+              ('TRIG_CMD',      r'\\sinh|\\cosh|\\tanh|\\sin|\\cos|\\tan'),
               ('DEFINE_MACRO',  r'define'),
               ('ASSIGN_MACRO',  r'assign'),
               ('PARSE_MACRO',   r'parse'),
@@ -106,7 +110,8 @@ class Lexer:
                 raise ParseError('unexpected \'%s\' at position %d' %
                     (self.sentence[self.index], self.index), self.sentence, self.index)
             self.index = token.end()
-            if token.lastgroup not in ('SPACE_DELIM', 'BIGL_DELIM', 'BIGR_DELIM', 'LEFT_DELIM', 'RIGHT_DELIM'):
+            if token.lastgroup not in ('SPACE_DELIM', 'ALIGN_DELIM',
+                    'BIGL_DELIM', 'BIGR_DELIM', 'LEFT_DELIM', 'RIGHT_DELIM'):
                 self.lexeme = token.group()
                 yield token.lastgroup
 
@@ -145,8 +150,9 @@ class Parser:
         LaTeX Extended BNF Grammar:
         <LATEX>         -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
         <ALIGN>         -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
-        <CONFIG>        -> '%' ( <PARSE> | <ASSIGN> | <DEFINE> )
+        <CONFIG>        -> '%' ( <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> )
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT> [ ',' <ASSIGNMENT> ]
+        <ALIAS>         -> <ALIAS_MACRO> <REPLACEMENT> [ ',' <REPLACEMENT> ]
         <ASSIGN>        -> <ASSIGN_MACRO> ( <SYMMETRY> | <WEIGHT> <NUMBER> ) ( <LETTER> | <VARIABLE> )
         <DEFINE>        -> <DEFINE_MACRO> ( <VARDEF> | <KEYDEF> ) { ',' ( <VARDEF> | <KEYDEF> ) }*
         <VARDEF>        -> [ <SYMMETRY> ] ( <LETTER> | <VARIABLE> ) [ '(' <DIMENSION> ')' ]
@@ -160,7 +166,8 @@ class Parser:
         <BASE>          -> [ '-' ] ( <ATOM> | '(' <EXPRESSION> ')' )
         <EXPONENT>      -> <BASE> | '{' <BASE> '}' | '{{' <BASE> '}}'
         <ATOM>          -> <COMMAND> | <OPERATOR> | <NUMBER> | <TENSOR>
-        <COMMAND>       -> <FRAC> | <SQRT> | <NLOG> | <TRIG>
+        <COMMAND>       -> <FUNC> | <FRAC> | <SQRT> | <NLOG> | <TRIG>
+        <FUNC>          -> <FUNC_CMD> '(' <EXPRESSION> ')'
         <FRAC>          -> <FRAC_CMD> '{' <EXPRESSION> '}' '{' <EXPRESSION> '}'
         <SQRT>          -> <SQRT_CMD> [ '[' <INTEGER> ']' ] '{' <EXPRESSION> '}'
         <NLOG>          -> <NLOG_CMD> [ '_' ( <NUMBER> | '{' <NUMBER> '}' ) ] ( <NUMBER> | <TENSOR> | '(' <EXPRESSION> ')' )
@@ -260,6 +267,8 @@ class Parser:
         self.expect('COMMENT')
         if self.peek('PARSE_MACRO'):
             self._parse()
+        elif self.peek('ALIAS_MACRO'):
+            self._alias()
         elif self.peek('ASSIGN_MACRO'):
             self._assign()
         elif self.peek('DEFINE_MACRO'):
@@ -275,6 +284,17 @@ class Parser:
         self._assignment()
         while self.accept('COMMA'):
             self._assignment()
+
+    # <ALIAS> -> <ALIAS_MACRO> <REPLACEMENT> [ ',' <REPLACEMENT> ]
+    def _alias(self):
+        self.expect('ALIAS_MACRO')
+        while True:
+            match = re.match(r'([^,;%]+)->([^,;%]+)', self.lexer.lexeme)
+            self.expect('REPLACEMENT')
+            old, new = match.group(1).strip(), match.group(2).strip()
+            sentence, position = self.lexer.sentence, self.lexer.mark()
+            self.lexer.sentence = sentence[:position] + sentence[position:].replace(old, new)
+            if not self.accept('COMMA'): break
 
     # <ASSIGN> -> <ASSIGN_MACRO> ( <SYMMETRY> | <WEIGHT> <NUMBER> ) ( <LETTER> | <VARIABLE> )
     def _assign(self):
@@ -439,7 +459,6 @@ class Parser:
             self.expect('LEFT_BRACE')
             covdrv = self.peek('COV_SYM')
             self.lexer.reset()
-        # TODO: SWITCH TO VARIABLE TEMPORARILY
         if pardrv and self._namespace['deriv'] == 'symbolic':
             sentence, position = self.lexer.sentence, self.lexer.mark()
             raise ParseError('cannot parse symbolic partial derivative on LHS' %
@@ -456,31 +475,29 @@ class Parser:
                 subexpr, rank = subtree.expr, len(subtree.expr.args)
                 if subexpr.func == Function('Tensor') and rank > 1:
                     indexed = True
+        function, RHS = LHS, expand(tree.root.expr)
         if indexed:
-            function, RHS = LHS, expand(tree.root.expr)
             # perform implied summation on indexed expression
             (LHS, RHS), dimension = self._summation(LHS, RHS)
-            global_env = dict(sympy_env)
-            global_env.update(self._namespace)
-            for key in global_env:
-                if isinstance(global_env[key], Tensor):
-                    global_env[key] = global_env[key].structure
-                if isinstance(global_env[key], Function('Constant')):
-                    global_env[key] = global_env[key].args[0]
-            # evaluate each implied summation and update namespace
-            exec('%s = %s' % (LHS, RHS), global_env)
-            symbol = LHS.split('[')[0]
-            tensor = Tensor(function, dimension, global_env[symbol])
-            self._namespace.update({symbol: tensor})
         else:
-            # replace each tensor function with symbol whenever scalar
             for subtree in tree.preorder():
-                subexpr, rank = subtree.expr, len(subtree.expr.args) - 1
+                subexpr = subtree.expr
                 if subexpr.func in (Function('Tensor'), Function('Constant')):
-                    if rank == 0:
-                        subtree.expr = subexpr.args[0]
-                        del subtree.children[:]
-            self._namespace.update({str(LHS.args[0]): tree.reconstruct()})
+                    subtree.expr = subexpr.args[0]
+                    del subtree.children[:]
+            (LHS, RHS), dimension = (LHS.args[0], tree.reconstruct()), 0
+        global_env = dict(sympy_env)
+        global_env.update(self._namespace)
+        for key in global_env:
+            if isinstance(global_env[key], Tensor):
+                global_env[key] = global_env[key].structure
+            if isinstance(global_env[key], Function('Constant')):
+                global_env[key] = global_env[key].args[0]
+        # evaluate every implied summation and update namespace
+        exec('%s = %s' % (LHS, RHS), global_env)
+        symbol = LHS.split('[')[0] if indexed else str(LHS)
+        tensor = Tensor(function, dimension, global_env[symbol])
+        self._namespace.update({symbol: tensor})
 
     # <EXPRESSION> -> <TERM> { ( '+' | '-' ) <TERM> }*
     def _expression(self):
@@ -497,7 +514,7 @@ class Parser:
         expr = self._factor()
         while any(self.peek(token) for token in ('DIVIDE', 'LEFT_PAREN', 'VPHANTOM', 'DIACRITIC',
                 'RATIONAL', 'DECIMAL', 'INTEGER', 'PI', 'PAR_SYM', 'COV_SYM', 'LIE_SYM',
-                'LETTER', 'COMMAND', 'FRAC_CMD', 'SQRT_CMD', 'NLOG_CMD', 'TRIG_CMD')):
+                'LETTER', 'COMMAND', 'FUNC_CMD', 'FRAC_CMD', 'SQRT_CMD', 'NLOG_CMD', 'TRIG_CMD')):
             if self.accept('DIVIDE'):
                 expr /= self._factor()
             else: expr *= self._factor()
@@ -545,7 +562,7 @@ class Parser:
                 return self._operator()
             self.lexer.reset()
         if any(self.peek(token) for token in
-                ('COMMAND', 'FRAC_CMD', 'SQRT_CMD', 'NLOG_CMD', 'TRIG_CMD')):
+                ('COMMAND', 'FUNC_CMD', 'FRAC_CMD', 'SQRT_CMD', 'NLOG_CMD', 'TRIG_CMD')):
             return self._command()
         if any(self.peek(token) for token in
                 ('VPHANTOM', 'PAR_SYM', 'COV_SYM', 'LIE_SYM')):
@@ -558,7 +575,8 @@ class Parser:
             sentence, position = self.lexer.sentence, self.lexer.mark()
             tensor = Tensor(self._tensor(), None)
             symbol, indexing = tensor.symbol, tensor.indexing
-            if symbol[:5] == 'Gamma': # reserved keyword for christoffel symbol
+            # reserved keyword for christoffel symbol
+            if symbol[:5] == 'Gamma' and tensor.rank == 3:
                 metric = self._namespace['metric'][symbol[5:-3]] + symbol[5:-3]
                 if metric + 'DD' not in self._namespace:
                     raise ParseError('cannot generate christoffel symbol without defined metric \'%s\'' %
@@ -577,9 +595,11 @@ class Parser:
         raise ParseError('unexpected \'%s\' at position %d' %
             (sentence[position], position), sentence, position)
 
-    # <COMMAND> -> <FRAC> | <SQRT> | <NLOG> | <TRIG>
+    # <COMMAND> -> <FUNC> | <FRAC> | <SQRT> | <NLOG> | <TRIG>
     def _command(self):
         command = self.lexer.lexeme
+        if self.peek('FUNC_CMD'):
+            return self._func()
         if self.peek('FRAC_CMD'):
             return self._frac()
         if self.peek('SQRT_CMD'):
@@ -618,6 +638,19 @@ class Parser:
         if root == Rational(1, 2):
             return sqrt(expr)
         return Pow(expr, root)
+
+    # <FUNC> -> <FUNC_CMD> '(' <EXPRESSION> ')'
+    def _func(self):
+        func = self._strip(self.lexer.lexeme)
+        self.expect('FUNC_CMD')
+        self.expect('LEFT_PAREN')
+        expr = self._expression()
+        self.expect('RIGHT_PAREN')
+        if func == 'exp':
+            return exp(expr)
+        sentence, position = self.lexer.sentence, self.lexer.mark()
+        raise ParseError('unsupported function \'%s\' at position %d' %
+            (func, position), sentence, position)
 
     # <NLOG> -> <NLOG_CMD> [ '_' ( <NUMBER> | '{' <NUMBER> '}' ) ] ( <NUMBER> | <TENSOR> | '(' <EXPRESSION> ')' )
     def _nlog(self):
@@ -841,7 +874,7 @@ class Parser:
         # instantiate covariant derivative and update namespace
         marker_1 = self.lexer.mark()
         function = self._tensor()
-        marker_2 = self.lexer.index
+        marker_2 = self.lexer.index - len(self.lexer.lexeme)
         equation[0] += self.lexer.sentence[marker_1:marker_2].strip()
         equation[3] += self.lexer.sentence[marker_1:marker_2].strip()
         if location == 'RHS':
@@ -893,9 +926,7 @@ class Parser:
     def _number(self):
         number = self.lexer.lexeme
         if self.accept('RATIONAL'):
-            rational = re.match(r'([1-9][0-9]*)\/([1-9][0-9]*)', number)
-            if not rational:
-                rational = re.match(r'\\frac{([0-9]+)}{([1-9]+)}', number)
+            rational = re.match(r'(\-?[0-9]+)\/(\-?[1-9][0-9]*)', number)
             return Rational(rational.group(1), rational.group(2))
         if self.accept('DECIMAL'):
             return Float(number)
@@ -1293,7 +1324,7 @@ class Parser:
         if len(str(vector)) > 1:
             vector = '\\' + str(vector)
         indexing = [str(index[0]) for index in tensor.indexing]
-        alphabet = (chr(105 + n) for n in range(26)) # 97
+        alphabet = (chr(105 + n) for n in range(26)) # TODO: 97
         for i, index in enumerate(indexing):
             if index in indexing[:i]:
                 indexing[i] = next(x for x in alphabet if x not in indexing)
@@ -1303,8 +1334,7 @@ class Parser:
         for index, position in tensor.indexing:
             _tensor = Tensor(tensor.function, tensor.dimension)
             _indexing = [bound_index if i == str(index) else i for i in indexing]
-            _tensor.indexing = [(index, position)
-                for index, (_, position) in zip(_indexing, tensor.indexing)]
+            _tensor.indexing = [(idx, pos) for idx, (_, pos) in zip(_indexing, tensor.indexing)]
             latex = _tensor.latex_format()
             if len(str(index)) > 1:
                 index = '\\' + str(index)
