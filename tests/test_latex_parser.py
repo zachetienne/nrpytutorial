@@ -2,12 +2,10 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# pylint: disable=import-error,protected-access
-# import sys; sys.path.append('..')
-from latex_parser import Tensor, OverrideWarning
-from latex_parser import Parser, parse_expr, parse
+# pylint: disable = import-error, protected-access
+from latex_parser import Tensor, Parser, parse_expr, parse
 from sympy import Function, Symbol, Matrix, simplify
-import unittest, sys
+import unittest, sys # sys.path.append('..')
 
 class TestParser(unittest.TestCase):
     """ Unit Testing for LaTeX Parser """

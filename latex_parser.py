@@ -1318,7 +1318,7 @@ class Parser:
         indexing, order = tensor.indexing + indexing[::-1], len(indexing)
         indexing = [(str(idx), str(pos)) for idx, pos in indexing]
         for i, (index, position) in enumerate(indexing):
-            _indexing = [index for index, _ in indexing]
+            _indexing = list(index for index, _ in indexing)
             if index in _indexing[:i]:
                 index = next(x for x in alphabet if x not in _indexing)
                 indexing[i] = (index, position)
@@ -1342,9 +1342,9 @@ class Parser:
             RHS = '\\partial_%s (%s)' % (deriv_index, latex)
             for index, position in indexing[:pos(order)]:
                 alphabet = (chr(97 + n) for n in range(26))
-                _indexing = [index for index, _ in indexing]
+                _indexing = list(index for index, _ in indexing)
                 bound_index = next(x for x in alphabet if x not in _indexing)
-                _indexing = list(indexing)
+                _indexing = indexing[:]
                 for i, _ in enumerate(indexing):
                     if index == indexing[i][0]:
                         _indexing[i] = (bound_index, indexing[i][1])
