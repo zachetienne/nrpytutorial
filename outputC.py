@@ -178,6 +178,12 @@ def parse_outCparams_string(params):
                 CSE_preprocess          = "True"
                 SIMD_find_more_subs     = "True"
                 SIMD_find_more_FMAsFMSs = "True"
+                sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
+                sympy_major_version = int(sympy_version.split(".")[0])
+                sympy_minor_version = int(sympy_version.split(".")[1])
+                if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 3):
+                    print('Error: SymPy version', sympy_version, 'does not support CSE preprocessing.')
+                    sys.exit(1)
             elif parname == "GoldenKernelsEnable" and value[i] == "False":
                 pass # Do nothing; just allow user to set GoldenKernelsEnable="False".
             elif parname == "gridsuffix":
@@ -185,13 +191,6 @@ def parse_outCparams_string(params):
             else:
                 print("Error: outputC parameter name \""+parname+"\" unrecognized.")
                 sys.exit(1)
-
-    sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
-    sympy_major_version = int(sympy_version.split(".")[0])
-    sympy_minor_version = int(sympy_version.split(".")[1])
-    if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 3):
-        print('Warning: SymPy version', sympy_version, 'does not support CSE preprocessing.')
-        CSE_preprocess = "False"
 
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,
                       CSE_enable,CSE_varprefix,CSE_sorting,CSE_preprocess,
