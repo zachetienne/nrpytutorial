@@ -25,7 +25,7 @@ def GiRaFFE_NRPy_FCVAL(Ccodesdir):
 #define A1  -0.0625
 #define COMPUTE_FCVAL(METRICm2,METRICm1,METRIC,METRICp1) (AM2*(METRICm2) + AM1*(METRICm1) + A0*(METRIC) + A1*(METRICp1))
 
-const int metric_gfs_list[10] = {GAMMADD00GF,
+const int metric_gfs_list[13] = {GAMMADD00GF,
                                  GAMMADD01GF,
                                  GAMMADD02GF,
                                  GAMMADD11GF,
@@ -34,9 +34,12 @@ const int metric_gfs_list[10] = {GAMMADD00GF,
                                  BETAU0GF,
                                  BETAU1GF,
                                  BETAU2GF,
-                                 ALPHAGF};
+                                 ALPHAGF,
+                                 GAMMAUUXXGF,
+                                 GAMMAUUYYGF,
+                                 GAMMAUUZZGF};
 
-const int metric_gfs_face_list[10] = {GAMMA_FACEDD00GF,
+const int metric_gfs_face_list[13] = {GAMMA_FACEDD00GF,
                                       GAMMA_FACEDD01GF,
                                       GAMMA_FACEDD02GF,
                                       GAMMA_FACEDD11GF,
@@ -45,9 +48,12 @@ const int metric_gfs_face_list[10] = {GAMMA_FACEDD00GF,
                                       BETA_FACEU0GF,
                                       BETA_FACEU1GF,
                                       BETA_FACEU2GF,
-                                      ALPHA_FACEGF};
+                                      ALPHA_FACEGF,
+                                      GAMMA_FACEUUXXGF,
+                                      GAMMA_FACEUUYYGF,
+                                      GAMMA_FACEUUZZGF};
 
-const int num_metric_gfs = 10;
+const int num_metric_gfs = 13;
 """)
 
     desc = "Interpolate metric gridfunctions to cell faces"
@@ -82,7 +88,7 @@ const int num_metric_gfs = 10;
                 Qm1 = auxevol_gfs[IDX4S(PHIGF,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
                 Qp0 = auxevol_gfs[IDX4S(PHIGF,i0,i1,i2)];
                 Qp1 = auxevol_gfs[IDX4S(PHIGF,i0+kronecker_delta[flux_dirn][0],i1+kronecker_delta[flux_dirn][1],i2+kronecker_delta[flux_dirn][2])];
-                auxevol_gfs[IDX4S(PSI6_TEMPGF,i0,i1,i2)] = COMPUTE_FCVAL(Qm2,Qm1,Qp0,Qp1);
+                auxevol_gfs[IDX4S(PHI_FACEGF,i0,i1,i2)] = COMPUTE_FCVAL(Qm2,Qm1,Qp0,Qp1);
             }
         }
     }

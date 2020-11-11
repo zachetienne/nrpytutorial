@@ -25,22 +25,23 @@ if nrpy_dir_path not in sys.path:
 import GRHD.equations as GRHD
 import GRFFE.equations as GRFFE
 
-def calculate_GRFFE_Tmunu_and_contractions(flux_dirn, mom_comp, gammaDD,betaU,alpha,ValenciavU,BU,sqrt4pi):
-    GRHD.compute_sqrtgammaDET(gammaDD)
+def calculate_GRFFE_Tmunu_and_contractions(flux_dirn, mom_comp, gammaDD,betaU,alpha,ValenciavU,BU,sqrt4pi,phi_face,gammaUU):
+#     GRHD.compute_sqrtgammaDET(gammaDD)
+    sqrtgammaDET = sp.exp(sp.sympify(6)*phi_face) # phi_face is phi, e^(6*phi) = psi^6 = sqrtgamma
 
     GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
     GRFFE.compute_smallb4U(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
     GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4U)
 
-    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU)
+    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU,gammaUU)
     GRFFE.compute_TEM4UD(gammaDD, betaU, alpha, GRFFE.TEM4UU)
 
     # Compute conservative variables in terms of primitive variables
-    GRHD.compute_S_tildeD(alpha, GRHD.sqrtgammaDET, GRFFE.TEM4UD)
+    GRHD.compute_S_tildeD(alpha, sqrtgammaDET, GRFFE.TEM4UD)
 
     global U,F
     # Flux F = alpha*sqrt{gamma}*T^i_j
-    F = alpha*GRHD.sqrtgammaDET*GRFFE.TEM4UD[flux_dirn+1][mom_comp+1]
+    F = alpha*sqrtgammaDET*GRFFE.TEM4UD[flux_dirn+1][mom_comp+1]
     # U = alpha*sqrt{gamma}*T^0_j = Stilde_j
     U = GRHD.S_tildeD[mom_comp]
 
@@ -53,19 +54,23 @@ def HLLE_solver(cmax, cmin, Fr, Fl, Ur, Ul):
     return (cmin*Fr + cmax*Fl - cmin*cmax*(Ur-Ul) )/(cmax + cmin)
 
 def calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
-                          Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi):
+                          Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi,gamma_faceUU,phi_face):
 
-    chsp.find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face)
+    chsp.find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face,gamma_faceUU)
 
     global Stilde_fluxD
     Stilde_fluxD = ixp.zerorank3()
     for mom_comp in range(3):
         calculate_GRFFE_Tmunu_and_contractions(flux_dirn, mom_comp, gamma_faceDD,beta_faceU,alpha_face,\
-                                               Valenciav_rU,B_rU,sqrt4pi)
+                                               Valenciav_rU,B_rU,sqrt4pi,phi_face,gamma_faceUU)
         Fr = F
         Ur = U
+        if mom_comp==0:
+            global F_out,U_out
+            F_out=F
+            U_out=U
         calculate_GRFFE_Tmunu_and_contractions(flux_dirn, mom_comp, gamma_faceDD,beta_faceU,alpha_face,\
-                                               Valenciav_lU,B_lU,sqrt4pi)
+                                               Valenciav_lU,B_lU,sqrt4pi,phi_face,gamma_faceUU)
         Fl = F
         Ul = U
         Stilde_fluxD[mom_comp] = HLLE_solver(chsp.cmax, chsp.cmin, Fr, Fl, Ur, Ul)
@@ -75,6 +80,7 @@ def write_C_Code_to_read_memory(write_cmax_cmin=False):
     # Read in all the inputs:
     for var in ["GAMMA_FACEDD00", "GAMMA_FACEDD01", "GAMMA_FACEDD02",
                 "GAMMA_FACEDD11", "GAMMA_FACEDD12", "GAMMA_FACEDD22",
+                "GAMMA_FACEUUXX", "GAMMA_FACEUUYY", "GAMMA_FACEUUZZ", "PHI_FACE",
                 "BETA_FACEU0", "BETA_FACEU1", "BETA_FACEU2","ALPHA_FACE",
                 "B_RU0","B_RU1","B_RU2","B_LU0","B_LU1","B_LU2",
                 "VALENCIAV_RU0","VALENCIAV_RU1","VALENCIAV_RU2",
@@ -125,7 +131,7 @@ def write_C_code_to_write_results(write_cmax_cmin=False):
 
 def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=None, gamma_faceDD=None, beta_faceU=None,
                                     Valenciav_rU=None, B_rU=None, Valenciav_lU=None, B_lU=None, sqrt4pi=None,
-                                    outCparams = "outCverbose=False,CSE_sorting=none", write_cmax_cmin=False):
+                                    outCparams = "outCverbose=False,CSE_sorting=none", write_cmax_cmin=False, gamma_faceUU=None,phi_face=None):
     if not inputs_provided:
         # We will pass values of the gridfunction on the cell faces into the function. This requires us
         # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
@@ -152,16 +158,20 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
 
     for flux_dirn in range(3):
         calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
-                              Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
+                              Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi,gamma_faceUU,phi_face)
         Stilde_flux_to_print = [
                                 Stilde_fluxD[0],
                                 Stilde_fluxD[1],
-                                Stilde_fluxD[2]
+                                Stilde_fluxD[2],
+#                                 F_out,
+#                                 U_out
                                ]
         Stilde_flux_names = [
                              "Stilde_fluxD0",
                              "Stilde_fluxD1",
-                             "Stilde_fluxD2"
+                             "Stilde_fluxD2",
+#                              "F_out",
+#                              "U_out"
                             ]
 
         if write_cmax_cmin:

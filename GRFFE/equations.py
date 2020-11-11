@@ -73,20 +73,36 @@ def compute_smallbsquared(gammaDD, betaU, alpha, smallb4U):
 
 # Step 3: Define the electromagnetic stress-energy tensor T_{EM}^{mu nu}
 # Step 3.a: Define T_{EM}^{mu nu} (a 4-dimensional tensor)
-def compute_TEM4UU(gammaDD,betaU,alpha, smallb4U, smallbsquared,u4U):
+def compute_TEM4UU(gammaDD,betaU,alpha, smallb4U, smallbsquared,u4U,gammaUU=None):
     global TEM4UU
 
     # Then define g^{mu nu} in terms of the ADM quantities:
-    import BSSN.ADMBSSN_tofrom_4metric as AB4m
-    AB4m.g4UU_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
+    if gammaUU==None:
+        import BSSN.ADMBSSN_tofrom_4metric as AB4m
+        AB4m.g4UU_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
+        # Finally compute T^{mu nu}
+        TEM4UU = ixp.zerorank2(DIM=4)
+        for mu in range(4):
+            for nu in range(4):
+                TEM4UU[mu][nu] = smallbsquared*u4U[mu]*u4U[nu] \
+                                 + sp.Rational(1,2)*smallbsquared*AB4m.g4UU[mu][nu] \
+                                 - smallb4U[mu]*smallb4U[nu]
+    else:
+        g4UU = ixp.zerorank4(DIM=4)
+        g4UU[0][0] = -1 / alpha**2
+        for mu in range(1,4):
+            g4UU[0][mu] = g4UU[mu][0] = betaU[mu-1]/alpha**2
+        for mu in range(1,4):
+            for nu in range(1,4):
+                g4UU[mu][nu] = gammaUU[mu-1][nu-1] - betaU[mu-1]*betaU[nu-1]/alpha**2
+        # Finally compute T^{mu nu}
+        TEM4UU = ixp.zerorank2(DIM=4)
+        for mu in range(4):
+            for nu in range(4):
+                TEM4UU[mu][nu] = smallbsquared*u4U[mu]*u4U[nu] \
+                                 + sp.Rational(1,2)*smallbsquared*g4UU[mu][nu] \
+                                 - smallb4U[mu]*smallb4U[nu]
 
-    # Finally compute T^{mu nu}
-    TEM4UU = ixp.zerorank2(DIM=4)
-    for mu in range(4):
-        for nu in range(4):
-            TEM4UU[mu][nu] = smallbsquared*u4U[mu]*u4U[nu] \
-                             + sp.Rational(1,2)*smallbsquared*AB4m.g4UU[mu][nu] \
-                             - smallb4U[mu]*smallb4U[nu]
 
 # Step 3.b: Define T^{mu}_{nu} (a 4-dimensional tensor)
 def compute_TEM4UD(gammaDD,betaU,alpha, TEM4UU):

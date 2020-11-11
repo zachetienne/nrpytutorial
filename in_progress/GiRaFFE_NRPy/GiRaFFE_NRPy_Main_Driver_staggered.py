@@ -75,7 +75,10 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     gri.register_gridfunctions("AUXEVOL","cmax_z")
     gri.register_gridfunctions("AUXEVOL","cmin_z")
 
-#     gri.register_gridfumctions("AUXEVOL","cf") # Needed only for ADM-BSSN-ADM workaround
+    phi = gri.register_gridfunctions("AUXEVOL","phi") # Needed only for ADM-BSSN-ADM workaround
+    phi_face = gri.register_gridfunctions("AUXEVOL","phi_face") # Needed only for ADM-BSSN-ADM workaround
+    gammaUUxx,gammaUUyy,gammaUUzz = gri.register_gridfunctions("AUXEVOL",["gammaUUxx","gammaUUyy","gammaUUzz"])
+    gamma_faceUUxx,gamma_faceUUyy,gamma_faceUUzz = gri.register_gridfunctions("AUXEVOL",["gamma_faceUUxx","gamma_faceUUyy","gamma_faceUUzz"])
 
     subdir = "RHSs"
     stgsrc.GiRaFFE_NRPy_Source_Terms(os.path.join(out_dir,subdir))
@@ -119,8 +122,12 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     subdir = "RHSs"
     Af.GiRaFFE_NRPy_Afield_flux(os.path.join(out_dir, subdir))
 
+    gamma_faceUU = ixp.zerorank2()
+    gamma_faceUU[0][0] = gamma_faceUUxx
+    gamma_faceUU[1][1] = gamma_faceUUyy
+    gamma_faceUU[2][2] = gamma_faceUUzz
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
-                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi,write_cmax_cmin=True)
+                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi,write_cmax_cmin=True, gamma_faceUU=gamma_faceUU, phi_face=phi_face)
 
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
@@ -132,13 +139,13 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     C2P_P2C.GiRaFFE_NRPy_C2P(StildeD,BU,gammaDD,betaU,alpha)
 
-    values_to_print = [\
-                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD0"),rhs=C2P_P2C.outStildeD[0]),\
-                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD1"),rhs=C2P_P2C.outStildeD[1]),\
-                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD2"),rhs=C2P_P2C.outStildeD[2]),\
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","ValenciavU0"),rhs=C2P_P2C.ValenciavU[0]),\
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","ValenciavU1"),rhs=C2P_P2C.ValenciavU[1]),\
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","ValenciavU2"),rhs=C2P_P2C.ValenciavU[2])\
+    values_to_print = [
+                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD0"),rhs=C2P_P2C.outStildeD[0]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD1"),rhs=C2P_P2C.outStildeD[1]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD2"),rhs=C2P_P2C.outStildeD[2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","ValenciavU0"),rhs=C2P_P2C.ValenciavU[0]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","ValenciavU1"),rhs=C2P_P2C.ValenciavU[1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","ValenciavU2"),rhs=C2P_P2C.ValenciavU[2])
                       ]
 
     subdir = "C2P"
@@ -154,10 +161,10 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     C2P_P2C.GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi)
 
-    values_to_print = [\
-                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD0"),rhs=C2P_P2C.StildeD[0]),\
-                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD1"),rhs=C2P_P2C.StildeD[1]),\
-                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD2"),rhs=C2P_P2C.StildeD[2]),\
+    values_to_print = [
+                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD0"),rhs=C2P_P2C.StildeD[0]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD1"),rhs=C2P_P2C.StildeD[1]),
+                       lhrh(lhs=gri.gfaccess("in_gfs","StildeD2"),rhs=C2P_P2C.StildeD[2]),
                       ]
 
     desc = "Recompute StildeD after current sheet fix to Valencia 3-velocity to ensure consistency between conservative & primitive variables."
@@ -172,7 +179,6 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
     # First calculate the conformal factor psi^4 = detgamma^(1/3)
     _gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaUU unused.
-    phi = gri.register_gridfunctions("AUXEVOL","phi")
     psi4 = sp.cbrt(gammaDET)
     phi_expression = sp.Rational(1,4)*sp.log(psi4)
     # Rescale gammaDD: gammabarDD = gammaDD/psi4
@@ -180,6 +186,9 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     for i in range(3):
         for j in range(3):
             gammabarDD[i][j] = gammaDD[i][j]/psi4
+    gammabarUUxx = gammaUUxx*psi4
+    gammabarUUyy = gammaUUyy*psi4
+    gammabarUUzz = gammaUUzz*psi4
     # Generate a kernel to convert to BSSN:
     # We'll convert the metric in place to ensure compatibility with our metric face interpolator
     values_to_print = [
@@ -189,7 +198,10 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=gammabarDD[1][1]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=gammabarDD[1][2]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=gammabarDD[2][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","phi"),rhs=phi_expression)
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","phi"),rhs=phi_expression),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUxx"),rhs=gammabarUUxx),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUyy"),rhs=gammabarUUyy),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUzz"),rhs=gammabarUUzz)
                       ]
 
     desc = "Convert ADM metric to BSSN"
@@ -206,6 +218,9 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         for j in range(3):
             # Here, gammaDD actually represents gammabarDD, but recall that we converted in place.
             rescaled_gammaDD[i][j] = gammaDD[i][j]*sp.exp(4*phi)
+    rescaled_gammaUUxx = gammaUUxx/sp.exp(4*phi)
+    rescaled_gammaUUyy = gammaUUyy/sp.exp(4*phi)
+    rescaled_gammaUUzz = gammaUUzz/sp.exp(4*phi)
     # We'll convert the metric in place to ensure compatibility with our metric face interpolator
     values_to_print = [
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD00"),rhs=rescaled_gammaDD[0][0]),
@@ -213,22 +228,26 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD02"),rhs=rescaled_gammaDD[0][2]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=rescaled_gammaDD[1][1]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=rescaled_gammaDD[1][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=rescaled_gammaDD[2][2])
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=rescaled_gammaDD[2][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUxx"),rhs=rescaled_gammaUUxx),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUyy"),rhs=rescaled_gammaUUyy),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUzz"),rhs=rescaled_gammaUUzz)
                       ]
 
     C_code_kernel = fin.FD_outputC("returnstring",values_to_print,params=outCparams)\
                        .replace("IDX4","IDX4S")
-    # .replace("in_gfs","auxevol_gfs")
-    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PHIGF","PSI6_TEMPGF")
+    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PHIGF","PHI_FACEGF")
 
     desc = "Convert BSSN metric to ADM"
     name = "Workaround_BSSN_to_ADM"
-    outCfunction(
-        outfile  = os.path.join(out_dir,name+".h"), desc=desc, name=name,
+    Ccode_function = outCfunction(
+        outfile  = "returnstring", desc=desc, name=name,
         params   ="const paramstruct *params,REAL *auxevol_gfs",
         body     = C_code_kernel+"\n"+C_face_kernel,
-        loopopts ="AllPoints",
-        rel_path_for_Cparams=os.path.join("./"))
+    loopopts ="InteriorPoints",
+    rel_path_for_Cparams=os.path.join("./")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
+    with open(os.path.join(out_dir,name+".h"),"w") as file:
+        file.write(Ccode_function)
 
     # Write out the main driver itself:
     with open(os.path.join(out_dir,"GiRaFFE_NRPy_Main_Driver.h"),"w") as file:
