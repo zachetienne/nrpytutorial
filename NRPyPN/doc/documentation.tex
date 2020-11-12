@@ -1,0 +1,177 @@
+% *======================================================================*
+%  Cactus Thorn template for ThornGuide documentation
+%  Author: Ian Kelley
+%  Date: Sun Jun 02, 2002
+%  $Header$
+%
+%  Thorn documentation in the latex file doc/documentation.tex
+%  will be included in ThornGuides built with the Cactus make system.
+%  The scripts employed by the make system automatically include
+%  pages about variables, parameters and scheduling parsed from the
+%  relevant thorn CCL files.
+%
+%  This template contains guidelines which help to assure that your
+%  documentation will be correctly added to ThornGuides. More
+%  information is available in the Cactus UsersGuide.
+%
+%  Guidelines:
+%   - Do not change anything before the line
+%       % START CACTUS THORNGUIDE",
+%     except for filling in the title, author, date, etc. fields.
+%        - Each of these fields should only be on ONE line.
+%        - Author names should be separated with a \\ or a comma.
+%   - You can define your own macros, but they must appear after
+%     the START CACTUS THORNGUIDE line, and must not redefine standard
+%     latex commands.
+%   - To avoid name clashes with other thorns, 'labels', 'citations',
+%     'references', and 'image' names should conform to the following
+%     convention:
+%       ARRANGEMENT_THORN_LABEL
+%     For example, an image wave.eps in the arrangement CactusWave and
+%     thorn WaveToyC should be renamed to CactusWave_WaveToyC_wave.eps
+%   - Graphics should only be included using the graphicx package.
+%     More specifically, with the "\includegraphics" command.  Do
+%     not specify any graphic file extensions in your .tex file. This
+%     will allow us to create a PDF version of the ThornGuide
+%     via pdflatex.
+%   - References should be included with the latex "\bibitem" command.
+%   - Use \begin{abstract}...\end{abstract} instead of \abstract{...}
+%   - Do not use \appendix, instead include any appendices you need as
+%     standard sections.
+%   - For the benefit of our Perl scripts, and for future extensions,
+%     please use simple latex.
+%
+% *======================================================================*
+%
+% Example of including a graphic image:
+%    \begin{figure}[ht]
+% 	\begin{center}
+%    	   \includegraphics[width=6cm]{MyArrangement_MyThorn_MyFigure}
+% 	\end{center}
+% 	\caption{Illustration of this and that}
+% 	\label{MyArrangement_MyThorn_MyLabel}
+%    \end{figure}
+%
+% Example of using a label:
+%   \label{MyArrangement_MyThorn_MyLabel}
+%
+% Example of a citation:
+%    \cite{MyArrangement_MyThorn_Author99}
+%
+% Example of including a reference
+%   \bibitem{MyArrangement_MyThorn_Author99}
+%   {J. Author, {\em The Title of the Book, Journal, or periodical}, 1 (1999),
+%   1--16. {\tt http://www.nowhere.com/}}
+%
+% *======================================================================*
+
+% If you are using CVS use this line to give version information
+% $Header$
+
+\documentclass{article}
+
+% Use the Cactus ThornGuide style file
+% (Automatically used from Cactus distribution, if you have a
+%  thorn without the Cactus Flesh download this from the Cactus
+%  homepage at www.cactuscode.org)
+\usepackage{../../../../doc/latex/cactus}
+
+\begin{document}
+
+% The author of the documentation
+\author{Zachariah B.~Etienne \textless zachetie *at* gmail *dot* com\textgreater}
+
+% The title of the document (not necessarily the name of the Thorn)
+\title{\texttt{NRPyPN}: Validated Post-Newtonian Expressions for Input
+  into Wolfram Mathematica, SymPy, or Highly-Optimized C Codes. Also
+  provides low-eccentricity binary black hole initial data parameters
+  for Bowen-York initial data (e.g., TwoPunctures)}
+
+% the date your document was last changed, if your document is in CVS,
+% please use:
+%    \date{$ $Date$ $}
+\date{November 12, 2020}
+
+\maketitle
+
+% Do not delete next line
+% START CACTUS THORNGUIDE
+
+% Add all definitions used in this documentation here
+%   \def\mydef etc
+\newcommand{\beq}{\begin{equation}}
+\newcommand{\eeq}{\end{equation}}
+\newcommand{\beqn}{\begin{eqnarray}}
+\newcommand{\eeqn}{\end{eqnarray}}
+\newcommand{\half} {{1\over 2}}
+\newcommand{\sgam} {\sqrt{\gamma}}
+\newcommand{\tB}{\tilde{B}}
+\newcommand{\tS}{\tilde{S}}
+\newcommand{\tF}{\tilde{F}}
+\newcommand{\tf}{\tilde{f}}
+\newcommand{\tT}{\tilde{T}}
+\newcommand{\sg}{\sqrt{\gamma}\,}
+\newcommand{\ve}[1]{\mbox{\boldmath $#1$}}
+
+\newcommand{\GiR}{{\texttt{GiRaFFE}}}
+\newcommand{\IGM}{{\texttt{IllinoisGRMHD}}}
+
+\linespread{1.0}
+
+\newenvironment{packed_itemize}{
+\begin{itemize}
+  \setlength{\itemsep}{0.0pt}
+  \setlength{\parskip}{0.0pt}
+  \setlength{\parsep}{ 0.0pt}
+}{\end{itemize}}
+
+\newenvironment{packed_enumerate}{
+\begin{enumerate}
+  \setlength{\itemsep}{0.0pt}
+  \setlength{\parskip}{0.0pt}
+  \setlength{\parsep}{ 0.0pt}
+}{\end{enumerate}}
+
+% Add an abstract for this thorn's documentation
+Post-Newtonian theory results in some of the longest and most complex
+mathematical expressions ever derived by humanity.
+
+These expressions form the core of most gravitational wave data
+analysis codes, as well as codes used to construct low-eccentricity
+initial data for numerical relativity simulations of compact binary
+systems (e.g., using \texttt{TwoPunctures}), but generally the
+expressions are written in a format 
+that is either inaccessible by others (i.e., closed-source) or written
+directly in e.g., C code and thus incompatible with symbolic algebra
+packages like Wolfram Mathematica or the
+Python-based SymPy.
+
+Once in a symbolic algebra package, these expressions could be
+manipulated, extended, and output as {\it more} optimized C codes
+(e.g., using SymPy/NRPy+, thus speeding up gravitational wave data
+analysis and making it easier to quickly get needed low-eccentricity
+parameters for setting up binary black hole initial data).
+
+NRPyPN aims to provide a trusted source for validated
+Post-Newtonian expressions useful for gravitational wave astronomy,
+using the open-source SymPy computer algebra
+system, so that expressions can be output into Wolfram
+Mathematica or highly optimized C codes using the SymPy-based
+\texttt{NRPy+}.
+
+In particular, \texttt{NRPyPN} exists within the \texttt{Einstein
+  Toolkit} to provide a convenient interface for computing
+parameters for low-eccentricity binary black hole initial data, as
+computed by the \texttt{TwoPunctures} thorn. The interface for
+accomplishing this is provided by at the bottom of the
+well-documented, interactive Jupyter notebook located at
+\texttt{EinsteinInitialData/NRPyPN/NRPyPN.ipynb} in the
+\texttt{Einstein Toolkit}. Instructions for getting the Jupyter
+notebook up and running are provided in the
+\texttt{EinsteinInitialData/NRPyPN/README} file.
+
+
+% Do not delete next line
+% END CACTUS THORNGUIDE
+
+\end{document}
