@@ -115,3 +115,36 @@ def num_eval(expr,
 .subs(chi2U[0],nchi2x).subs(chi2U[1],nchi2y).subs(chi2U[2],nchi2z)\
 .subs(r,nr).subs(q,nr).subs(sp.pi,sp.N(sp.pi))\
 .subs(gamma_EulerMascheroni,sp.N(sp.EulerGamma))
+
+# Shortcut function to just evaluate P_t and P_r
+#  -= Inputs =-
+#  * qmassratio: mass ratio q>=1
+#  * nr: Orbital separation (total coordinate distance between black holes)
+#  * nchi1x,nchi1y,nchi1z: dimensionless spin vector for BH 1
+#  * nchi2x,nchi2y,nchi2z: dimensionless spin vector for BH 2
+#  -= Outputs =-
+# The numerical values for
+#  * P_t: the tangential momentum
+#  * P_r: the radial momentum
+def eval__P_t__and__P_r(qmassratio, nr,
+                        nchi1x, nchi1y, nchi1z,
+                        nchi2x, nchi2y, nchi2z):
+
+    # Compute p_t, the tangential component of momentum
+    import PN_p_t as pt
+    pt.f_p_t(m1,m2, chi1U,chi2U, r)
+
+    # Compute p_r, the radial component of momentum
+    import PN_p_r as pr
+    pr.f_p_r(m1,m2, n12U,n21U, chi1U,chi2U, S1U,S2U, p1U,p2U, r)
+
+    nPt = num_eval(pt.p_t,
+                   qmassratio=qmassratio, nr=nr,
+                   nchi1x=nchi1x,nchi1y=nchi1y,nchi1z=nchi1z,
+                   nchi2x=nchi2x,nchi2y=nchi2y,nchi2z=nchi2z)
+
+    nPr = num_eval(pr.p_r,
+                    qmassratio = qmassratio, nr=nr,
+                    nchi1x=nchi1x, nchi1y=nchi1y, nchi1z=nchi1z,
+                    nchi2x=nchi2x, nchi2y=nchi2y, nchi2z=nchi2z,  nPt=nPt)
+    return nPt, nPr
