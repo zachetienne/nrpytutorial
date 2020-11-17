@@ -99,7 +99,18 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-## Required Citations
+## Required Citation
 
-1) NRPyPN, author Z. B. Etienne. https://github.com/zachetienne/nrpytutorial
-2) [forthcoming arXiv paper; Habib, Haas, Huerta, and Etienne]
+1) Bibtex entry:
+
+@misc{NRPyPN,
+ author       = {Etienne, Zachariah B.},
+ title        = {NRPyPN: Validated Post-Newtonian Expressions for Input into Wolfram Mathematica, SymPy, or Highly Optimized C Codes},
+ month        = nov,
+ year         = 2020,
+ url          = {https://github.com/zachetienne/nrpytutorial/blob/master/NRPyPN/}
+}
+
+## Suggested Citation
+
+1) [forthcoming arXiv paper; Habib, Haas, Huerta, and Etienne]
