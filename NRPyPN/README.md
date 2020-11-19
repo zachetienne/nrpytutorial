@@ -113,4 +113,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Suggested Citation
 
-1) [forthcoming arXiv paper; Habib, Haas, Huerta, and Etienne]
+1) Bibtex entry:
+
+@misc{habib2020initial,
+      title={Initial Data and Eccentricity Reduction Toolkit for Binary Black Hole Numerical Relativity Waveforms}, 
+      author={Sarah Habib and Antoni Ramos-Buades and E. A. Huerta and Sascha Husa and Roland Haas and Zachariah Etienne},
+      year={2020},
+      eprint={2011.08878},
+      archivePrefix={arXiv},
+      primaryClass={gr-qc}
+}
