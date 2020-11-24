@@ -265,8 +265,7 @@ class sommerfeld_boundary_condition_class():
     # radial falloff power n = 3 has been found to yield the best results
     #  - see Tutorial-SommerfeldBoundaryCondition.ipynb Step 2 for details
     def __init__(self, fd_order=2, vars_at_inf_default = 0., vars_radial_falloff_power_default = 3., vars_speed_default = 1.):
-        evolved_variables_list, _, _ = \
-                                                        gri.gridfunction_lists()
+        evolved_variables_list, _, _ = gri.gridfunction_lists()
 
         # set class finite differencing order
         self.fd_order = fd_order
