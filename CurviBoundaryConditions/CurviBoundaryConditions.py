@@ -265,7 +265,7 @@ class sommerfeld_boundary_condition_class():
     # radial falloff power n = 3 has been found to yield the best results
     #  - see Tutorial-SommerfeldBoundaryCondition.ipynb Step 2 for details
     def __init__(self, fd_order=2, vars_at_inf_default = 0., vars_radial_falloff_power_default = 3., vars_speed_default = 1.):
-        evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = \
+        evolved_variables_list, _, _ = \
                                                         gri.gridfunction_lists()
 
         # set class finite differencing order
@@ -299,19 +299,19 @@ class sommerfeld_boundary_condition_class():
 
         # Creating array for EVOL gridfunction values at infinity
         var_at_inf_string = "{"
-        for gf,val in self.vars_at_infinity.items():
+        for _gf,val in self.vars_at_infinity.items():
             var_at_inf_string += str(val) + ", "
         var_at_inf_string = var_at_inf_string[:-2] + "};"
 
         # Creating array for EVOL gridfunction values of radial falloff power
         vars_radial_falloff_power_string = "{"
-        for gf,val in self.vars_radial_falloff_power.items():
+        for _gf,val in self.vars_radial_falloff_power.items():
             vars_radial_falloff_power_string += str(val) + ", "
         vars_radial_falloff_power_string = vars_radial_falloff_power_string[:-2] + "};"
 
         # Creating array for EVOL gridfunction values of wave speed at outer boundaries
         var_speed_string = "{"
-        for gf,val in self.vars_speed.items():
+        for _gf,val in self.vars_speed.items():
             var_speed_string += str(val) + ", "
         var_speed_string = var_speed_string[:-2] + "};"
 
@@ -324,7 +324,8 @@ const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
 """
         return out_str
 
-    def dfdr_function(self, fd_order):
+    @staticmethod
+    def dfdr_function(fd_order):
         # function to write c code to calculate dfdr term in Sommerfeld boundary condition
 
         # Read what # of dimensions being usded
@@ -366,52 +367,63 @@ const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
         r_str_and_contraction_str = outputC([rfm.xxSph[0],contraction],
                  ["*_r","*_partial_i_f"],filename="returnstring",params="includebraces=False")
 
+
+        def gen_central_2oFD_stencil_str(intdirn):
+            if intdirn == 0:
+                return "(gfs[IDX4S(which_gf,i0+1,i1,i2)]-gfs[IDX4S(which_gf,i0-1,i1,i2)])*0.5"  # Does not include the 1/dx multiplication
+            if intdirn == 1:
+                return "(gfs[IDX4S(which_gf,i0,i1+1,i2)]-gfs[IDX4S(which_gf,i0,i1-1,i2)])*0.5"  # Does not include the 1/dy multiplication
+            return "(gfs[IDX4S(which_gf,i0,i1,i2+1)]-gfs[IDX4S(which_gf,i0,i1,i2-1)])*0.5"  # Does not include the 1/dz multiplication
+
+        def gen_central_4oFD_stencil_str(intdirn):
+            if intdirn == 0:
+                return """(-c2*gfs[IDX4S(which_gf,i0+2,i1,i2)]
+                         +c1*gfs[IDX4S(which_gf,i0+1,i1,i2)]
+                         -c1*gfs[IDX4S(which_gf,i0-1,i1,i2)]
+                         +c2*gfs[IDX4S(which_gf,i0-2,i1,i2)])"""  # Does not include the 1/dx multiplication
+            if intdirn == 1:
+                return """(-c2*gfs[IDX4S(which_gf,i0,i1+2,i2)]
+                         +c1*gfs[IDX4S(which_gf,i0,i1+1,i2)]
+                         -c1*gfs[IDX4S(which_gf,i0,i1-1,i2)]
+                         +c2*gfs[IDX4S(which_gf,i0,i1-2,i2)])"""  # Does not include the 1/dy multiplication
+            return """(-c2*gfs[IDX4S(which_gf,i0,i1,i2+2)]
+                         +c1*gfs[IDX4S(which_gf,i0,i1,i2+1)]
+                         -c1*gfs[IDX4S(which_gf,i0,i1,i2-1)]
+                         +c2*gfs[IDX4S(which_gf,i0,i1,i2-2)])"""  # Does not include the 1/dz multiplication
+
+        def gen_central_6oFD_stencil_str(intdirn):
+            if intdirn == 0:
+                return """( c3*gfs[IDX4S(which_gf,i0+3,i1,i2)]
+                         -c2*gfs[IDX4S(which_gf,i0+2,i1,i2)]
+                         +c1*gfs[IDX4S(which_gf,i0+1,i1,i2)]
+                         -c1*gfs[IDX4S(which_gf,i0-1,i1,i2)]
+                         +c2*gfs[IDX4S(which_gf,i0-2,i1,i2)]
+                         -c3*gfs[IDX4S(which_gf,i0-3,i1,i2)])"""  # Does not include the 1/dx multiplication
+
+            if intdirn == 1:
+                return """( c3*gfs[IDX4S(which_gf,i0,i1+3,i2)]
+                         -c2*gfs[IDX4S(which_gf,i0,i1+2,i2)]
+                         +c1*gfs[IDX4S(which_gf,i0,i1+1,i2)]
+                         -c1*gfs[IDX4S(which_gf,i0,i1-1,i2)]
+                         +c2*gfs[IDX4S(which_gf,i0,i1-2,i2)]
+                         -c3*gfs[IDX4S(which_gf,i0,i1-3,i2)])"""  # Does not include the 1/dy multiplication
+
+            return """( c3*gfs[IDX4S(which_gf,i0,i1,i2+3)]
+                         -c2*gfs[IDX4S(which_gf,i0,i1,i2+2)]
+                         +c1*gfs[IDX4S(which_gf,i0,i1,i2+1)]
+                         -c1*gfs[IDX4S(which_gf,i0,i1,i2-1)]
+                         +c2*gfs[IDX4S(which_gf,i0,i1,i2-2)]
+                         -c3*gfs[IDX4S(which_gf,i0,i1,i2-3)])"""  # Does not include the 1/dz multiplication
+
         def gen_central_fd_stencil_str(intdirn, fd_order):
-            if fd_order == 2:
-                if intdirn == 0:
-                    return "(gfs[IDX4S(which_gf,i0+1,i1,i2)]-gfs[IDX4S(which_gf,i0-1,i1,i2)])*0.5"  # Does not include the 1/dx multiplication
-                elif intdirn == 1:
-                    return "(gfs[IDX4S(which_gf,i0,i1+1,i2)]-gfs[IDX4S(which_gf,i0,i1-1,i2)])*0.5"  # Does not include the 1/dy multiplication
-                elif intdirn == 2:
-                    return "(gfs[IDX4S(which_gf,i0,i1,i2+1)]-gfs[IDX4S(which_gf,i0,i1,i2-1)])*0.5"  # Does not include the 1/dz multiplication
-            elif fd_order == 4:
-                if intdirn == 0:
-                    return """(-c2*gfs[IDX4S(which_gf,i0+2,i1,i2)]
-                               +c1*gfs[IDX4S(which_gf,i0+1,i1,i2)]
-                               -c1*gfs[IDX4S(which_gf,i0-1,i1,i2)]
-                               +c2*gfs[IDX4S(which_gf,i0-2,i1,i2)])"""  # Does not include the 1/dx multiplication
-                elif intdirn == 1:
-                    return """(-c2*gfs[IDX4S(which_gf,i0,i1+2,i2)]
-                               +c1*gfs[IDX4S(which_gf,i0,i1+1,i2)]
-                               -c1*gfs[IDX4S(which_gf,i0,i1-1,i2)]
-                               +c2*gfs[IDX4S(which_gf,i0,i1-2,i2)])"""  # Does not include the 1/dy multiplication
-                elif intdirn == 2:
-                    return """(-c2*gfs[IDX4S(which_gf,i0,i1,i2+2)]
-                               +c1*gfs[IDX4S(which_gf,i0,i1,i2+1)]
-                               -c1*gfs[IDX4S(which_gf,i0,i1,i2-1)]
-                               +c2*gfs[IDX4S(which_gf,i0,i1,i2-2)])"""  # Does not include the 1/dz multiplication
-            elif fd_order == 6:
-                if intdirn == 0:
-                    return """( c3*gfs[IDX4S(which_gf,i0+3,i1,i2)]
-                               -c2*gfs[IDX4S(which_gf,i0+2,i1,i2)]
-                               +c1*gfs[IDX4S(which_gf,i0+1,i1,i2)]
-                               -c1*gfs[IDX4S(which_gf,i0-1,i1,i2)]
-                               +c2*gfs[IDX4S(which_gf,i0-2,i1,i2)]
-                               -c3*gfs[IDX4S(which_gf,i0-3,i1,i2)])"""  # Does not include the 1/dx multiplication
-                elif intdirn == 1:
-                    return """( c3*gfs[IDX4S(which_gf,i0,i1+3,i2)]
-                               -c2*gfs[IDX4S(which_gf,i0,i1+2,i2)]
-                               +c1*gfs[IDX4S(which_gf,i0,i1+1,i2)]
-                               -c1*gfs[IDX4S(which_gf,i0,i1-1,i2)]
-                               +c2*gfs[IDX4S(which_gf,i0,i1-2,i2)]
-                               -c3*gfs[IDX4S(which_gf,i0,i1-3,i2)])"""  # Does not include the 1/dy multiplication
-                elif intdirn == 2:
-                    return """( c3*gfs[IDX4S(which_gf,i0,i1,i2+3)]
-                               -c2*gfs[IDX4S(which_gf,i0,i1,i2+2)]
-                               +c1*gfs[IDX4S(which_gf,i0,i1,i2+1)]
-                               -c1*gfs[IDX4S(which_gf,i0,i1,i2-1)]
-                               +c2*gfs[IDX4S(which_gf,i0,i1,i2-2)]
-                               -c3*gfs[IDX4S(which_gf,i0,i1,i2-3)])"""  # Does not include the 1/dz multiplication
+            if fd_order==2:
+                return gen_central_2oFD_stencil_str(intdirn)
+            if fd_order==4:
+                return gen_central_4oFD_stencil_str(intdirn)
+            if fd_order==6:
+                return gen_central_6oFD_stencil_str(intdirn)
+            print("Error: fd_order = "+str(fd_order)+" currently unsupported.")
+            sys.exit(1)
 
         def output_dfdx(intdirn, fd_order):
             dirn = str(intdirn)
@@ -441,7 +453,7 @@ if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""
     fdD"""+dirn+""" = """+gen_central_fd_stencil_str(intdirn, 2)+"""*invdx"""+dirn+""";
 }
 """
-            elif fd_order == 4:
+            if fd_order == 4:
                 return preface + """
 
     fdD"""+dirn+"""
@@ -457,8 +469,7 @@ if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""
     fdD"""+dirn+""" = """+gen_central_fd_stencil_str(intdirn, 4)+"""*invdx"""+dirn+""";
 }
 """
-            elif fd_order == 6:
-                return preface + """
+            return preface + """
 
     fdD"""+dirn+"""
         = SHIFTSTENCIL"""+dirn+"""*(u0*gfs[IDX4S(which_gf,i0+0*SHIFTSTENCIL0,i1+0*SHIFTSTENCIL1,i2+0*SHIFTSTENCIL2)]
@@ -475,9 +486,6 @@ if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""
     fdD"""+dirn+""" = """+gen_central_fd_stencil_str(intdirn, 6)+"""*invdx"""+dirn+""";
 }
 """
-            else:
-                print("Error: fd_order = "+str(fd_order)+" currently unsupported.")
-                sys.exit(1)
 
         contraction_term_func = """
 
