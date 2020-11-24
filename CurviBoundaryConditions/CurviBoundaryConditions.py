@@ -420,10 +420,7 @@ const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
                 return gen_central_2oFD_stencil_str(intdirn)
             if fd_order==4:
                 return gen_central_4oFD_stencil_str(intdirn)
-            if fd_order==6:
-                return gen_central_6oFD_stencil_str(intdirn)
-            print("Error: fd_order = "+str(fd_order)+" currently unsupported.")
-            sys.exit(1)
+            return gen_central_6oFD_stencil_str(intdirn)
 
         def output_dfdx(intdirn, fd_order):
             dirn = str(intdirn)
@@ -469,7 +466,8 @@ if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""
     fdD"""+dirn+""" = """+gen_central_fd_stencil_str(intdirn, 4)+"""*invdx"""+dirn+""";
 }
 """
-            return preface + """
+            if fd_order == 6:
+                return preface + """
 
     fdD"""+dirn+"""
         = SHIFTSTENCIL"""+dirn+"""*(u0*gfs[IDX4S(which_gf,i0+0*SHIFTSTENCIL0,i1+0*SHIFTSTENCIL1,i2+0*SHIFTSTENCIL2)]
@@ -486,6 +484,9 @@ if(abs(FACEXi["""+dirn+"""])==1 || i"""+dirn+"""+NGHOSTS >= Nxx_plus_2NGHOSTS"""
     fdD"""+dirn+""" = """+gen_central_fd_stencil_str(intdirn, 6)+"""*invdx"""+dirn+""";
 }
 """
+
+            print("Error: fd_order = "+str(fd_order)+" currently unsupported.")
+            sys.exit(1)
 
         contraction_term_func = """
 
