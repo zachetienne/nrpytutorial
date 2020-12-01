@@ -37,53 +37,62 @@ class TestParser(unittest.TestCase):
         )
 
     def test_expression_4(self):
-        tensor = Tensor(Function('Tensor')(Symbol('T')), 4)
+        function = Function('Tensor')(Symbol('T'))
+        tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
             r'\nabla_\beta T = \partial_\beta (T)'
         )
-        tensor = Tensor(Function('Tensor')(Symbol('TUU'), Symbol('mu'), Symbol('nu')), 4)
+        function = Function('Tensor')(Symbol('TUU'), Symbol('mu'), Symbol('nu'))
+        tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
             r'\nabla_\beta T^{\mu \nu} = \partial_\beta (T^{\mu \nu}) + \Gamma^\mu_{a \beta} (T^{a \nu}) + \Gamma^\nu_{a \beta} (T^{\mu a})'
         )
-        tensor = Tensor(Function('Tensor')(Symbol('TUD'), Symbol('mu'), Symbol('nu')), 4)
+        function = Function('Tensor')(Symbol('TUD'), Symbol('mu'), Symbol('nu'))
+        tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
             r'\nabla_\beta T^\mu_\nu = \partial_\beta (T^\mu_\nu) + \Gamma^\mu_{a \beta} (T^a_\nu) - \Gamma^a_{\nu \beta} (T^\mu_a)'
         )
-        tensor = Tensor(Function('Tensor')(Symbol('TDD'), Symbol('mu'), Symbol('nu')), 4)
+        function = Function('Tensor')(Symbol('TDD'), Symbol('mu'), Symbol('nu'))
+        tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
             r'\nabla_\beta T_{\mu \nu} = \partial_\beta (T_{\mu \nu}) - \Gamma^a_{\mu \beta} (T_{a \nu}) - \Gamma^a_{\nu \beta} (T_{\mu a})'
         )
 
     def test_expression_5(self):
-        tensor = Tensor(Function('Tensor')(Symbol('vU'), Symbol('mu')), 4)
+        function = Function('Tensor')(Symbol('vU'), Symbol('mu'))
+        tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, [('a', 'D'), ('b', 'D')]),
+            Parser._generate_covdrv(tensor, function, [('a', 'D'), ('b', 'D')]),
             r'\nabla_a \nabla_b v^\mu = \partial_a (\partial_b (v^\mu) + \Gamma^\mu_{c b} (v^c)) + \Gamma^\mu_{c a} (\partial_b (v^c) + \Gamma^c_{d b} (v^d)) - \Gamma^c_{b a} (\partial_c (v^\mu) + \Gamma^\mu_{b c} (v^b))'
         )
 
     def test_expression_6(self):
-        tensor = Tensor(Function('Tensor')(Symbol('g')), dimension=3, weight=2)
+        function = Function('Tensor')(Symbol('g'))
+        tensor = Tensor(function, dimension=3, weight=2)
         self.assertEqual(
-            Parser._generate_liedrv(tensor, 'beta'),
+            Parser._generate_liedrv(tensor, function, 'beta'),
             r'\mathcal{L}_\text{beta} g = \text{beta}^a \partial_a g + (2)(\partial_a \text{beta}^a) g'
         )
-        tensor = Tensor(Function('Tensor')(Symbol('gUU'), Symbol('i'), Symbol('j')), 3)
+        function = Function('Tensor')(Symbol('gUU'), Symbol('i'), Symbol('j'))
+        tensor = Tensor(function, 3)
         self.assertEqual(
-            Parser._generate_liedrv(tensor, 'beta'),
+            Parser._generate_liedrv(tensor, function, 'beta'),
             r'\mathcal{L}_\text{beta} g^{i j} = \text{beta}^a \partial_a g^{i j} - (\partial_a \text{beta}^i) g^{a j} - (\partial_a \text{beta}^j) g^{i a}'
         )
-        tensor = Tensor(Function('Tensor')(Symbol('gUD'), Symbol('i'), Symbol('j')), 3)
+        function = Function('Tensor')(Symbol('gUD'), Symbol('i'), Symbol('j'))
+        tensor = Tensor(function, 3)
         self.assertEqual(
-            Parser._generate_liedrv(tensor, 'beta'),
+            Parser._generate_liedrv(tensor, function, 'beta'),
             r'\mathcal{L}_\text{beta} g^i_j = \text{beta}^a \partial_a g^i_j - (\partial_a \text{beta}^i) g^a_j + (\partial_j \text{beta}^a) g^i_a'
         )
-        tensor = Tensor(Function('Tensor')(Symbol('gDD'), Symbol('i'), Symbol('j')), 3)
+        function = Function('Tensor')(Symbol('gDD'), Symbol('i'), Symbol('j'))
+        tensor = Tensor(function, 3)
         self.assertEqual(
-            Parser._generate_liedrv(tensor, 'beta'),
+            Parser._generate_liedrv(tensor, function, 'beta'),
             r'\mathcal{L}_\text{beta} g_{i j} = \text{beta}^a \partial_a g_{i j} + (\partial_i \text{beta}^a) g_{a j} + (\partial_j \text{beta}^a) g_{i a}'
         )
 
