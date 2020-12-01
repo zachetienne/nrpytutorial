@@ -2,7 +2,7 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-from standard_constants import precision
+from UnitTesting.standard_constants import precision
 from mpmath import mp, mpf, mpc, fabs, log10
 import sympy as sp, sys, random
 
