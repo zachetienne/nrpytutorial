@@ -2,6 +2,8 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
+import sys
+
 def pipe(x, *f):
     """ Pipe Operator
 
@@ -94,3 +96,7 @@ def product(*iterable, **kwargs):
     f = lambda A, B: [list(flatten([x] + [y])) for x in A for y in B]
     for prod in reduce(f, iterable):
         yield tuple(prod)
+
+if __name__ == "__main__":
+    import doctest
+    sys.exit(doctest.testmod()[0])
