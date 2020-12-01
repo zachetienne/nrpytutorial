@@ -100,7 +100,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define vU (2D), wU (2D);
+                % define vU (2D), wU (2D)
                 T^{ab}_c = \vphantom{numeric} \partial_c (v^a w^b)
             """)),
             {'vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD'}
@@ -113,7 +113,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define vU (2D), const w;
+                % define vU (2D), const w
                 T^a_c = \vphantom{numeric} \partial_c (v^a w)
             """)),
             {'vU', 'w', 'vU_dD', 'TUD'}
@@ -126,7 +126,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define metric gDD (4D), vU (4D);
+                % define metric gDD (4D), vU (4D)
                 T^{\mu\nu} = \vphantom{numeric} \nabla^\nu v^\mu
             """)),
             {'gUU', 'gdet', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
@@ -136,10 +136,10 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define basis [x, y], deriv numeric;
-                % define vD (2D);
-                v_0 = x^{{2}} + 2x;
-                v_1 = y\sqrt{x};
+                % define basis [x, y], deriv numeric
+                % define vD (2D)
+                v_0 = x^{{2}} + 2x \\
+                v_1 = y\sqrt{x} \\
                 T_{\mu\nu} = (\partial_\nu v_\mu)\,\partial^2_x v_0
             """)),
             {'vD', 'x', 'y', 'vD_dD', 'TDD'}
@@ -151,14 +151,14 @@ class TestParser(unittest.TestCase):
     def test_assignment_5(self):
         Parser.clear_namespace()
         parse(r"""
-            % define basis [\theta, \phi];
-            % define const r, deltaDD (2D);
-            % parse g_{\mu\nu} = \delta_{\mu\nu};
+            % define basis [\theta, \phi]
+            % define const r, deltaDD (2D)
+            % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align*}
                 g_{0 0} &= r^{{2}} \\
                 g_{1 1} &= r^{{2}} \sin^2(\theta)
             \end{align*}
-            % assign metric gDD;
+            % assign metric gDD
             \begin{align*}
                 R^\alpha_{\beta\mu\nu} &= \partial_\mu \Gamma^\alpha_{\beta\nu} - \partial_\nu \Gamma^\alpha_{\beta\mu} + \Gamma^\alpha_{\mu\gamma}\Gamma^\gamma_{\beta\nu} - \Gamma^\alpha_{\nu\sigma}\Gamma^\sigma_{\beta\mu} \\
                 R_{\alpha\beta\mu\nu} &= g_{\alpha a} R^a_{\beta\mu\nu} \\
@@ -197,7 +197,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define metric gDD (4D);
+                % define metric gDD (4D)
                 \gamma_{ij} = g_{ij}
             """)),
             {'gUU', 'gdet', 'gDD', 'gammaDD'}
@@ -208,8 +208,8 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define index [i-j] = 0:1;
-                % define nosym TUU (3D), vD (2D);
+                % define index [i-j] = 0:1
+                % define nosym TUU (3D), vD (2D)
                 w^\mu = T^{\mu i} v_i
             """)),
             {'TUU', 'vD', 'wU'}
@@ -222,7 +222,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define nosym hUD (4D);
+                % define nosym hUD (4D)
                 h = h^\mu{}_\mu
             """)),
             {'hUD', 'h'}
@@ -235,7 +235,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define metric gUU (3D), vD (3D);
+                % define metric gUU (3D), vD (3D)
                 v^\mu = g^{\mu\nu} v_\nu
             """)),
             {'gDD', 'gdet', 'gUU', 'vD', 'vU'}
@@ -248,8 +248,8 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define epsilonDDD (3D);
-                % define vU (3D), wU (3D);
+                % define epsilonDDD (3D)
+                % define vU (3D), wU (3D)
                 u_i = \epsilon_{ijk} v^j w^k
             """)),
             {'epsilonDDD', 'vU', 'wU', 'uD'}
@@ -262,7 +262,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define anti01 FUU (4D), metric gDD (4D), const k;
+                % define anti01 FUU (4D), metric gDD (4D), const k
                 J^\mu = (4\pi k)^{-1} \vphantom{numeric} \nabla_\nu F^{\mu\nu}
             """)),
             {'FUU', 'gUU', 'gdet', 'gDD', 'k', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
@@ -272,7 +272,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define anti01 FUU (4D), metric ghatDD (4D), const k;
+                % define anti01 FUU (4D), metric ghatDD (4D), const k
                 J^\mu = (4\pi k)^{-1} \vphantom{numeric} \hat{\nabla}_\nu F^{\mu\nu}
             """)),
             {'FUU', 'ghatUU', 'ghatdet', 'ghatDD', 'k', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
@@ -281,9 +281,9 @@ class TestParser(unittest.TestCase):
     def test_example_5_1(self):
         Parser.clear_namespace()
         parse(r"""
-            % define deltaDD (4D);
-            % define const G, const M;
-            % parse g_{\mu\nu} = \delta_{\mu\nu};
+            % define deltaDD (4D)
+            % define const G, const M
+            % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align}
                 g_{0 0} &= -\left(1 - \frac{2GM}{r}\right) \\
                 g_{1 1} &=  \left(1 - \frac{2GM}{r}\right)^{-1} \\
@@ -310,7 +310,7 @@ class TestParser(unittest.TestCase):
 
     def test_example_5_2(self):
         parse(r"""
-            % define basis [t, r, \theta, \phi];
+            % define basis [t, r, \theta, \phi]
             \begin{align}
                 R^\alpha{}_{\beta\mu\nu} &= \partial_\mu \Gamma^\alpha_{\beta\nu} - \partial_\nu \Gamma^\alpha_{\beta\mu} + \Gamma^\alpha_{\mu\gamma}\Gamma^\gamma_{\beta\nu} - \Gamma^\alpha_{\nu\sigma}\Gamma^\sigma_{\beta\mu} \\
                 R^{\alpha\beta\mu\nu} &= g^{\beta a} g^{\mu b} g^{\nu c} R^\alpha_{a b c} \\
@@ -367,10 +367,10 @@ class TestParser(unittest.TestCase):
 
     def test_example_6_1(self):
         parse(r"""
-            % define basis [r, \theta, \phi];
+            % define basis [r, \theta, \phi]
             \begin{align}
                 \gamma_{ij} &= g_{ij} \\
-                % assign metric gammaDD;
+                % assign metric gammaDD
                 \beta_i &= g_{0 i} \\
                 \alpha &= \sqrt{\gamma^{ij}\beta_i\beta_j - g_{0 0}} \\
                 K_{ij} &= \frac{1}{2\alpha}\left(\nabla_i \beta_j + \nabla_j \beta_i\right) \\

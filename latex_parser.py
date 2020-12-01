@@ -6,7 +6,6 @@ from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow, A
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff
 from inspect import currentframe
-from copy import deepcopy
 from functional import uniquify
 from expr_tree import ExprTree
 import indexedexp as ixp
@@ -58,7 +57,6 @@ class Lexer:
               ('RBRACK',        r'\]'),
               ('LBRACE',        r'\{'),
               ('RBRACE',        r'\}'),
-              ('LINE_BREAK',    r'\;|\\\\'),
               ('OPENING',       r'\\begin{align\*?}'),
               ('CLOSING',       r'\\end{align\*?}'),
               ('PAR_SYM',       r'\\partial'),
@@ -80,6 +78,7 @@ class Lexer:
               ('BASIS_KWRD',    r'basis'),
               ('DERIV_KWRD',    r'deriv'),
               ('DERIV_TYPE',    r'symbolic|numeric|upwind'),
+              ('LINE_BREAK',    r'\\\\'),
               ('DIACRITIC',     r'\\hat|\\tilde|\\bar'),
               ('VPHANTOM',      r'\\vphantom'),
               ('SYMMETRY',      r'const|metric|' + symmetry),
@@ -147,8 +146,8 @@ class Parser:
         The following class will parse a tokenized LaTeX sentence.
 
         LaTeX Extended BNF Grammar:
-        <LATEX>         -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
-        <ALIGN>         -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
+        <LATEX>         -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
+        <ALIGN>         -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
         <CONFIG>        -> <COMMENT> ( <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE> )
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT> { ',' <ASSIGNMENT> }*
         <ALIAS>         -> <ALIAS_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
@@ -244,26 +243,25 @@ class Parser:
         self._latex()
         return self._namespace
 
-    # <LATEX> -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
+    # <LATEX> -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
     def _latex(self):
-        while True:
+        while self.lexer.lexeme:
             if self.peek('OPENING'):
                 self._align()
                 if self.lexer.lexeme: continue
             elif self.peek('COMMENT'):
                 self._config()
             else: self._assignment()
-            if not self.accept('LINE_BREAK'): break
+            if self.accept('LINE_BREAK'): pass
 
-    # <ALIGN> -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { <LINE_BREAK> ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
+    # <ALIGN> -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
     def _align(self):
         self.expect('OPENING')
-        while True:
+        while not self.accept('CLOSING'):
             if self.peek('COMMENT'):
                 self._config()
             else: self._assignment()
-            if not self.accept('LINE_BREAK'): break
-        self.expect('CLOSING')
+            if self.accept('LINE_BREAK'): pass
 
     # <CONFIG> -> <COMMENT> ( <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE> )
     def _config(self):
