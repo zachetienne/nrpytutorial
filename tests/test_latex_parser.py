@@ -3,9 +3,10 @@
 # Email:  ksible *at* outlook *dot* com
 
 # pylint: disable = import-error, protected-access
+# import sys; sys.path.append('..')
 from latex_parser import Tensor, Parser, parse_expr, parse
 from sympy import Function, Symbol, Matrix, simplify
-import unittest, sys # sys.path.append('..')
+import unittest, sys
 
 class TestParser(unittest.TestCase):
     """ Unit Testing for LaTeX Parser """
@@ -68,22 +69,22 @@ class TestParser(unittest.TestCase):
         tensor = Tensor(Function('Tensor')(Symbol('g')), dimension=3, weight=2)
         self.assertEqual(
             Parser._generate_liedrv(tensor, 'beta'),
-            r'\mathcal{L}_\beta g = \beta^a \partial_a g + (2)(\partial_a \beta^a) g'
+            r'\mathcal{L}_\text{beta} g = \text{beta}^a \partial_a g + (2)(\partial_a \text{beta}^a) g'
         )
         tensor = Tensor(Function('Tensor')(Symbol('gUU'), Symbol('i'), Symbol('j')), 3)
         self.assertEqual(
             Parser._generate_liedrv(tensor, 'beta'),
-            r'\mathcal{L}_\beta g^{i j} = \beta^a \partial_a g^{i j} - (\partial_a \beta^i) g^{a j} - (\partial_a \beta^j) g^{i a}'
+            r'\mathcal{L}_\text{beta} g^{i j} = \text{beta}^a \partial_a g^{i j} - (\partial_a \text{beta}^i) g^{a j} - (\partial_a \text{beta}^j) g^{i a}'
         )
         tensor = Tensor(Function('Tensor')(Symbol('gUD'), Symbol('i'), Symbol('j')), 3)
         self.assertEqual(
             Parser._generate_liedrv(tensor, 'beta'),
-            r'\mathcal{L}_\beta g^i_j = \beta^a \partial_a g^i_j - (\partial_a \beta^i) g^a_j + (\partial_j \beta^a) g^i_a'
+            r'\mathcal{L}_\text{beta} g^i_j = \text{beta}^a \partial_a g^i_j - (\partial_a \text{beta}^i) g^a_j + (\partial_j \text{beta}^a) g^i_a'
         )
         tensor = Tensor(Function('Tensor')(Symbol('gDD'), Symbol('i'), Symbol('j')), 3)
         self.assertEqual(
             Parser._generate_liedrv(tensor, 'beta'),
-            r'\mathcal{L}_\beta g_{i j} = \beta^a \partial_a g_{i j} + (\partial_i \beta^a) g_{a j} + (\partial_j \beta^a) g_{i a}'
+            r'\mathcal{L}_\text{beta} g_{i j} = \text{beta}^a \partial_a g_{i j} + (\partial_i \text{beta}^a) g_{a j} + (\partial_j \text{beta}^a) g_{i a}'
         )
 
     def test_assignment_1(self):
@@ -91,7 +92,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define vU (2D), wU (2D);
-                T^{ab}_c = \vphantom{variable} \partial_c (v^a w^b)
+                T^{ab}_c = \vphantom{numeric} \partial_c (v^a w^b)
             """)),
             {'vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD'}
         )
@@ -104,7 +105,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define vU (2D), const w;
-                T^a_c = \vphantom{variable} \partial_c (v^a w)
+                T^a_c = \vphantom{numeric} \partial_c (v^a w)
             """)),
             {'vU', 'w', 'vU_dD', 'TUD'}
         )
@@ -117,7 +118,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define metric gDD (4D), vU (4D);
-                T^{\mu\nu} = \vphantom{variable} \nabla^\nu v^\mu
+                T^{\mu\nu} = \vphantom{numeric} \nabla^\nu v^\mu
             """)),
             {'gUU', 'gdet', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
         )
@@ -126,7 +127,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define basis [x, y], deriv variable;
+                % define basis [x, y], deriv numeric;
                 % define vD (2D);
                 v_0 = x^{{2}} + 2x;
                 v_1 = y\sqrt{x};
@@ -253,7 +254,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define anti01 FUU (4D), metric gDD (4D), const k;
-                J^\mu = (4\pi k)^{-1} \vphantom{variable} \nabla_\nu F^{\mu\nu}
+                J^\mu = (4\pi k)^{-1} \vphantom{numeric} \nabla_\nu F^{\mu\nu}
             """)),
             {'FUU', 'gUU', 'gdet', 'gDD', 'k', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
         )
@@ -263,7 +264,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define anti01 FUU (4D), metric ghatDD (4D), const k;
-                J^\mu = (4\pi k)^{-1} \vphantom{variable} \hat{\nabla}_\nu F^{\mu\nu}
+                J^\mu = (4\pi k)^{-1} \vphantom{numeric} \hat{\nabla}_\nu F^{\mu\nu}
             """)),
             {'FUU', 'ghatUU', 'ghatdet', 'ghatDD', 'k', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
         )
