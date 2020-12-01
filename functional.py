@@ -10,8 +10,8 @@ def pipe(x, *f):
         >>> pipe(range(5, 0, -1), reversed, list)
         [1, 2, 3, 4, 5]
 
-        >>> pipe([3, 2, 2, 4, 5, 1], sorted, set)
-        {1, 2, 3, 4, 5}
+        >>> pipe([3, 2, 2, 4, 5, 1], sorted, set, list)
+        [1, 2, 3, 4, 5]
     """
     if not f: return x
     return pipe(f[0](x), *f[1:])

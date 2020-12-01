@@ -6,6 +6,7 @@ from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow, A
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff
 from inspect import currentframe
+from copy import deepcopy
 from functional import uniquify
 from expr_tree import ExprTree
 import indexedexp as ixp
@@ -344,8 +345,8 @@ class Parser:
             elif tensor.dimension == 4:
                 inverse, determinant = ixp.symm_matrix_inverter4x4(tensor.structure)
             inv_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
-            self._namespace[inv_symbol] = tensor.__copy__()
-            self._namespace[inv_symbol].name = inv_symbol
+            function = Function('Tensor')(Symbol(inv_symbol))
+            self._namespace[inv_symbol] = Tensor(function, tensor.dimension, symmetry=tensor.symmetry)
             self._namespace[inv_symbol].structure = inverse
             det_symbol = symbol[:-2] + 'det'
             function = Function('Tensor')(Symbol(det_symbol, real=True))
@@ -1169,8 +1170,8 @@ class Parser:
                 elif dimension == 4:
                     inverse, determinant = ixp.symm_matrix_inverter4x4(tensor.structure)
                 inv_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
-                self._namespace[inv_symbol] = tensor.__copy__()
-                self._namespace[inv_symbol].name = inv_symbol
+                function = Function('Tensor')(Symbol(inv_symbol))
+                self._namespace[inv_symbol] = Tensor(function, tensor.dimension, symmetry=tensor.symmetry)
                 self._namespace[inv_symbol].structure = inverse
                 det_symbol = symbol[:-2] + 'det'
                 function = Function('Tensor')(Symbol(det_symbol, real=True))
@@ -1540,11 +1541,6 @@ class Tensor:
                 latex[2] = '_{' + latex[2] + '}'
             else: latex[2] = '_' + latex[2]
         return ''.join(latex)
-
-    def __copy__(self):
-        tensor = type(self).__new__(self.__class__)
-        tensor.__dict__.update(self.__dict__)
-        return tensor
 
     def __repr__(self):
         if self.rank == 0:
