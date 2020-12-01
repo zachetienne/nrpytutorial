@@ -50,6 +50,7 @@ class Lexer:
               ('COMMENT',       r'\%'),
               ('COMMA',         r'\,'),
               ('COLON',         r'\:'),
+              ('SEMICOLON',     r'\;'),
               ('APOSTROPHE',    r'\''),
               ('LPAREN',        r'\('),
               ('RPAREN',        r'\)'),
@@ -148,7 +149,8 @@ class Parser:
         LaTeX Extended BNF Grammar:
         <LATEX>         -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
         <ALIGN>         -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
-        <CONFIG>        -> <COMMENT> ( <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE> )
+        <CONFIG>        -> <COMMENT> <MACRO> { <SEMICOLON> <MACRO> }*
+        <MACRO>         -> <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE>
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT> { ',' <ASSIGNMENT> }*
         <ALIAS>         -> <ALIAS_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
         <ASSIGN>        -> <ASSIGN_MACRO> ( <SYMMETRY> | <WEIGHT_KWRD> <NUMBER> ) ( <LETTER> | <VARIABLE> )
@@ -263,9 +265,15 @@ class Parser:
             else: self._assignment()
             if self.accept('LINE_BREAK'): pass
 
-    # <CONFIG> -> <COMMENT> ( <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE> )
+    # <CONFIG> -> <COMMENT> <MACRO> { <SEMICOLON> <MACRO> }*
     def _config(self):
         self.expect('COMMENT')
+        self._macro()
+        while self.accept('SEMICOLON'):
+            self._macro()
+
+    # <MACRO> -> <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE>
+    def _macro(self):
         if self.peek('PARSE_MACRO'):
             self._parse()
         elif self.peek('ALIAS_MACRO'):
@@ -298,10 +306,12 @@ class Parser:
             self.expect('STRING')
             self.expect('ARROW')
             new = self.lexer.lexeme[1:-1]
+            sentence, position = self.lexer.sentence, self.lexer.index
+            self.lexer.mark()
             self.expect('STRING')
-            sentence, position = self.lexer.sentence, self.lexer.mark()
             self.lexer.sentence = sentence[:position] + sentence[position:].replace(old, new)
             if not self.accept('COMMA'): break
+        self.lexer.reset(); self.lexer.lex()
 
     # <ASSIGN> -> <ASSIGN_MACRO> ( <SYMMETRY> | <WEIGHT_KWRD> <NUMBER> ) ( <LETTER> | <VARIABLE> )
     def _assign(self):
@@ -368,10 +378,12 @@ class Parser:
             string = self.lexer.lexeme[1:-1]
             if string not in self._namespace['ignore']:
                 self._namespace['ignore'].append(string)
+            sentence, position = self.lexer.sentence, self.lexer.index
+            self.lexer.mark()
             self.expect('STRING')
-            sentence, position = self.lexer.sentence, self.lexer.mark()
             self.lexer.sentence = sentence[:position] + sentence[position:].replace(string, '')
             if not self.accept('COMMA'): break
+        self.lexer.reset(); self.lexer.lex()
 
     # <VARDEF> -> [ <SYMMETRY> ] ( <LETTER> | <VARIABLE> ) [ '(' <DIMENSION> ')' ]
     def _vardef(self):
@@ -1022,8 +1034,7 @@ class Parser:
                         if isinstance(self._namespace[symbol], Function('Constant')):
                             return self._namespace[symbol]
                     return function
-                self.lexer.reset()
-                self.lexer.lex()
+                self.lexer.reset(); self.lexer.lex()
             index = self._upper_index()
             indexing.extend(index)
             symbol.extend(len(index) * ['U'])
