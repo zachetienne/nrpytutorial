@@ -1,8 +1,16 @@
 # NRPyPN: Validated Post-Newtonian Expressions for Input into TwoPunctures, Wolfram Mathematica, SymPy, or Highly-Optimized C Codes
 
-## Author:
+## Author
 Zachariah B. Etienne (http://astro.phys.wvu.edu/zetienne/)
 
+## Special Thanks
+Special thanks to Peter Diener and Roland Haas for reviewing
+NRPyPN in preparation for its inclusion into the Einstein
+Toolkit. Also special thanks to Antoni Ramos-Buades for sharing
+the Mathematica notebooks that the paper
+"Simple procedures to reduce eccentricity of binary black hole simulations"
+Phys. Rev. D 99, 023003 (2019)
+used, so that expressions in NRPyPN could be validated.
 
 ## Purpose
 
@@ -27,7 +35,7 @@ https://arxiv.org/abs/1702.00872,
 Class. Quant. Grav. 34 (2017) 14, 145011 
 
 
-## Installation instructions:
+## Installation instructions
 
 Prerequisites:
 
@@ -91,3 +99,28 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+## Required Citation
+
+1) Bibtex entry:
+
+@misc{NRPyPN,
+ author       = {Etienne, Zachariah B.},
+ title        = {NRPyPN: Validated Post-Newtonian Expressions for Input into Wolfram Mathematica, SymPy, or Highly Optimized C Codes},
+ month        = nov,
+ year         = 2020,
+ url          = {https://github.com/zachetienne/nrpytutorial/blob/master/NRPyPN/}
+}
+
+## Suggested Citation
+
+1) Bibtex entry:
+
+@article{Habib:2020dba,
+    author = "Habib, Sarah and Ramos-Buades, Antoni and Huerta, E.A. and Husa, Sascha and Haas, Roland and Etienne, Zachariah",
+    title = "{Initial Data and Eccentricity Reduction Toolkit for Binary Black Hole Numerical Relativity Waveforms}",
+    eprint = "2011.08878",
+    archivePrefix = "arXiv",
+    primaryClass = "gr-qc",
+    month = "11",
+    year = "2020"
+}
