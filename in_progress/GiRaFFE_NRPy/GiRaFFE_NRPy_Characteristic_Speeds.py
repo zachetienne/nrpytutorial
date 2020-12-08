@@ -26,12 +26,13 @@ def find_cp_cm(lapse,shifti,gammaUUii):
     cminus = sp.Rational(1,2)*(-b/a - detm/a)
 
 # We'll write this as a function, and call it within HLLE_solver, below.
-def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face,gamma_faceUU):
+def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face,gamma_faceUU=None):
     # Inputs:  flux direction flux_dirn, Inverse metric gamma_faceUU, shift beta_faceU,
     #          lapse alpha_face, metric determinant gammadet_face
     # Outputs: maximum and minimum characteristic speeds cmax and cmin
     # First, we need to find the characteristic speeds on each face
-#     gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
+    if gamma_faceUU==None:
+        gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
     find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
     cp = cplus
     cm = cminus
