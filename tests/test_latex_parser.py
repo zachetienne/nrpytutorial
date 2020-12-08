@@ -116,7 +116,7 @@ class TestParser(unittest.TestCase):
                 % define vU (2D), const w
                 T^a_c = \vphantom{numeric} \partial_c (v^a w)
             """)),
-            {'vU', 'w', 'vU_dD', 'TUD'}
+            {'vU', 'vU_dD', 'TUD'}
         )
         self.assertEqual(str(TUD),
             '[[vU_dD00*w, vU_dD01*w], [vU_dD10*w, vU_dD11*w]]'
@@ -129,23 +129,24 @@ class TestParser(unittest.TestCase):
                 % define metric gDD (4D), vU (4D)
                 T^{\mu\nu} = \vphantom{numeric} \nabla^\nu v^\mu
             """)),
-            {'gUU', 'gdet', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
+            {'gUU', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
         )
 
     def test_assignment_4(self):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define basis [x, y], deriv numeric
-                % define vD (2D)
-                v_0 = x^{{2}} + 2x \\
-                v_1 = y\sqrt{x} \\
-                T_{\mu\nu} = (\partial_\nu v_\mu)\,\partial^2_x v_0
+                % define basis [x, y]
+                % define symbolic uD (2D), wD (2D)
+                u_0 = x^{{2}} + 2x \\
+                u_1 = y\sqrt{x} \\
+                v_a = u_a + w_a \\
+                T_{ab} = \partial^2_x v_0\, \vphantom{numeric} \partial_b v_a
             """)),
-            {'vD', 'x', 'y', 'vD_dD', 'TDD'}
+            {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
         )
         self.assertEqual(str(TDD),
-            '[[2*vD_dD00, 2*vD_dD01], [2*vD_dD10, 2*vD_dD11]]'
+            '[[2*wD_dD00 + 4*x + 4, 2*wD_dD01], [2*wD_dD10 + y/sqrt(x), 2*wD_dD11 + 2*sqrt(x)]]'
         )
 
     def test_assignment_5(self):
@@ -200,7 +201,7 @@ class TestParser(unittest.TestCase):
                 % define metric gDD (4D)
                 \gamma_{ij} = g_{ij}
             """)),
-            {'gUU', 'gdet', 'gDD', 'gammaDD'}
+            {'gUU', 'gDD', 'gammaDD'}
         )
         self.assertEqual(str(gammaDD),
             '[[gDD11, gDD12, gDD13], [gDD12, gDD22, gDD23], [gDD13, gDD23, gDD33]]'
@@ -208,7 +209,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define index [i-j] = 0:1
+                % define range [i-j] = 0:1
                 % define nosym TUU (3D), vD (2D)
                 w^\mu = T^{\mu i} v_i
             """)),
@@ -238,7 +239,7 @@ class TestParser(unittest.TestCase):
                 % define metric gUU (3D), vD (3D)
                 v^\mu = g^{\mu\nu} v_\nu
             """)),
-            {'gDD', 'gdet', 'gUU', 'vD', 'vU'}
+            {'gDD', 'gUU', 'vD', 'vU'}
         )
         self.assertEqual(str(vU),
             '[gUU00*vD0 + gUU01*vD1 + gUU02*vD2, gUU01*vD0 + gUU11*vD1 + gUU12*vD2, gUU02*vD0 + gUU12*vD1 + gUU22*vD2]'
@@ -265,7 +266,7 @@ class TestParser(unittest.TestCase):
                 % define anti01 FUU (4D), metric gDD (4D), const k
                 J^\mu = (4\pi k)^{-1} \vphantom{numeric} \nabla_\nu F^{\mu\nu}
             """)),
-            {'FUU', 'gUU', 'gdet', 'gDD', 'k', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
+            {'FUU', 'gUU', 'gDD', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
         )
 
     def test_example_4_2(self):
@@ -275,7 +276,7 @@ class TestParser(unittest.TestCase):
                 % define anti01 FUU (4D), metric ghatDD (4D), const k
                 J^\mu = (4\pi k)^{-1} \vphantom{numeric} \hat{\nabla}_\nu F^{\mu\nu}
             """)),
-            {'FUU', 'ghatUU', 'ghatdet', 'ghatDD', 'k', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
+            {'FUU', 'ghatUU', 'ghatDD', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
         )
 
     def test_example_5_1(self):
