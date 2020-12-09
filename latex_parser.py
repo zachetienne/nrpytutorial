@@ -881,7 +881,7 @@ class Parser:
             operator = '\\nabla'
             if self.accept('DIACRITIC'):
                 diacritic = lexeme
-                operator = '\\%s{\\nabla}' % diacritic
+                operator = '\\' + diacritic + '\\nabla'
                 self.expect('LBRACE')
                 self.expect('COV_SYM')
                 self.expect('RBRACE')
@@ -893,25 +893,11 @@ class Parser:
             equation[0] += operator
             equation[3] += operator
             if self.accept('CARET'):
-                index = self.lexer.lexeme
-                equation[0] += '^' + index + ' '
-                bound_index = next(x for x in alphabet if x != index)
-                prefix = '\\' if len(self._namespace['metric'][diacritic]) > 1 else ''
-                metric = '\\%s{%s}' % (diacritic, prefix + self._namespace['metric'][diacritic]) if diacritic \
-                    else prefix + self._namespace['metric'][diacritic]
-                equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
-                equation[3] += '_' + bound_index + ' '
-                index = self._strip(index)
+                index = self._strip(self.lexer.lexeme)
                 self.expect('LETTER')
                 indexing.append((Symbol(index, real=True), 'U'))
             elif self.accept('UNDERSCORE'):
-                index = _index = self.lexer.lexeme
-                _indexing = [str(index[0]) for index in indexing]
-                if _index in _indexing:
-                    _index = next(x for x in alphabet if x not in _indexing)
-                equation[0] += '_' + _index + ' '
-                equation[3] += '_' + _index + ' '
-                index = self._strip(index)
+                index = self._strip(self.lexer.lexeme)
                 self.expect('LETTER')
                 indexing.append((Symbol(index, real=True), 'D'))
             else:
@@ -921,6 +907,19 @@ class Parser:
         marker_1 = self.lexer.mark()
         function = self._tensor()
         marker_2 = self.lexer.index - len(self.lexer.lexeme)
+        for index, position in indexing:
+            if position == 'U':
+                equation[0] += '^' + str(index) + ' '
+                _indexing = [str(i) for i, _ in indexing + Tensor.extract(function)[1]]
+                bound_index = next(x for x in alphabet if x not in _indexing)
+                prefix = '\\' if len(self._namespace['metric'][diacritic]) > 1 else ''
+                metric = prefix + self._namespace['metric'][diacritic]
+                if diacritic: metric = '\\%s{%s}' % (diacritic, metric)
+                equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
+                equation[3] += '_' + bound_index + ' '
+            else:
+                equation[0] += '_' + str(index) + ' '
+                equation[3] += '_' + str(index) + ' '
         equation[0] += self.lexer.sentence[marker_1:marker_2].strip()
         equation[3] += self.lexer.sentence[marker_1:marker_2].strip()
         if location == 'RHS':
@@ -942,7 +941,7 @@ class Parser:
                 self.lexer.lex()
         symbol, suffix = str(function.args[0]), ''.join([index[1] for index in indexing])
         symbol = symbol + ('' if '_cd' in symbol else '_cd' + diacritic) + suffix
-        indexing = list(function.args[1:]) + [index[0] for index in indexing]
+        indexing = list(function.args[1:]) + [index for index, _ in indexing]
         return Function('Tensor')(Symbol(symbol, real=True), *indexing)
 
     # <LIEDRV> -> <LIE_SYM> '_' <SYMBOL> ( <TENSOR> | <SUBEXPR> )
@@ -977,9 +976,9 @@ class Parser:
             symbol.extend((len(index) - order) * ['D'])
             if order > 0:
                 sentence = self.lexer.sentence
-                function = Function('Tensor')(Symbol(''.join(symbol)), *indexing[:-order])
-                operator = ' '.join('\\partial_' + ('\\' if len(str(index)) > 0 else '') + str(index) for index in indexing[:-(order + 1):-1])
-                notation = operator + ' ' + Tensor(function).latex_format(function)
+                symbol.append('_d' + order * 'D')
+                function = Function('Tensor')(Symbol(''.join(symbol)), *indexing)
+                notation = Tensor(function).latex_format(function)
                 self.lexer.sentence = sentence.replace(sentence[position:self.lexer.mark()], notation)
                 self.lexer.marker = position
                 self.lexer.reset()
@@ -1005,9 +1004,9 @@ class Parser:
                 symbol.extend((len(index) - order) * ['D'])
                 if order > 0:
                     sentence = self.lexer.sentence
-                    function = Function('Tensor')(Symbol(''.join(symbol)), *indexing[:-order])
-                    operator = ' '.join('\\partial_' + ('\\' if len(str(index)) > 0 else '') + str(index) for index in indexing[:-(order + 1):-1])
-                    notation = operator + ' ' + Tensor(function).latex_format(function)
+                    symbol.append('_d' + order * 'D')
+                    function = Function('Tensor')(Symbol(''.join(symbol)), *indexing)
+                    notation = Tensor(function).latex_format(function)
                     self.lexer.sentence = sentence.replace(sentence[position:self.lexer.mark()], notation)
                     self.lexer.marker = position
                     self.lexer.reset()

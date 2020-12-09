@@ -127,7 +127,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define metric gDD (4D), vU (4D)
-                T^{\mu\nu} = \vphantom{numeric} \nabla^\nu v^\mu
+                T^{ab} = \vphantom{numeric} \nabla^b v^a
             """)),
             {'gUU', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
         )
@@ -137,11 +137,12 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define basis [x, y]
-                % define symbolic uD (2D), wD (2D)
+                % define uD (2D), numeric wD (2D)
                 u_0 = x^{{2}} + 2x \\
                 u_1 = y\sqrt{x} \\
                 v_a = u_a + w_a \\
-                T_{ab} = \partial^2_x v_0\, \vphantom{numeric} \partial_b v_a
+                % assign numeric vD
+                T_{ab} = \partial^2_x v_0 (\partial_b v_a)
             """)),
             {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
         )
@@ -150,6 +151,36 @@ class TestParser(unittest.TestCase):
         )
 
     def test_assignment_5(self):
+        Parser.clear_namespace()
+        self.assertEqual(
+            set(parse(r"""
+                % define basis [x, y]
+                % define symbolic uD (2D), wD (2D)
+                u_0 = x^{{2}} + 2x \\
+                u_1 = y\sqrt{x} \\
+                v_a = u_a + w_a \\
+                T_{ab} = \vphantom{numeric} \partial_b v_a
+            """)),
+            {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
+        )
+        self.assertEqual(str(TDD),
+            '[[wD_dD00 + 2*x + 2, wD_dD01], [wD_dD10 + y/(2*sqrt(x)), wD_dD11 + sqrt(x)]]'
+        )
+
+    def test_assignment_6(self):
+        Parser.clear_namespace()
+        self.assertEqual(
+            set(parse(r"""
+                    % define vD (2D), uD (2D), wD (2D)
+                    T_{abc} = \vphantom{numeric} ((v_a + u_a)_{,b} - w_{a,b})_{,c}
+            """)),
+            {'vD', 'uD', 'wD', 'TDDD', 'uD_dD', 'vD_dD', 'wD_dD', 'wD_dDD', 'uD_dDD', 'vD_dDD'}
+        )
+        self.assertEqual(str(TDDD[0][0][0]),
+            'uD_dDD000 + vD_dDD000 - wD_dDD000'
+        )
+
+    def test_assignment_7(self):
         Parser.clear_namespace()
         parse(r"""
             % define basis [\theta, \phi]
@@ -194,7 +225,7 @@ class TestParser(unittest.TestCase):
             '2/r**2'
         )
 
-    def test_assignment_6(self):
+    def test_assignment_8(self):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
@@ -400,26 +431,15 @@ class TestParser(unittest.TestCase):
 
 if __name__ == '__main__':
     suite = unittest.TestSuite()
-    suite.addTest(TestParser('test_expression_1'))
-    suite.addTest(TestParser('test_expression_2'))
-    suite.addTest(TestParser('test_expression_3'))
-    suite.addTest(TestParser('test_expression_4'))
-    suite.addTest(TestParser('test_expression_5'))
-    suite.addTest(TestParser('test_expression_6'))
-    suite.addTest(TestParser('test_assignment_1'))
-    suite.addTest(TestParser('test_assignment_2'))
-    suite.addTest(TestParser('test_assignment_3'))
-    suite.addTest(TestParser('test_assignment_4'))
-    suite.addTest(TestParser('test_assignment_5'))
-    suite.addTest(TestParser('test_assignment_6'))
-    suite.addTest(TestParser('test_example_1'))
-    suite.addTest(TestParser('test_example_2'))
-    suite.addTest(TestParser('test_example_3'))
-    suite.addTest(TestParser('test_example_4_1'))
-    suite.addTest(TestParser('test_example_4_2'))
-    suite.addTest(TestParser('test_example_5_1'))
-    suite.addTest(TestParser('test_example_5_2'))
-    suite.addTest(TestParser('test_example_6_1'))
-    suite.addTest(TestParser('test_example_6_2'))
+    for i in range(6):
+        suite.addTest(TestParser('test_expression_' + str(i + 1)))
+    for i in range(8):
+        suite.addTest(TestParser('test_assignment_' + str(i + 1)))
+    for i in range(6):
+        if i > 2:
+            suite.addTest(TestParser('test_example_' + str(i + 1) + '_1'))
+            suite.addTest(TestParser('test_example_' + str(i + 1) + '_2'))
+        else:
+            suite.addTest(TestParser('test_example_' + str(i + 1)))
     result = unittest.TextTestRunner().run(suite)
     sys.exit(not result.wasSuccessful())
