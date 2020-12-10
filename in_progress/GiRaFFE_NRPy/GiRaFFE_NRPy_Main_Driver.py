@@ -5,7 +5,7 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-from outputC import outCfunction, lhrh, outputC # NRPy+: Core C code output module
+from outputC import outCfunction, lhrh # NRPy+: Core C code output module
 import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
@@ -48,8 +48,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     psi6Phi = gri.register_gridfunctions("EVOL","psi6Phi")
     StildeD = ixp.register_gridfunctions_for_single_rank1("EVOL","StildeD")
 
-    PhievolParenU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","PhievolParenU",DIM=3)
-    AevolParen = gri.register_gridfunctions("AUXEVOL","AevolParen")
+    ixp.register_gridfunctions_for_single_rank1("AUXEVOL","PhievolParenU",DIM=3)
+    gri.register_gridfunctions("AUXEVOL","AevolParen")
 
     # Declare this symbol:
     sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")

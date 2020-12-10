@@ -9,7 +9,7 @@ import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line int
 Ccodesdir = "GiRaFFE_standalone_Ccodes/RHSs"
 cmd.mkdir(os.path.join(Ccodesdir))
 
-from outputC import outCfunction, outputC # NRPy+: Core C code output module
+from outputC import outputC # NRPy+: Core C code output module
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import GiRaFFE_NRPy.GiRaFFE_NRPy_Characteristic_Speeds as chsp

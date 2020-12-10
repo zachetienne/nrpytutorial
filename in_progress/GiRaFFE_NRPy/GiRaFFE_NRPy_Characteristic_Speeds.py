@@ -31,7 +31,7 @@ def find_cmax_cmin(flux_dirn,gamma_faceDD,beta_faceU,alpha_face,gamma_faceUU=Non
     #          lapse alpha_face, metric determinant gammadet_face
     # Outputs: maximum and minimum characteristic speeds cmax and cmin
     # First, we need to find the characteristic speeds on each face
-    if gamma_faceUU==None:
+    if gamma_faceUU is None:
         gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
     find_cp_cm(alpha_face,beta_faceU[flux_dirn],gamma_faceUU[flux_dirn][flux_dirn])
     cp = cplus

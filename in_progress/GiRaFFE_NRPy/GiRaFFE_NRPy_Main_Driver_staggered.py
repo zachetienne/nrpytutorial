@@ -5,15 +5,13 @@ nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
 
-from outputC import outCfunction, lhrh, outputC # NRPy+: Core C code output module
+from outputC import outCfunction, lhrh # NRPy+: Core C code output module
 import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
-import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
-import GRFFE.equations as GRFFE  # NRPy+: Generate general relativisitic force-free electrodynamics equations
 import GiRaFFE_NRPy.GiRaFFE_NRPy_Metric_Face_Values as FCVAL
 import GiRaFFE_NRPy.GiRaFFE_NRPy_PPM as PPM
 import GiRaFFE_NRPy.GiRaFFE_NRPy_staggered_Afield_flux as Af

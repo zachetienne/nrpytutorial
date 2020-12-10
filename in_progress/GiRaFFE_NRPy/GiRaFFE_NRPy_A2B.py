@@ -179,55 +179,55 @@ REAL find_accepted_Bx_order(REAL *Bx) {
 }
 """)
 
-    order_lowering_body = """REAL AD0_1[5],AD0_2[5],AD1_2[5],AD1_0[5],AD2_0[5],AD2_1[5];
-const double gammaDD00 = auxevol_gfs[IDX4S(GAMMADD00GF, i0,i1,i2)];
-const double gammaDD01 = auxevol_gfs[IDX4S(GAMMADD01GF, i0,i1,i2)];
-const double gammaDD02 = auxevol_gfs[IDX4S(GAMMADD02GF, i0,i1,i2)];
-const double gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF, i0,i1,i2)];
-const double gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF, i0,i1,i2)];
-const double gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF, i0,i1,i2)];
-AD0_2[M2] = in_gfs[IDX4S(AD0GF, i0,i1,i2-2)];
-AD0_2[M1] = in_gfs[IDX4S(AD0GF, i0,i1,i2-1)];
-AD0_1[M2] = in_gfs[IDX4S(AD0GF, i0,i1-2,i2)];
-AD0_1[M1] = in_gfs[IDX4S(AD0GF, i0,i1-1,i2)];
-AD0_1[P0] = AD0_2[P0] = in_gfs[IDX4S(AD0GF, i0,i1,i2)];
-AD0_1[P1] = in_gfs[IDX4S(AD0GF, i0,i1+1,i2)];
-AD0_1[P2] = in_gfs[IDX4S(AD0GF, i0,i1+2,i2)];
-AD0_2[P1] = in_gfs[IDX4S(AD0GF, i0,i1,i2+1)];
-AD0_2[P2] = in_gfs[IDX4S(AD0GF, i0,i1,i2+2)];
-AD1_2[M2] = in_gfs[IDX4S(AD1GF, i0,i1,i2-2)];
-AD1_2[M1] = in_gfs[IDX4S(AD1GF, i0,i1,i2-1)];
-AD1_0[M2] = in_gfs[IDX4S(AD1GF, i0-2,i1,i2)];
-AD1_0[M1] = in_gfs[IDX4S(AD1GF, i0-1,i1,i2)];
-AD1_2[P0] = AD1_0[P0] = in_gfs[IDX4S(AD1GF, i0,i1,i2)];
-AD1_0[P1] = in_gfs[IDX4S(AD1GF, i0+1,i1,i2)];
-AD1_0[P2] = in_gfs[IDX4S(AD1GF, i0+2,i1,i2)];
-AD1_2[P1] = in_gfs[IDX4S(AD1GF, i0,i1,i2+1)];
-AD1_2[P2] = in_gfs[IDX4S(AD1GF, i0,i1,i2+2)];
-AD2_1[M2] = in_gfs[IDX4S(AD2GF, i0,i1-2,i2)];
-AD2_1[M1] = in_gfs[IDX4S(AD2GF, i0,i1-1,i2)];
-AD2_0[M2] = in_gfs[IDX4S(AD2GF, i0-2,i1,i2)];
-AD2_0[M1] = in_gfs[IDX4S(AD2GF, i0-1,i1,i2)];
-AD2_0[P0] = AD2_1[P0] = in_gfs[IDX4S(AD2GF, i0,i1,i2)];
-AD2_0[P1] = in_gfs[IDX4S(AD2GF, i0+1,i1,i2)];
-AD2_0[P2] = in_gfs[IDX4S(AD2GF, i0+2,i1,i2)];
-AD2_1[P1] = in_gfs[IDX4S(AD2GF, i0,i1+1,i2)];
-AD2_1[P2] = in_gfs[IDX4S(AD2GF, i0,i1+2,i2)];
-const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22
-                               - gammaDD00*gammaDD12*gammaDD12
-                               + 2*gammaDD01*gammaDD02*gammaDD12
-                               - gammaDD11*gammaDD02*gammaDD02
-                               - gammaDD22*gammaDD01*gammaDD01);
+#     order_lowering_body = """REAL AD0_1[5],AD0_2[5],AD1_2[5],AD1_0[5],AD2_0[5],AD2_1[5];
+# const double gammaDD00 = auxevol_gfs[IDX4S(GAMMADD00GF, i0,i1,i2)];
+# const double gammaDD01 = auxevol_gfs[IDX4S(GAMMADD01GF, i0,i1,i2)];
+# const double gammaDD02 = auxevol_gfs[IDX4S(GAMMADD02GF, i0,i1,i2)];
+# const double gammaDD11 = auxevol_gfs[IDX4S(GAMMADD11GF, i0,i1,i2)];
+# const double gammaDD12 = auxevol_gfs[IDX4S(GAMMADD12GF, i0,i1,i2)];
+# const double gammaDD22 = auxevol_gfs[IDX4S(GAMMADD22GF, i0,i1,i2)];
+# AD0_2[M2] = in_gfs[IDX4S(AD0GF, i0,i1,i2-2)];
+# AD0_2[M1] = in_gfs[IDX4S(AD0GF, i0,i1,i2-1)];
+# AD0_1[M2] = in_gfs[IDX4S(AD0GF, i0,i1-2,i2)];
+# AD0_1[M1] = in_gfs[IDX4S(AD0GF, i0,i1-1,i2)];
+# AD0_1[P0] = AD0_2[P0] = in_gfs[IDX4S(AD0GF, i0,i1,i2)];
+# AD0_1[P1] = in_gfs[IDX4S(AD0GF, i0,i1+1,i2)];
+# AD0_1[P2] = in_gfs[IDX4S(AD0GF, i0,i1+2,i2)];
+# AD0_2[P1] = in_gfs[IDX4S(AD0GF, i0,i1,i2+1)];
+# AD0_2[P2] = in_gfs[IDX4S(AD0GF, i0,i1,i2+2)];
+# AD1_2[M2] = in_gfs[IDX4S(AD1GF, i0,i1,i2-2)];
+# AD1_2[M1] = in_gfs[IDX4S(AD1GF, i0,i1,i2-1)];
+# AD1_0[M2] = in_gfs[IDX4S(AD1GF, i0-2,i1,i2)];
+# AD1_0[M1] = in_gfs[IDX4S(AD1GF, i0-1,i1,i2)];
+# AD1_2[P0] = AD1_0[P0] = in_gfs[IDX4S(AD1GF, i0,i1,i2)];
+# AD1_0[P1] = in_gfs[IDX4S(AD1GF, i0+1,i1,i2)];
+# AD1_0[P2] = in_gfs[IDX4S(AD1GF, i0+2,i1,i2)];
+# AD1_2[P1] = in_gfs[IDX4S(AD1GF, i0,i1,i2+1)];
+# AD1_2[P2] = in_gfs[IDX4S(AD1GF, i0,i1,i2+2)];
+# AD2_1[M2] = in_gfs[IDX4S(AD2GF, i0,i1-2,i2)];
+# AD2_1[M1] = in_gfs[IDX4S(AD2GF, i0,i1-1,i2)];
+# AD2_0[M2] = in_gfs[IDX4S(AD2GF, i0-2,i1,i2)];
+# AD2_0[M1] = in_gfs[IDX4S(AD2GF, i0-1,i1,i2)];
+# AD2_0[P0] = AD2_1[P0] = in_gfs[IDX4S(AD2GF, i0,i1,i2)];
+# AD2_0[P1] = in_gfs[IDX4S(AD2GF, i0+1,i1,i2)];
+# AD2_0[P2] = in_gfs[IDX4S(AD2GF, i0+2,i1,i2)];
+# AD2_1[P1] = in_gfs[IDX4S(AD2GF, i0,i1+1,i2)];
+# AD2_1[P2] = in_gfs[IDX4S(AD2GF, i0,i1+2,i2)];
+# const double invsqrtg = 1.0/sqrt(gammaDD00*gammaDD11*gammaDD22
+#                                - gammaDD00*gammaDD12*gammaDD12
+#                                + 2*gammaDD01*gammaDD02*gammaDD12
+#                                - gammaDD11*gammaDD02*gammaDD02
+#                                - gammaDD22*gammaDD01*gammaDD01);
 
-REAL BU0[4],BU1[4],BU2[4];
-compute_Bx_pointwise(BU0,invdx2,AD1_2,invdx1,AD2_1);
-compute_Bx_pointwise(BU1,invdx0,AD2_0,invdx2,AD0_2);
-compute_Bx_pointwise(BU2,invdx1,AD0_1,invdx0,AD1_0);
+# REAL BU0[4],BU1[4],BU2[4];
+# compute_Bx_pointwise(BU0,invdx2,AD1_2,invdx1,AD2_1);
+# compute_Bx_pointwise(BU1,invdx0,AD2_0,invdx2,AD0_2);
+# compute_Bx_pointwise(BU2,invdx1,AD0_1,invdx0,AD1_0);
 
-auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = find_accepted_Bx_order(BU0)*invsqrtg;
-auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = find_accepted_Bx_order(BU1)*invsqrtg;
-auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
-"""
+# auxevol_gfs[IDX4S(BU0GF, i0,i1,i2)] = find_accepted_Bx_order(BU0)*invsqrtg;
+# auxevol_gfs[IDX4S(BU1GF, i0,i1,i2)] = find_accepted_Bx_order(BU1)*invsqrtg;
+# auxevol_gfs[IDX4S(BU2GF, i0,i1,i2)] = find_accepted_Bx_order(BU2)*invsqrtg;
+# """
 
     # Here, we'll use the outCfunction() function to output a function that will compute the magnetic field
     # on the interior. Then, we'll add postloop code to handle the ghostzones.

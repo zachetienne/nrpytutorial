@@ -77,7 +77,7 @@ def compute_TEM4UU(gammaDD,betaU,alpha, smallb4U, smallbsquared,u4U,gammaUU=None
     global TEM4UU
 
     # Then define g^{mu nu} in terms of the ADM quantities:
-    if gammaUU==None:
+    if gammaUU is None:
         import BSSN.ADMBSSN_tofrom_4metric as AB4m
         AB4m.g4UU_ito_BSSN_or_ADM("ADM",gammaDD,betaU,alpha)
         # Finally compute T^{mu nu}

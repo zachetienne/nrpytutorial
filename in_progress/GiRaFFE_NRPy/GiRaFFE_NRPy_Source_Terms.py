@@ -1,9 +1,6 @@
 # Step 1: The StildeD RHS *source* term
 import os
-from outputC import outputC, outCfunction, lhrh # NRPy+: Core C code output module
-import finite_difference as fin  # NRPy+: Finite difference C code generation module
-import NRPy_param_funcs as par   # NRPy+: Parameter interface
-import grid as gri               # NRPy+: Functions having to do with numerical grids
+from outputC import outputC, outCfunction # NRPy+: Core C code output module
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import GRHD.equations as GRHD    # NRPy+: Generate general relativistic hydrodynamics equations
 import GRFFE.equations as GRFFE  # NRPy+: Generate general relativistic force-free electrodynamics equations

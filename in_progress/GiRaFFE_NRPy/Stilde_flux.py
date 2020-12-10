@@ -155,6 +155,8 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
         input_params_for_Stilde_flux = "const paramstruct *params,REAL *auxevol_gfs,REAL *rhs_gfs"
     else:
         input_params_for_Stilde_flux = "const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs"
+    if gamma_faceUU==None:
+        gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
 
     for flux_dirn in range(3):
         calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
