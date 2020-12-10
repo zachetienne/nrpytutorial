@@ -280,7 +280,7 @@ const int NUM_RECONSTRUCT_GFS = 15;
 #include "Workaround_ADM_to_BSSN.h"
 #include "Workaround_BSSN_to_ADM.h"
 
-void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
+/*void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
 #include "set_Cparameters.h"
     char filename[100];
     sprintf(filename,"BU0_override-%08d.bin",n);
@@ -298,14 +298,15 @@ void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restr
     fread(auxevol_gfs+BU2GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
           sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
     fclose(out2D);
-}
+}*/
 
 void workaround_Valencia_to_Drift_velocity(const paramstruct *params, REAL *vU0, const REAL *alpha, const REAL *betaU0) {
 #include "set_Cparameters.h"
     // Converts Valencia 3-velocities to Drift 3-velocities for testing. The variable argument
     // vu0 is any Valencia 3-velocity component or reconstruction thereof.
 #pragma omp parallel for
-    for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;ii++) {
+    for (int i2 = 2;i2 < Nxx_plus_2NGHOSTS2-1;i2++) for (int i1 = 2;i1 < Nxx_plus_2NGHOSTS1-1;i1++) for (int i0 = 2;i0 < Nxx_plus_2NGHOSTS0-1;i0++) {
+        int ii = IDX3S(i0,i1,i2);
         // Here, we modify the velocity in place.
         vU0[ii] = alpha[ii]*vU0[ii]-betaU0[ii];
     }
@@ -316,7 +317,8 @@ void workaround_Drift_to_Valencia_velocity(const paramstruct *params, REAL *vU0,
     // Converts Drift 3-velocities to Valencia 3-velocities for testing. The variable argument
     // vu0 is any drift (i.e. IllinoisGRMHD's definition) 3-velocity component or reconstruction thereof.
 #pragma omp parallel for
-    for(int ii=0;ii<Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;ii++) {
+    for (int i2 = 2;i2 < Nxx_plus_2NGHOSTS2-1;i2++) for (int i1 = 2;i1 < Nxx_plus_2NGHOSTS1-1;i1++) for (int i0 = 2;i0 < Nxx_plus_2NGHOSTS0-1;i0++) {
+        int ii = IDX3S(i0,i1,i2);
         // Here, we modify the velocity in place.
         vU0[ii] = (vU0[ii]+betaU0[ii])/alpha[ii];
     }

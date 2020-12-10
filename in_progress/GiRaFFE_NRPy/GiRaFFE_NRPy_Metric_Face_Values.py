@@ -68,9 +68,9 @@ const int num_metric_gfs = 13;
         body     ="""    for(int gf = 0;gf < num_metric_gfs;gf++) {
         in_gf  = metric_gfs_list[gf];
         out_gf = metric_gfs_face_list[gf];
-        for (int i2 = NGHOSTS;i2 < Nxx2+NGHOSTS+1;i2++) {
-            for (int i1 = NGHOSTS;i1 < Nxx1+NGHOSTS+1;i1++) {
-                for (int i0 = NGHOSTS;i0 < Nxx0+NGHOSTS+1;i0++) {
+        for (int i2 = 2;i2 < Nxx_plus_2NGHOSTS2-1;i2++) {
+            for (int i1 = 2;i1 < Nxx_plus_2NGHOSTS1-1;i1++) {
+                for (int i0 = 2;i0 < Nxx_plus_2NGHOSTS0-1;i0++) {
                     Qm2 = auxevol_gfs[IDX4S(in_gf,i0-2*kronecker_delta[flux_dirn][0],i1-2*kronecker_delta[flux_dirn][1],i2-2*kronecker_delta[flux_dirn][2])];
                     Qm1 = auxevol_gfs[IDX4S(in_gf,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
                     Qp0 = auxevol_gfs[IDX4S(in_gf,i0,i1,i2)];
@@ -81,9 +81,9 @@ const int num_metric_gfs = 13;
         }
     }
 #ifdef WORKAROUND_ENABLED
-    for (int i2 = NGHOSTS;i2 < Nxx2+NGHOSTS+1;i2++) {
-        for (int i1 = NGHOSTS;i1 < Nxx1+NGHOSTS+1;i1++) {
-            for (int i0 = NGHOSTS;i0 < Nxx0+NGHOSTS+1;i0++) {
+        for (int i2 = 2;i2 < Nxx_plus_2NGHOSTS2-1;i2++) {
+            for (int i1 = 2;i1 < Nxx_plus_2NGHOSTS1-1;i1++) {
+                for (int i0 = 2;i0 < Nxx_plus_2NGHOSTS0-1;i0++) {
                 Qm2 = auxevol_gfs[IDX4S(PHIGF,i0-2*kronecker_delta[flux_dirn][0],i1-2*kronecker_delta[flux_dirn][1],i2-2*kronecker_delta[flux_dirn][2])];
                 Qm1 = auxevol_gfs[IDX4S(PHIGF,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
                 Qp0 = auxevol_gfs[IDX4S(PHIGF,i0,i1,i2)];
