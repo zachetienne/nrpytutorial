@@ -1,6 +1,7 @@
-from outputC import outCfunction, outputC # NRPy+: Core C code output module
+from outputC import outCfunction, outputC, lhrh # NRPy+: Core C code output module
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import finite_difference as fin  # NRPy+: Finite difference C code generation module
 import grid as gri               # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import os, sys           # Standard Python modules for multiplatform OS-level functions
@@ -42,6 +43,8 @@ def calculate_GRFFE_Tmunu_and_contractions(flux_dirn, mom_comp, gammaDD,betaU,al
     global U,F
     # Flux F = alpha*sqrt{gamma}*T^i_j
     F = alpha*sqrtgammaDET*GRFFE.TEM4UD[flux_dirn+1][mom_comp+1]
+    # alpha_sqrt_gamma*( b2*(u0_r*Ur[VX+offset])*U_LOWERr[UX] + 0.5*b2*kronecker_delta[flux_dirn][0] - smallbr[SMALLBX+offset]*smallb_lowerr[SMALLBX] )
+#     F = alpha*sqrtgammaDET*(GRFFE.smallbsquared*GRHD.u4U_ito_ValenciavU[0]* + sp.Rational(1,2)*GRFFE.smallbsquared*)
     # U = alpha*sqrt{gamma}*T^0_j = Stilde_j
     U = GRHD.S_tildeD[mom_comp]
 
@@ -66,9 +69,10 @@ def calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
         Fr = F
         Ur = U
         if mom_comp==0:
-            global F_out,U_out
+            global F_out,U_out,smallb_out
             F_out=F
             U_out=U
+            smallb_out = GRFFE.smallbsquared
         calculate_GRFFE_Tmunu_and_contractions(flux_dirn, mom_comp, gamma_faceDD,beta_faceU,alpha_face,\
                                                Valenciav_lU,B_lU,sqrt4pi,phi_face,gamma_faceUU)
         Fl = F
@@ -80,7 +84,8 @@ def write_C_Code_to_read_memory(write_cmax_cmin=False):
     # Read in all the inputs:
     for var in ["GAMMA_FACEDD00", "GAMMA_FACEDD01", "GAMMA_FACEDD02",
                 "GAMMA_FACEDD11", "GAMMA_FACEDD12", "GAMMA_FACEDD22",
-                "GAMMA_FACEUUXX", "GAMMA_FACEUUYY", "GAMMA_FACEUUZZ", "PHI_FACE",
+                "GAMMA_FACEUU00", "GAMMA_FACEUU01", "GAMMA_FACEUU02",
+                "GAMMA_FACEUU11", "GAMMA_FACEUU12", "GAMMA_FACEUU22", "PHI_FACE",
                 "BETA_FACEU0", "BETA_FACEU1", "BETA_FACEU2","ALPHA_FACE",
                 "B_RU0","B_RU1","B_RU2","B_LU0","B_LU1","B_LU2",
                 "VALENCIAV_RU0","VALENCIAV_RU1","VALENCIAV_RU2",
@@ -91,6 +96,11 @@ def write_C_Code_to_read_memory(write_cmax_cmin=False):
         Memory_Read += "const REAL "+lhsvar+" = auxevol_gfs[IDX4S("+var+"GF,i0,i1,i2)];\n"
     # Storage for the outputs:
     for var in ["Stilde_fluxD0","Stilde_fluxD1","Stilde_fluxD2"]:
+        # e.g.,
+        # REAL Stilde_fluxD0 = 0;
+        Memory_Read += "REAL "+var+" = 0;\n"
+    # Extra storage for testing:
+    for var in ["F_out","U_out","smallb_out"]:
         # e.g.,
         # REAL Stilde_fluxD0 = 0;
         Memory_Read += "REAL "+var+" = 0;\n"
@@ -155,7 +165,7 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
         input_params_for_Stilde_flux = "const paramstruct *params,REAL *auxevol_gfs,REAL *rhs_gfs"
     else:
         input_params_for_Stilde_flux = "const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs"
-    if gamma_faceUU==None:
+    if gamma_faceUU is None:
         gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
 
     for flux_dirn in range(3):
@@ -165,15 +175,17 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
                                 Stilde_fluxD[0],
                                 Stilde_fluxD[1],
                                 Stilde_fluxD[2],
-#                                 F_out,
-#                                 U_out
+                                F_out,
+                                U_out,
+                                smallb_out
                                ]
         Stilde_flux_names = [
                              "Stilde_fluxD0",
                              "Stilde_fluxD1",
                              "Stilde_fluxD2",
-#                              "F_out",
-#                              "U_out"
+                             "F_out",
+                             "U_out",
+                             "smallb_out"
                             ]
 
         if write_cmax_cmin:
@@ -193,3 +205,75 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
 
         with open(os.path.join(out_dir,name+".h"),"w") as file:
             file.write(Ccode_function)
+
+# def generate_C_code_for_Stilde_flux_TEMP(out_dir,inputs_provided = False, alpha_face=None, gamma_faceDD=None, beta_faceU=None,
+#                                     Valenciav_rU=None, B_rU=None, Valenciav_lU=None, B_lU=None, sqrt4pi=None,
+#                                     outCparams = "outCverbose=False,CSE_sorting=none", write_cmax_cmin=False, gamma_faceUU=None,phi_face=None):
+#     if not inputs_provided:
+#         # We will pass values of the gridfunction on the cell faces into the function. This requires us
+#         # to declare them as C parameters in NRPy+. We will denote this with the _face infix/suffix.
+#         alpha_face = gri.register_gridfunctions("AUXEVOL","alpha_face")
+#         gamma_faceDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gamma_faceDD","sym01")
+#         beta_faceU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","beta_faceU")
+
+#         # We'll need some more gridfunctions, now, to represent the reconstructions of BU and ValenciavU
+#         # on the right and left faces
+#         Valenciav_rU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rU",DIM=3)
+#         B_rU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_rU",DIM=3)
+#         Valenciav_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
+#         B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
+#         sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
+
+#     if write_cmax_cmin:
+#         # In the staggered case, we will also want to output cmax and cmin
+#         # If we want to write cmax and cmin, we will need to be able to change auxevol_gfs:
+#         input_params_for_Stilde_flux = "const paramstruct *params,REAL *auxevol_gfs,REAL *rhs_gfs"
+#     else:
+#         input_params_for_Stilde_flux = "const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs"
+#     if gamma_faceUU is None:
+#         gamma_faceUU,unusedgammaDET = ixp.generic_matrix_inverter3x3(gamma_faceDD)
+
+#     for flux_dirn in range(3):
+#         calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
+#                               Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi,gamma_faceUU,phi_face)
+
+#         Stilde_flux_to_print = [
+#                                 lhrh(lhs=gri.gfaccess("out_gfs","FIXMETEMP0"),rhs=Stilde_fluxD[0]),
+#                                 lhrh(lhs=gri.gfaccess("out_gfs","FIXMETEMP1"),rhs=Stilde_fluxD[1]),
+#                                 lhrh(lhs=gri.gfaccess("out_gfs","FIXMETEMP2"),rhs=Stilde_fluxD[2]),
+#                                ]
+
+#         if write_cmax_cmin:
+#             Stilde_flux_to_print = Stilde_flux_to_print + [chsp.cmax,chsp.cmin]
+#             Stilde_flux_names = Stilde_flux_names + ["cmax","cmin"]
+
+#         desc = "Compute the flux term of all 3 components of tilde{S}_i on the left face in the " + str(flux_dirn) + "direction for all components."
+#         name = "calculate_Stilde_flux_D" + str(flux_dirn)
+#         Ccode_function = outCfunction(
+#             outfile  = "returnstring", desc=desc, name=name,
+#             params   = input_params_for_Stilde_flux,
+#             body     = fin.FD_outputC("returnstring",Stilde_flux_to_print,params=outCparams).replace("IDX4","IDX4S"),
+#             loopopts ="InteriorPoints",
+#             rel_path_for_Cparams=os.path.join("../")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
+
+#         with open(os.path.join(out_dir,name+".h"),"w") as file:
+#             file.write(Ccode_function)
+
+#     FD_body = """#include "../set_Cparameters.h"
+#     // Notice in the loop below that we go from 3 to cctk_lsh-3 for i, j, AND k, even though
+#     //   we are only computing the flux in one direction. This is because in the end,
+#     //   we only need the rhs's from 3 to cctk_lsh-3 for i, j, and k.
+# #pragma omp parallel for
+#     for(int i2=NGHOSTS;i2<Nxx2+NGHOSTS;i2++) for(int i1=NGHOSTS;i1<Nxx1+NGHOSTS;i1++) for(int i0=NGHOSTS;i0<Nxx0+NGHOSTS;i0++) {
+#         const int index = IDX3S(i,j,k);
+#         const int indexp1 = CCTK_GFINDEX3D(cctkGH,i+kronecker_delta[flux_dirn][0],j+kronecker_delta[flux_dirn][1],k+kronecker_delta[flux_dirn][2]);
+
+#         rhs_gfs[IDX4ptS(STILDED0GF,index)] += (st_x_flux[index]     - st_x_flux[indexp1]    ) * invdx;
+#         rhs_gfs[IDX4ptS(STILDED0GF,index)] += (st_y_flux[index]     - st_y_flux[indexp1]    ) * invdx;
+#         rhs_gfs[IDX4ptS(STILDED0GF,index)] += (st_z_flux[index]     - st_z_flux[indexp1]    ) * invdx;
+#     }"""
+#     desc = "Compute the difference in the flux of StildeD on the opposite faces in flux_dirn for all components."
+#     name = "calculate_Stilde_rhsD"
+#     outCfunction(
+#         outfile = os.path.join(out_dir,name+".h"), desc=desc, name=name,
+#         params  = "
