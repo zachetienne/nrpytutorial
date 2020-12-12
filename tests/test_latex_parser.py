@@ -96,6 +96,18 @@ class TestParser(unittest.TestCase):
             r'\mathcal{L}_\text{beta} g_{i j} = \text{beta}^a \partial_a g_{i j} + (\partial_i \text{beta}^a) g_{a j} + (\partial_j \text{beta}^a) g_{i a}'
         )
 
+    def test_alias_macro(self):
+        Parser.clear_namespace()
+        parse(r"""
+            % srepl "<1>_{<2>}" -> "<1>_<2>", "<1>_<2>" -> "\text{<1>_<2>}"
+            % srepl "<1>^{<2>}" -> "<1>^<2>", "<1>^<2>" -> "<1>^{{<2>}}"
+        """)
+        expr = r'x_n^4 + \exp(x_n y_n^2)'
+        self.assertEqual(
+            str(parse_expr(expr)),
+            'x_n**4 + exp(x_n*y_n**2)'
+        )
+
     def test_assignment_1(self):
         Parser.clear_namespace()
         self.assertEqual(
@@ -433,6 +445,7 @@ if __name__ == '__main__':
     suite = unittest.TestSuite()
     for i in range(6):
         suite.addTest(TestParser('test_expression_' + str(i + 1)))
+    suite.addTest(TestParser('test_alias_macro'))
     for i in range(8):
         suite.addTest(TestParser('test_assignment_' + str(i + 1)))
     for i in range(6):

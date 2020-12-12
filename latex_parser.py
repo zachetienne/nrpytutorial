@@ -33,26 +33,25 @@ class Lexer:
             r'\\[uU]psilon', r'\\[pP]hi', r'\\[cC]hi', r'\\[pP]si', r'\\[oO]mega', r'[a-zA-Z]'))
         self.token_dict = [
             ('WHITESPACE',      r'\s+'),
+            ('STRING',          r'\"[^\"]+\"'),
             ('DIMENSION',       r'[2-9][0-9]*D'),
             ('VARIABLE',        r'[a-zA-Z]+[UD]+'),
-            ('STRING',          r'\"[^\"]+\"'),
-            ('ARROW',           r'\-\>'),
+            ('TOKEN_GROUP',     r'\<[1-9][0-9]*\>'),
             ('RATIONAL',        r'\-?[0-9]+\/\-?[1-9][0-9]*'),
             ('DECIMAL',         r'\-?[0-9]+\.[0-9]+'),
             ('INTEGER',         r'\-?[0-9]+'),
-            ('PI',              r'\\pi'),
             ('PLUS',            r'\+'),
+            ('ARROW',           r'\-\>'),
             ('MINUS',           r'\-'),
             ('DIVIDE',          r'\/'),
             ('EQUAL',           r'\='),
             ('CARET',           r'\^'),
             ('UNDERSCORE',      r'\_'),
             ('COMMENT',         r'\%'),
+            ('PRIME',           r'\''),
             ('COMMA',           r'\,'),
             ('COLON',           r'\:'),
             ('SEMICOLON',       r'\;'),
-            ('ASTERISK',        r'\*'),
-            ('APOSTROPHE',      r'\''),
             ('LPAREN',          r'\('),
             ('RPAREN',          r'\)'),
             ('LBRACK',          r'\['),
@@ -74,7 +73,7 @@ class Lexer:
             ('DEFINE_MACRO',    r'define'),
             ('IGNORE_MACRO',    r'ignore'),
             ('PARSE_MACRO',     r'parse'),
-            ('ALIAS_MACRO',     r'alias'),
+            ('SREPL_MACRO',     r'srepl'),
             ('RANGE_KWRD',      r'range'),
             ('BASIS_KWRD',      r'basis'),
             ('DERIV_KWRD',      r'deriv'),
@@ -83,6 +82,7 @@ class Lexer:
             ('VPHANTOM',        r'\\vphantom'),
             ('SYMMETRY',        r'const|metric|' + symmetry),
             ('WEIGHT',          r'weight'),
+            ('PI',              r'\\pi'),
             ('LETTER',          r'[a-zA-Z]|' + alphabet),
             ('COMMAND',         r'\\[a-zA-Z]+'),
             ('LINE_BREAK',      r'\\\\'),
@@ -153,9 +153,9 @@ class Parser:
         <LATEX>         -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
         <ALIGN>         -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
         <CONFIG>        -> <COMMENT> <MACRO> { <SEMICOLON> <MACRO> }*
-        <MACRO>         -> <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE>
+        <MACRO>         -> <PARSE> | <SREPL> | <ASSIGN> | <DEFINE> | <IGNORE>
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT> { ',' <ASSIGNMENT> }*
-        <ALIAS>         -> <ALIAS_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
+        <SREPL>         -> <SREPL_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
         <ASSIGN>        -> <ASSIGN_MACRO> ( <DERIVATIVE | <SYMMETRY> | <WEIGHT> <NUMBER> ) ( <LETTER> | <VARIABLE> )
         <DEFINE>        -> <DEFINE_MACRO> ( <VARDEF> | <KEYDEF> ) { ',' ( <VARDEF> | <KEYDEF> ) }*
         <IGNORE>        -> <IGNORE_MACRO> <STRING> { ',' <STRING> }*
@@ -192,6 +192,8 @@ class Parser:
 
     def __init__(self, debug=False):
         self.lexer = Lexer()
+        if 'srepl' not in self._namespace:
+            self._namespace['srepl'] = []
         if 'basis' not in self._namespace:
             self._namespace['basis'] = []
         if 'deriv' not in self._namespace:
@@ -215,6 +217,16 @@ class Parser:
             :arg:    expression mode [default: disabled]
             :return: namespace or expression
         """
+        # replace every substring marked 'ignore' with an empty string
+        for ignore in self._namespace['ignore']:
+            sentence = sentence.replace(ignore, '')
+        # perform string replacement (aliasing) using namespace mapping
+        sentence = '\n'.join(self._namespace['srepl'] + [sentence])
+        self.lexer.initialize(sentence)
+        self.lexer.lex()
+        for _ in self._namespace['srepl']:
+            self._srepl()
+        sentence = self.lexer.sentence[self.lexer.mark():]
         stack = []; i = i_1 = i_2 = i_3 = 0
         # replace comma/semicolon with operator notation for parenthetical expression(s)
         while i < len(sentence):
@@ -242,11 +254,7 @@ class Parser:
             if sentence[i:(i + 2)] == '%%':
                 index = sentence.index('\n', i + 2)
                 sentence = sentence.replace(sentence[i:index], '')
-                i = index + 1
             else: i += 1
-        # replace every substring marked 'ignore' with an empty string
-        for ignore in self._namespace['ignore']:
-            sentence = sentence.replace(ignore, '')
         self.lexer.initialize(sentence)
         self.lexer.lex()
         if expression:
@@ -288,13 +296,13 @@ class Parser:
         while self.accept('SEMICOLON'):
             self._macro()
 
-    # <MACRO> -> <PARSE> | <ALIAS> | <ASSIGN> | <DEFINE> | <IGNORE>
+    # <MACRO> -> <PARSE> | <SREPL> | <ASSIGN> | <DEFINE> | <IGNORE>
     def _macro(self):
         macro = self.lexer.lexeme
         if self.peek('PARSE_MACRO'):
             self._parse()
-        elif self.peek('ALIAS_MACRO'):
-            self._alias()
+        elif self.peek('SREPL_MACRO'):
+            self._srepl()
         elif self.peek('ASSIGN_MACRO'):
             self._assign()
         elif self.peek('DEFINE_MACRO'):
@@ -313,20 +321,46 @@ class Parser:
         while self.accept('COMMA'):
             self._assignment()
 
-    # <ALIAS> -> <ALIAS_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
-    def _alias(self):
-        self.expect('ALIAS_MACRO')
+    # <SREPL> -> <SREPL_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
+    def _srepl(self):
+        marker = self.lexer.mark()
+        self.expect('SREPL_MACRO')
         while True:
             old = self.lexer.lexeme[1:-1]
             self.expect('STRING')
             self.expect('ARROW')
             new = self.lexer.lexeme[1:-1]
-            sentence, position = self.lexer.sentence, self.lexer.index
-            self.lexer.mark()
+            macro = self.lexer.sentence[marker:self.lexer.index]
+            if macro not in self._namespace['srepl']:
+                self._namespace['srepl'].append(macro)
             self.expect('STRING')
-            self.lexer.sentence = sentence[:position] + sentence[position:].replace(old, new)
+            sentence, position = self.lexer.sentence, self.lexer.mark()
+            lexer = Lexer(); lexer.initialize(old); lexer.lex()
+            substr_syntax = [(lexer.lexeme, lexer.token)]
+            for token in lexer.tokenize():
+                substr_syntax.append((lexer.lexeme, token))
+            string_syntax = [(self.lexer.index, self.lexer.lexeme, self.lexer.token)]
+            for token in self.lexer.tokenize():
+                string_syntax.append((self.lexer.index, self.lexer.lexeme, token))
+            i_1 = i_2 = offset = 0
+            for i, (index, lexeme, token) in enumerate(string_syntax):
+                if substr_syntax[0][0] == lexeme or substr_syntax[0][1] == 'TOKEN_GROUP':
+                    index, namespace = index - len(lexeme), {}
+                    for j, (_lexeme, _token) in enumerate(substr_syntax, start=i):
+                        if _token == 'TOKEN_GROUP':
+                            namespace[_lexeme] = string_syntax[j][1]
+                        elif j >= len(string_syntax) or _lexeme != string_syntax[j][1]: break
+                        if (j - i + 1) == len(substr_syntax):
+                            new_repl = new
+                            for var in namespace:
+                                new_repl = new_repl.replace(var, namespace[var])
+                            i_1, i_2 = index + offset, string_syntax[j][0] + offset
+                            old_repl = sentence[i_1:i_2]
+                            sentence = sentence[:i_1] + new_repl + sentence[i_2:]
+                            offset += len(new_repl) - len(old_repl)
+            self.lexer.sentence, self.lexer.marker = sentence, position
+            self.lexer.reset()
             if not self.accept('COMMA'): break
-        self.lexer.reset(); self.lexer.lex()
 
     # <ASSIGN> -> <ASSIGN_MACRO> ( <DERIVATIVE> | <SYMMETRY> | <WEIGHT> <NUMBER> ) ( <LETTER> | <VARIABLE> )
     def _assign(self):
@@ -556,6 +590,12 @@ class Parser:
                 'RATIONAL', 'DECIMAL', 'INTEGER', 'PI', 'PAR_SYM', 'COV_SYM', 'LIE_SYM',
                 'TEXT_CMD', 'FUNC_CMD', 'FRAC_CMD', 'SQRT_CMD', 'NLOG_CMD', 'TRIG_CMD',
                 'LPAREN', 'LBRACK', 'DIACRITIC', 'VPHANTOM', 'LETTER', 'COMMAND', 'ESCAPE')):
+            self.lexer.mark()
+            if self.accept('ESCAPE'):
+                if self.peek('RBRACE'):
+                    self.lexer.reset()
+                    return expr
+                self.lexer.reset()
             if self.accept('DIVIDE'):
                 expr /= self._factor()
             else: expr *= self._factor()
@@ -1043,13 +1083,10 @@ class Parser:
         if self.accept('TEXT_CMD'):
             self.expect('LBRACE')
             symbol = [self.lexer.lexeme]
-            if not self.accept('LETTER'):
-                sentence, position = self.lexer.sentence, self.lexer.mark()
-                raise ParseError('unexpected \'%s\' at position %d' %
-                    (sentence[position], position), sentence, position)
+            self.expect('LETTER')
             while any(self.peek(token) for token in
                     ('UNDERSCORE', 'LETTER', 'INTEGER')):
-                symbol.extend([self.lexer.lexeme])
+                symbol.append(self.lexer.lexeme)
                 self.lexer.lex()
             self.expect('RBRACE')
             return ''.join(symbol).replace('\\', '')
@@ -1600,7 +1637,7 @@ def parse(sentence, verbose=False):
     _namespace = Parser._namespace.copy()
     namespace = Parser(verbose).parse(sentence)
     kwrd_dict = {}
-    for kwrd in ('basis', 'deriv', 'range', 'ignore', 'metric'):
+    for kwrd in ('srepl', 'basis', 'deriv', 'range', 'ignore', 'metric'):
         kwrd_dict[kwrd] = namespace[kwrd]
         del namespace[kwrd]
     key_diff = [key for key in namespace if key not in _namespace]
@@ -1618,6 +1655,7 @@ def parse(sentence, verbose=False):
             if not verbose and key in key_diff:
                 key_diff.remove(key)
     namespace.update(kwrd_dict)
+    if not key_diff: return
     if verbose:
         return tuple(namespace[key] for key in key_diff)
     return tuple(key_diff)
