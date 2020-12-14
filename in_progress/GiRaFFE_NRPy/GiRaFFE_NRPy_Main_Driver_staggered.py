@@ -75,8 +75,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     phi = gri.register_gridfunctions("AUXEVOL","phi") # Needed only for ADM-BSSN-ADM workaround
     phi_face = gri.register_gridfunctions("AUXEVOL","phi_face") # Needed only for ADM-BSSN-ADM workaround
-    gammaUUxx,gammaUUyy,gammaUUzz = gri.register_gridfunctions("AUXEVOL",["gammaUUxx","gammaUUyy","gammaUUzz"])
-    gamma_faceUUxx,gamma_faceUUyy,gamma_faceUUzz = gri.register_gridfunctions("AUXEVOL",["gamma_faceUUxx","gamma_faceUUyy","gamma_faceUUzz"])
+    gammaUU = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaUU","sym01",DIM=3)
 
     subdir = "RHSs"
     stgsrc.GiRaFFE_NRPy_Source_Terms(os.path.join(out_dir,subdir))
@@ -102,6 +101,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     alpha_face = gri.register_gridfunctions("AUXEVOL","alpha_face")
     gamma_faceDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gamma_faceDD","sym01")
     beta_faceU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","beta_faceU")
+    gamma_faceUU = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gamma_faceUU","sym01")
 
     # We'll need some more gridfunctions, now, to represent the reconstructions of BU and ValenciavU
     # on the right and left faces
@@ -109,6 +109,8 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     B_rU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_rU",DIM=3)
     Valenciav_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
     B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
+
+    Stilde_flux_HLLED = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Stilde_flux_HLLED")
 
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rrU",DIM=3)
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rlU",DIM=3)
@@ -120,12 +122,10 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     subdir = "RHSs"
     Af.GiRaFFE_NRPy_Afield_flux(os.path.join(out_dir, subdir))
 
-    gamma_faceUU = ixp.zerorank2()
-    gamma_faceUU[0][0] = gamma_faceUUxx
-    gamma_faceUU[1][1] = gamma_faceUUyy
-    gamma_faceUU[2][2] = gamma_faceUUzz
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
-                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi,write_cmax_cmin=True, gamma_faceUU=gamma_faceUU, phi_face=phi_face)
+                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,
+                                       Stilde_flux_HLLED, sqrt4pi,
+                                       write_cmax_cmin=True, gamma_faceUU=gamma_faceUU, phi_face=phi_face)
 
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
@@ -181,12 +181,11 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     phi_expression = sp.Rational(1,4)*sp.log(psi4)
     # Rescale gammaDD: gammabarDD = gammaDD/psi4
     gammabarDD = ixp.zerorank2(DIM=3)
+    gammabarUU = ixp.zerorank2(DIM=3)
     for i in range(3):
         for j in range(3):
             gammabarDD[i][j] = gammaDD[i][j]/psi4
-    gammabarUUxx = gammaUUxx*psi4
-    gammabarUUyy = gammaUUyy*psi4
-    gammabarUUzz = gammaUUzz*psi4
+            gammabarUU[i][j] = gammaUU[i][j]*psi4
     # Generate a kernel to convert to BSSN:
     # We'll convert the metric in place to ensure compatibility with our metric face interpolator
     values_to_print = [
@@ -197,9 +196,12 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=gammabarDD[1][2]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=gammabarDD[2][2]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","phi"),rhs=phi_expression),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUxx"),rhs=gammabarUUxx),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUyy"),rhs=gammabarUUyy),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUzz"),rhs=gammabarUUzz)
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU00"),rhs=gammabarUU[0][0]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU01"),rhs=gammabarUU[0][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU02"),rhs=gammabarUU[0][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU11"),rhs=gammabarUU[1][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU12"),rhs=gammabarUU[1][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU22"),rhs=gammabarUU[2][2])
                       ]
 
     desc = "Convert ADM metric to BSSN"
@@ -212,13 +214,12 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         rel_path_for_Cparams=os.path.join("./"))
 
     rescaled_gammaDD = ixp.zerorank2(DIM=3)
+    rescaled_gammaUU = ixp.zerorank2(DIM=3)
     for i in range(3):
         for j in range(3):
             # Here, gammaDD actually represents gammabarDD, but recall that we converted in place.
             rescaled_gammaDD[i][j] = gammaDD[i][j]*sp.exp(4*phi)
-    rescaled_gammaUUxx = gammaUUxx/sp.exp(4*phi)
-    rescaled_gammaUUyy = gammaUUyy/sp.exp(4*phi)
-    rescaled_gammaUUzz = gammaUUzz/sp.exp(4*phi)
+            rescaled_gammaUU[i][j] = gammaUU[i][j]/sp.exp(4*phi)
     # We'll convert the metric in place to ensure compatibility with our metric face interpolator
     values_to_print = [
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD00"),rhs=rescaled_gammaDD[0][0]),
@@ -227,9 +228,12 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=rescaled_gammaDD[1][1]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=rescaled_gammaDD[1][2]),
                        lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=rescaled_gammaDD[2][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUxx"),rhs=rescaled_gammaUUxx),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUyy"),rhs=rescaled_gammaUUyy),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUUzz"),rhs=rescaled_gammaUUzz)
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU00"),rhs=rescaled_gammaUU[0][0]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU01"),rhs=rescaled_gammaUU[0][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU02"),rhs=rescaled_gammaUU[0][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU11"),rhs=rescaled_gammaUU[1][1]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU12"),rhs=rescaled_gammaUU[1][2]),
+                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU22"),rhs=rescaled_gammaUU[2][2])
                       ]
 
     C_code_kernel = fin.FD_outputC("returnstring",values_to_print,params=outCparams)\
@@ -274,6 +278,7 @@ const int NUM_RECONSTRUCT_GFS = 15;
 #include "RHSs/calculate_Stilde_flux_D0.h"
 #include "RHSs/calculate_Stilde_flux_D1.h"
 #include "RHSs/calculate_Stilde_flux_D2.h"
+#include "RHSs/calculate_Stilde_rhsD.h"
 #include "boundary_conditions/GiRaFFE_boundary_conditions.h"
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
@@ -472,6 +477,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD0_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D0(params,auxevol_gfs,rhs_gfs);
+  calculate_Stilde_rhsD(flux_dirn+1,params,auxevol_gfs,rhs_gfs);
 
   // Note that we have already reconstructed vx and vy along the x-direction,
   //   at (i-1/2,j,k). That result is stored in v{x,y}{r,l}.  Bx_stagger data
@@ -576,6 +582,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD1_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D1(params,auxevol_gfs,rhs_gfs);
+  calculate_Stilde_rhsD(flux_dirn+1,params,auxevol_gfs,rhs_gfs);
 
   /*****************************************
    * COMPUTING RHS OF A_z, BOOKKEEPING NOTE:
@@ -722,6 +729,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   // This function is housed in the file: "add_fluxes_and_source_terms_to_hydro_rhss.C"
   calculate_StildeD2_source_term(params,auxevol_gfs,rhs_gfs);
   calculate_Stilde_flux_D2(params,auxevol_gfs,rhs_gfs);
+  calculate_Stilde_rhsD(flux_dirn+1,params,auxevol_gfs,rhs_gfs);
 
   // in_prims[{VYR,VYL,VZR,VZL}].gz_{lo,hi} ghostzones are not set correcty.
   //    We fix this below.

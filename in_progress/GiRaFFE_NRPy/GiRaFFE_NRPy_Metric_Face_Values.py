@@ -25,7 +25,7 @@ def GiRaFFE_NRPy_FCVAL(Ccodesdir):
 #define A1  -0.0625
 #define COMPUTE_FCVAL(METRICm2,METRICm1,METRIC,METRICp1) (AM2*(METRICm2) + AM1*(METRICm1) + A0*(METRIC) + A1*(METRICp1))
 
-const int metric_gfs_list[13] = {GAMMADD00GF,
+const int metric_gfs_list[16] = {GAMMADD00GF,
                                  GAMMADD01GF,
                                  GAMMADD02GF,
                                  GAMMADD11GF,
@@ -35,11 +35,14 @@ const int metric_gfs_list[13] = {GAMMADD00GF,
                                  BETAU1GF,
                                  BETAU2GF,
                                  ALPHAGF,
-                                 GAMMAUUXXGF,
-                                 GAMMAUUYYGF,
-                                 GAMMAUUZZGF};
+                                 GAMMAUU00GF,
+                                 GAMMAUU01GF,
+                                 GAMMAUU02GF,
+                                 GAMMAUU11GF,
+                                 GAMMAUU12GF,
+                                 GAMMAUU22GF};
 
-const int metric_gfs_face_list[13] = {GAMMA_FACEDD00GF,
+const int metric_gfs_face_list[16] = {GAMMA_FACEDD00GF,
                                       GAMMA_FACEDD01GF,
                                       GAMMA_FACEDD02GF,
                                       GAMMA_FACEDD11GF,
@@ -49,11 +52,14 @@ const int metric_gfs_face_list[13] = {GAMMA_FACEDD00GF,
                                       BETA_FACEU1GF,
                                       BETA_FACEU2GF,
                                       ALPHA_FACEGF,
-                                      GAMMA_FACEUUXXGF,
-                                      GAMMA_FACEUUYYGF,
-                                      GAMMA_FACEUUZZGF};
+                                      GAMMA_FACEUU00GF,
+                                      GAMMA_FACEUU01GF,
+                                      GAMMA_FACEUU02GF,
+                                      GAMMA_FACEUU11GF,
+                                      GAMMA_FACEUU12GF,
+                                      GAMMA_FACEUU22GF};
 
-const int num_metric_gfs = 13;
+const int num_metric_gfs = 16;
 """)
 
     desc = "Interpolate metric gridfunctions to cell faces"
