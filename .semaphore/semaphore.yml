@@ -1,0 +1,14 @@
+version: v1.0
+name: Python example
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu1804
+blocks:
+  - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
+    task:
+      jobs:
+        - name: Run some code
+          commands:
+            - pip install sympy==1.3 mpmath testfixtures
+            - ./UnitTesting/run_NRPy_UnitTests.sh python2
