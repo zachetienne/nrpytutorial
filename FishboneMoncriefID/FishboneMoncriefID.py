@@ -30,7 +30,8 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     kappa,gamma = par.Cparameters("REAL",thismodule,["kappa","gamma"], [1.0e-3, 4.0/3.0])
 
     # The return value from gri.register_gridfunctions("AUX","LorentzFactor") is unused, so we ignore it here:
-    gri.register_gridfunctions("AUX","LorentzFactor")
+    global LorentzFactor
+    LorentzFactor = gri.register_gridfunctions("AUX","LorentzFactor")
 
     def calculate_l_at_r(r):
         l  = sp.sqrt(M/r**3) * (r**4 + r**2*a**2 - 2*M*r*a**2 - a*sp.sqrt(M*r)*(r**2-a**2))
@@ -75,7 +76,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
     global hm1
     hm1 = sp.exp(ln_h + mln_h_in) - 1
 
-    global rho_initial
+    global rho_initial,Pressure_initial
     rho_initial,Pressure_initial = gri.register_gridfunctions("AUX",["rho_initial","Pressure_initial"])
 
     # Python 3.4 + sympy 1.0.0 has a serious problem taking the power here, hangs forever.
@@ -272,7 +273,7 @@ def FishboneMoncriefID(CoordSystem="Cartesian"):
         smallb2 += smallbU[i]*smallbD[i]
 
     ###############
-    LorentzFactor = alpha * uKS4U[0]
+    # LorentzFactor = alpha * uKS4U[0]
     # Define Valencia 3-velocity v^i_(n), which sets the 3-velocity as measured by normal observers to the spatial slice:
     #  v^i_(n) = u^i/(u^0*alpha) + beta^i/alpha. See eq 11 of https://arxiv.org/pdf/1501.07276.pdf
     Valencia3velocityU = ixp.zerorank1()
