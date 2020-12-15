@@ -18,7 +18,7 @@ for i in Tutorial-[A]*.ipynb Tutorial-[C-RT-Z]*.ipynb Tutorial-B[B-Z]*.ipynb Tut
 done
 
 # GiRaFFE unit tests:
-for i in in_progress/Tutorial-Start_to_Finish-GiRaFFE_NRPy-1D_tests-staggered.ipynb; do
+for i in in_progress/Tutorial-Start_to_Finish-GiRaFFE_NRPy-1D_tests-staggered.ipynb in_progress/Tutorial-Start_to_Finish_UnitTest*; do
     ./run_Jupyter_notebook.sh $i notimer
     cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i
     git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'|cdiff |cat
