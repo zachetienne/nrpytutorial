@@ -349,6 +349,7 @@ class Parser:
                 if substr_syntax[0][0] == lexeme or substr_syntax[0][1] == 'GROUP':
                     k, index, varmap = i, index - len(lexeme), {}
                     for j, (_lexeme, _token) in enumerate(substr_syntax, start=i):
+                        if k >= len(string_syntax): break
                         if _token == 'GROUP':
                             varmap[_lexeme] = string_syntax[k][1]
                             if _lexeme[-2] == '.':
@@ -360,7 +361,6 @@ class Parser:
                                         l += 1
                                     else:
                                         k, varmap[_lexeme] = l - 1, string
-                        elif k >= len(string_syntax): break
                         elif _lexeme != string_syntax[k][1]: break
                         if (j - i + 1) == len(substr_syntax):
                             new_repl = new

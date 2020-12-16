@@ -110,6 +110,13 @@ class TestParser(unittest.TestCase):
             str(parse_expr(expr)),
             "x_n**4 + xprime_n*exp(x_n*y_n**2)"
         )
+        Parser.clear_namespace()
+        parse(r""" % srepl "<1>'^{<2..>}" -> "\text{<1>prime}" """)
+        expr = r"v'^{label}"
+        self.assertEqual(
+            str(parse_expr(expr)),
+            "vprime"
+        )
 
     def test_assignment_1(self):
         Parser.clear_namespace()
