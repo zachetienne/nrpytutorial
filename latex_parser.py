@@ -2,9 +2,9 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow, Add
+from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow, Add, Mul
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
-from sympy import pi, exp, log, sqrt, expand, diff
+from sympy import pi, exp, log, sqrt, expand, diff, srepr
 from inspect import currentframe
 from functional import uniquify
 from expr_tree import ExprTree
@@ -14,7 +14,9 @@ import re, sys, warnings
 # pylint: disable = attribute-defined-outside-init, protected-access, exec-used
 sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', cosh), ('tanh', tanh),
     ('asin', asin), ('acos', acos), ('atan', atan), ('asinh', asinh), ('acosh', acosh), ('atanh', atanh),
-    ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt), ('diff', diff))
+    ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt), ('diff', diff),
+    ('Add', Add), ('Mul', Mul), ('Integer', Integer), ('Rational', Rational), ('Float', Float),
+    ('Pow', Pow), ('Symbol', Symbol), ('Function', Function), ('Derivative', Derivative))
 
 class Lexer:
     """ LaTeX Lexer
@@ -34,14 +36,14 @@ class Lexer:
         self.token_dict = [
             ('WHITESPACE',      r'\s+'),
             ('STRING',          r'\"[^\"]+\"'),
+            ('GROUP',           r'\<[0-9]+(\.{2})?\>'),
             ('DIMENSION',       r'[2-9][0-9]*D'),
             ('VARIABLE',        r'[a-zA-Z]+[UD]+'),
-            ('TOKEN_GROUP',     r'\<[1-9][0-9]*\>'),
             ('RATIONAL',        r'\-?[0-9]+\/\-?[1-9][0-9]*'),
             ('DECIMAL',         r'\-?[0-9]+\.[0-9]+'),
             ('INTEGER',         r'\-?[0-9]+'),
-            ('PLUS',            r'\+'),
             ('ARROW',           r'\-\>'),
+            ('PLUS',            r'\+'),
             ('MINUS',           r'\-'),
             ('DIVIDE',          r'\/'),
             ('EQUAL',           r'\='),
@@ -85,7 +87,7 @@ class Lexer:
             ('PI',              r'\\pi'),
             ('LETTER',          r'[a-zA-Z]|' + alphabet),
             ('COMMAND',         r'\\[a-zA-Z]+'),
-            ('LINE_BREAK',      r'\\\\'),
+            ('RETURN',          r'\\{2}'),
             ('ESCAPE',          r'\\')]
         self.regex = re.compile('|'.join(['(?P<%s>%s)' % pattern for pattern in self.token_dict]))
         self.token_dict = dict(self.token_dict)
@@ -150,8 +152,8 @@ class Parser:
         The following class will parse a tokenized LaTeX sentence.
 
         LaTeX Extended BNF Grammar:
-        <LATEX>         -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
-        <ALIGN>         -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
+        <LATEX>         -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <RETURN> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
+        <ALIGN>         -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <RETURN> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
         <CONFIG>        -> <COMMENT> <MACRO> { <SEMICOLON> <MACRO> }*
         <MACRO>         -> <PARSE> | <SREPL> | <ASSIGN> | <DEFINE> | <IGNORE>
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT> { ',' <ASSIGNMENT> }*
@@ -269,7 +271,7 @@ class Parser:
         self._latex()
         return self._namespace
 
-    # <LATEX> -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
+    # <LATEX> -> ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) { [ <RETURN> ] ( <ALIGN> | <CONFIG> | <ASSIGNMENT> ) }*
     def _latex(self):
         while self.lexer.lexeme:
             if self.peek('OPENING'):
@@ -278,16 +280,16 @@ class Parser:
             elif self.peek('COMMENT'):
                 self._config()
             else: self._assignment()
-            if self.accept('LINE_BREAK'): pass
+            if self.accept('RETURN'): pass
 
-    # <ALIGN> -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <LINE_BREAK> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
+    # <ALIGN> -> <OPENING> ( <CONFIG> | <ASSIGNMENT> ) { [ <RETURN> ] ( <CONFIG> | <ASSIGNMENT> ) }* <CLOSING>
     def _align(self):
         self.expect('OPENING')
         while not self.accept('CLOSING'):
             if self.peek('COMMENT'):
                 self._config()
             else: self._assignment()
-            if self.accept('LINE_BREAK'): pass
+            if self.accept('RETURN'): pass
 
     # <CONFIG> -> <COMMENT> <MACRO> { <SEMICOLON> <MACRO> }*
     def _config(self):
@@ -344,20 +346,31 @@ class Parser:
                 string_syntax.append((self.lexer.index, self.lexer.lexeme, token))
             i_1 = i_2 = offset = 0
             for i, (index, lexeme, token) in enumerate(string_syntax):
-                if substr_syntax[0][0] == lexeme or substr_syntax[0][1] == 'TOKEN_GROUP':
-                    index, namespace = index - len(lexeme), {}
+                if substr_syntax[0][0] == lexeme or substr_syntax[0][1] == 'GROUP':
+                    k, index, varmap = i, index - len(lexeme), {}
                     for j, (_lexeme, _token) in enumerate(substr_syntax, start=i):
-                        if _token == 'TOKEN_GROUP':
-                            namespace[_lexeme] = string_syntax[j][1]
-                        elif j >= len(string_syntax) or _lexeme != string_syntax[j][1]: break
+                        if _token == 'GROUP':
+                            varmap[_lexeme] = string_syntax[k][1]
+                            if _lexeme[-2] == '.':
+                                l, string = k + 1, varmap[_lexeme]
+                                if l < len(string_syntax) and j - i + 1 < len(substr_syntax):
+                                    while string_syntax[l][1] != substr_syntax[j - i + 1][0]:
+                                        string += string_syntax[l][1]
+                                        if l + 1 >= len(string_syntax): break
+                                        l += 1
+                                    else:
+                                        k, varmap[_lexeme] = l - 1, string
+                        elif k >= len(string_syntax): break
+                        elif _lexeme != string_syntax[k][1]: break
                         if (j - i + 1) == len(substr_syntax):
                             new_repl = new
-                            for var in namespace:
-                                new_repl = new_repl.replace(var, namespace[var])
-                            i_1, i_2 = index + offset, string_syntax[j][0] + offset
+                            for var in varmap:
+                                new_repl = new_repl.replace(var, varmap[var])
+                            i_1, i_2 = index + offset, string_syntax[k][0] + offset
                             old_repl = sentence[i_1:i_2]
                             sentence = sentence[:i_1] + new_repl + sentence[i_2:]
                             offset += len(new_repl) - len(old_repl)
+                        k += 1
             self.lexer.sentence, self.lexer.marker = sentence, position
             self.lexer.reset()
             if not self.accept('COMMA'): break
@@ -533,8 +546,8 @@ class Parser:
 
     # <ASSIGNMENT> -> <OPERATOR> = <EXPRESSION>
     def _assignment(self):
-        LHS = self._operator('LHS')
-        indexed = LHS.func == Function('Tensor') and len(LHS.args) > 1
+        function = self._operator('LHS')
+        indexed = function.func == Function('Tensor') and len(function.args) > 1
         self.expect('EQUAL')
         sentence, position = self.lexer.sentence, self.lexer.mark()
         tree = ExprTree(self._expression())
@@ -544,17 +557,9 @@ class Parser:
                 subexpr, rank = subtree.expr, len(subtree.expr.args)
                 if subexpr.func == Function('Tensor') and rank > 1:
                     indexed = True
-        function, RHS = LHS, expand(tree.root.expr)
-        if indexed:
-            # perform implied summation on indexed expression
-            (LHS, RHS), dimension = self._summation(LHS, RHS)
-        else:
-            for subtree in tree.preorder():
-                subexpr = subtree.expr
-                if subexpr.func in (Function('Tensor'), Function('Constant')):
-                    subtree.expr = subexpr.args[0]
-                    del subtree.children[:]
-            (LHS, RHS), dimension = (LHS.args[0], tree.reconstruct()), 0
+        LHS, RHS = function, expand(tree.root.expr) if indexed else tree.root.expr
+        # perform implied summation on indexed expression
+        (LHS, RHS), dimension = self._summation(LHS, RHS)
         global_env = dict(sympy_env)
         global_env.update(self._namespace)
         for key in global_env:
@@ -565,7 +570,7 @@ class Parser:
         del global_env['range']
         # evaluate every implied summation and update namespace
         exec('%s = %s' % (LHS, RHS), global_env)
-        symbol = LHS.split('[')[0] if indexed else str(LHS)
+        symbol = Tensor.extract(function)[0] if indexed else LHS
         derivative = self._namespace[symbol].derivative if symbol in self._namespace else None
         tensor = Tensor(function, dimension, structure=global_env[symbol], derivative=derivative)
         _, indexing = Tensor.extract(function)
@@ -1263,10 +1268,10 @@ class Parser:
                             raise ParseError('inconsistent indexing range for index \'%s\'' %
                                 index, self.lexer.sentence)
                         idx_map[str(index)] = (lower, upper)
-                    sentence = sentence.replace(str(subexpr), tensor.array_format(subexpr))
+                    sentence = sentence.replace(srepr(subexpr), tensor.array_format(subexpr))
                 elif subexpr.func == Function('Constant'):
                     symbol = str(subexpr.args[0])
-                    sentence = sentence.replace(str(subexpr), symbol)
+                    sentence = sentence.replace(srepr(subexpr), symbol)
             return sentence
         def separate_indexing(subexpr):
             # extract every index present in the subexpression
@@ -1298,7 +1303,7 @@ class Parser:
                 else: free_index.extend(index_tuple)
             return uniquify(free_index), bound_index
         iterable = RHS.args if RHS.func == Add else [RHS]
-        LHS, RHS = Tensor(LHS, None).array_format(LHS), str(RHS)
+        LHS, RHS = Tensor(LHS, None).array_format(LHS), srepr(RHS)
         # count every index on LHS to determine the rank
         rank = len(re.findall(r'\[[^\]]+\]', LHS))
         # construct a tuple list of every LHS free index
@@ -1306,7 +1311,7 @@ class Parser:
         # construct a tuple list of every RHS free index
         free_index_RHS = []
         for element in iterable:
-            original, idx_map = str(element), {}
+            original, idx_map = srepr(element), {}
             if original[0] == '-':
                 original = original[1:]
             modified = original
@@ -1315,8 +1320,8 @@ class Parser:
                 subexpr = subtree.expr
                 if subexpr.func == Derivative:
                     argument = subexpr.args[0]
-                    derivative = 'diff(' + str(argument)
-                    argument = replace_function(str(argument), argument, idx_map)
+                    derivative = 'diff(' + srepr(argument)
+                    argument = replace_function(srepr(argument), argument, idx_map)
                     free_index, _ = separate_indexing(argument)
                     for idx, _ in reversed(free_index):
                         lower, upper = idx_map[idx]
@@ -1337,7 +1342,7 @@ class Parser:
                             derivative += ', (basis[%s], %s)' % (index, order)
                         else: derivative += ', (%s, %s)' % (index, order)
                     derivative += ')'
-                    modified = modified.replace(str(subexpr), derivative)
+                    modified = modified.replace(srepr(subexpr), derivative)
             modified = replace_function(modified, element, idx_map)
             free_index, bound_index = separate_indexing(modified)
             free_index_RHS.append(free_index)

@@ -99,13 +99,16 @@ class TestParser(unittest.TestCase):
     def test_alias_macro(self):
         Parser.clear_namespace()
         parse(r"""
+            % srepl "<1>'" -> "\text{<1>prime}"
+            % srepl "\text{<1..>}_<2>" -> "\text{(<1..>)<2>}"
             % srepl "<1>_{<2>}" -> "<1>_<2>", "<1>_<2>" -> "\text{<1>_<2>}"
+            % srepl "\text{(<1..>)<2>}" -> "\text{<1..>_<2>}"
             % srepl "<1>^{<2>}" -> "<1>^<2>", "<1>^<2>" -> "<1>^{{<2>}}"
         """)
-        expr = r'x_n^4 + \exp(x_n y_n^2)'
+        expr = r"x_n^4 + x'_n \exp(x_n y_n^2)"
         self.assertEqual(
             str(parse_expr(expr)),
-            'x_n**4 + exp(x_n*y_n**2)'
+            "x_n**4 + xprime_n*exp(x_n*y_n**2)"
         )
 
     def test_assignment_1(self):
