@@ -12,6 +12,7 @@ blocks:
           commands:
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff
+            - export PATH=$PATH:/home/semaphore/.local/bin
             - pip install -U pip setuptools
             - pip install testfixtures sympy mpmath jupyter matplotlib scipy
             - git clone https://github.com/zachetienne/nrpytutorial.git
