@@ -18,6 +18,7 @@ blocks:
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+blocks:
   - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
     task:
       jobs:
