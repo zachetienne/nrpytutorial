@@ -1,11 +1,12 @@
 version: v1.0
-name: Python example
+name: NRPy+ CI
 agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu1804
 blocks:
   - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Xenial CPython 2.7 (Python 2.7 + latest stable SymPy)"
+    dependencies: []
     task:
       jobs:
         - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Xenial CPython 2.7 (Python 2.7 + latest stable SymPy)"
@@ -18,8 +19,8 @@ blocks:
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
-blocks:
   - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
+    dependencies: []
     task:
       jobs:
         - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
