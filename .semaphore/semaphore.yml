@@ -3,19 +3,25 @@ name: NRPy+ CI
 agent:
   machine:
     type: e1-standard-2
-    os_image: ubuntu1804
+#    os_image: ubuntu1804
+  containers:
+    - name: main
+#      https://docs.semaphoreci.com/ci-cd-environment/semaphore-registry-images/#python
+      image: 'registry.semaphoreci.com/python:3.9'
+
 blocks:
-  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 2.7 (Python 2.7 + latest stable SymPy)"
+  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.9 (Python 3.9 + latest stable SymPy)"
     dependencies: []
     task:
       jobs:
-        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 2.7 (Python 2.7 + latest stable SymPy)"
+        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.9 (Python 3.9 + latest stable SymPy)"
           commands:
+            - sem-version python 3.9
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
             - export PATH=$PATH:/home/semaphore/.local/bin
-            - pip install -U pip setuptools
-            - pip install testfixtures sympy mpmath jupyter matplotlib scipy
+            - pip3 install -U pip setuptools
+            - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - gcc --version
