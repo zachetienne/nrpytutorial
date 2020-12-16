@@ -10,6 +10,7 @@ blocks:
       jobs:
         - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Xenial CPython 2.7 (Python 2.7 + latest stable SymPy)"
           commands:
+            - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff
             - pip install -U pip setuptools
             - pip install testfixtures sympy mpmath jupyter matplotlib scipy
