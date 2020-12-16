@@ -4,20 +4,26 @@ agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu1804
+#  containers:
+#    - name: main
+#      https://docs.semaphoreci.com/ci-cd-environment/semaphore-registry-images/#python
+#      image: 'registry.semaphoreci.com/python:3.9'
+
 blocks:
-  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 2.7 (Python 2.7 + latest stable SymPy)"
+  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
     dependencies: []
     task:
       jobs:
-        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 2.7 (Python 2.7 + latest stable SymPy)"
+        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
           commands:
             - sudo apt-get update
-            - sudo apt-get -y install texlive-latex-base pandoc colordiff
+            - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
             - export PATH=$PATH:/home/semaphore/.local/bin
-            - pip install -U pip setuptools
-            - pip install testfixtures sympy mpmath jupyter matplotlib scipy
+            - pip3 install -U pip setuptools
+            - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
+            - gcc --version
             - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
   - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
     dependencies: []
@@ -25,6 +31,7 @@ blocks:
       jobs:
         - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
           commands:
+            - sem-version python 2.7
             - pip install -U pip setuptools
             - pip install sympy==1.3 mpmath testfixtures
             - git clone https://github.com/zachetienne/nrpytutorial.git
