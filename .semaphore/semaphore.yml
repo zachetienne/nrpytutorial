@@ -10,5 +10,9 @@ blocks:
       jobs:
         - name: Run some code
           commands:
+            - pip install -U pip setuptools
             - pip install sympy==1.3 mpmath testfixtures
+            - ls ~/
+            - echo hi
+            - ls
             - ./UnitTesting/run_NRPy_UnitTests.sh python2
