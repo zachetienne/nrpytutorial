@@ -1,4 +1,4 @@
-from outputC import outCfunction, outputC, lhrh # NRPy+: Core C code output module
+from outputC import outCfunction, lhrh # NRPy+: Core C code output module
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import finite_difference as fin  # NRPy+: Finite difference C code generation module
