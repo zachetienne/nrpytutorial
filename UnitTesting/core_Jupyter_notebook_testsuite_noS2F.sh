@@ -11,7 +11,9 @@ for i in Tutorial-[A]*.ipynb Tutorial-[C-RT-Z]*.ipynb Tutorial-B[B-Z]*.ipynb Tut
     if [ $i != "Tutorial-Start_to_Finish-BSSNCurvilinear-Neutron_Star-Hydro_without_Hydro.ipynb" ] && [ $i != "Tutorial-ETK_thorn-WaveToyNRPy.ipynb" ]; then
         ./run_Jupyter_notebook.sh $i notimer
         cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i
-        git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'|cdiff |cat
+        git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'| \
+            grep -v "metadata\":"|grep -v "\"execution\":"|grep -v "\"iopub."| \
+            grep -v "\"shell.execute"|grep -v "\"version\":"|grep -v "   }"$|grep -v "   },"$| cdiff |cat
         #    git diff $i | grep -v "image/png" | cdiff | cat
         #    echo Number of lines different in the git diff: `git diff|grep -v image/png|wc -l`
     fi

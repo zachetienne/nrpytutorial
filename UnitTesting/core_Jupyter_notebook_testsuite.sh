@@ -23,7 +23,9 @@ done
 for i in in_progress/Tutorial-Start_to_Finish-GiRaFFE_NRPy-1D_tests-staggered.ipynb in_progress/Tutorial-Start_to_Finish_UnitTest*; do
     ./run_Jupyter_notebook.sh $i notimer
     cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i
-    git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'|cdiff |cat
+    git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'| \
+        grep -v "metadata\":"|grep -v "\"execution\":"|grep -v "\"iopub."| \
+        grep -v "\"shell.execute"|grep -v "\"version\":"|grep -v "   }"$|grep -v "   },"$| cdiff |cat
 done
 # ./run_Jupyter_notebook.sh Tutorial-Finite_Difference_Derivatives.ipynb && git diff Tutorial-Finite_Difference_Derivatives.ipynb && \
 # ./run_Jupyter_notebook.sh Tutorial-Numerical_Grids.ipynb && git diff Tutorial-Numerical_Grids.ipynb && \
