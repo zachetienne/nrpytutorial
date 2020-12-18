@@ -242,12 +242,21 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     desc = "Convert BSSN metric to ADM"
     name = "Workaround_BSSN_to_ADM"
+    outCfunction(
+        outfile  = os.path.join(out_dir,name+".h"), desc=desc, name=name,
+        params   ="const paramstruct *params,REAL *auxevol_gfs",
+        body     = C_code_kernel,
+        loopopts ="AllPoints",
+        rel_path_for_Cparams=os.path.join("./"))
+
+    desc = "Convert BSSN metric to ADM on the cell faces"
+    name = "Workaround_BSSN_to_ADM_face"
     Ccode_function = outCfunction(
         outfile  = "returnstring", desc=desc, name=name,
         params   ="const paramstruct *params,REAL *auxevol_gfs",
-        body     = C_code_kernel+"\n"+C_face_kernel,
-    loopopts ="InteriorPoints",
-    rel_path_for_Cparams=os.path.join("./")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
+        body     = C_face_kernel,
+        loopopts ="InteriorPoints",
+        rel_path_for_Cparams=os.path.join("./")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
     with open(os.path.join(out_dir,name+".h"),"w") as file:
         file.write(Ccode_function)
 
@@ -284,6 +293,7 @@ const int NUM_RECONSTRUCT_GFS = 15;
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
 #include "Workaround_ADM_to_BSSN.h"
 #include "Workaround_BSSN_to_ADM.h"
+#include "Workaround_BSSN_to_ADM_face.h"
 
 /*void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
 #include "set_Cparameters.h"
@@ -446,6 +456,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
 #ifdef WORKAROUND_ENABLED
   Workaround_BSSN_to_ADM(params,auxevol_gfs);
+  Workaround_BSSN_to_ADM_face(params,auxevol_gfs);
 #endif /*WORKAROUND_ENABLED*/
   // ftilde = 0 in GRFFE, since P=rho=0.
 
@@ -565,6 +576,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
 #ifdef WORKAROUND_ENABLED
   Workaround_BSSN_to_ADM(params,auxevol_gfs);
+  Workaround_BSSN_to_ADM_face(params,auxevol_gfs);
 #endif /*WORKAROUND_ENABLED*/
   ww=0;
   // Reconstruct other primitives last!
@@ -634,11 +646,11 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
         const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
         const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
         const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
-        psi6center[index] = sqrt( gxx*gyy*gzz
-                               -  gxx*gyz*gyz
-                               +2*gxy*gxz*gyz
-                               -  gyy*gxz*gxz
-                               -  gzz*gxy*gxy );
+        psi6center[index] = log(sqrt( gxx*gyy*gzz
+                                   -  gxx*gyz*gyz
+                                   +2*gxy*gxz*gyz
+                                   -  gyy*gxz*gxz
+                                   -  gzz*gxy*gxy ))/6.0;
       }
 #pragma omp parallel for
   for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
@@ -712,6 +724,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
 #ifdef WORKAROUND_ENABLED
   Workaround_BSSN_to_ADM(params,auxevol_gfs);
+  Workaround_BSSN_to_ADM_face(params,auxevol_gfs);
 #endif /*WORKAROUND_ENABLED*/
   // Reconstruct other primitives last!
   ww=0;

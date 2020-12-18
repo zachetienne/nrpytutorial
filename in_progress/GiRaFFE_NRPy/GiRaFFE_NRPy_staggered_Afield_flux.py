@@ -74,7 +74,7 @@ static void A_i_rhs_no_gauge_terms(const int A_dirn,const paramstruct *params,gf
         const int index_B2=IDX3S(i+B2_ijk_offset[A_dirn][0],j+B2_ijk_offset[A_dirn][1],k+B2_ijk_offset[A_dirn][2]);
 
         // Stores 1/sqrt(gamma)==exp(6 phi) at (i+1/2,j+1/2,k) for Az, (i+1/2,j,k+1/2) for Ay, and (i,j+1/2,k+1/2) for Az.
-        const REAL psi6_interped=psi6_pointer[index];
+        const REAL psi6_interped=exp(6.0*(psi6_pointer[index]));
 
         const REAL B1lL = B1l[index_B1];
         const REAL B1rL = B1r[index_B1];
