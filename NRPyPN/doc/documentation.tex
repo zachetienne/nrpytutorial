@@ -90,7 +90,7 @@
 % the date your document was last changed, if your document is in CVS,
 % please use:
 %    \date{$ $Date$ $}
-\date{November 12, 2020}
+\date{December 22, 2020}
 
 \maketitle
 
@@ -99,38 +99,6 @@
 
 % Add all definitions used in this documentation here
 %   \def\mydef etc
-\newcommand{\beq}{\begin{equation}}
-\newcommand{\eeq}{\end{equation}}
-\newcommand{\beqn}{\begin{eqnarray}}
-\newcommand{\eeqn}{\end{eqnarray}}
-\newcommand{\half} {{1\over 2}}
-\newcommand{\sgam} {\sqrt{\gamma}}
-\newcommand{\tB}{\tilde{B}}
-\newcommand{\tS}{\tilde{S}}
-\newcommand{\tF}{\tilde{F}}
-\newcommand{\tf}{\tilde{f}}
-\newcommand{\tT}{\tilde{T}}
-\newcommand{\sg}{\sqrt{\gamma}\,}
-\newcommand{\ve}[1]{\mbox{\boldmath $#1$}}
-
-\newcommand{\GiR}{{\texttt{GiRaFFE}}}
-\newcommand{\IGM}{{\texttt{IllinoisGRMHD}}}
-
-\linespread{1.0}
-
-\newenvironment{packed_itemize}{
-\begin{itemize}
-  \setlength{\itemsep}{0.0pt}
-  \setlength{\parskip}{0.0pt}
-  \setlength{\parsep}{ 0.0pt}
-}{\end{itemize}}
-
-\newenvironment{packed_enumerate}{
-\begin{enumerate}
-  \setlength{\itemsep}{0.0pt}
-  \setlength{\parskip}{0.0pt}
-  \setlength{\parsep}{ 0.0pt}
-}{\end{enumerate}}
 
 % Add an abstract for this thorn's documentation
 Post-Newtonian theory results in some of the longest and most complex
@@ -165,10 +133,20 @@ parameters for low-eccentricity binary black hole initial data, as
 computed by the \texttt{TwoPunctures} thorn. The interface for
 accomplishing this is provided by at the bottom of the
 well-documented, interactive Jupyter notebook located at
-\texttt{EinsteinInitialData/NRPyPN/NRPyPN.ipynb} in the
-\texttt{Einstein Toolkit}. Instructions for getting the Jupyter
-notebook up and running are provided in the
-\texttt{EinsteinInitialData/NRPyPN/README} file.
+\texttt{NRPyPN.ipynb} in the Einstein Toolkit. Instructions for
+getting the Jupyter notebook up and running are provided in the
+\texttt{README} file.
+
+If you do not have Jupyter installed the online version
+at~\cite{EinsteinInitialData_NRPyPN_MyBinder} may be used instead.
+
+\begin{thebibliography}{9}
+
+\bibitem{EinsteinInitialData_NRPyPN_MyBinder}
+MyBinder online NRPyPN notebook,
+\url{https://mybinder.org/v2/gh/zachetienne/nrpytutorial/master?filepath=NRPyPN%2FNRPyPN.ipynb}.
+
+\end{thebibliography}
 
 
 % Do not delete next line
