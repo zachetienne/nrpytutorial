@@ -2,10 +2,11 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
-# pylint: disable = import-error, protected-access
+# pylint: disable = import-error, protected-access, exec-used
 # import sys; sys.path.append('..')
 from latex_parser import Tensor, Parser, parse_expr, parse
 from sympy import Function, Symbol, Matrix, simplify
+from UnitTesting.assert_equal import assert_equal
 import unittest, sys
 
 class TestParser(unittest.TestCase):
@@ -96,7 +97,7 @@ class TestParser(unittest.TestCase):
             r'\mathcal{L}_\text{beta} g_{i j} = \text{beta}^a \partial_a g_{i j} + (\partial_i \text{beta}^a) g_{a j} + (\partial_j \text{beta}^a) g_{i a}'
         )
 
-    def test_alias_macro(self):
+    def test_srepl_macro(self):
         Parser.clear_namespace()
         parse(r"""
             % srepl "<1>'" -> "\text{<1>prime}"
@@ -123,7 +124,9 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define vU (2D), wU (2D)
-                T^{ab}_c = \vphantom{numeric} \partial_c (v^a w^b)
+                % assign numeric vU, wU
+                % define index [a-z] (2D)
+                T^{ab}_c = \partial_c (v^a w^b)
             """)),
             {'vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD'}
         )
@@ -136,7 +139,9 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define vU (2D), const w
-                T^a_c = \vphantom{numeric} \partial_c (v^a w)
+                % assign numeric vU
+                % define index [a-z] (2D)
+                T^a_c = \partial_c (v^a w)
             """)),
             {'vU', 'vU_dD', 'TUD'}
         )
@@ -149,7 +154,9 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define metric gDD (4D), vU (4D)
-                T^{ab} = \vphantom{numeric} \nabla^b v^a
+                % assign numeric gDD, vU
+                % define index [a-z] (4D)
+                T^{ab} = \nabla^b v^a
             """)),
             {'gUU', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
         )
@@ -159,11 +166,12 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define basis [x, y]
-                % define uD (2D), numeric wD (2D)
+                % define uD (2D), wD (2D)
+                % define index [a-z] (2D)
                 u_0 = x^{{2}} + 2x \\
                 u_1 = y\sqrt{x} \\
                 v_a = u_a + w_a \\
-                % assign numeric vD
+                % assign numeric wD, vD
                 T_{ab} = \partial^2_x v_0 (\partial_b v_a)
             """)),
             {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
@@ -177,16 +185,18 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                 % define basis [x, y]
-                % define symbolic uD (2D), wD (2D)
+                % define uD (2D), wD (2D)
+                % assign symbolic <H> uD
+                % define index [a-z] (2D)
                 u_0 = x^{{2}} + 2x \\
                 u_1 = y\sqrt{x} \\
                 v_a = u_a + w_a \\
-                T_{ab} = \vphantom{numeric} \partial_b v_a
+                T_{ab} = \partial^2_x v_0 (\vphantom{numeric} \partial_b v_a)
             """)),
             {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
         )
         self.assertEqual(str(TDD),
-            '[[wD_dD00 + 2*x + 2, wD_dD01], [wD_dD10 + y/(2*sqrt(x)), wD_dD11 + sqrt(x)]]'
+            '[[2*wD_dD00 + 4*x + 4, 2*wD_dD01], [2*wD_dD10 + y/sqrt(x), 2*wD_dD11 + 2*sqrt(x)]]'
         )
 
     def test_assignment_6(self):
@@ -194,6 +204,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(
             set(parse(r"""
                     % define vD (2D), uD (2D), wD (2D)
+                    % define index [a-z] (2D)
                     T_{abc} = \vphantom{numeric} ((v_a + u_a)_{,b} - w_{a,b})_{,c}
             """)),
             {'vD', 'uD', 'wD', 'TDDD', 'uD_dD', 'vD_dD', 'wD_dD', 'wD_dDD', 'uD_dDD', 'vD_dDD'}
@@ -207,6 +218,7 @@ class TestParser(unittest.TestCase):
         parse(r"""
             % define basis [\theta, \phi]
             % define const r, deltaDD (2D)
+            % define index [a-z] (2D)
             % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align*}
                 g_{0 0} &= r^{{2}} \\
@@ -262,8 +274,8 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define range [i-j] = 0:1
                 % define nosym TUU (3D), vD (2D)
+                % define index i (2D)
                 w^\mu = T^{\mu i} v_i
             """)),
             {'TUU', 'vD', 'wU'}
@@ -451,11 +463,43 @@ class TestParser(unittest.TestCase):
             all(component == 0 for component in pD)
         )
 
+    @staticmethod
+    def test_example_BSSN():
+        import NRPy_param_funcs as par, reference_metric as rfm, BSSN.BSSN_RHSs as Brhs
+        Parser.clear_namespace()
+        parse(r"""
+            % define deltaDD (3D), sym01 hDD (3D), sym01 aDD (3D), vetU (3D)
+            % parse \hat{\gamma}_{ij} = \delta_{ij}
+            % assign symbolic <H> gammahatDD
+            % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij}
+            % assign numeric hDD, aDD, vetU, gammabarDD
+            % assign metric gammahatDD, gammabarDD
+            % srepl "\bar{A}" -> "a", "\beta" -> "\text{vet}"
+            % parse \bar{A}^i_j = \bar{\gamma}^{ik} \bar{A}_{kj}
+            \begin{align}
+                % define basis [x, y, z]
+                %% parse \partial_k \bar{\gamma}_{ij} = \vphantom{upwind} \partial_k h_{ij} + \partial_k \hat{\gamma}_{ij}
+                % srepl "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{upwind} \partial_<1>" %% (inside Lie derivative expansion)
+                % srepl "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\text{vet}^k \vphantom{symbolic} \partial_k \text{gammabardet}}{2 \text{gammabardet}})"
+                % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
+                \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
+                    + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right) - 2 \alpha \bar{A}_{ij}
+                % srepl "K" -> "\text{trK}", "\phi" -> "\text{cf}", "\partial_t \text{cf}" -> "\text{cf_rhs}"
+                \partial_t \phi &= \mathcal{L}_\beta \phi - \frac{1}{3} \phi \left(\bar{D}_k \beta^k - \alpha K \right)
+            \end{align}
+        """)
+        par.set_parval_from_str('reference_metric::CoordSystem', 'Cartesian')
+        rfm.reference_metric(); Brhs.BSSN_RHSs()
+        assert_equal({'h_rhsDD': h_rhsDD,
+                      'cf_rhs': cf_rhs},
+                     {'h_rhsDD': Brhs.h_rhsDD,
+                      'cf_rhs': Brhs.cf_rhs})
+
 if __name__ == '__main__':
     suite = unittest.TestSuite()
     for i in range(6):
         suite.addTest(TestParser('test_expression_' + str(i + 1)))
-    suite.addTest(TestParser('test_alias_macro'))
+    suite.addTest(TestParser('test_srepl_macro'))
     for i in range(8):
         suite.addTest(TestParser('test_assignment_' + str(i + 1)))
     for i in range(6):
@@ -464,5 +508,6 @@ if __name__ == '__main__':
             suite.addTest(TestParser('test_example_' + str(i + 1) + '_2'))
         else:
             suite.addTest(TestParser('test_example_' + str(i + 1)))
+    suite.addTest(TestParser('test_example_BSSN'))
     result = unittest.TextTestRunner().run(suite)
     sys.exit(not result.wasSuccessful())

@@ -9,7 +9,8 @@ from inspect import currentframe
 from functional import uniquify
 from expr_tree import ExprTree
 import indexedexp as ixp
-import re, sys, warnings
+import os, sys, warnings
+import re, json, shutil
 
 # pylint: disable = attribute-defined-outside-init, protected-access, exec-used
 sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', cosh), ('tanh', tanh),
@@ -17,6 +18,9 @@ sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', 
     ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt), ('diff', diff),
     ('Add', Add), ('Mul', Mul), ('Integer', Integer), ('Rational', Rational), ('Float', Float),
     ('Pow', Pow), ('Symbol', Symbol), ('Function', Function), ('Derivative', Derivative))
+
+if not os.path.isfile('config_backup.json'):
+    shutil.copyfile('config_default.json', 'config_backup.json')
 
 class Lexer:
     """ LaTeX Lexer
@@ -76,10 +80,10 @@ class Lexer:
             ('IGNORE_MACRO',    r'ignore'),
             ('PARSE_MACRO',     r'parse'),
             ('SREPL_MACRO',     r'srepl'),
-            ('RANGE_KWRD',      r'range'),
+            ('INDEX_KWRD',      r'index'),
             ('BASIS_KWRD',      r'basis'),
-            ('DERIV_KWRD',      r'deriv'),
-            ('DERIVATIVE',      r'symbolic|numeric|upwind'),
+            ('DRV_TYPE',        r'symbolic|numeric|upwind'),
+            ('PRIORITY',        r'\<L\>|\<H\>'),
             ('DIACRITIC',       r'\\hat|\\tilde|\\bar'),
             ('VPHANTOM',        r'\\vphantom'),
             ('SYMMETRY',        r'const|metric|' + symmetry),
@@ -158,13 +162,13 @@ class Parser:
         <MACRO>         -> <PARSE> | <SREPL> | <ASSIGN> | <DEFINE> | <IGNORE>
         <PARSE>         -> <PARSE_MACRO> <ASSIGNMENT> { ',' <ASSIGNMENT> }*
         <SREPL>         -> <SREPL_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
-        <ASSIGN>        -> <ASSIGN_MACRO> ( <DERIVATIVE | <SYMMETRY> | <WEIGHT> <NUMBER> ) ( <LETTER> | <VARIABLE> )
+        <ASSIGN>        -> <ASSIGN_MACRO> ( <SYMMETRY> | <DRV_TYPE> [ <PRIORITY> ] | <WEIGHT> <NUMBER> ) <VARIABLE> { ',' <VARIABLE> }*
         <DEFINE>        -> <DEFINE_MACRO> ( <VARDEF> | <KEYDEF> ) { ',' ( <VARDEF> | <KEYDEF> ) }*
         <IGNORE>        -> <IGNORE_MACRO> <STRING> { ',' <STRING> }*
-        <VARDEF>        -> [ <DERIVATIVE> ] [ <SYMMETRY> ] ( <LETTER> | <VARIABLE> ) [ '(' <DIMENSION> ')' ]
-        <KEYDEF>        -> <BASIS_KWRD> <BASIS> | <DERIV_KWRD> <DERIVATIVE> | <RANGE_KWRD> <RANGE>
+        <VARDEF>        -> [ <SYMMETRY> ] ( <LETTER> | <VARIABLE> ) [ '(' <DIMENSION> ')' ]
+        <KEYDEF>        -> <BASIS_KWRD> <BASIS> | <INDEX_KWRD> <INDEX>
         <BASIS>         -> <BASIS_KWRD> '{' <LETTER> { ',' <LETTER> }* '}'
-        <RANGE>         -> ( <LETTER> | '[' <LETTER> '-' <LETTER> ']' ) '=' <INTEGER> ':' <INTEGER>
+        <INDEX>         -> ( <LETTER> | '[' <LETTER> '-' <LETTER> ']' ) '(' <DIMENSION> ')'
         <ASSIGNMENT>    -> <OPERATOR> = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
         <TERM>          -> <FACTOR> { [ '/' ] <FACTOR> }*
@@ -178,7 +182,7 @@ class Parser:
         <SQRT>          -> <SQRT_CMD> [ '[' <INTEGER> ']' ] '{' <EXPRESSION> '}'
         <NLOG>          -> <NLOG_CMD> [ '_' ( <NUMBER> | '{' <NUMBER> '}' ) ] ( <NUMBER> | <TENSOR> | <SUBEXPR> )
         <TRIG>          -> <TRIG_CMD> [ '^' ( <NUMBER> | '{' <NUMBER> '}' ) ] ( <NUMBER> | <TENSOR> | <SUBEXPR> )
-        <OPERATOR>      -> [ <VPHANTOM> '{' <DERIVATIVE> '}' ] ( <PARDRV> | <COVDRV> | <LIEDRV> | <TENSOR> )
+        <OPERATOR>      -> [ <VPHANTOM> '{' <DRV_TYPE> '}' ] ( <PARDRV> | <COVDRV> | <LIEDRV> | <TENSOR> )
         <PARDRV>        -> <PAR_SYM> [ '^' <INTEGER> ] '_' <LETTER> ( <TENSOR> | <PARDRV> | <SUBEXPR> )
         TODO: <COVDRV>  -> ( <COV_SYM> | <DIACRITIC> '{' <COV_SYM> '}' ) ( '^' | '_' ) <LETTER> ( <TENSOR> | <COVDRV> | <SUBEXPR> )
         TODO: <LIEDRV>  -> <LIE_SYM> '_' <SYMBOL> ( <TENSOR> | <SUBEXPR> )
@@ -189,23 +193,16 @@ class Parser:
         <NUMBER>        -> <RATIONAL> | <DECIMAL> | <INTEGER> | <PI>
     """
 
-    _namespace = {}
+    _namespace, _property = {}, {}
     continue_parsing = True
 
     def __init__(self, debug=False):
         self.lexer = Lexer()
-        if 'srepl' not in self._namespace:
-            self._namespace['srepl'] = []
-        if 'basis' not in self._namespace:
-            self._namespace['basis'] = []
-        if 'deriv' not in self._namespace:
-            self._namespace['deriv'] = 'default::symbolic'
-        if 'range' not in self._namespace:
-            self._namespace['range'] = {chr(105 + n): (0, 3) for n in range(4)}
-        if 'ignore' not in self._namespace:
-            self._namespace['ignore'] = ['\\left', '\\right', '\\,', '{}', '&']
-        if 'metric' not in self._namespace:
-            self._namespace['metric'] = {'': 'g', 'bar': 'g', 'hat': 'g', 'tilde': 'gamma'}
+        if not self._property:
+            with open('config_default.json', 'r') as read_file:
+                self._property.update(json.load(read_file))
+        if 'vphantom' not in self._property:
+            self._property['vphantom'] = None
         def excepthook(exception_type, exception, traceback):
             if not debug:
                 print('%s: %s' % (exception_type.__name__, exception))
@@ -220,13 +217,13 @@ class Parser:
             :return: namespace or expression
         """
         # replace every substring marked 'ignore' with an empty string
-        for ignore in self._namespace['ignore']:
+        for ignore in self._property['ignore']:
             sentence = sentence.replace(ignore, '')
         # perform string replacement (aliasing) using namespace mapping
-        sentence = '\n'.join(self._namespace['srepl'] + [sentence])
-        self.lexer.initialize(sentence)
+        self.lexer.initialize('\n'.join(['srepl "%s" -> "%s"' % (old, new)
+            for (old, new) in self._property['srepl']] + [sentence]))
         self.lexer.lex()
-        for _ in self._namespace['srepl']:
+        for _ in self._property['srepl']:
             self._srepl()
         sentence = self.lexer.sentence[self.lexer.mark():]
         stack = []; i = i_1 = i_2 = i_3 = 0
@@ -325,16 +322,14 @@ class Parser:
 
     # <SREPL> -> <SREPL_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
     def _srepl(self):
-        marker = self.lexer.mark()
         self.expect('SREPL_MACRO')
         while True:
             old = self.lexer.lexeme[1:-1]
             self.expect('STRING')
             self.expect('ARROW')
             new = self.lexer.lexeme[1:-1]
-            macro = self.lexer.sentence[marker:self.lexer.index]
-            if macro not in self._namespace['srepl']:
-                self._namespace['srepl'].append(macro)
+            if [old, new] not in self._property['srepl']:
+                self._property['srepl'].append([old, new])
             self.expect('STRING')
             sentence, position = self.lexer.sentence, self.lexer.mark()
             lexer = Lexer(); lexer.initialize(old); lexer.lex()
@@ -375,64 +370,64 @@ class Parser:
             self.lexer.reset()
             if not self.accept('COMMA'): break
 
-    # <ASSIGN> -> <ASSIGN_MACRO> ( <DERIVATIVE> | <SYMMETRY> | <WEIGHT> <NUMBER> ) ( <LETTER> | <VARIABLE> )
+    # <ASSIGN> -> <ASSIGN_MACRO> ( <SYMMETRY> | <DRV_TYPE> [ <PRIORITY> ] | <WEIGHT> <NUMBER> ) <VARIABLE> { ',' <VARIABLE> }*
     def _assign(self):
         self.expect('ASSIGN_MACRO')
-        derivative, symmetry, weight = None, None, None
-        if self.peek('DERIVATIVE'):
-            derivative = self.lexer.lexeme
-            self.lexer.lex()
-        elif self.peek('SYMMETRY'):
+        symmetry, drv_type, weight = None, None, None
+        if self.peek('SYMMETRY'):
             symmetry = self.lexer.lexeme
             self.lexer.lex()
+        elif self.peek('DRV_TYPE'):
+            drv_type = self.lexer.lexeme
+            self.lexer.lex()
+            if self.peek('PRIORITY'):
+                drv_type += '::' + self.lexer.lexeme[1:-1]
+                self.lexer.lex()
+            else: drv_type += '::L'
         elif self.accept('WEIGHT'):
             weight = self._number()
         else:
             sentence, position = self.lexer.sentence, self.lexer.mark()
             raise ParseError('unexpected \'%s\' at position %d' %
                 (sentence[position], position), sentence, position)
-        if self.peek('LETTER'):
-            symbol = self.lexer.lexeme
-            self.expect('LETTER')
-        elif self.peek('VARIABLE'):
+        while True:
             symbol = self.lexer.lexeme
             self.expect('VARIABLE')
-        else:
-            sentence, position = self.lexer.sentence, self.lexer.mark()
-            raise ParseError('unexpected \'%s\' at position %d' %
-                (sentence[position], position), sentence, position)
-        if symbol not in self._namespace:
-            raise TensorError('cannot update undefined tensor \'%s\'' % symbol)
-        tensor = self._namespace[symbol]
-        if derivative: tensor.derivative = derivative
-        if weight: tensor.weight = weight
-        if symmetry == 'metric':
-            diacritic = next(i for i in ('bar', 'hat', 'tilde', '') if i in symbol)
-            self._namespace['metric'][diacritic] = re.split(diacritic if diacritic else r'[UD]', symbol)[0]
-            christoffel = 'Gamma' + diacritic + 'UDD'
-            if christoffel in self._namespace:
-                del self._namespace[christoffel]
-            if tensor.dimension == 2:
-                inverse, determinant = ixp.symm_matrix_inverter2x2(tensor.structure)
-            elif tensor.dimension == 3:
-                inverse, determinant = ixp.symm_matrix_inverter3x3(tensor.structure)
-            elif tensor.dimension == 4:
-                inverse, determinant = ixp.symm_matrix_inverter4x4(tensor.structure)
-            inv_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
-            function = Function('Tensor')(Symbol(inv_symbol))
-            self._namespace[inv_symbol] = Tensor(function, tensor.dimension, symmetry=tensor.symmetry)
-            self._namespace[inv_symbol].structure = inverse
-            det_symbol = symbol[:-2] + 'det'
-            function = Function('Tensor')(Symbol(det_symbol, real=True))
-            self._namespace[det_symbol] = Tensor(function, 0)
-            self._namespace[det_symbol].structure = determinant \
-                if symbol[-2:] == 'DD' else (determinant)**(-1)
+            if symbol not in self._namespace:
+                raise TensorError('cannot update undefined tensor \'%s\'' % symbol)
+            tensor = self._namespace[symbol]
+            if symmetry == 'metric':
+                diacritic = next(i for i in ('bar', 'hat', 'tilde', '') if i in symbol)
+                self._property['metric'][diacritic] = re.split(diacritic if diacritic else r'[UD]', symbol)[0]
+                christoffel = 'Gamma' + diacritic + 'UDD'
+                if christoffel in self._namespace:
+                    del self._namespace[christoffel]
+                tensor.symmetry = 'sym01'
+                if tensor.dimension == 2:
+                    inverse, determinant = ixp.symm_matrix_inverter2x2(tensor.structure)
+                elif tensor.dimension == 3:
+                    inverse, determinant = ixp.symm_matrix_inverter3x3(tensor.structure)
+                elif tensor.dimension == 4:
+                    inverse, determinant = ixp.symm_matrix_inverter4x4(tensor.structure)
+                inv_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
+                function = Function('Tensor')(Symbol(inv_symbol))
+                self._namespace[inv_symbol] = Tensor(function, dimension=tensor.dimension,
+                    structure=inverse, symmetry=tensor.symmetry, drv_type=tensor.drv_type)
+                det_symbol = symbol[:-2] + 'det'
+                function = Function('Tensor')(Symbol(det_symbol, real=True))
+                self._namespace[det_symbol] = Tensor(function, drv_type=tensor.drv_type)
+                self._namespace[det_symbol].structure = determinant \
+                    if symbol[-2:] == 'DD' else (determinant)**(-1)
+            elif symmetry: tensor.symmetry = symmetry
+            if drv_type: tensor.drv_type = drv_type
+            if weight:   tensor.weight = weight
+            if not self.accept('COMMA'): break
 
     # <DEFINE> -> <DEFINE_MACRO> ( <VARDEF> | <KEYDEF> ) { ',' ( <VARDEF> | <KEYDEF> ) }*
     def _define(self):
         self.expect('DEFINE_MACRO')
         while True:
-            if any(self.peek(kwrd) for kwrd in ('BASIS_KWRD', 'DERIV_KWRD', 'RANGE_KWRD')):
+            if any(self.peek(kwrd) for kwrd in ('BASIS_KWRD', 'DERIV_KWRD', 'INDEX_KWRD')):
                 self._keydef()
             else: self._vardef()
             if not self.accept('COMMA'): break
@@ -442,8 +437,8 @@ class Parser:
         self.expect('IGNORE_MACRO')
         while True:
             string = self.lexer.lexeme[1:-1]
-            if string not in self._namespace['ignore']:
-                self._namespace['ignore'].append(string)
+            if string not in self._property['ignore']:
+                self._property['ignore'].append(string)
             sentence, position = self.lexer.sentence, self.lexer.index
             self.lexer.mark()
             self.expect('STRING')
@@ -451,12 +446,8 @@ class Parser:
             if not self.accept('COMMA'): break
         self.lexer.reset(); self.lexer.lex()
 
-    # <VARDEF> -> [ <DERIVATIVE> ] [ <SYMMETRY> ] ( <LETTER> | <VARIABLE> ) [ '(' <DIMENSION> ')' ]
+    # <VARDEF> -> [ <SYMMETRY> ] ( <LETTER> | <VARIABLE> ) [ '(' <DIMENSION> ')' ]
     def _vardef(self):
-        if self.peek('DERIVATIVE'):
-            derivative = self.lexer.lexeme
-            self.lexer.lex()
-        else: derivative = None
         if self.peek('SYMMETRY'):
             symmetry = self.lexer.lexeme
             self.lexer.lex()
@@ -484,25 +475,21 @@ class Parser:
         else:
             if symmetry == 'metric':
                 diacritic = next(i for i in ('bar', 'hat', 'tilde', '') if i in symbol)
-                self._namespace['metric'][diacritic] = re.split(diacritic if diacritic else r'[UD]', symbol)[0]
+                self._property['metric'][diacritic] = re.split(diacritic if diacritic else r'[UD]', symbol)[0]
                 christoffel = 'Gamma' + diacritic + 'UDD'
                 if christoffel in self._namespace:
                     del self._namespace[christoffel]
             function = Function('Tensor')(Symbol(symbol))
-            tensor = Tensor(function, dimension, derivative=derivative, symmetry=('sym01' if symmetry == 'metric' else symmetry))
+            tensor = Tensor(function, dimension, symmetry=('sym01' if symmetry == 'metric' else symmetry), drv_type='symbolic::L')
             self._define_tensor(tensor, invertible=(symmetry == 'metric'),
                 permutation=(symbol[:7] == 'epsilon'), kronecker=(symbol[:5] == 'delta'))
 
-    # <KEYDEF> -> <BASIS_KWRD> <BASIS> | <DERIV_KWRD> <DERIVATIVE> | <RANGE_KWRD> <RANGE>
+    # <KEYDEF> -> <BASIS_KWRD> <BASIS> | <INDEX_KWRD> <INDEX>
     def _keydef(self):
         if self.accept('BASIS_KWRD'):
             self._basis()
-        elif self.accept('DERIV_KWRD'):
-            derivative = self.lexer.lexeme
-            self.expect('DERIVATIVE')
-            self._namespace['deriv'] = 'default::' + derivative
-        elif self.accept('RANGE_KWRD'):
-            self._range()
+        elif self.accept('INDEX_KWRD'):
+            self._index()
         else:
             sentence, position = self.lexer.sentence, self.lexer.mark()
             raise ParseError('unexpected keyword at position %d' %
@@ -511,20 +498,20 @@ class Parser:
     # <BASIS> -> <BASIS_KWRD> <LBRACK> <LETTER> [ ',' <LETTER> ]* <RBRACK>
     def _basis(self):
         self.expect('LBRACK')
-        del self._namespace['basis'][:]
+        del self._property['basis'][:]
         while True:
             symbol = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
-            if symbol in self._namespace['basis']:
+            if symbol in self._property['basis']:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
                 raise ParseError('duplicate basis symbol \'%s\' at position %d' %
                     (sentence[position], position), sentence, position)
-            self._namespace['basis'].append(Symbol(symbol, real=True))
+            self._property['basis'].append(Symbol(symbol, real=True))
             if not self.accept('COMMA'): break
         self.expect('RBRACK')
 
-    # <RANGE> -> ( <LETTER> | '[' <LETTER> '-' <LETTER> ']' ) '=' <INTEGER> ':' <INTEGER>
-    def _range(self):
+    # <INDEX> -> ( <LETTER> | '[' <LETTER> '-' <LETTER> ']' )  '(' <DIMENSION> ')'
+    def _index(self):
         if self.accept('LBRACK'):
             index_1 = self._strip(self.lexer.lexeme)
             self.expect('LETTER')
@@ -536,13 +523,11 @@ class Parser:
         else:
             index = [self._strip(self.lexer.lexeme)]
             self.expect('LETTER')
-        self.expect('EQUAL')
-        lower = self.lexer.lexeme
-        self.expect('INTEGER')
-        self.expect('COLON')
-        upper = self.lexer.lexeme
-        self.expect('INTEGER')
-        self._namespace['range'].update({i: (int(lower), int(upper) + 1) for i in index})
+        self.expect('LPAREN')
+        dimension = self.lexer.lexeme
+        self.expect('DIMENSION')
+        self.expect('RPAREN')
+        self._property['index'].update({i: dimension for i in index})
 
     # <ASSIGNMENT> -> <OPERATOR> = <EXPRESSION>
     def _assignment(self):
@@ -561,21 +546,23 @@ class Parser:
         # perform implied summation on indexed expression
         (LHS, RHS), dimension = self._summation(LHS, RHS)
         global_env = dict(sympy_env)
+        global_env.update(self._property)
         global_env.update(self._namespace)
         for key in global_env:
             if isinstance(global_env[key], Tensor):
                 global_env[key] = global_env[key].structure
             if isinstance(global_env[key], Function('Constant')):
                 global_env[key] = global_env[key].args[0]
-        del global_env['range']
         # evaluate every implied summation and update namespace
         exec('%s = %s' % (LHS, RHS), global_env)
-        symbol = Tensor.extract(function)[0] if indexed else LHS
-        derivative = self._namespace[symbol].derivative if symbol in self._namespace else None
-        tensor = Tensor(function, dimension, structure=global_env[symbol], derivative=derivative)
-        _, indexing = Tensor.extract(function)
-        if all(not isinstance(index, Integer) for index, _ in indexing):
-            tensor.expression = latex
+        symbol, indexing = Tensor.extract(function)
+        if not indexed: symbol = LHS
+        if any(isinstance(index, Integer) for index, _ in indexing):
+            tensor = self._namespace[symbol]
+            tensor.structure = global_env[symbol]
+        else:
+            tensor = Tensor(function, dimension, structure=global_env[symbol],
+                expression=latex, drv_type='symbolic::L')
         self._namespace.update({symbol: tensor})
 
     # <EXPRESSION> -> <TERM> { ( '+' | '-' ) <TERM> }*
@@ -741,14 +728,7 @@ class Parser:
             expr = self._number()
         elif any(self.peek(token) for token in
                 ('LETTER', 'DIACRITIC', 'TEXT_CMD')):
-            sentence, position = self.lexer.sentence, self.lexer.mark()
-            function = self._tensor(); tensor = Tensor(function, 0)
-            if tensor.symbol not in self._namespace:
-                if tensor.rank > 0:
-                    raise ParseError('cannot index undefined tensor \'%s\' at position %d' %
-                        (tensor.symbol, position), sentence, position)
-                self._define_tensor(tensor)
-            expr = function
+            expr = self._tensor()
         elif any(self.peek(i) for i in ('LPAREN', 'LBRACK', 'LBRACE')):
             expr = self._subexpr()
         else:
@@ -781,14 +761,7 @@ class Parser:
             expr = self._number()
         elif any(self.peek(token) for token in
                 ('LETTER', 'DIACRITIC', 'TEXT_CMD')):
-            sentence, position = self.lexer.sentence, self.lexer.mark()
-            function = self._tensor(); tensor = Tensor(function, 0)
-            if tensor.symbol not in self._namespace:
-                if tensor.rank > 0:
-                    raise ParseError('cannot index undefined tensor \'%s\' at position %d' %
-                        (tensor.symbol, position), sentence, position)
-                self._define_tensor(tensor)
-            expr = function
+            expr = self._tensor()
         elif any(self.peek(i) for i in ('LPAREN', 'LBRACK', 'LBRACE')):
             expr = self._subexpr()
         else:
@@ -798,19 +771,19 @@ class Parser:
         if exponent == -1: return trig(expr)
         return trig(expr) ** exponent
 
-    # <OPERATOR> -> [ <VPHANTOM> '{' <DERIVATIVE> '}' ] ( <PARDRV> | <COVDRV> | <LIEDRV> | <TENSOR> )
+    # <OPERATOR> -> [ <VPHANTOM> '{' <DRV_TYPE> '}' ] ( <PARDRV> | <COVDRV> | <LIEDRV> | <TENSOR> )
     def _operator(self, location='RHS'):
-        derivative = self._namespace['deriv']
+        vphantom = self._property['vphantom']
         if self.accept('VPHANTOM'):
             self.expect('LBRACE')
-            vphantom = self.lexer.lexeme
-            self.expect('DERIVATIVE')
+            drv_type = self.lexer.lexeme
+            self.expect('DRV_TYPE')
+            self._property['vphantom'] = drv_type
             self.expect('RBRACE')
-            self._namespace['deriv'] = 'vphantom::' + vphantom
         operator = self.lexer.lexeme
         if self.peek('PAR_SYM'):
             pardrv = self._pardrv(location)
-            self._namespace['deriv'] = derivative
+            self._property['vphantom'] = vphantom
             return pardrv
         if self.peek('COV_SYM') or self.peek('DIACRITIC'):
             self.lexer.mark()
@@ -819,27 +792,21 @@ class Parser:
                 if self.accept('COV_SYM'):
                     self.lexer.reset()
                     covdrv = self._covdrv(location)
-                    self._namespace['deriv'] = derivative
+                    self._property['vphantom'] = vphantom
                     return covdrv
                 self.lexer.reset()
             else:
                 covdrv = self._covdrv(location)
-                self._namespace['deriv'] = derivative
+                self._property['vphantom'] = vphantom
                 return covdrv
         if self.peek('LIE_SYM'):
             liedrv = self._liedrv(location)
-            self._namespace['deriv'] = derivative
+            self._property['vphantom'] = vphantom
             return liedrv
         if any(self.peek(token) for token in ('LETTER', 'DIACRITIC', 'TEXT_CMD')):
-            sentence, position = self.lexer.sentence, self.lexer.mark()
-            function = self._tensor(location); tensor = Tensor(function, 0)
-            if tensor.symbol not in self._namespace:
-                if location == 'RHS' and tensor.rank > 0:
-                    raise ParseError('cannot index undefined tensor \'%s\' at position %d' %
-                        (tensor.symbol, position), sentence, position)
-                self._define_tensor(tensor)
-            self._namespace['deriv'] = derivative
-            return function
+            tensor = self._tensor(location)
+            self._property['vphantom'] = vphantom
+            return tensor
         sentence, position = self.lexer.sentence, self.lexer.mark()
         raise ParseError('unsupported operator \'%s\' at position %d' %
             (operator, position), sentence, position)
@@ -858,15 +825,6 @@ class Parser:
         self.expect('LETTER')
         index = Symbol(index, real=True)
         if any(self.peek(i) for i in ('LPAREN', 'LBRACK', 'LBRACE')):
-            _, derivative = self._namespace['deriv'].split('::')
-            if index in self._namespace['basis']:
-                derivative = 'symbolic'
-            if order > 1:
-                if derivative != 'symbolic':
-                    raise ParseError('cannot specify derivative order unless symbolic',
-                        sentence, position)
-                derivative = Derivative(self._subexpr(), (index, order))
-                return derivative
             tree = ExprTree(self._subexpr())
             for subtree in tree.preorder():
                 subexpr = subtree.expr
@@ -883,17 +841,16 @@ class Parser:
                     # remove temporary symbol '_x' from tensor function
                     function = subexpr.args[0].args[0]
                     symbol, _ = Tensor.extract(function)
-                    if symbol not in self._namespace:
-                        raise ParseError('cannot differentiate undefined tensor \'%s\'' %
-                            symbol, self.lexer.sentence)
                     tensor = self._namespace[symbol]
-                    var_type, derivative = self._namespace['deriv'].split('::')
-                    if index in self._namespace['basis']:
-                        derivative = 'symbolic'
-                    elif (tensor.derivative and var_type == 'default') or tensor.derivative == 'symbolic':
-                        derivative = tensor.derivative
-                    subtree.expr = Derivative(function, (index, order)) if derivative == 'symbolic' \
-                        else self._define_pardrv(function, location, derivative, index)
+                    attribute, priority = tensor.drv_type.split('::')
+                    vphantom = self._property['vphantom']
+                    drv_type = vphantom if vphantom else 'symbolic'
+                    if index in self._property['basis']:
+                        drv_type = 'symbolic'
+                    elif priority == 'H' or (not vphantom and priority == 'L'):
+                        drv_type = attribute
+                    subtree.expr = Derivative(function, (index, order)) if drv_type == 'symbolic' \
+                        else self._define_pardrv(function, location, drv_type, index)
                     del subtree.children[:]
                 elif subexpr.func == Function('_Tensor'):
                     # remove temporary symbol '_x' from tensor function
@@ -903,18 +860,19 @@ class Parser:
         sentence, position = self.lexer.sentence, self.lexer.mark()
         function = self._pardrv() if self.peek('PAR_SYM') else self._tensor()
         symbol, _ = Tensor.extract(function)
-        if symbol not in self._namespace:
-            raise ParseError('cannot differentiate undefined tensor \'%s\' at position %d' %
-                (symbol, position), sentence, position)
         tensor = self._namespace[symbol]
-        var_type, derivative = self._namespace['deriv'].split('::')
-        if index in self._namespace['basis']:
-            derivative = 'symbolic'
-        elif (tensor.derivative and var_type == 'default') or tensor.derivative == 'symbolic':
-            derivative = tensor.derivative
-        if derivative == 'symbolic':
-            return Derivative(function, (index, order))
-        return self._define_pardrv(function, location, derivative, index)
+        attribute, priority = tensor.drv_type.split('::')
+        vphantom = self._property['vphantom']
+        drv_type = vphantom if vphantom else 'symbolic'
+        if index in self._property['basis']:
+            drv_type = 'symbolic'
+        elif priority == 'H' or (not vphantom and priority == 'L'):
+            drv_type = attribute
+        if order > 1 and drv_type != 'symbolic':
+            raise ParseError('cannot specify derivative order unless symbolic',
+                sentence, position)
+        return Derivative(function, (index, order)) if drv_type == 'symbolic' \
+            else self._define_pardrv(function, location, drv_type, index)
 
     # <COVDRV> -> { ( <COV_SYM> | <DIACRITIC> '{' <COV_SYM> '}' ) ( '^' | '_' ) <LETTER> }+ ( <TENSOR> | <SUBEXPR> )
     def _covdrv(self, location='RHS'):
@@ -931,7 +889,7 @@ class Parser:
                 self.expect('COV_SYM')
                 self.expect('RBRACE')
             else: self.expect('COV_SYM')
-            metric = self._namespace['metric'][diacritic] + diacritic
+            metric = self._property['metric'][diacritic] + diacritic
             if metric + 'DD' not in self._namespace:
                 raise ParseError('cannot generate covariant derivative without defined metric \'%s\'' %
                     metric, sentence, position)
@@ -957,8 +915,8 @@ class Parser:
                 equation[0] += '^' + str(index) + ' '
                 _indexing = [str(i) for i, _ in indexing + Tensor.extract(function)[1]]
                 bound_index = next(x for x in alphabet if x not in _indexing)
-                prefix = '\\' if len(self._namespace['metric'][diacritic]) > 1 else ''
-                metric = prefix + self._namespace['metric'][diacritic]
+                prefix = '\\' if len(self._property['metric'][diacritic]) > 1 else ''
+                metric = prefix + self._property['metric'][diacritic]
                 if diacritic: metric = '\\%s{%s}' % (diacritic, metric)
                 equation[2] += '%s^{%s %s} ' % (metric, index, bound_index)
                 equation[3] += '_' + bound_index + ' '
@@ -976,10 +934,6 @@ class Parser:
             else:
                 sentence, position = self.lexer.sentence, self.lexer.mark()
                 symbol = str(function.args[0])
-                if symbol not in self._namespace:
-                    sentence, position = self.lexer.sentence, self.lexer.mark()
-                    raise ParseError('cannot differentiate undefined tensor \'%s\'' %
-                        symbol, sentence, position)
                 tensor = Tensor(function, self._namespace[symbol].dimension)
                 self.parse(self._generate_covdrv(tensor, function, indexing, diacritic))
                 self.lexer.initialize(sentence, position)
@@ -998,10 +952,6 @@ class Parser:
         if location == 'RHS':
             sentence, position = self.lexer.sentence, self.lexer.mark()
             symbol = str(function.args[0])
-            if symbol not in self._namespace:
-                sentence, position = self.lexer.sentence, self.lexer.mark()
-                raise ParseError('cannot differentiate undefined tensor \'%s\'' %
-                    symbol, sentence, position)
             tensor = Tensor(function, self._namespace[symbol].dimension)
             tensor.weight = self._namespace[symbol].weight
             self.parse(self._generate_liedrv(tensor, function, vector))
@@ -1038,6 +988,7 @@ class Parser:
                     if symbol in self._namespace:
                         if isinstance(self._namespace[symbol], Function('Constant')):
                             return self._namespace[symbol]
+                    else: self._define_tensor(Tensor(function))
                     return function
                 self.lexer.reset(); self.lexer.lex()
             index, _ = self._upper_index()
@@ -1061,18 +1012,23 @@ class Parser:
             if isinstance(self._namespace[symbol], Function('Constant')):
                 return self._namespace[symbol]
         function = Function('Tensor')(Symbol(symbol, real=True), *indexing)
-        tensor = Tensor(function)
+        tensor = Tensor(function, len(self._property['basis']))
         # reserved keyword for christoffel symbol
         if location == 'RHS' and tensor.symbol[:5] == 'Gamma' and tensor.rank == 3:
-            metric = self._namespace['metric'][tensor.symbol[5:-3]] + tensor.symbol[5:-3]
+            metric = self._property['metric'][tensor.symbol[5:-3]] + tensor.symbol[5:-3]
             if metric + 'DD' not in self._namespace:
                 raise ParseError('cannot generate christoffel symbol without defined metric \'%s\'' %
                     metric, sentence, position)
-            if tensor.symbol not in self._namespace:
-                sentence, position = self.lexer.sentence, self.lexer.mark()
-                self.parse(self._generate_christoffel(function, self._namespace['metric']))
-                self.lexer.initialize(sentence, position)
-                self.lexer.lex()
+            # if tensor.symbol not in self._namespace:
+            sentence, position = self.lexer.sentence, self.lexer.mark()
+            self.parse(self._generate_christoffel(function, self._property['metric']))
+            self.lexer.initialize(sentence, position)
+            self.lexer.lex()
+        if tensor.symbol not in self._namespace and location == 'RHS':
+            if tensor.rank > 0:
+                raise ParseError('cannot index undefined tensor \'%s\' at position %d' %
+                    (tensor.symbol, position), sentence, position)
+            self._define_tensor(tensor)
         return function
 
     # <SYMBOL> -> <LETTER> | <DIACRITIC> '{' <SYMBOL> '}' | <TEXT_CMD> '{' <LETTER> { '_' | <LETTER> | <INTEGER> }* '}'
@@ -1177,6 +1133,7 @@ class Parser:
                     if i == j: return 0
                     cycle_length += i > j
             return (-1)**cycle_length
+        if not tensor.drv_type: tensor.drv_type = 'symbolic::L'
         symbol, rank = tensor.symbol, tensor.rank
         if symbol not in self._namespace:
             dimension, symmetry = tensor.dimension, tensor.symmetry
@@ -1209,11 +1166,11 @@ class Parser:
                     inverse, determinant = ixp.symm_matrix_inverter4x4(tensor.structure)
                 inv_symbol = symbol.replace('U', 'D') if 'U' in symbol else symbol.replace('D', 'U')
                 function = Function('Tensor')(Symbol(inv_symbol))
-                self._namespace[inv_symbol] = Tensor(function, tensor.dimension, symmetry=tensor.symmetry)
-                self._namespace[inv_symbol].structure = inverse
+                self._namespace[inv_symbol] = Tensor(function, dimension=tensor.dimension,
+                    structure=inverse, symmetry=tensor.symmetry, drv_type=tensor.drv_type)
                 det_symbol = symbol[:-2] + 'det'
                 function = Function('Tensor')(Symbol(det_symbol, real=True))
-                self._namespace[det_symbol] = Tensor(function, 0)
+                self._namespace[det_symbol] = Tensor(function, drv_type=tensor.drv_type)
                 self._namespace[det_symbol].structure = determinant \
                     if symbol[-2:] == 'DD' else (determinant)**(-1)
             if symbol in self._namespace:
@@ -1225,11 +1182,11 @@ class Parser:
                 warnings.warn(symbol, OverrideWarning)
             self._namespace[symbol] = tensor
 
-    def _define_pardrv(self, function, location, derivative, index):
+    def _define_pardrv(self, function, location, drv_type, index):
         symbol, indexing = Tensor.extract(function)
         tensor = self._namespace[symbol]
-        suffix = '_d'   if derivative == 'numeric' \
-            else '_dup' if derivative == 'upwind' \
+        suffix = '_d'   if drv_type == 'numeric' \
+            else '_dup' if drv_type == 'upwind' \
             else ''
         symbol = symbol + ('' if suffix in symbol else suffix) + 'D'
         if location == 'RHS' and tensor.expression and symbol not in self._namespace:
@@ -1247,7 +1204,7 @@ class Parser:
             else: symmetry = 'nosym'
             if tensor.symmetry and tensor.symmetry != 'nosym':
                 symmetry = tensor.symmetry + '_' + symmetry if symmetry != 'nosym' else tensor.symmetry
-            self._define_tensor(Tensor(function, tensor.dimension, derivative=derivative, symmetry=symmetry))
+            self._define_tensor(Tensor(function, tensor.dimension, symmetry=symmetry, drv_type=tensor.drv_type))
         return function
 
     def _summation(self, LHS, RHS):
@@ -1261,13 +1218,13 @@ class Parser:
                     dimension = self._namespace[symbol].dimension
                     tensor = Tensor(subexpr, dimension)
                     for index in subexpr.args[1:]:
-                        if str(index) in self._namespace['range']:
-                            lower, upper = self._namespace['range'][str(index)]
-                        else: lower, upper = (0, dimension)
-                        if str(index) in idx_map and (lower, upper) != idx_map[str(index)]:
-                            raise ParseError('inconsistent indexing range for index \'%s\'' %
+                        upper_bound = dimension
+                        if str(index) in self._property['index']:
+                            upper_bound = int(self._property['index'][str(index)][:-1])
+                        if str(index) in idx_map and upper_bound != idx_map[str(index)]:
+                            raise ParseError('inconsistent dimension for index \'%s\'' %
                                 index, self.lexer.sentence)
-                        idx_map[str(index)] = (lower, upper)
+                        idx_map[str(index)] = upper_bound
                     sentence = sentence.replace(srepr(subexpr), tensor.array_format(subexpr))
                 elif subexpr.func == Function('Constant'):
                     symbol = str(subexpr.args[0])
@@ -1324,19 +1281,18 @@ class Parser:
                     argument = replace_function(srepr(argument), argument, idx_map)
                     free_index, _ = separate_indexing(argument)
                     for idx, _ in reversed(free_index):
-                        lower, upper = idx_map[idx]
-                        dimension = upper - lower
+                        dimension = idx_map[idx]
                     if not free_index: dimension = 0
                     for index, order in subexpr.args[1:]:
-                        if str(index) in self._namespace['range']:
-                            lower, upper = self._namespace['range'][str(index)]
-                        else: lower, upper = (0, dimension)
-                        if str(index) in idx_map and (lower, upper) != idx_map[str(index)]:
-                            raise ParseError('inconsistent indexing range for index \'%s\'' %
+                        upper_bound = dimension
+                        if str(index) in self._property['index']:
+                            upper_bound = int(self._property['index'][str(index)][:-1])
+                        if str(index) in idx_map and upper_bound != idx_map[str(index)]:
+                            raise ParseError('inconsistent dimension for index \'%s\'' %
                                 index, self.lexer.sentence)
-                        idx_map[str(index)] = (lower, upper)
-                        if index not in self._namespace['basis']:
-                            if not self._namespace['basis']:
+                        idx_map[str(index)] = upper_bound
+                        if index not in self._property['basis']:
+                            if not self._property['basis']:
                                 message = 'cannot differentiate symbolically without specifying a basis'
                                 raise ParseError(message, self.lexer.sentence)
                             derivative += ', (basis[%s], %s)' % (index, order)
@@ -1348,8 +1304,7 @@ class Parser:
             free_index_RHS.append(free_index)
             # generate implied summation over every bound index
             for idx in bound_index:
-                lower, upper = idx_map[idx]
-                modified = 'sum(%s for %s in range(%d, %d))' % (modified, idx, lower, upper)
+                modified = 'sum(%s for %s in range(%d))' % (modified, idx, idx_map[idx])
             RHS = RHS.replace(original, modified)
         for i in range(len(free_index_RHS)):
             if sorted(free_index_LHS) != sorted(free_index_RHS[i]):
@@ -1359,9 +1314,8 @@ class Parser:
                 raise TensorError('unbalanced free index')
         # generate tensor instantiation with implied summation
         for idx, _ in reversed(free_index_LHS):
-            lower, upper = idx_map[idx]
-            RHS = '[%s for %s in range(%d, %d)]' % (RHS, idx, lower, upper)
-            LHS_dimension = upper - lower
+            RHS = '[%s for %s in range(%d)]' % (RHS, idx, idx_map[idx])
+            LHS_dimension = idx_map[idx]
         if not free_index_LHS: LHS_dimension = 0
         # shift tensor indexing forward whenever dimension > upper bound
         for subtree in tree.preorder():
@@ -1372,10 +1326,10 @@ class Parser:
                 tensor = Tensor(subexpr, dimension)
                 _, indexing = Tensor.extract(subexpr)
                 for index in subexpr.args[1:]:
-                    if str(index) in self._namespace['range']:
-                        _, upper = self._namespace['range'][str(index)]
-                        if dimension > upper:
-                            shift = dimension - upper
+                    if str(index) in self._property['index']:
+                        upper_bound = int(self._property['index'][str(index)][:-1])
+                        if dimension > upper_bound:
+                            shift = dimension - upper_bound
                             for i, (idx, pos) in enumerate(indexing):
                                 if str(idx) == str(index):
                                     indexing[i] = ('%s + %s' % (idx, shift), pos)
@@ -1407,7 +1361,7 @@ class Parser:
                 .format(i1 = indexing[0], i2 = indexing[1], i3 = indexing[2], symbol = symbol, metric = metric, bound_index = bound_index))
 
     @staticmethod
-    def _generate_covdrv(tensor, function, indexing, diacritic=''):
+    def _generate_covdrv(tensor, function, indexing, diacritic=None):
         alphabet = (chr(97 + n) for n in range(26))
         indexing, order = Tensor.extract(function)[1] + indexing[::-1], len(indexing)
         indexing = [(str(idx), str(pos)) for idx, pos in indexing]
@@ -1484,7 +1438,26 @@ class Parser:
 
     @staticmethod
     def clear_namespace():
-        Parser._namespace.clear()
+        Parser._namespace, Parser._property = {}, {}
+
+    @staticmethod
+    def load_config(filename='config_default'):
+        with open(filename + '.json', 'r') as read_file:
+            self._property.update(json.load(read_file))
+        self._property['vphantom'] = None
+
+    @staticmethod
+    def save_config(filename='config_default'):
+        vphantom = Parser._property.pop('vphantom')
+        json.dump(Parser._property, filename + '.json')
+        Parser._property['vphantom'] = vphantom
+
+    @staticmethod
+    def reset_config():
+        shutil.copyfile('config_backup.json', 'config_default.json')
+        with open('config_default.json', 'r') as read_file:
+            self._property.update(json.load(read_file))
+        self._property['vphantom'] = None
 
     @staticmethod
     def _strip(symbol):
@@ -1508,7 +1481,7 @@ class Parser:
 class ParseError(Exception):
     """ Invalid LaTeX Sentence """
 
-    def __init__(self, message, sentence, position=None):
+    def __init__(self, message, sentence=None, position=None):
         if position is not None:
             length = 0
             for i, substring in enumerate(sentence.split('\n')):
@@ -1525,14 +1498,14 @@ class Tensor:
     """ Tensor Structure """
 
     def __init__(self, function, dimension=None, structure=None,
-            expression=None, derivative=None, symmetry=None, weight=None):
+            expression=None, symmetry=None, drv_type=None, weight=None):
         self.symbol      = str(function.args[0])
         self.rank        = len(re.findall(r'[UD]', self.symbol))
         self.dimension   = dimension
         self.structure   = structure
         self.expression  = expression
-        self.derivative  = derivative
         self.symmetry    = symmetry
+        self.drv_type    = drv_type
         self.weight      = weight
 
     @staticmethod
@@ -1641,10 +1614,6 @@ def parse(sentence, verbose=False):
         Parser.clear_namespace()
     _namespace = Parser._namespace.copy()
     namespace = Parser(verbose).parse(sentence)
-    kwrd_dict = {}
-    for kwrd in ('srepl', 'basis', 'deriv', 'range', 'ignore', 'metric'):
-        kwrd_dict[kwrd] = namespace[kwrd]
-        del namespace[kwrd]
     key_diff = [key for key in namespace if key not in _namespace]
     # inject updated namespace into the previous stack frame
     frame = currentframe().f_back
@@ -1659,8 +1628,6 @@ def parse(sentence, verbose=False):
             frame.f_globals[key] = namespace[key].args[0]
             if not verbose and key in key_diff:
                 key_diff.remove(key)
-    namespace.update(kwrd_dict)
-    if not key_diff: return
     if verbose:
         return tuple(namespace[key] for key in key_diff)
     return tuple(key_diff)
