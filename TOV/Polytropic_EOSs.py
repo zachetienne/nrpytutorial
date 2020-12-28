@@ -651,7 +651,7 @@ IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
 #|  - hybrid_gamma_th   |
 #.----------------------.
 # Set up the number of polytropic EOSs.
-EOS_omni::neos = 1
+EOS_Omni::n_pieces = 1
 
 # Set hybrid_k0 to K_ppoly_tab0
 EOS_omni::hybrid_k0 = %.15e
@@ -770,7 +770,7 @@ IllinoisGRMHD::Gamma_th = %.15e
 #|  - hybrid_gamma_th              |
 #.---------------------------------.
 # Set up the number of polytropic EOSs.
-EOS_omni::neos = %d
+EOS_Omni::n_pieces = %d
 
 # Set hybrid_k0 to K_ppoly_tab0
 EOS_omni::hybrid_k0 = %.15e
@@ -910,7 +910,7 @@ NRPyPlusTOVID::K_atmosphere = %.15e
 #|  - hybrid_gamma_th              |
 #.---------------------------------.
 # Set up the number of polytropic EOSs.
-EOS_omni::neos = %d
+EOS_Omni::n_pieces = %d
 
 # Set hybrid_k0 to K_ppoly_tab0
 EOS_omni::hybrid_k0 = %.15e
