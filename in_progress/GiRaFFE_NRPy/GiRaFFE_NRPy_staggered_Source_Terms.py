@@ -96,15 +96,23 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
             /*
              * NRPy+ Finite Difference Code Generation, Step 2 of 1: Evaluate SymPy expressions and write to main memory:
              */
-            const double tmp_5 = gammaDD00*gammaDD11*gammaDD22 - gammaDD00*((gammaDD12)*(gammaDD12)) - ((gammaDD01)*(gammaDD01))*gammaDD22 + 2*gammaDD01*gammaDD02*gammaDD12 - ((gammaDD02)*(gammaDD02))*gammaDD11;
+            const double FDPart3_0 = cbrt(gammaDD00*gammaDD11*gammaDD22 - gammaDD00*((gammaDD12)*(gammaDD12)) - ((gammaDD01)*(gammaDD01))*gammaDD22 + 2*gammaDD01*gammaDD02*gammaDD12 - ((gammaDD02)*(gammaDD02))*gammaDD11);
+            const double FDPart3_1 = (1.0/(FDPart3_0));
+            const REAL gamma_bssnDD00 = FDPart3_1*gammaDD00;
+            const REAL gamma_bssnDD01 = FDPart3_1*gammaDD01;
+            const REAL gamma_bssnDD02 = FDPart3_1*gammaDD02;
+            const REAL gamma_bssnDD11 = FDPart3_1*gammaDD11;
+            const REAL gamma_bssnDD12 = FDPart3_1*gammaDD12;
+            const REAL gamma_bssnDD22 = FDPart3_1*gammaDD22;
+            const double tmp_5 = gamma_bssnDD00*gamma_bssnDD11*gamma_bssnDD22 - gamma_bssnDD00*((gamma_bssnDD12)*(gamma_bssnDD12)) - ((gamma_bssnDD01)*(gamma_bssnDD01))*gamma_bssnDD22 + 2*gamma_bssnDD01*gamma_bssnDD02*gamma_bssnDD12 - ((gamma_bssnDD02)*(gamma_bssnDD02))*gamma_bssnDD11;
             const double tmp_6 = (1.0/(tmp_5));
-            INTERP_VARS[GUPXXI][kk][jj][ii] = tmp_6*(gammaDD11*gammaDD22 - ((gammaDD12)*(gammaDD12)));
-            INTERP_VARS[GUPXYI][kk][jj][ii] = tmp_6*(-gammaDD01*gammaDD22 + gammaDD02*gammaDD12);
-            INTERP_VARS[GUPXZI][kk][jj][ii] = tmp_6*(gammaDD01*gammaDD12 - gammaDD02*gammaDD11);
-            INTERP_VARS[GUPYYI][kk][jj][ii] = tmp_6*(gammaDD00*gammaDD22 - ((gammaDD02)*(gammaDD02)));
-            INTERP_VARS[GUPYZI][kk][jj][ii] = tmp_6*(-gammaDD00*gammaDD12 + gammaDD01*gammaDD02);
-            INTERP_VARS[GUPZZI][kk][jj][ii] = tmp_6*(gammaDD00*gammaDD11 - ((gammaDD01)*(gammaDD01)));
-            INTERP_VARS[PSII][kk][jj][ii]   = pow(tmp_5,1.0/12.0);
+            INTERP_VARS[GUPXXI][kk][jj][ii] = tmp_6*(gamma_bssnDD11*gamma_bssnDD22 - ((gamma_bssnDD12)*(gamma_bssnDD12)));
+            INTERP_VARS[GUPXYI][kk][jj][ii] = tmp_6*(-gamma_bssnDD01*gamma_bssnDD22 + gamma_bssnDD02*gamma_bssnDD12);
+            INTERP_VARS[GUPXZI][kk][jj][ii] = tmp_6*(gamma_bssnDD01*gamma_bssnDD12 - gamma_bssnDD02*gamma_bssnDD11);
+            INTERP_VARS[GUPYYI][kk][jj][ii] = tmp_6*(gamma_bssnDD00*gamma_bssnDD22 - ((gamma_bssnDD02)*(gamma_bssnDD02)));
+            INTERP_VARS[GUPYZI][kk][jj][ii] = tmp_6*(-gamma_bssnDD00*gamma_bssnDD12 + gamma_bssnDD01*gamma_bssnDD02);
+            INTERP_VARS[GUPZZI][kk][jj][ii] = tmp_6*(gamma_bssnDD00*gamma_bssnDD11 - ((gamma_bssnDD01)*(gamma_bssnDD01)));
+            INTERP_VARS[PSII][kk][jj][ii]   = pow(FDPart3_0,1.0/4.0);
 
             // Now, we read in the lapse function.
             int whichvar=vars_to_interpolate[6];
