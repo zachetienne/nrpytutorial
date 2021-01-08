@@ -41,33 +41,39 @@ class TestParser(unittest.TestCase):
         function = Function('Tensor')(Symbol('T'))
         tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, 'beta'),
             r'\nabla_\beta T = \partial_\beta (T)'
         )
         function = Function('Tensor')(Symbol('TUU'), Symbol('mu'), Symbol('nu'))
         tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, 'beta'),
             r'\nabla_\beta T^{\mu \nu} = \partial_\beta (T^{\mu \nu}) + \Gamma^\mu_{a \beta} (T^{a \nu}) + \Gamma^\nu_{a \beta} (T^{\mu a})'
         )
         function = Function('Tensor')(Symbol('TUD'), Symbol('mu'), Symbol('nu'))
         tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, 'beta'),
             r'\nabla_\beta T^\mu_\nu = \partial_\beta (T^\mu_\nu) + \Gamma^\mu_{a \beta} (T^a_\nu) - \Gamma^a_{\nu \beta} (T^\mu_a)'
         )
         function = Function('Tensor')(Symbol('TDD'), Symbol('mu'), Symbol('nu'))
         tensor = Tensor(function, 4)
         self.assertEqual(
-            Parser._generate_covdrv(tensor, function, [('beta', 'D')]),
+            Parser._generate_covdrv(tensor, function, 'beta'),
             r'\nabla_\beta T_{\mu \nu} = \partial_\beta (T_{\mu \nu}) - \Gamma^a_{\mu \beta} (T_{a \nu}) - \Gamma^a_{\nu \beta} (T_{\mu a})'
         )
 
     def test_expression_5(self):
-        function = Function('Tensor')(Symbol('vU'), Symbol('mu'))
-        tensor = Tensor(function, 4)
+        Parser.clear_namespace()
+        parse(r"""
+            % define metric gDD (4D), vU (4D)
+            % assign numeric gDD, vU
+            T^\mu_b = \nabla_b v^\mu
+        """)
+        tensor = Parser._namespace['vU_cdD']
+        function = Parser._namespace['vU_cdD'].equation[0]
         self.assertEqual(
-            Parser._generate_covdrv(tensor, function, [('a', 'D'), ('b', 'D')]),
+            Parser._generate_covdrv(tensor, function, 'a'),
             r'\nabla_a \nabla_b v^\mu = \partial_a (\partial_b (v^\mu) + \Gamma^\mu_{c b} (v^c)) + \Gamma^\mu_{c a} (\partial_b (v^c) + \Gamma^c_{d b} (v^d)) - \Gamma^c_{b a} (\partial_c (v^\mu) + \Gamma^\mu_{b c} (v^b))'
         )
 
@@ -191,7 +197,7 @@ class TestParser(unittest.TestCase):
                 u_0 = x^{{2}} + 2x \\
                 u_1 = y\sqrt{x} \\
                 v_a = u_a + w_a \\
-                T_{ab} = \partial^2_x v_0 (\vphantom{numeric} \partial_b v_a)
+                T_{bc} = \partial^2_x v_0 (\vphantom{numeric} \partial_c v_b)
             """)),
             {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
         )
