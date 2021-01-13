@@ -73,9 +73,12 @@ def assert_equal(vardict_1, vardict_2):
         >>> from sympy.abc import x
 
         >>> assert_equal(sin(2*x), 2*sin(x)*cos(x))
+        Assertion Passed!
         >>> assert_equal(cos(2*x), cos(x)**2 - sin(x)**2)
+        Assertion Passed!
 
         >>> assert_equal(cos(2*x), 1 - 2*sin(x)**2)
+        Assertion Passed!
         >>> assert_equal(cos(2*x), 1 + 2*sin(x)**2)
         Traceback (most recent call last):
         ...
@@ -84,6 +87,7 @@ def assert_equal(vardict_1, vardict_2):
         >>> vardict_1 = {'A': sin(2*x), 'B': cos(2*x)}
         >>> vardict_2 = {'A': 2*sin(x)*cos(x), 'B': cos(x)**2 - sin(x)**2}
         >>> assert_equal(vardict_1, vardict_2)
+        Assertion Passed!
     """
     if isinstance(vardict_1, sp.Basic):
         vardict_1 = {'': vardict_1}
@@ -96,6 +100,7 @@ def assert_equal(vardict_1, vardict_2):
         n_1, n_2 = vardict_1[var_1], vardict_2[var_2]
         E_rel = 2 * fabs(n_1 - n_2)/(fabs(n_1) + fabs(n_2))
         assert -log10(E_rel) + 1 >= (2.0/3) * precision
+    print('Assertion Passed!')
 
 if __name__ == "__main__":
     import doctest
