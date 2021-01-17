@@ -49,12 +49,38 @@ extern "C" void set_IllinoisGRMHD_metric_GRMHD_variables_based_on_HydroBase_and_
         }
   }
 
+  // Check whether or not to apply a pressure depletion to the initial data
+  bool apply_pressure_depletion = false;
+  if( ID_converter_ILGRMHD_pressure_depletion_factor != 0.0 ) apply_pressure_depletion = true;
+
 #pragma omp parallel for
   for(int k=0;k<cctk_lsh[2];k++) for(int j=0;j<cctk_lsh[1];j++) for(int i=0;i<cctk_lsh[0];i++) {
         int index=CCTK_GFINDEX3D(cctkGH,i,j,k);
 
+        if( apply_pressure_depletion ) {
+          // Deplete the pressure
+          const CCTK_REAL pressL = (1.0 - ID_converter_ILGRMHD_pressure_depletion_factor)*press[index];
+          // Recompute P and eps
+          const CCTK_INT  ppidx = find_polytropic_K_and_Gamma_index_from_P(eos,pressL);
+          const CCTK_REAL K     = eos.K_ppoly_tab[ppidx];
+          const CCTK_REAL Gamma = eos.Gamma_ppoly_tab[ppidx];
+          // Now we have
+          //                    .----------------------.
+          // P = K rho^Gamma => | rho = (P/K)^(1/Gamma)|
+          //                    .----------------------.
+          const CCTK_REAL rhoL  = pow( pressL/K, 1.0/Gamma );
+          // Finally compute eps
+          const CCTK_REAL epsC  = eos.eps_integ_const[ppidx];
+          const CCTK_REAL epsL  = pressL/(rhoL*(Gamma-1.0)) + epsC;
+
+          // Now update the HydroBase gridfunctions
+          rho  [index] = rhoL;
+          press[index] = pressL;
+          eps  [index] = epsL;
+        }
+
         rho_b[index] = rho[index];
-        P[index] = press[index];
+        P    [index] = press[index];
 
         /***************
          * PPEOS Patch *
