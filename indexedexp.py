@@ -72,18 +72,22 @@ def declare_indexedexp(rank, symbol=None, symmetry=None, dimension=None):
         if not isinstance(symbol, str) or not re.match(r'[\w_]', symbol):
             raise ValueError('symbol must be an alphabetic string')
     if dimension is not None:
-        if not isinstance(dimension, int) or not dimension > 0:
+        if not isinstance(dimension, int) or dimension <= 0:
             raise ValueError('dimension must be a positive integer')
-    loop_index = ['str(%s)' % chr(97 + n) for n in range(rank)]
-    indexing = ' + '.join(loop_index)
-    interior = 'sympify(0)' if not symbol \
-          else 'sympify(\'%s\' + %s)' % (symbol, indexing)
-    indexedexp = '[' * rank + interior
-    for i in range(1, rank + 1):
-        indexedexp += ' for %s in range(%s)]' % (loop_index[rank - i][4:-1], dimension)
-    indexedexp = eval(indexedexp, {'sympify': sp.sympify}, {})
+    indexedexp = _init(rank * [dimension], symbol)
     if symmetry: return symmetrize(rank, indexedexp, symmetry, dimension)
     return apply_symmetry_condition_to_derivatives(indexedexp)
+
+def _init(shape, symbol, index=None):
+    if isinstance(shape, int):
+        shape = [shape]
+    if not index: index = []
+    iterable = [sp.Symbol(symbol + ''.join(str(n) for n in index + [i]))
+        if symbol else 0 for i in range(shape[0])]
+    if len(shape) > 1:
+        for i in range(shape[0]):
+            iterable[i] = _init(shape[1:], symbol, index + [i])
+    return iterable
 
 def symmetrize(rank, indexedexp, symmetry, dimension):
     if rank == 1:
