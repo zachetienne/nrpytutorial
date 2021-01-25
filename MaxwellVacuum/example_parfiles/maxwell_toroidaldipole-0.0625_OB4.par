@@ -1,6 +1,5 @@
 
 ActiveThorns = "
-ADMBase
 Boundary
 CartGrid3d
 CoordBase
@@ -15,51 +14,54 @@ PUGH
 PUGHReduce
 LocalReduce
 PUGHSlab
-MaxwellID
-MaxwellEvol
+MaxwellVacuumID
+MaxwellVacuum
 Slab
 SymBase
 Time
+NewRad
 "
 
 #############################################################
 # Grid
 #############################################################
 
-CoordBase::boundary_size_x_lower        = 1
-CoordBase::boundary_size_y_lower        = 1
-CoordBase::boundary_size_z_lower        = 1
+MaxwellVacuum::FD_order                 = 4
+# Use to set ghost zones and such
 
-CoordBase::boundary_size_x_upper        = 1
-CoordBase::boundary_size_y_upper        = 1
-CoordBase::boundary_size_z_upper        = 1
+CoordBase::boundary_size_x_lower        = 2
+CoordBase::boundary_size_y_lower        = 2
+CoordBase::boundary_size_z_lower        = 2
 
-# Case: Outer Boundary at 8, 64^3 points (per quadrant)
+CoordBase::boundary_size_x_upper        = 2
+CoordBase::boundary_size_y_upper        = 2
+CoordBase::boundary_size_z_upper        = 2
+
+# Case: Outer Boundary at 4, 32^3 points (per quadrant)
 # Size of the grid (including boundary points)
 PUGH::global_nx = 131
 PUGH::global_ny = 131
 PUGH::global_nz = 131
 
-PUGH::ghost_size = 1
+PUGH::ghost_size = 2
 
 CartGrid3D::type         = "byrange"
-CartGrid3D::avoid_origin = "no"
+CartGrid3D::avoid_origin = "yes"
+CartGrid3D::domain       = "full"
 
-CartGrid3D::xmin = -8.0625
-CartGrid3D::ymin = -8.0625
-CartGrid3D::zmin = -8.0625
-CartGrid3D::xmax =  8.1875
-CartGrid3D::ymax =  8.1875
-CartGrid3D::zmax =  8.1875
-
-Periodic::periodic = "yes"
+CartGrid3D::xmin = -4.03125
+CartGrid3D::ymin = -4.03125
+CartGrid3D::zmin = -4.03125
+CartGrid3D::xmax =  4.09375
+CartGrid3D::ymax =  4.09375
+CartGrid3D::zmax =  4.09375
 
 #############################################################
 # Time integration
 #############################################################
 
 Cactus::terminate                     = "time"
-Cactus::cctk_final_time               = 100.0
+Cactus::cctk_final_time               = 4.0
 
 Time::dtfac                           = 0.5
 MethodOfLines::ode_method             = "ICN"
@@ -71,7 +73,7 @@ MethodOfLines::MoL_NaN_Check          = "yes"
 # Boundary conditions
 #############################################################
 
-MaxwellEvol::bound = "radiation"
+#MaxwellEvol::bound = "radiation"
 
 #############################################################
 # Output
@@ -82,22 +84,17 @@ IO::out_fileinfo              = "none"
 IO::new_filename_scheme       = "no"
 
 IOBasic::outInfo_every        = 1
-IOBasic::outInfo_vars         = "MaxwellEvol::CviolationIGF MaxwellEvol::CviolationIIGF"
+IOBasic::outInfo_vars         = "MaxwellVacuum::DivEIGF MaxwellVacuum::DivEIIGF"
+IOBasic::outInfo_reductions	  = "norm2"
 
-
-IOASCII::out1D_style          = "gnuplot f(x)"
-IOASCII::out1D_every          = 1
-IOASCII::out1D_x              = "yes"
-IOASCII::out1D_y              = "no"
-IOASCII::out1D_z              = "no"
-IOASCII::out1D_d              = "no"
-IOASCII::out1D_vars           = "MaxwellEvol::CviolationIGF MaxwellEvol::CviolationIIGF"
-
-IOASCII::out2D_style          = "gnuplot f(t,x,y)"
-IOASCII::out2D_every          = 1
-IOASCII::out2D_xyplane_z      = 0.0625
-IOASCII::out2D_vars           = "MaxwellEvol::CviolationIGF MaxwellEvol::CviolationIIGF"
+IOBasic::outScalar_every      = 1
+IOBasic::outScalar_vars       = "MaxwellVacuum::DivEIGF MaxwellVacuum::DivEIIGF"
+IOBasic::outScalar_reductions = "norm2"
+IOBasic::outScalar_style      = "gnuplot"
 
 #############################################################
 # Initial Data
 #############################################################
+MaxwellVacuumID::wavespeed = 1.0
+MaxwellVacuumID::amp       = 1.0
+MaxwellVacuumID::lam       = 1.0
