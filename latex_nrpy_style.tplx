@@ -1,5 +1,5 @@
 % Based on http://nbviewer.jupyter.org/github/ipython/nbconvert-examples/blob/master/citations/Tutorial.ipynb , authored by Brian E. Granger
-((*- extends 'article.tplx' -*))
+((*- extends 'style_jupyter.tex.j2' -*))
 ((* block docclass *))
     % Declare the document class
     \documentclass[landscape,letterpaper,10pt,english]{article}
@@ -18,7 +18,7 @@
 % Start the section counter at -1, so the Table of Contents is Section 0
    \setcounter{section}{-2}
 % Prevent overflowing lines due to hard-to-break entities
-    \sloppy 
+    \sloppy
     % Setup hyperref package
     \hypersetup{
       breaklinks=true,  % so long urls are correctly broken across lines
@@ -27,7 +27,7 @@
       linkcolor=linkcolor,
       citecolor=citecolor,
       }
-      
+
     % Slightly bigger margins than the latex defaults
     \geometry{verbose,tmargin=0.5in,bmargin=0.5in,lmargin=0.5in,rmargin=0.5in}
 ((* endblock commands *))

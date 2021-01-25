@@ -189,7 +189,7 @@ def mkdir(newpath):
         os.makedirs(os.path.join(newpath))
 
 def output_Jupyter_notebook_to_LaTeXed_PDF(notebookname,location_of_template_file=os.path.join("."),verbose=True):
-    Execute_input_string(r"jupyter nbconvert --to latex --template "
+    Execute_input_string(r"jupyter nbconvert --to latex --template-file "
                          +os.path.join(location_of_template_file,"latex_nrpy_style.tplx")
                          +r" --log-level='WARN' "+notebookname+".ipynb",verbose=False)
     for _i in range(3):  # _i is an unused variable.

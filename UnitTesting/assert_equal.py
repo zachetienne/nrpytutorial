@@ -73,9 +73,12 @@ def assert_equal(vardict_1, vardict_2):
         >>> from sympy.abc import x
 
         >>> assert_equal(sin(2*x), 2*sin(x)*cos(x))
+        Assertion Passed!
         >>> assert_equal(cos(2*x), cos(x)**2 - sin(x)**2)
+        Assertion Passed!
 
         >>> assert_equal(cos(2*x), 1 - 2*sin(x)**2)
+        Assertion Passed!
         >>> assert_equal(cos(2*x), 1 + 2*sin(x)**2)
         Traceback (most recent call last):
         ...
@@ -84,18 +87,29 @@ def assert_equal(vardict_1, vardict_2):
         >>> vardict_1 = {'A': sin(2*x), 'B': cos(2*x)}
         >>> vardict_2 = {'A': 2*sin(x)*cos(x), 'B': cos(x)**2 - sin(x)**2}
         >>> assert_equal(vardict_1, vardict_2)
+        Assertion Passed!
+
+        >>> assert_equal('(a^2 - b^2) - (a + b)*(a - b)', 0)
+        Assertion Passed!
     """
-    if isinstance(vardict_1, sp.Basic):
+    if not isinstance(vardict_1, dict):
         vardict_1 = {'': vardict_1}
-    if isinstance(vardict_2, sp.Basic):
+    if not isinstance(vardict_2, dict):
         vardict_2 = {'': vardict_2}
+    for var_1, var_2 in zip(vardict_1, vardict_2):
+        if not isinstance(vardict_1[var_1], sp.Basic):
+            vardict_1[var_1] = sp.sympify(vardict_1[var_1])
+        if not isinstance(vardict_2[var_2], sp.Basic):
+            vardict_2[var_2] = sp.sympify(vardict_2[var_2])
     # update each vardict with mapping: variable -> (pseudo) unique number
     vardict_1, vardict_2 = update_vardict(vardict_1), update_vardict(vardict_2)
     # assert whether SDA >= (2/3) * precision, implying expression equality
     for var_1, var_2 in zip(vardict_1, vardict_2):
         n_1, n_2 = vardict_1[var_1], vardict_2[var_2]
+        if n_1 == n_2: continue
         E_rel = 2 * fabs(n_1 - n_2)/(fabs(n_1) + fabs(n_2))
         assert -log10(E_rel) + 1 >= (2.0/3) * precision
+    print('Assertion Passed!')
 
 if __name__ == "__main__":
     import doctest
