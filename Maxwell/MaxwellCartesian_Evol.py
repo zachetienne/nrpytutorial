@@ -1,8 +1,7 @@
-import NRPy_param_funcs as par
-import indexedexp as ixp
-import grid as gri
-import finite_difference as fin
-from outputC import *
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
+import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri               # NRPy+: Functions having to do with numerical grids
+import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 
 par.initialize_param(par.glb_param("char", __name__, "System_to_use", "System_II"))
 
@@ -12,7 +11,8 @@ def MaxwellCartesian_Evol():
     DIM = par.parval_from_str("grid::DIM")
 
     # Step 1: Set the finite differencing order to 4.
-    par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
+    # (not needed here)
+    # par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", 4)
 
     # Step 2: Register gridfunctions that are needed as input.
     psi = gri.register_gridfunctions("EVOL", ["psi"])
@@ -34,8 +34,6 @@ def MaxwellCartesian_Evol():
     gammaDD_dD = ixp.declarerank3("gammaDD_dD","sym01")
     gammaDD_dDD = ixp.declarerank4("gammaDD_dDD","sym01_sym23")
 
-    gammaUU = ixp.declarerank3("gammaUU","sym01")
-    detgamma = gri.register_gridfunctions("AUX",["detgamma"])
     gammaUU, detgamma = ixp.symm_matrix_inverter3x3(gammaDD)
     gammaUU_dD = ixp.declarerank3("gammaDD_dD","sym01")
 
