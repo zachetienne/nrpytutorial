@@ -83,7 +83,7 @@ def _init(shape, symbol, index=None):
         shape = [shape]
     if not index: index = []
     iterable = [sp.Symbol(symbol + ''.join(str(n) for n in index + [i]))
-        if symbol else 0 for i in range(shape[0])]
+        if symbol else sp.sympify(0) for i in range(shape[0])]
     if len(shape) > 1:
         for i in range(shape[0]):
             iterable[i] = _init(shape[1:], symbol, index + [i])

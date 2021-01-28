@@ -32,5 +32,6 @@
           "bar": "g",
           "hat": "g",
         "tilde": "gamma"
-    }
+    },
+    "dimension": 3
 }
