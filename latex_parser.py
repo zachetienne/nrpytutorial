@@ -89,6 +89,7 @@ class Lexer:
             ('VPHANTOM',        r'\\vphantom'),
             ('SYMMETRY',        r'const|metric|' + symmetry),
             ('WEIGHT',          r'weight'),
+            ('GLOBAL',          r'global'),
             ('PI',              r'\\pi'),
             ('LETTER',          r'[a-zA-Z]|' + alphabet),
             ('COMMAND',         r'\\[a-zA-Z]+'),
@@ -161,13 +162,13 @@ class Parser:
         <ALIGN>         -> <OPENING> ( '%' <MACRO> | <ASSIGNMENT> ) { [ <RETURN> ] ( '%' <MACRO> | <ASSIGNMENT> ) }* <CLOSING>
             <MACRO>     -> <PARSE> | <SREPL> | <VARDEF> | <KEYDEF> | <ASSIGN> | <IGNORE>
             <PARSE>     -> <PARSE_MACRO> <ASSIGNMENT> { ',' <ASSIGNMENT> }*
-            <SREPL>     -> <SREPL_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
+            <SREPL>     -> <SREPL_MACRO> [ '-' <GLOBAL> ] <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
             <VARDEF>    -> <VARDEF_MACRO> { '-' <OPTION> }* <VARIABLE> { ',' <VARIABLE> }* [ '(' <DIMENSION> ')' ]
             <KEYDEF>    -> <KEYDEF_MACRO> <BASIS_KWRD> <BASIS> | <INDEX_KWRD> <INDEX>
             <ASSIGN>    -> <ASSIGN_MACRO> { '-' <OPTION> }* <VARIABLE> { ',' <VARIABLE> }*
             <IGNORE>    -> <IGNORE_MACRO> <STRING> { ',' <STRING> }*
             <OPTION>    -> <DRV_TYPE> [ <PRIORITY> ] | <SYMMETRY> | <WEIGHT> '=' <NUMBER>
-            <BASIS>     -> <BASIS_KWRD> '{' <LETTER> { ',' <LETTER> }* '}'
+            <BASIS>     -> <BASIS_KWRD> ( '[' <LETTER> { ',' <LETTER> }* ']' )
             <INDEX>     -> ( <LETTER> | '[' <LETTER> '-' <LETTER> ']' ) '(' <DIMENSION> ')'
         <ASSIGNMENT>    -> <OPERATOR> = <EXPRESSION>
         <EXPRESSION>    -> <TERM> { ( '+' | '-' ) <TERM> }*
@@ -315,15 +316,16 @@ class Parser:
         while self.accept('COMMA'):
             self._assignment()
 
-    # <SREPL> -> <SREPL_MACRO> <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
+    # <SREPL> -> <SREPL_MACRO> [ '-' <GLOBAL> ] <STRING> <ARROW> <STRING> { ',' <STRING> <ARROW> <STRING> }*
     def _srepl(self):
         self.expect('SREPL_MACRO')
+        persist = self.accept('MINUS') and self.accept('GLOBAL')
         while True:
             old = self.lexer.lexeme[1:-1]
             self.expect('STRING')
             self.expect('ARROW')
             new = self.lexer.lexeme[1:-1]
-            if [old, new] not in self._property['srepl']:
+            if persist and [old, new] not in self._property['srepl']:
                 self._property['srepl'].append([old, new])
             self.expect('STRING')
             sentence, position = self.lexer.sentence, self.lexer.mark()
@@ -565,7 +567,6 @@ class Parser:
 
     # <OPTION> -> <DRV_TYPE> [ <PRIORITY> ] | <SYMMETRY> | <WEIGHT> '=' <NUMBER>
     def _option(self):
-        drv_type, symmetry, weight = None, None, None
         if self.peek('DRV_TYPE'):
             drv_type = self.lexer.lexeme
             self.lexer.lex()
@@ -1561,6 +1562,7 @@ class Tensor:
     def __init__(self, function, dimension=None, structure=None,
             expression=None, symmetry=None, drv_type=None, weight=None):
         self.symbol      = str(function.args[0])
+        # TODO split on _d/_dup/_cd/diacritic(s) and count from end
         self.rank        = len(re.findall(r'[UD]', self.symbol))
         self.dimension   = dimension
         self.structure   = structure

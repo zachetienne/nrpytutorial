@@ -106,11 +106,11 @@ class TestParser(unittest.TestCase):
     def test_srepl_macro(self):
         Parser.clear_namespace()
         parse(r"""
-            % srepl "<1>'" -> "\text{<1>prime}"
-            % srepl "\text{<1..>}_<2>" -> "\text{(<1..>)<2>}"
-            % srepl "<1>_{<2>}" -> "<1>_<2>", "<1>_<2>" -> "\text{<1>_<2>}"
-            % srepl "\text{(<1..>)<2>}" -> "\text{<1..>_<2>}"
-            % srepl "<1>^{<2>}" -> "<1>^<2>", "<1>^<2>" -> "<1>^{{<2>}}"
+            % srepl -global "<1>'" -> "\text{<1>prime}"
+            % srepl -global "\text{<1..>}_<2>" -> "\text{(<1..>)<2>}"
+            % srepl -global "<1>_{<2>}" -> "<1>_<2>", "<1>_<2>" -> "\text{<1>_<2>}"
+            % srepl -global "\text{(<1..>)<2>}" -> "\text{<1..>_<2>}"
+            % srepl -global "<1>^{<2>}" -> "<1>^<2>", "<1>^<2>" -> "<1>^{{<2>}}"
         """)
         expr = r"x_n^4 + x'_n \exp(x_n y_n^2)"
         self.assertEqual(
@@ -118,7 +118,7 @@ class TestParser(unittest.TestCase):
             "x_n**4 + xprime_n*exp(x_n*y_n**2)"
         )
         Parser.clear_namespace()
-        parse(r""" % srepl "<1>'^{<2..>}" -> "\text{<1>prime}" """)
+        parse(r""" % srepl -global "<1>'^{<2..>}" -> "\text{<1>prime}" """)
         expr = r"v'^{label}"
         self.assertEqual(
             str(parse_expr(expr)),
@@ -511,6 +511,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         parse(r"""
             % keydef basis [x, y, z]
+            % ignore "\\%", "\qquad"
             % vardef 'deltaDD', 'vetU', 'lambdaU'
             % vardef -numeric -sym01 'hDD', 'aDD', 'RbarDD'
             % assign -numeric 'cf', 'alpha', 'trK', 'vetU', 'lambdaU'
@@ -519,47 +520,61 @@ class TestParser(unittest.TestCase):
             % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij}
             % assign -numeric -metric 'gammabarDD'
             \begin{align}
-                % srepl "\bar{A}" -> "a", "\beta" -> "\text{vet}", "\bar{\Lambda}" -> "\lambda"
-                % srepl "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{upwind} \partial_<1>" %% (inside Lie derivative expansion)
-                % srepl "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k)" %% (enforce gammabardet == gammahatdet constraint)
-                % srepl "\bar{D}^i (\partial_k \text{vet}^k)" -> "(\bar{D}^i \partial_k \text{vet}^k)"
+                %% replace LaTeX variable(s) with BSSN variable(s)
+                % srepl "\bar{A}" -> "\text{a}", "\beta" -> "\text{vet}", "K" -> "\text{trK}", "\bar{\Lambda}" -> "\text{lambda}"
+                % srepl "e^{{-4\phi}}" -> "\text{cf}^{{2}}"
+                % srepl "\partial_t \phi = <1..> \\" -> "\text{cf_rhs} = -2 \text{cf} (<1..>) \\"
+                % srepl -global "\partial_<1> \phi"         -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                % srepl -global "\partial_<1> \text{phi}"   -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                % srepl -global "\partial_<1> (\text{phi})" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+
+                %% upwind pattern inside Lie derivative expansion
+                % srepl -global "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{upwind} \partial_<1>"
+
+                %% enforce metric constraint gammabardet == gammahatdet
+                % srepl -global "\bar{D}^i \bar{D}_k \text{vet}^k" -> "(\bar{D}^i \partial_k \text{vet}^k)"
+                % srepl -global "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
+
                 % parse \bar{A}^i_j = \bar{\gamma}^{ik} \bar{A}_{kj}
                 % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
                 \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
                     + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right)
-                    - 2 \alpha \bar{A}_{ij}
-                % srepl "\alpha K" -> "\alpha \text{trK}", "\phi" -> "\text{cf}", "\partial_t \text{cf}" -> "\text{cf_rhs}"
+                    - 2 \alpha \bar{A}_{ij} \\
+
                 \partial_t \phi &= \mathcal{L}_\beta \phi
-                    - \frac{1}{3} \phi \left(\bar{D}_k \beta^k - \alpha K \right)
+                    + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
+
                 % parse \bar{A}^{ij} = \bar{\gamma}^{ik} \bar{\gamma}^{jl} \bar{A}_{kl}
-                % srepl "\partial_t K" -> "\text{trK_rhs}", "\mathcal{L}_\beta K" -> "\mathcal{L}_\beta \text{trK}"
-                \partial_t K &= \mathcal{L}_\beta \text{trK}
+                % srepl "\partial_t \text{trK}" -> "\text{trK_rhs}"
+                \partial_t K &= \mathcal{L}_\beta K
                     + \frac{1}{3} \alpha K^{{2}}
                     + \alpha \bar{A}_{ij} \bar{A}^{ij}
-                    - \text{cf} \left(\text{cf} \bar{D}_i \bar{D}^i \alpha - \bar{D}^i \alpha \bar{D}_i \text{cf}\right)
-                % parse \Rho^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij}
-                % parse \Rho_{ijk}  = \bar{\gamma}_{il} \Rho^l_{jk}
-                % parse \Rho^k = \bar{\gamma}^{ij} \Rho^k_{ij}
-                % srepl "\partial_t \lambda" -> "\text{Lambdabar_rhs}"
+                    - e^{{-4\phi}} \left(\bar{D}_i \bar{D}^i \alpha + 2 \bar{D}^i \alpha \bar{D}_i \phi\right) \\
+
+                % parse \Pi^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij}
+                % parse \Pi_{ijk}  = \bar{\gamma}_{il} \Pi^l_{jk}
+                % parse \Pi^k = \bar{\gamma}^{ij} \Pi^k_{ij}
+                % srepl "\partial_t \text{lambda}" -> "\text{Lambdabar_rhs}"
                 \partial_t \bar{\Lambda}^i &= \mathcal{L}_\beta \bar{\Lambda}^i + \bar{\gamma}^{jk} \hat{D}_j \hat{D}_k \beta^i
-                    + \frac{2}{3} \Rho^i \bar{D}_k \beta^k + \frac{1}{3} \bar{D}^i \bar{D}_k \beta^k
-                    - 2 \bar{A}^{ij} (\partial_j \alpha + (3/\text{cf}) \alpha \partial_j \text{cf})
-                    + 2 \alpha \bar{A}^{jk} \Rho^i_{jk} - \frac{4}{3} \alpha \bar{\gamma}^{ij} \partial_j \text{trK}
-                % parse X_{ij} = (-2 \alpha) (\frac{1}{2 \text{cf}}) (-\bar{D}_i \bar{D}_j \text{cf} + \frac{1}{\text{cf}} \bar{D}_i \text{cf} \bar{D}_j \text{cf})
-                    + 4 (\frac{1}{2 \text{cf}})^{{2}} \alpha \bar{D}_i \text{cf} \bar{D}_j \text{cf}
-                    - \frac{1}{\text{cf}} (\bar{D}_i \alpha \bar{D}_j \text{cf} + \bar{D}_j \alpha \bar{D}_i \text{cf})
-                    - \bar{D}_i \bar{D}_j \alpha + \alpha \bar{R}_{ij}
-                % parse \hat{X}_{ij} = X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl}
-                % srepl "\partial_t a" -> "\text{a_rhs}"
+                    + \frac{2}{3} \Pi^i \bar{D}_k \beta^k + \frac{1}{3} \bar{D}^i \bar{D}_k \beta^k \\%
+                    &\qquad- 2 \bar{A}^{ij} (\partial_j \alpha - 6 \alpha \partial_j \phi)
+                    + 2 \alpha \bar{A}^{jk} \Pi^i_{jk} - \frac{4}{3} \alpha \bar{\gamma}^{ij} \partial_j K \\
+
+                X_{ij} &= -2 \alpha \bar{D}_i \bar{D}_j \phi + 4 \alpha \bar{D}_i \phi \bar{D}_j \phi
+                    + 2 \bar{D}_i \alpha \bar{D}_j \phi + 2 \bar{D}_j \alpha \bar{D}_i \phi
+                    - \bar{D}_i \bar{D}_j \alpha + \alpha \bar{R}_{ij} \\
+                \hat{X}_{ij} &= X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl} \\
+                % srepl "\partial_t \text{a}" -> "\text{a_rhs}"
                 \partial_t \bar{A}_{ij} &= \mathcal{L}_\beta \bar{A}_{ij}
                     - \frac{2}{3} \bar{A}_{ij} \bar{D}_k \beta^k
                     - 2 \alpha \bar{A}_{ik} \bar{A}^k_j
-                    + \alpha \bar{A}_{ij} \text{trK}
-                    + \text{cf}^{{2}} \hat{X}_{ij}
-                % parse \bar{R}_{i j} = -\frac{1}{2} \bar{\gamma}^{kl} \hat{D}_k \hat{D}_l \bar{\gamma}_{ij}
+                    + \alpha \bar{A}_{ij} K
+                    + e^{{-4\phi}} \hat{X}_{ij} \\
+
+                \bar{R}_{ij} &= -\frac{1}{2} \bar{\gamma}^{kl} \hat{D}_k \hat{D}_l \bar{\gamma}_{ij}
                     + \frac{1}{2} (\bar{\gamma}_{ki} \hat{D}_j \bar{\Lambda}^k + \bar{\gamma}_{kj} \hat{D}_i \bar{\Lambda}^k)
-                    + \frac{1}{2} \Rho^k (\Rho_{ijk} + \Rho_{jik})
-                    + \bar{\gamma}^{kl} (\Rho^m_{ki} \Rho_{jml} + \Rho^m_{kj} \Rho_{iml} + \Rho^m_{ik} \Rho_{mjl}) 
+                    + \frac{1}{2} \Pi^k (\Pi_{ijk} + \Pi_{jik}) \\%
+                    &\qquad+ \bar{\gamma}^{kl} (\Pi^m_{ki} \Pi_{jml} + \Pi^m_{kj} \Pi_{iml} + \Pi^m_{ik} \Pi_{mjl}) 
             \end{align}
         """)
         par.set_parval_from_str('reference_metric::CoordSystem', 'Cartesian')
