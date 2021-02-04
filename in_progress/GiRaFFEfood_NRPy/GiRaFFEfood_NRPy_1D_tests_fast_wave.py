@@ -52,12 +52,13 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
     Bycenter = sp.sympify(1) - sp.Rational(15,10)*(x+sp.Rational(1,10))
     Byright = sp.Rational(7,10)
 
+    global BU
     BU = ixp.zerorank1()
     BU[0] = sp.sympify(1)
     BU[1] = noif.coord_leq_bound(x,-bound)*Byleft\
             +noif.coord_greater_bound(x,-bound)*noif.coord_leq_bound(x,bound)*Bycenter\
             +noif.coord_greater_bound(x,bound)*Byright
-    BU[2] = 0
+    BU[2] = sp.sympify(0)
 
     # E^x(0,x) = 0.0 , E^y(x) = 0.0 , E^z(x) = -B^y(0,x)
     EU = ixp.zerorank1()
