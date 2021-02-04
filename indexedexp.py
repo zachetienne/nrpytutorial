@@ -91,6 +91,7 @@ def _init(shape, symbol, index=None):
 
 def symmetrize(rank, indexedexp, symmetry, dimension):
     if rank == 1:
+        if symmetry == 'nosym': return indexedexp
         raise Exception('cannot symmetrize indexed expression of rank 1')
     if rank == 2:
         indexedexp = symmetrize_rank2(indexedexp, symmetry, dimension)

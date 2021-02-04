@@ -66,8 +66,8 @@ class TestParser(unittest.TestCase):
     def test_expression_5(self):
         Parser.clear_namespace()
         parse(r"""
-            % define metric gDD (4D), vU (4D)
-            % assign numeric gDD, vU
+            % vardef -numeric -metric 'gDD' (4D)
+            % vardef -numeric 'vU' (4D)
             T^\mu_b = \nabla_b v^\mu
         """)
         tensor = Parser._namespace['vU_cdD']
@@ -129,9 +129,8 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define vU (2D), wU (2D)
-                % assign numeric vU, wU
-                % define index [a-z] (2D)
+                % vardef -numeric 'vU' (2D), 'wU' (2D)
+                % keydef index [a-z] (2D)
                 T^{ab}_c = \partial_c (v^a w^b)
             """)),
             {'vU', 'wU', 'vU_dD', 'wU_dD', 'TUUD'}
@@ -144,9 +143,9 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define vU (2D), const w
-                % assign numeric vU
-                % define index [a-z] (2D)
+                % vardef -const 'w'
+                % vardef -numeric 'vU' (2D)
+                % keydef index [a-z] (2D)
                 T^a_c = \partial_c (v^a w)
             """)),
             {'vU', 'vU_dD', 'TUD'}
@@ -159,9 +158,9 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define metric gDD (4D), vU (4D)
-                % assign numeric gDD, vU
-                % define index [a-z] (4D)
+                % vardef -numeric -metric 'gDD' (4D)
+                % vardef -numeric 'vU' (4D)
+                % keydef index [a-z] (4D)
                 T^{ab} = \nabla^b v^a
             """)),
             {'gUU', 'gdet', 'epsilonUUUU', 'gDD', 'vU', 'vU_dD', 'gDD_dD', 'GammaUDD', 'vU_cdD', 'vU_cdU', 'TUU'}
@@ -171,13 +170,13 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define basis [x, y]
-                % define uD (2D), wD (2D)
-                % define index [a-z] (2D)
+                % keydef basis [x, y]
+                % vardef 'uD' (2D), 'wD' (2D)
+                % keydef index [a-z] (2D)
                 u_0 = x^{{2}} + 2x \\
                 u_1 = y\sqrt{x} \\
                 v_a = u_a + w_a \\
-                % assign numeric wD, vD
+                % assign -numeric 'wD', 'vD'
                 T_{ab} = \partial^2_x v_0 (\partial_b v_a)
             """)),
             {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
@@ -190,10 +189,10 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define basis [x, y]
-                % define uD (2D), wD (2D)
-                % assign symbolic <H> uD
-                % define index [a-z] (2D)
+                % keydef basis [x, y]
+                % vardef 'uD' (2D), 'wD' (2D)
+                % assign -symbolic <H> 'uD'
+                % keydef index [a-z] (2D)
                 u_0 = x^{{2}} + 2x \\
                 u_1 = y\sqrt{x} \\
                 v_a = u_a + w_a \\
@@ -209,8 +208,8 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                    % define vD (2D), uD (2D), wD (2D)
-                    % define index [a-z] (2D)
+                    % vardef 'vD' (2D), 'uD' (2D), 'wD' (2D)
+                    % keydef index [a-z] (2D)
                     T_{abc} = \vphantom{numeric} ((v_a + u_a)_{,b} - w_{a,b})_{,c}
             """)),
             {'vD', 'uD', 'wD', 'TDDD', 'uD_dD', 'vD_dD', 'wD_dD', 'wD_dDD', 'uD_dDD', 'vD_dDD'}
@@ -222,15 +221,16 @@ class TestParser(unittest.TestCase):
     def test_assignment_7(self):
         Parser.clear_namespace()
         parse(r"""
-            % define basis [\theta, \phi]
-            % define const r, deltaDD (2D)
-            % define index [a-z] (2D)
+            % keydef basis [\theta, \phi]
+            % vardef -const 'r'
+            % vardef 'deltaDD' (2D)
+            % keydef index [a-z] (2D)
             % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align*}
                 g_{0 0} &= r^{{2}} \\
                 g_{1 1} &= r^{{2}} \sin^2(\theta)
             \end{align*}
-            % assign metric gDD
+            % assign -metric 'gDD'
             \begin{align*}
                 R^\alpha_{\beta\mu\nu} &= \partial_\mu \Gamma^\alpha_{\beta\nu} - \partial_\nu \Gamma^\alpha_{\beta\mu} + \Gamma^\alpha_{\mu\gamma}\Gamma^\gamma_{\beta\nu} - \Gamma^\alpha_{\nu\sigma}\Gamma^\sigma_{\beta\mu} \\
                 R_{\alpha\beta\mu\nu} &= g_{\alpha a} R^a_{\beta\mu\nu} \\
@@ -269,7 +269,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define metric gDD (4D)
+                % vardef -metric 'gDD' (4D)
                 \gamma_{ij} = g_{ij}
             """)),
             {'gUU', 'gdet', 'epsilonUUUU', 'gDD', 'gammaDD'}
@@ -280,8 +280,9 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define nosym TUU (3D), vD (2D)
-                % define index i (2D)
+                % vardef -nosym 'TUU' (3D)
+                % vardef 'vD' (2D)
+                % keydef index i (2D)
                 w^\mu = T^{\mu i} v_i
             """)),
             {'TUU', 'vD', 'wU'}
@@ -294,7 +295,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define nosym hUD (4D)
+                % vardef -nosym 'hUD' (4D)
                 h = h^\mu{}_\mu
             """)),
             {'hUD', 'h'}
@@ -307,7 +308,8 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define metric gUU (3D), vD (3D)
+                % vardef -metric 'gUU' (3D)
+                % vardef 'vD' (3D)
                 v^\mu = g^{\mu\nu} v_\nu
             """)),
             {'gDD', 'gdet', 'epsilonDDD', 'gUU', 'vD', 'vU'}
@@ -320,8 +322,8 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define epsilonDDD (3D)
-                % define vU (3D), wU (3D)
+                % vardef 'epsilonDDD' (3D)
+                % vardef 'vU' (3D), 'wU' (3D)
                 u_i = \epsilon_{ijk} v^j w^k
             """)),
             {'epsilonDDD', 'vU', 'wU', 'uD'}
@@ -334,7 +336,9 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define anti01 FUU (4D), metric gDD (4D), const k
+                % vardef -anti01 'FUU' (4D)
+                % vardef -metric 'gDD' (4D)
+                % vardef -const 'k'
                 J^\mu = (4\pi k)^{-1} \vphantom{numeric} \nabla_\nu F^{\mu\nu}
             """)),
             {'FUU', 'gUU', 'gdet', 'epsilonUUUU', 'gDD', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
@@ -344,7 +348,9 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % define anti01 FUU (4D), metric ghatDD (4D), const k
+                % vardef -anti01 'FUU' (4D)
+                % vardef -metric 'ghatDD' (4D)
+                % vardef -const 'k'
                 J^\mu = (4\pi k)^{-1} \vphantom{numeric} \hat{\nabla}_\nu F^{\mu\nu}
             """)),
             {'FUU', 'ghatUU', 'ghatdet', 'epsilonUUUU',  'ghatDD', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
@@ -353,8 +359,8 @@ class TestParser(unittest.TestCase):
     def test_example_5_1(self):
         Parser.clear_namespace()
         parse(r"""
-            % define deltaDD (4D)
-            % define const G, const M
+            % vardef 'deltaDD' (4D)
+            % vardef -const 'G', 'M'
             % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align}
                 g_{0 0} &= -\left(1 - \frac{2GM}{r}\right) \\
@@ -362,7 +368,7 @@ class TestParser(unittest.TestCase):
                 g_{2 2} &= r^{{2}} \\
                 g_{3 3} &= r^{{2}} \sin^2\theta
             \end{align}
-            % assign metric gDD
+            % assign -metric 'gDD'
         """)
         self.assertEqual(str(gDD[0][0]),
             '2*G*M/r - 1'
@@ -382,7 +388,7 @@ class TestParser(unittest.TestCase):
 
     def test_example_5_2(self):
         parse(r"""
-            % define basis [t, r, \theta, \phi]
+            % keydef basis [t, r, \theta, \phi]
             \begin{align}
                 R^\alpha{}_{\beta\mu\nu} &= \partial_\mu \Gamma^\alpha_{\beta\nu} - \partial_\nu \Gamma^\alpha_{\beta\mu} + \Gamma^\alpha_{\mu\gamma}\Gamma^\gamma_{\beta\nu} - \Gamma^\alpha_{\nu\sigma}\Gamma^\sigma_{\beta\mu} \\
                 R^{\alpha\beta\mu\nu} &= g^{\beta a} g^{\mu b} g^{\nu c} R^\alpha_{a b c} \\
@@ -439,10 +445,10 @@ class TestParser(unittest.TestCase):
 
     def test_example_6_1(self):
         parse(r"""
-            % define basis [r, \theta, \phi]
+            % keydef basis [r, \theta, \phi]
             \begin{align}
                 \gamma_{ij} &= g_{ij} \\
-                % assign metric gammaDD
+                % assign -metric 'gammaDD'
                 \beta_i &= g_{0 i} \\
                 \alpha &= \sqrt{\gamma^{ij}\beta_i\beta_j - g_{0 0}} \\
                 K_{ij} &= \frac{1}{2\alpha}\left(\nabla_i \beta_j + \nabla_j \beta_i\right) \\
@@ -474,7 +480,7 @@ class TestParser(unittest.TestCase):
         for DIM in range(2, 5):
             Parser.clear_namespace()
             parse(r"""
-                % define metric gDD ({DIM}D)
+                % vardef -metric 'gDD' ({DIM}D)
                 \delta^a_c = g^{{ab}} g_{{bc}}
             """.format(DIM=DIM))
             # for i in range(DIM):
@@ -490,7 +496,7 @@ class TestParser(unittest.TestCase):
         for DIM in range(2, 5):
             Parser.clear_namespace()
             parse(r"""
-                % define metric gUU ({DIM}D)
+                % vardef -metric 'gUU' ({DIM}D)
                 \delta^a_c = g^{{ab}} g_{{bc}}
             """.format(DIM=DIM))
             kronecker = simplify(Matrix(deltaUD))
@@ -504,38 +510,56 @@ class TestParser(unittest.TestCase):
         import BSSN.BSSN_RHSs as Brhs, BSSN.BSSN_quantities as Bq
         Parser.clear_namespace()
         parse(r"""
-            % define deltaDD (3D), sym01 hDD (3D), sym01 aDD (3D), vetU (3D), lambdaU (3D)
+            % keydef basis [x, y, z]
+            % vardef 'deltaDD', 'vetU', 'lambdaU'
+            % vardef -numeric -sym01 'hDD', 'aDD', 'RbarDD'
+            % assign -numeric 'cf', 'alpha', 'trK', 'vetU', 'lambdaU'
             % parse \hat{\gamma}_{ij} = \delta_{ij}
-            % assign symbolic <H> gammahatDD
+            % assign -symbolic <H> -metric 'gammahatDD'
             % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij}
-            % assign numeric hDD, aDD, vetU, lambdaU, gammabarDD
-            % assign metric gammahatDD, gammabarDD
-            % srepl "\bar{A}" -> "a", "\beta" -> "\text{vet}", "\bar{\Lambda}" -> "\lambda"
-            % parse \bar{A}^i_j = \bar{\gamma}^{ik} \bar{A}_{kj}
-            % parse \bar{A}^{ij} = \bar{\gamma}^{ik} \bar{\gamma}^{jl} \bar{A}_{kl}
+            % assign -numeric -metric 'gammabarDD'
             \begin{align}
-                % define basis [x, y, z]
+                % srepl "\bar{A}" -> "a", "\beta" -> "\text{vet}", "\bar{\Lambda}" -> "\lambda"
                 % srepl "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{upwind} \partial_<1>" %% (inside Lie derivative expansion)
-                % srepl "\bar{D}^i \bar{D}_k \text{vet}^k" -> "(\bar{D}^i \hat{D}_k \text{vet}^k + \frac{\text{vet}^k \vphantom{symbolic} \bar{D}^i \hat{D}_k \text{gammabardet}}{2 \text{gammabardet}})"
-                % srepl "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\text{vet}^k \vphantom{symbolic} \partial_k \text{gammabardet}}{2 \text{gammabardet}})"
+                % srepl "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k)" %% (enforce gammabardet == gammahatdet constraint)
+                % srepl "\bar{D}^i (\partial_k \text{vet}^k)" -> "(\bar{D}^i \partial_k \text{vet}^k)"
+                % parse \bar{A}^i_j = \bar{\gamma}^{ik} \bar{A}_{kj}
                 % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
                 \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
-                    + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right) - 2 \alpha \bar{A}_{ij}
+                    + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right)
+                    - 2 \alpha \bar{A}_{ij}
                 % srepl "\alpha K" -> "\alpha \text{trK}", "\phi" -> "\text{cf}", "\partial_t \text{cf}" -> "\text{cf_rhs}"
-                \partial_t \phi &= \mathcal{L}_\beta \phi - \frac{1}{3} \phi \left(\bar{D}_k \beta^k - \alpha K \right)
+                \partial_t \phi &= \mathcal{L}_\beta \phi
+                    - \frac{1}{3} \phi \left(\bar{D}_k \beta^k - \alpha K \right)
+                % parse \bar{A}^{ij} = \bar{\gamma}^{ik} \bar{\gamma}^{jl} \bar{A}_{kl}
                 % srepl "\partial_t K" -> "\text{trK_rhs}", "\mathcal{L}_\beta K" -> "\mathcal{L}_\beta \text{trK}"
-                \partial_t K &= \mathcal{L}_\beta \text{trK} + \frac{1}{3} \alpha K^{{2}} + \alpha \bar{A}_{ij} \bar{A}^{ij} - \text{cf} \left(\text{cf} \vphantom{numeric} \bar{D}_i \bar{D}^i \alpha - \vphantom{numeric} \bar{D}^i \alpha \vphantom{numeric} \bar{D}_i \text{cf}\right)
+                \partial_t K &= \mathcal{L}_\beta \text{trK}
+                    + \frac{1}{3} \alpha K^{{2}}
+                    + \alpha \bar{A}_{ij} \bar{A}^{ij}
+                    - \text{cf} \left(\text{cf} \bar{D}_i \bar{D}^i \alpha - \bar{D}^i \alpha \bar{D}_i \text{cf}\right)
                 % parse \Rho^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij}
-                % parse \Rho_{ijk} = \bar{\gamma}_{il} \Rho^l_{jk}
+                % parse \Rho_{ijk}  = \bar{\gamma}_{il} \Rho^l_{jk}
                 % parse \Rho^k = \bar{\gamma}^{ij} \Rho^k_{ij}
                 % srepl "\partial_t \lambda" -> "\text{Lambdabar_rhs}"
-                \partial_t \bar{\Lambda}^i &= \mathcal{L}_\beta \bar{\Lambda}^i + \bar{\gamma}^{jk} \hat{D}_j \hat{D}_k \beta^i + \frac{2}{3} \Rho^i \bar{D}_k \beta^k + \frac{1}{3} \bar{D}^i \bar{D}_k \beta^k - 2 \bar{A}^{ij} (\partial_j \alpha + (3/\text{cf}) \alpha \partial_j \text{cf}) + 2 \alpha \bar{A}^{jk} \Rho^i_{jk} - \frac{4}{3} \alpha \bar{\gamma}^{ij} \vphantom{numeric} \partial_j \text{trK}
-                % define sym01 RbarDD (3D)
-                % parse X_{ij} = (-2 \alpha) (\frac{1}{2 \text{cf}}) (-\vphantom{numeric} \bar{D}_i \bar{D}_j \text{cf} + \frac{1}{\text{cf}} \vphantom{numeric} \bar{D}_i \text{cf} \vphantom{numeric} \bar{D}_j \text{cf}) + 4 (\frac{1}{2 \text{cf}})^{{2}} \alpha \vphantom{numeric} \bar{D}_i \text{cf} \vphantom{numeric} \bar{D}_j \text{cf} - \frac{1}{\text{cf}} (\vphantom{numeric} \bar{D}_i \alpha \vphantom{numeric} \bar{D}_j \text{cf} + \vphantom{numeric} \bar{D}_j \alpha \vphantom{numeric} \bar{D}_i \text{cf}) - \vphantom{numeric} \bar{D}_i \bar{D}_j \alpha + \alpha \bar{R}_{ij}
+                \partial_t \bar{\Lambda}^i &= \mathcal{L}_\beta \bar{\Lambda}^i + \bar{\gamma}^{jk} \hat{D}_j \hat{D}_k \beta^i
+                    + \frac{2}{3} \Rho^i \bar{D}_k \beta^k + \frac{1}{3} \bar{D}^i \bar{D}_k \beta^k
+                    - 2 \bar{A}^{ij} (\partial_j \alpha + (3/\text{cf}) \alpha \partial_j \text{cf})
+                    + 2 \alpha \bar{A}^{jk} \Rho^i_{jk} - \frac{4}{3} \alpha \bar{\gamma}^{ij} \partial_j \text{trK}
+                % parse X_{ij} = (-2 \alpha) (\frac{1}{2 \text{cf}}) (-\bar{D}_i \bar{D}_j \text{cf} + \frac{1}{\text{cf}} \bar{D}_i \text{cf} \bar{D}_j \text{cf})
+                    + 4 (\frac{1}{2 \text{cf}})^{{2}} \alpha \bar{D}_i \text{cf} \bar{D}_j \text{cf}
+                    - \frac{1}{\text{cf}} (\bar{D}_i \alpha \bar{D}_j \text{cf} + \bar{D}_j \alpha \bar{D}_i \text{cf})
+                    - \bar{D}_i \bar{D}_j \alpha + \alpha \bar{R}_{ij}
                 % parse \hat{X}_{ij} = X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl}
                 % srepl "\partial_t a" -> "\text{a_rhs}"
-                \partial_t \bar{A}_{ij} &= \mathcal{L}_\beta \bar{A}_{ij} - \frac{2}{3} \bar{A}_{ij} \bar{D}_k \beta^k - 2 \alpha \bar{A}_{ik} \bar{A}^k_j + \alpha \bar{A}_{ij} \text{trK} + \text{cf}^{{2}} \hat{X}_{ij}
-                % parse \bar{R}_{i j} = -\frac{1}{2} \bar{\gamma}^{kl} \hat{D}_k \hat{D}_l \bar{\gamma}_{ij} + \frac{1}{2} (\bar{\gamma}_{ki} \hat{D}_j \bar{\Lambda}^k + \bar{\gamma}_{kj} \hat{D}_i \bar{\Lambda}^k) + \frac{1}{2} \Rho^k (\Rho_{ijk} + \Rho_{jik}) + \bar{\gamma}^{kl} (\Rho^m_{ki} \Rho_{jml} + \Rho^m_{kj} \Rho_{iml} + \Rho^m_{ik} \Rho_{mjl}) 
+                \partial_t \bar{A}_{ij} &= \mathcal{L}_\beta \bar{A}_{ij}
+                    - \frac{2}{3} \bar{A}_{ij} \bar{D}_k \beta^k
+                    - 2 \alpha \bar{A}_{ik} \bar{A}^k_j
+                    + \alpha \bar{A}_{ij} \text{trK}
+                    + \text{cf}^{{2}} \hat{X}_{ij}
+                % parse \bar{R}_{i j} = -\frac{1}{2} \bar{\gamma}^{kl} \hat{D}_k \hat{D}_l \bar{\gamma}_{ij}
+                    + \frac{1}{2} (\bar{\gamma}_{ki} \hat{D}_j \bar{\Lambda}^k + \bar{\gamma}_{kj} \hat{D}_i \bar{\Lambda}^k)
+                    + \frac{1}{2} \Rho^k (\Rho_{ijk} + \Rho_{jik})
+                    + \bar{\gamma}^{kl} (\Rho^m_{ki} \Rho_{jml} + \Rho^m_{kj} \Rho_{iml} + \Rho^m_{ik} \Rho_{mjl}) 
             \end{align}
         """)
         par.set_parval_from_str('reference_metric::CoordSystem', 'Cartesian')
