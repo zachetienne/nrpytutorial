@@ -66,7 +66,7 @@ def update_vardict(vardict):
         vardict[var] = value
     return vardict
 
-def assert_equal(vardict_1, vardict_2):
+def assert_equal(vardict_1, vardict_2, suppress_message=False):
     """ Assert SymPy Expression Equality
 
         >>> from sympy import sin, cos
@@ -109,7 +109,8 @@ def assert_equal(vardict_1, vardict_2):
         if n_1 == n_2: continue
         E_rel = 2 * fabs(n_1 - n_2)/(fabs(n_1) + fabs(n_2))
         assert -log10(E_rel) + 1 >= (2.0/3) * precision
-    print('Assertion Passed!')
+    if not suppress_message:
+        print('Assertion Passed!')
 
 if __name__ == "__main__":
     import doctest
