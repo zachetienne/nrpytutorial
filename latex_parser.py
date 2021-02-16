@@ -9,8 +9,7 @@ from inspect import currentframe
 from functional import uniquify
 from expr_tree import ExprTree
 import math, indexedexp as ixp
-import os, sys, warnings
-import re, json, shutil
+import re, sys, warnings
 
 # pylint: disable = attribute-defined-outside-init, protected-access, exec-used
 sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', cosh), ('tanh', tanh),
@@ -18,9 +17,6 @@ sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', 
     ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt), ('diff', diff),
     ('Add', Add), ('Mul', Mul), ('Integer', Integer), ('Rational', Rational), ('Float', Float),
     ('Pow', Pow), ('Symbol', Symbol), ('Function', Function), ('Derivative', Derivative))
-
-if not os.path.isfile('config_backup.json'):
-    shutil.copyfile('config_default.json', 'config_backup.json')
 
 class Lexer:
     """ LaTeX Lexer
@@ -200,8 +196,13 @@ class Parser:
     def __init__(self, debug=False):
         self.lexer = Lexer()
         if not self._property:
-            with open('config_default.json', 'r') as read_file:
-                self._property.update(json.load(read_file))
+            self._property['dimension'] = 3
+            self._property['srepl'] = []
+            self._property['basis'] = []
+            self._property['index'] = {i: self._property['dimension']
+                for i in (chr(i) for i in range(105, 123))} # 105 -> 97
+            self._property['ignore'] = ['\\left', '\\right', '{}', '&']
+            self._property['metric'] = {'': 'g', 'bar': 'g', 'hat': 'g', 'tilde': 'gamma'}
         if 'vphantom' not in self._property:
             self._property['vphantom'] = None
         def excepthook(exception_type, exception, traceback):
@@ -640,6 +641,7 @@ class Parser:
         self.expect('LPAREN')
         dimension = self.lexer.lexeme
         self.expect('DIMENSION')
+        dimension = int(dimension[:-1])
         self.expect('RPAREN')
         self._property['index'].update({i: dimension for i in index})
 
@@ -1427,7 +1429,7 @@ class Parser:
                     for index in subexpr.args[1:]:
                         upper_bound = dimension
                         if str(index) in self._property['index']:
-                            upper_bound = int(self._property['index'][str(index)][:-1])
+                            upper_bound = self._property['index'][str(index)]
                         if str(index) in idx_map and upper_bound != idx_map[str(index)]:
                             raise ParseError('inconsistent dimension for index \'%s\'' %
                                 index, self.lexer.sentence)
@@ -1448,7 +1450,7 @@ class Parser:
                     for index, order in subexpr.args[1:]:
                         upper_bound = dimension
                         if str(index) in self._property['index']:
-                            upper_bound = int(self._property['index'][str(index)][:-1])
+                            upper_bound = self._property['index'][str(index)]
                         if str(index) in idx_map and upper_bound != idx_map[str(index)]:
                             raise ParseError('inconsistent dimension for index \'%s\'' %
                                 index, self.lexer.sentence)
@@ -1497,7 +1499,7 @@ class Parser:
                 indexing = Tensor.indexing(subexpr)
                 for index in subexpr.args[1:]:
                     if str(index) in self._property['index']:
-                        upper_bound = int(self._property['index'][str(index)][:-1])
+                        upper_bound = self._property['index'][str(index)]
                         if dimension > upper_bound:
                             shift = dimension - upper_bound
                             for i, (idx, pos) in enumerate(indexing):
@@ -1595,25 +1597,6 @@ class Parser:
     @staticmethod
     def clear_namespace():
         Parser._namespace, Parser._property = {}, {}
-
-    @staticmethod
-    def load_config(filename='config_default'):
-        with open(filename + '.json', 'r') as read_file:
-            Parser._property.update(json.load(read_file))
-        Parser._property['vphantom'] = None
-
-    @staticmethod
-    def save_config(filename='config_default'):
-        vphantom = Parser._property.pop('vphantom')
-        json.dump(Parser._property, filename + '.json')
-        Parser._property['vphantom'] = vphantom
-
-    @staticmethod
-    def reset_config():
-        shutil.copyfile('config_backup.json', 'config_default.json')
-        with open('config_default.json', 'r') as read_file:
-            Parser._property.update(json.load(read_file))
-        Parser._property['vphantom'] = None
 
     @staticmethod
     def _strip(symbol):
