@@ -140,7 +140,7 @@ def GiRaFFEfood_NRPy_1D_tests_FFE_breakdown(stagger = False):
     # \end{align}
     #
 
-
+    global BU
     BU = ixp.zerorank1(DIM=3)
 
     BU[0] = sp.sympify(1)
