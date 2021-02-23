@@ -7,7 +7,7 @@
 #  Tutorial-TOV-Piecewise_Polytrope_EOSs.ipynb
 
 # Step 0: Import needed Python/NRPy+ modules
-import numpy as np                  # This module is used for math functions
+import numpy as np                  # NumPy: A numerical methods module for Python
 import sys                          # This module is used for system related function calls
 from collections import namedtuple  # This module is used to create named tuples
 
@@ -237,7 +237,17 @@ def set_up_EOS_parameters__complete_set_of_input_variables(neos,rho_poly_tab,Gam
 #                  P_poly_tab     - values of P used to distinguish one EOS from
 #                                   the other (not required for a single polytrope)
 
-def set_up_EOS_parameters__Read_et_al_input_variables(EOSname):
+def set_up_EOS_parameters__Read_et_al_input_variables(EOSname,units="rescaledensity"):
+
+    # Check if the input units are implemented below
+    available_units = ["rescaledensity","geometrized","cgs"]
+    if units not in available_units:
+        print("ERROR: unknown units ",units)
+        print("Available units are: ",end="")
+        for unit in available_units:
+            print(unit,end=" ")
+        print("")
+        sys.exit(1)
 
     # Set up the number of polytropic EOSs, which is
     # fixed at seven for this type of input
@@ -267,7 +277,9 @@ def set_up_EOS_parameters__Read_et_al_input_variables(EOSname):
     Gamma6    = PPdict.EOS_Read_et_al_dict[EOSname].Gamma6
 
     # Set up the speed of light and change the units of the input pressure
-    c = 2.9979e10 # cm/s -- cgs units
+    c = 2.997924580000000e+10 # Speed of light
+    G = 6.674299999999999e-08 # Gravitational constant
+    M = 1.988409870698051e+33 # Mass of the sun
     log_of_p4 -= 2.0*np.log10(c)
 
     # Set up tabulated polytropic values following the table above
@@ -310,31 +322,54 @@ def set_up_EOS_parameters__Read_et_al_input_variables(EOSname):
         P_poly_tab[j]   = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j])
         K_poly_tab[j+1] = K_poly_tab[j] * rho_poly_tab[j]**(Gamma_poly_tab[j] - Gamma_poly_tab[j+1])
 
-    # We impose a "ratio preserving rescaling" of rhob:
-    #
-    # rhob_rescaled[j] / rhob[j] = rhob_rescaled[j-1] / rhob[j-1]
-    #
-    # which implies the relation
-    # .-------------------------------------------------------------.
-    # | rhob_rescaled[j-1] = (rhob[j-1]/rhob[j]) * rhob_rescaled[j] |
-    # .-------------------------------------------------------------.
-    # after setting rhob_nuclear_rescaled = 1
-    rhob_rescaled  = [1.0 for i in range(neos-1)]
-    for j in range(neos-2,0,-1):
-        rhob_rescaled[j-1] = (rho_poly_tab[j-1]/rho_poly_tab[j]) * rhob_rescaled[j]
+    if units == "rescaledensity":
 
-    # Now because the values of P and rho given by Read et al. are already
-    # in the same units, namely (g/cm^3), the ratio P/rho should be invariant
-    # under this rescalling procedure. Therefore
-    # .---------------------------------------------------------------------.
-    # | P_rescaled[j] = (rhob_rescaled[j]/rhob_readetal[j]) * P_readetal[j] |
-    # .---------------------------------------------------------------------.
-    P_rescaled = [0.0 for i in range(neos-1)]
-    for j in range(neos-1):
-        P_rescaled[j] = (rhob_rescaled[j]/rho_poly_tab[j]) * P_poly_tab[j]
+        # We impose a "ratio preserving rescaling" of rhob:
+        #
+        # rhob_rescaled[j] / rhob[j] = rhob_rescaled[j-1] / rhob[j-1]
+        #
+        # which implies the relation
+        # .-------------------------------------------------------------.
+        # | rhob_rescaled[j-1] = (rhob[j-1]/rhob[j]) * rhob_rescaled[j] |
+        # .-------------------------------------------------------------.
+        # after setting rhob_nuclear_rescaled = 1
+        rhob_rescaled  = [1.0 for i in range(neos-1)]
+        for j in range(neos-2,0,-1):
+            rhob_rescaled[j-1] = (rho_poly_tab[j-1]/rho_poly_tab[j]) * rhob_rescaled[j]
 
-    rho_poly_tab = rhob_rescaled
-    P_poly_tab   = P_rescaled
+        # Now because the values of P and rho given by Read et al. are already
+        # in the same units, namely (g/cm^3), the ratio P/rho should be invariant
+        # under this rescalling procedure. Therefore
+        # .---------------------------------------------------------------------.
+        # | P_rescaled[j] = (rhob_rescaled[j]/rhob_readetal[j]) * P_readetal[j] |
+        # .---------------------------------------------------------------------.
+        P_rescaled = [0.0 for i in range(neos-1)]
+        for j in range(neos-1):
+            P_rescaled[j] = (rhob_rescaled[j]/rho_poly_tab[j]) * P_poly_tab[j]
+
+        rho_poly_tab = rhob_rescaled
+        P_poly_tab   = P_rescaled
+
+    elif units == "geometrized" :
+        # Now convert to units in which Msun = 1, G = 1, c = 1
+        csq               = c**2
+        units_of_length   = G * M / csq
+        units_of_time     = units_of_length/c
+        units_of_mass     = M
+        units_of_density  = units_of_mass / units_of_length**3
+        units_of_pressure = units_of_mass / units_of_length / units_of_time**2
+
+        for i in range(neos-1):
+            rho_poly_tab[i] /= units_of_density
+            P_poly_tab[i]   *= csq
+            P_poly_tab[i]   /= units_of_pressure
+
+    elif units == "cgs" :
+
+        # Restore P to cgs units
+        csq = c*c
+        for i in range(neos-1):
+            P_poly_tab[i] *= csq
 
     # Demanding that the pressure be everywhere continuous then imposes
     # .-------------------------------------------------------------------------------------------.
@@ -644,7 +679,7 @@ IllinoisGRMHD::Gamma_th = %.15e
 IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
 
 #.----------------------.
-#| EOS_omni parameters: |
+#| EOS_Omni parameters: |
 #|  - n_pieces          |
 #|  - hybrid_k0         |
 #|  - hybrid_gamma[0]   |
@@ -654,13 +689,13 @@ IllinoisGRMHD::rho_ppoly_tab_in[0] = 0.0
 EOS_Omni::n_pieces = 1
 
 # Set hybrid_k0 to K_ppoly_tab0
-EOS_omni::hybrid_k0 = %.15e
+EOS_Omni::hybrid_k0 = %.15e
 
 # Set hybrid_gamma to Gamma_ppoly_tab_in
-EOS_omni::hybrid_gamma[0] = %.15e
+EOS_Omni::hybrid_gamma[0] = %.15e
 
 # Set hybrid_gamma_th to Gamma_th
-EOS_omni::hybrid_gamma_th = %.15e
+EOS_Omni::hybrid_gamma_th = %.15e
 
 #.--------------------------------.
 #| End of NRPy+ generated section |
@@ -675,9 +710,9 @@ EOS_omni::hybrid_gamma_th = %.15e
      Gamma_single_polytrope,  # sets IllinoisGRMHD::Gamma_ppoly_tab_in[0]
      Gamma_single_polytrope,  # sets NRPyPlusTOVID::Gamma_atmosphere
      Gamma_single_polytrope,  # sets IllinoisGRMHD::Gamma_th
-     K_single_polytrope,      # sets EOS_omni::hybrid_k0
-     Gamma_single_polytrope,  # sets EOS_omni::hybrid_gamma[0]
-     Gamma_single_polytrope)) # sets EOS_omni::hybrid_gamma_th
+     K_single_polytrope,      # sets EOS_Omni::hybrid_k0
+     Gamma_single_polytrope,  # sets EOS_Omni::hybrid_gamma[0]
+     Gamma_single_polytrope)) # sets EOS_Omni::hybrid_gamma_th
 
     elif EOSname == "piecewise":
         if EOS_struct is None: # Use "is None" instead of "==None", as the former is more correct.
@@ -720,7 +755,7 @@ EOS_omni::hybrid_gamma_th = %.15e
 #|  - Gamma_atmosphere                   |
 #|  - K_atmosphere                       |
 #.---------------------------------------.
-#| EOS_omni parameters set:              |
+#| EOS_Omni parameters set:              |
 #|  - n_pieces                           |
 #|  - hybrid_k0                          |
 #|  - hybrid_rho[j]   0<=j<=neos-2       |
@@ -762,7 +797,7 @@ IllinoisGRMHD::Gamma_ppoly_tab_in[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j
 IllinoisGRMHD::Gamma_th = %.15e
 
 #.---------------------------------.
-#| EOS_omni parameters:            |
+#| EOS_Omni parameters:            |
 #|  - n_pieces                     |
 #|  - hybrid_k0                    |
 #|  - hybrid_rho[j]   0<=j<=neos-2 |
@@ -773,22 +808,22 @@ IllinoisGRMHD::Gamma_th = %.15e
 EOS_Omni::n_pieces = %d
 
 # Set hybrid_k0 to K_ppoly_tab0
-EOS_omni::hybrid_k0 = %.15e
+EOS_Omni::hybrid_k0 = %.15e
 
 # Set hybrid_rho to rho_ppoly_tab_in""" %(Gamma_thermal,EOS_struct.neos,EOS_struct.K_poly_tab[0]))
             for j in range(EOS_struct.neos-1):
                 file.write("""
-EOS_omni::hybrid_rho[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
+EOS_Omni::hybrid_rho[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma to Gamma_ppoly_tab_in""")
             for j in range(EOS_struct.neos):
                 file.write("""
-EOS_omni::hybrid_gamma[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
+EOS_Omni::hybrid_gamma[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma_th to Gamma_th
-EOS_omni::hybrid_gamma_th = %.15e
+EOS_Omni::hybrid_gamma_th = %.15e
 
 #.--------------------------------.
 #| End of NRPy+ generated section |
@@ -902,7 +937,7 @@ NRPyPlusTOVID::Gamma_atmosphere = %.15e
 NRPyPlusTOVID::K_atmosphere = %.15e
 
 #.---------------------------------.
-#| EOS_omni parameters:            |
+#| EOS_Omni parameters:            |
 #|  - n_pieces                     |
 #|  - hybrid_k0                    |
 #|  - hybrid_rho[j]   0<=j<=neos-2 |
@@ -913,22 +948,22 @@ NRPyPlusTOVID::K_atmosphere = %.15e
 EOS_Omni::n_pieces = %d
 
 # Set hybrid_k0 to K_ppoly_tab0
-EOS_omni::hybrid_k0 = %.15e
+EOS_Omni::hybrid_k0 = %.15e
 
 # Set hybrid_rho to rho_ppoly_tab_in""" %(Gamma_thermal,IDfilename,rho_atmosphere,Gamma_atm,Kpoly_atm,EOS_struct.neos,EOS_struct.K_poly_tab[0]))
             for j in range(EOS_struct.neos-1):
                 file.write("""
-EOS_omni::hybrid_rho[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
+EOS_Omni::hybrid_rho[%d] = %.15e""" %(j,EOS_struct.rho_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma to Gamma_ppoly_tab_in""")
             for j in range(EOS_struct.neos):
                 file.write("""
-EOS_omni::hybrid_gamma[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
+EOS_Omni::hybrid_gamma[%d] = %.15e""" %(j,EOS_struct.Gamma_poly_tab[j]))
             file.write("""
 
 # Set hybrid_gamma_th to Gamma_th
-EOS_omni::hybrid_gamma_th = %.15e
+EOS_Omni::hybrid_gamma_th = %.15e
 
 #.--------------------------------.
 #| End of NRPy+ generated section |

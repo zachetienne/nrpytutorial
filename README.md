@@ -1,5 +1,5 @@
 # NRPy+, SENRv2, and the NRPy+ Jupyter Tutorial
-[![Build Status](https://travis-ci.org/zachetienne/nrpytutorial.svg?branch=master)](https://travis-ci.org/zachetienne/nrpytutorial)
+[![Build Status](https://travis-ci.com/zachetienne/nrpytutorial.svg?branch=master)](https://travis-ci.com/zachetienne/nrpytutorial)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/zachetienne/nrpytutorial/master?filepath=NRPyPlus_Tutorial.ipynb)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/python/github/zachetienne/nrpytutorial)](http://lgtm.com/projects/g/zachetienne/nrpytutorial/)
 
@@ -14,4 +14,8 @@ If you would like to explore the NRPy+ tutorial on your local computer, you'll n
 
 In certain circumstances, developers may wish to execute one of these Jupyter notebooks from the command line. For example, when the notebook constructs an [Einstein Toolkit](https://einsteintoolkit.org) thorn. In such a case, the following command should be useful:
 
-jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 [Jupyter notebook file]
+`jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 [Jupyter notebook file]`
+
+Alternatively one can simply use the script:
+
+`./run_Jupyter_notebook.sh [Jupyter notebook file]`
