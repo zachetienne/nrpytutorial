@@ -134,54 +134,54 @@ def GiRaFFEfood_NRPy_1D_tests_three_waves(stagger = False):
     B_mU = ixp.zerorank1(DIM=3)
     E_mU = ixp.zerorank1(DIM=3)
 
-    if stagger:
-        B_aU[0] = sp.sympify(1)
-        B_aU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(3,2)
-        B_aU[2] = sp.sympify(2)
+#     if stagger:
+#         B_aU[0] = sp.sympify(1)
+#         B_aU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(3,2)
+#         B_aU[2] = sp.sympify(2)
 
-        E_aU[0] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(-1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(-3,2)
-        E_aU[1] = sp.sympify(1)
-        E_aU[2] = sp.sympify(0)
+#         E_aU[0] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(-1) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(-3,2)
+#         E_aU[1] = sp.sympify(1)
+#         E_aU[2] = sp.sympify(0)
 
-        B_pU[0] = sp.sympify(0)
-        B_pU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(3,2)
-        B_pU[2] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(1)
+#         B_pU[0] = sp.sympify(0)
+#         B_pU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(3,2)
+#         B_pU[2] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(1)
 
-        E_pU[0] = sp.sympify(0)
-        E_pU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(1)
-        E_pU[2] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(-3,2)
+#         E_pU[0] = sp.sympify(0)
+#         E_pU[1] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(1)
+#         E_pU[2] = noif.coord_leq_bound(x_p_half,0) * sp.sympify(0) + noif.coord_greater_bound(x_p_half,0) * sp.Rational(-3,2)
 
-        B_mU[0] = sp.sympify(0)
-        B_mU[1] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
-        B_mU[2] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(3,2) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
+#         B_mU[0] = sp.sympify(0)
+#         B_mU[1] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
+#         B_mU[2] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(3,2) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
 
-        E_mU[0] = sp.sympify(0)
-        E_mU[1] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
-        E_mU[2] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
-    else:
-        B_aU[0] = sp.sympify(1)
-        B_aU[1] = noif.coord_leq_bound(x,0) * sp.sympify(1) + noif.coord_greater_bound(x,0) * sp.Rational(3,2)
-        B_aU[2] = sp.sympify(2)
+#         E_mU[0] = sp.sympify(0)
+#         E_mU[1] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
+#         E_mU[2] = noif.coord_leq_bound(x_p_half,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x_p_half,0) * sp.sympify(0)
+#     else:
+    B_aU[0] = sp.sympify(1)
+    B_aU[1] = noif.coord_leq_bound(x,0) * sp.sympify(1) + noif.coord_greater_bound(x,0) * sp.Rational(3,2)
+    B_aU[2] = sp.sympify(2)
 
-        E_aU[0] = noif.coord_leq_bound(x,0) * sp.sympify(-1) + noif.coord_greater_bound(x,0) * sp.Rational(-3,2)
-        E_aU[1] = sp.sympify(1)
-        E_aU[2] = sp.sympify(0)
+    E_aU[0] = noif.coord_leq_bound(x,0) * sp.sympify(-1) + noif.coord_greater_bound(x,0) * sp.Rational(-3,2)
+    E_aU[1] = sp.sympify(1)
+    E_aU[2] = sp.sympify(0)
 
-        B_pU[0] = sp.sympify(0)
-        B_pU[1] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.Rational(3,2)
-        B_pU[2] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.sympify(1)
+    B_pU[0] = sp.sympify(0)
+    B_pU[1] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.Rational(3,2)
+    B_pU[2] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.sympify(1)
 
-        E_pU[0] = sp.sympify(0)
-        E_pU[1] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.sympify(1)
-        E_pU[2] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.Rational(-3,2)
+    E_pU[0] = sp.sympify(0)
+    E_pU[1] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.sympify(1)
+    E_pU[2] = noif.coord_leq_bound(x,0) * sp.sympify(0) + noif.coord_greater_bound(x,0) * sp.Rational(-3,2)
 
-        B_mU[0] = sp.sympify(0)
-        B_mU[1] = noif.coord_leq_bound(x,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x,0) * sp.sympify(0)
-        B_mU[2] = noif.coord_leq_bound(x,0) * sp.Rational(3,2) + noif.coord_greater_bound(x,0) * sp.sympify(0)
+    B_mU[0] = sp.sympify(0)
+    B_mU[1] = noif.coord_leq_bound(x,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x,0) * sp.sympify(0)
+    B_mU[2] = noif.coord_leq_bound(x,0) * sp.Rational(3,2) + noif.coord_greater_bound(x,0) * sp.sympify(0)
 
-        E_mU[0] = sp.sympify(0)
-        E_mU[1] = noif.coord_leq_bound(x,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x,0) * sp.sympify(0)
-        E_mU[2] = noif.coord_leq_bound(x,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x,0) * sp.sympify(0)
+    E_mU[0] = sp.sympify(0)
+    E_mU[1] = noif.coord_leq_bound(x,0) * sp.Rational(-3,2) + noif.coord_greater_bound(x,0) * sp.sympify(0)
+    E_mU[2] = noif.coord_leq_bound(x,0) * sp.Rational(1,2)  + noif.coord_greater_bound(x,0) * sp.sympify(0)
 
     global BU
     BU = ixp.zerorank1(DIM=3)
