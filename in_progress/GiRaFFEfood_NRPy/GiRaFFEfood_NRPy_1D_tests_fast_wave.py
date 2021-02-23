@@ -8,6 +8,7 @@ if nrpy_dir_path not in sys.path:
 # Step 0.a: Import the NRPy+ core modules and set the reference metric to Cartesian
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import grid as gri               # NRPy+: Functions having to do with numerical grids
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import reference_metric as rfm   # NRPy+: Reference metric support
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
@@ -16,10 +17,17 @@ rfm.reference_metric()
 # Step 1a: Set commonly used parameters.
 thismodule = "GiRaFFEfood_NRPy_1D"
 
-def GiRaFFEfood_NRPy_1D_tests_fast_wave():
+def GiRaFFEfood_NRPy_1D_tests_fast_wave(stagger = False):
     # We'll use reference_metric.py to define x and y
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
+    x0 = rfm.xxCart[0]
+    y0 = rfm.xxCart[1]
+
+    if stagger:
+        x = x0 + sp.Rational(1,2)*gri.dxx[0]
+        y = y0 + sp.Rational(1,2)*gri.dxx[1]
+    else:
+        x = x0
+        y = y0
 
     global AD
     AD = ixp.zerorank1(DIM=3)
@@ -47,6 +55,9 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave():
     #            1.0-1.5(x+0.1) if -0.1 < x <= 0.1
     #            0.7 if x > 0.1
     # B^z(0,x) = 0
+
+    x = rfm.xxCart[0]
+    y = rfm.xxCart[1]
 
     Byleft = sp.sympify(1)
     Bycenter = sp.sympify(1) - sp.Rational(15,10)*(x+sp.Rational(1,10))
