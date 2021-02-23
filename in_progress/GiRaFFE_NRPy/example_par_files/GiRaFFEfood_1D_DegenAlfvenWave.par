@@ -1,0 +1,285 @@
+ActiveThorns = "
+ADMBase 
+ADMCoupling 
+ADMMacros 
+AEILocalInterp 
+BLAS 
+Boundary 
+Carpet 
+CarpetInterp 
+CarpetIOASCII
+CarpetIOBasic 
+CarpetIOHDF5 
+CarpetIOScalar 
+CarpetLib 
+CarpetMask
+CarpetReduce 
+CarpetRegrid2 
+CarpetSlab 
+CartGrid3D 
+Constants 
+CoordBase 
+CoordGauge 
+CycleClock 
+Dissipation 
+Fortran 
+GenericFD
+HDF5 
+HydroBase
+InitBase
+IOUtil 
+LAPACK 
+LocalInterp 
+LoopControl 
+MoL 
+MPI 
+NaNChecker 
+NewRad 
+Slab 
+SpaceMask 
+SphericalSurface 
+StaticConformal 
+SummationByParts 
+SymBase 
+Time 
+Timers 
+TmunuBase 
+Vectors 
+zlib"
+#hwloc TGRtensor 
+
+ActiveThorns = "GiRaFFE ID_converter_GiRaFFE GiRaFFEfood"
+
+GiRaFFEfood::test_case  = "DegenAlfvenWave"
+GiRaFFEfood::wave_speed = -0.5
+
+# Parameters of thorn Time (implementing time)
+Time::dtfac = 0.5
+
+# Parameters of thorn CoordBase (implementing CoordBase)
+## Needed if we were to impose some symmetry. Note that GiRaFFE doesn't support symmetries at the moment.
+#CoordBase::boundary_shiftout_x_lower = 1
+## Needed if we were to impose some symmetry. Note that GiRaFFE doesn't support symmetries at the moment.
+#CoordBase::boundary_shiftout_z_lower = 1
+## GRID SETUP PARAMETERs
+CoordBase::boundary_size_x_lower     = 3
+CoordBase::boundary_size_x_upper     = 3
+CoordBase::boundary_size_y_lower     = 3
+CoordBase::boundary_size_y_upper     = 3
+CoordBase::boundary_size_z_lower     = 3
+CoordBase::boundary_size_z_upper     = 3
+CoordBase::domainsize                = "minmax"
+CoordBase::dx                        = 0.02
+CoordBase::dy                        = 0.02
+CoordBase::dz                        = 0.02
+CoordBase::xmax                      = 1.675
+CoordBase::xmin                      =-1.325
+CoordBase::ymax                      = 0.115
+CoordBase::ymin                      =-0.085
+CoordBase::zmax                      = 0.115
+CoordBase::zmin                      =-0.085
+
+
+
+# Parameters of thorn ADMBase (implementing ADMBase)
+ADMBase::dtlapse_evolution_method = "static"
+ADMBase::dtshift_evolution_method = "static"
+ADMBase::evolution_method         = "static"
+ADMBase::initial_data             = "Cartesian Minkowski"
+ADMBase::initial_dtlapse          = "zero"
+ADMBase::initial_dtshift          = "zero"
+ADMBase::initial_lapse            = "one"
+ADMBase::initial_shift            = "zero"
+ADMBase::lapse_evolution_method   = "static"
+ADMBase::lapse_timelevels         = 3
+ADMBase::metric_timelevels        = 3
+ADMBase::shift_timelevels         = 3
+ADMBase::metric_type              = "physical"
+ADMBase::shift_evolution_method   = "static"
+
+# Parameters of thorn ADMMacros (implementing ADMMacros)
+ADMMacros::spatial_order = 4
+
+# Parameters of thorn Boundary (implementing boundary)
+Boundary::radpower = 2
+
+# Parameters of thorn Cactus (implementing Cactus)
+Cactus::cctk_final_time            = 1.0
+Cactus::cctk_full_warnings         = "yes"
+Cactus::cctk_run_title             = "GiRaFFEfood"
+Cactus::highlight_warning_messages = "no"
+Cactus::terminate                  = "time"
+
+# Parameters of thorn Carpet (implementing Driver)
+Carpet::convergence_level        = 0
+Carpet::domain_from_coordbase    = "yes"
+Carpet::ghost_size               = 3
+Carpet::init_fill_timelevels     = "yes"
+Carpet::init_3_timelevels        = "no"
+Carpet::max_refinement_levels    = 1 #7
+Carpet::poison_new_timelevels    = "yes"
+Carpet::prolongation_order_space = 5
+Carpet::prolongation_order_time  = 2
+Carpet::schedule_barriers        = "no"
+Carpet::storage_verbose          = "no"
+#Carpet::time_refinement_factors  = "[1, 2, 4, 8, 16]"
+Carpet::use_buffer_zones         = "yes"
+Carpet::verbose                  = "no"
+#Carpet::veryverbose              = "yes"
+
+# Parameters of thorn CarpetIOASCII (implementing IOASCII)
+CarpetIOASCII::one_file_per_group     = "yes"
+# CarpetIOASCII::out0D_every            = 8
+# CarpetIOASCII::out0D_vars             = ""
+CarpetIOASCII::out1D_every          = 1
+CarpetIOASCII::out1D_x              = "yes"
+CarpetIOASCII::out1D_y              = "no"
+CarpetIOASCII::out1D_z              = "no"
+CarpetIOASCII::out1D_d              = "no"
+CarpetIOASCII::out1d_xline_y        = 0.01
+CarpetIOASCII::out1d_xline_z        = 0.01
+CarpetIOASCII::out1D_vars           = "
+  GiRaFFE::Bx
+  GiRaFFE::By
+  GiRaFFE::Bz
+  GiRaFFEfood::Ex
+  GiRaFFEfood::Ey
+  GiRaFFEfood::Ez
+  GiRaFFE::vx
+  GiRaFFE::vy
+  GiRaFFE::vz
+  GiRaFFE::mhd_st_x
+  GiRaFFE::mhd_st_y
+  GiRaFFE::mhd_st_z
+  GiRaFFE::Ax
+  GiRaFFE::Ay
+  GiRaFFE::Az
+"
+CarpetIOASCII::out2D_every            = 8
+CarpetIOASCII::out2D_vars             = ""
+CarpetIOASCII::out3D_ghosts           = "no"
+CarpetIOASCII::output_symmetry_points = "no"
+
+# Parameters of thorn CarpetIOBasic (implementing IOBasic)
+CarpetIOBasic::outInfo_every      = 1
+# CarpetIOBasic::outInfo_reductions = "norm2"
+CarpetIOBasic::outInfo_vars       = "carpet::physical_time_per_hour"
+
+# Parameters of thorn CarpetIOHDF5 (implementing IOHDF5)
+# We'll disable checkpointing & HDF5 output for these code tests, for the time being.
+#CarpetIOHDF5::checkpoint             = "yes"
+#CarpetIOHDF5::one_file_per_group     = "yes"
+#CarpetIOHDF5::out2D_every            = 4
+#CarpetIOHDF5::out2D_vars             = "
+#  ADMBase::lapse
+#"
+#CarpetIOHDF5::out3D_every            = 4
+#CarpetIOHDF5::out3D_vars             = "
+#"
+#CarpetIOHDF5::output_ghost_points    = "yes"
+#CarpetIOHDF5::output_symmetry_points = "yes"
+# Parameters of thorn CarpetIOScalar (implementing IOScalar)
+#CarpetIOScalar::one_file_per_group = "yes"
+#CarpetIOScalar::outScalar_every    = 8
+#CarpetIOScalar::outScalar_vars     = "
+#"
+
+# Parameters of thorn CarpetLib (implementing CarpetLib)
+CarpetLib::output_bboxes     = "no"
+CarpetLib::poison_new_memory = "yes"
+CarpetLib::support_staggered_operators = "yes"
+
+# Parameters of thorn CarpetMask (implementing CarpetMask)
+CarpetMask::excluded_surface[0]        = 0
+CarpetMask::excluded_surface_factor[0] = 1
+CarpetMask::verbose                    = "no"
+
+# Parameters of thorn CarpetRegrid2 (implementing CarpetRegrid2)
+## WE'LL MODIFY THESE IF WE WANT TO ENABLE AMR:
+CarpetRegrid2::freeze_unaligned_levels = "yes"
+CarpetRegrid2::num_centres             = 1
+CarpetRegrid2::num_levels_1            = 1 #7
+#CarpetRegrid2::radius_1[1]             = 512
+#CarpetRegrid2::radius_1[2]             = 256
+#CarpetRegrid2::radius_1[3]             = 128
+#CarpetRegrid2::radius_1[4]             =  64
+#CarpetRegrid2::radius_1[5]             =  32
+#CarpetRegrid2::radius_1[6]             =  16
+CarpetRegrid2::regrid_every            = 64
+CarpetRegrid2::snap_to_coarse          = "yes"
+CarpetRegrid2::verbose                 = "no"
+
+# Parameters of thorn CartGrid3D (implementing grid)
+CartGrid3D::type = "coordbase"
+
+
+## Parameters of thorn Dissipation (implementing Dissipation)
+#Dissipation::epsdis = 0.2
+#Dissipation::order  = 5
+#Dissipation::vars   = "
+#"
+
+# Parameters of thorn HydroBase (implementing HydroBase)
+HydroBase::timelevels        = 1
+HydroBase::initial_Avec      = "zero"
+HydroBase::initial_Aphi      = "zero"
+
+GiRaFFE::damp_lorenz = 0.1    # Relevant
+#GiRaFFE::Velocity_BC = "outflow"# Relevant; set to reasonable default
+GiRaFFE::Velocity_BC = "copy"   # Relevant; set to reasonable default
+GiRaFFE::EM_BC     = "copy"   # Relevant; set to reasonable default
+GiRaFFE::Symmetry = "none"    # Relevant; don't change!
+
+# Parameters of thorn IOUtil (implementing IO)
+# Set output directory. I always start my output directory names with ABE-
+#   so my script that automatically cleans up old runs will find and delete
+#   old directories. Note that prepending ABE- on the directory name
+#   results in some harmless complaints from the ET. You can safely ignore
+#   them.
+IOUtil::out_dir                 = ABE-$parfile
+
+# Zach says: I don't know why we'd need to checkpoint.
+#IOUtil::checkpoint_dir          = ABE-$parfile
+#IOUtil::checkpoint_every        = 1024 #64
+#IOUtil::checkpoint_keep         = 2
+#IOUtil::checkpoint_on_terminate = "no" #"yes"
+#IOUtil::out_fileinfo            = "none"
+#IOUtil::parfile_write           = "generate"
+#IOUtil::recover                 = "autoprobe"
+#IOUtil::recover_dir             = $parfile
+
+# Parameters of thorn LoopControl (implementing LoopControl)
+LoopControl::statistics_filename = ""
+
+# Parameters of thorn MoL (implementing MethodOfLines)
+MoL::MoL_Intermediate_Steps = 4
+MoL::MoL_Num_Scratch_Levels = 1
+MoL::ODE_Method             = "RK4"
+
+# Parameters of thorn NaNChecker (implementing NaNChecker)
+NaNChecker::action_if_found = "terminate"
+NaNChecker::check_every     = 1
+NaNChecker::check_vars      = ""
+
+# Parameters of thorn SpaceMask (implementing SpaceMask)
+SpaceMask::use_mask = "yes"
+
+# Parameters of thorn SphericalSurface (implementing SphericalSurface)
+# Terrence Says: why are these set?
+SphericalSurface::maxnphi         = 78
+SphericalSurface::maxntheta       = 39
+SphericalSurface::nghostsphi[0]   = 3
+SphericalSurface::nghoststheta[0] = 3
+SphericalSurface::nphi[0]         = 78
+SphericalSurface::nsurfaces       = 1
+SphericalSurface::ntheta[0]       = 39
+
+# Parameters of thorn SummationByParts (implementing SummationByParts)
+SummationByParts::order = 4
+
+# Parameters of thorn TmunuBase (implementing TmunuBase)
+TmunuBase::prolongation_type     = "none"
+TmunuBase::stress_energy_at_RHS  = "yes"
+TmunuBase::stress_energy_storage = "yes"
+TmunuBase::timelevels            = 1
+
