@@ -68,6 +68,7 @@ import grid as gri               # NRPy+: Functions having to do with numerical 
 import indexedexp as ixp
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import reference_metric as rfm
+import Min_Max_and_Piecewise_Expressions as noif
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 

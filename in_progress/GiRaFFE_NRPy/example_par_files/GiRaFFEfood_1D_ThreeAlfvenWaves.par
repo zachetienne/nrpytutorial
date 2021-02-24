@@ -50,7 +50,7 @@ zlib"
 
 ActiveThorns = "GiRaFFE ID_converter_GiRaFFE GiRaFFEfood"
 
-GiRaFFEfood::test_case  = "FastWave"
+GiRaFFEfood::test_case  = "ThreeAlfvenWave"
 ## Not applicable: GiRaFFEfood::wave_speed = 0.5
 
 # Parameters of thorn Time (implementing time)
@@ -72,12 +72,12 @@ CoordBase::domainsize                = "minmax"
 CoordBase::dx                        = 0.02
 CoordBase::dy                        = 0.02
 CoordBase::dz                        = 0.02
-CoordBase::xmax                      = 1.65
-CoordBase::xmin                      =-1.35
-CoordBase::ymax                      = 0.11
-CoordBase::ymin                      =-0.09
-CoordBase::zmax                      = 0.11
-CoordBase::zmin                      =-0.09
+CoordBase::xmax                      = 1.6747
+CoordBase::xmin                      =-1.3253
+CoordBase::ymax                      = 0.1147
+CoordBase::ymin                      =-0.0853
+CoordBase::zmax                      = 0.1147
+CoordBase::zmin                      =-0.0853
 
 
 
@@ -104,7 +104,7 @@ ADMMacros::spatial_order = 4
 Boundary::radpower = 2
 
 # Parameters of thorn Cactus (implementing Cactus)
-Cactus::cctk_final_time            = 2.0
+Cactus::cctk_final_time            = 1.0
 Cactus::cctk_full_warnings         = "yes"
 Cactus::cctk_run_title             = "GiRaFFEfood"
 Cactus::highlight_warning_messages = "no"
@@ -136,8 +136,8 @@ CarpetIOASCII::out1D_x              = "yes"
 CarpetIOASCII::out1D_y              = "no"
 CarpetIOASCII::out1D_z              = "no"
 CarpetIOASCII::out1D_d              = "no"
-CarpetIOASCII::out1d_xline_y        = 0.01
-CarpetIOASCII::out1d_xline_z        = 0.01
+CarpetIOASCII::out1d_xline_y        = 0.0147
+CarpetIOASCII::out1d_xline_z        = 0.0147
 CarpetIOASCII::out1D_vars           = "
   GiRaFFE::Bx
   GiRaFFE::By
