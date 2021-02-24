@@ -6,6 +6,9 @@
 # Full documentation for this module may be found in the NRPy+ tutorial Jupyter notebook:
 #  Tutorial-TOV-Piecewise_Polytrope_EOSs.ipynb
 
+# This ensures the availability of the argument end="" in the print() function.
+from __future__ import print_function
+
 # Step 0: Import needed Python/NRPy+ modules
 import numpy as np                  # NumPy: A numerical methods module for Python
 import sys                          # This module is used for system related function calls
