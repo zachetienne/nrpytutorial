@@ -5,6 +5,7 @@
 from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow, Add, Mul
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff, srepr
+# from IPython.core.magic import register_cell_magic
 from inspect import currentframe
 from functional import uniquify
 from expr_tree import ExprTree
@@ -435,34 +436,7 @@ class Parser:
                 if christoffel in self._namespace:
                     del self._namespace[christoffel]
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                if 'U' in symbol:
-                    prefix = r'\epsilon_{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
-                             r'\epsilon_{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
-                    det_latex = prefix + ' '.join(r'\text{{{symbol}}}^{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))
-                    inv_latex = prefix + ' '.join(r'\text{{{symbol}}}^{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(2, 1 + dimension))
-                    self.parse(r"""
-                        % vardef '{permutation}' ({dimension}D)
-                        \text{{{symbol}det}} = \frac{{1}}{{({dimension})({factorial})}} {det_latex} \\
-                        \text{{{symbol}}}_{{i_1 j_1}} = \frac{{1}}{{{factorial}}} \text{{{symbol}det}}^{{{{-1}}}} ({inv_latex})
-                        % assign -{drv_type} '{symbol}det', '{inv_symbol}'
-                        % assign -symbolic <H> '{permutation}'
-                    """.format(symbol=symbol[:-2], inv_symbol=symbol.replace('D', 'U'), dimension=dimension,
-                            factorial=math.factorial(dimension - 1), drv_type='%s <%s>' % tuple(drv_type.split('::')),
-                            det_latex=det_latex, inv_latex=inv_latex, permutation=('epsilon' + dimension * 'D')))
-                else:
-                    prefix = r'\epsilon^{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
-                             r'\epsilon^{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
-                    det_latex = prefix + ' '.join(r'\text{{{symbol}}}_{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))
-                    inv_latex = prefix + ' '.join(r'\text{{{symbol}}}_{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(2, 1 + dimension))
-                    self.parse(r"""
-                        % vardef '{permutation}' ({dimension}D)
-                        \text{{{symbol}det}} = \frac{{1}}{{({dimension})({factorial})}} {det_latex} \\
-                        \text{{{symbol}}}^{{i_1 j_1}} = \frac{{1}}{{{factorial}}} \text{{{symbol}det}}^{{{{-1}}}} ({inv_latex})
-                        % assign -{drv_type} '{symbol}det', '{inv_symbol}'
-                        % assign -symbolic <H> '{permutation}'
-                    """.format(symbol=symbol[:-2], inv_symbol=symbol.replace('D', 'U'), dimension=dimension,
-                            factorial=math.factorial(dimension - 1), drv_type='%s <%s>' % tuple(drv_type.split('::')),
-                            det_latex=det_latex, inv_latex=inv_latex, permutation=('epsilon' + dimension * 'U')))
+                self.parse(self._generate_metric(symbol, dimension, drv_type))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
             if not self.accept('COMMA'): break
@@ -525,34 +499,7 @@ class Parser:
                 if christoffel in self._namespace:
                     del self._namespace[christoffel]
                 sentence, position = self.lexer.sentence, self.lexer.mark()
-                if 'U' in symbol:
-                    prefix = r'\epsilon_{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
-                             r'\epsilon_{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
-                    det_latex = prefix + ' '.join(r'\text{{{symbol}}}^{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))
-                    inv_latex = prefix + ' '.join(r'\text{{{symbol}}}^{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(2, 1 + dimension))
-                    self.parse(r"""
-                        % vardef '{permutation}' ({dimension}D)
-                        \text{{{symbol}det}} = \frac{{1}}{{({dimension})({factorial})}} {det_latex} \\
-                        \text{{{symbol}}}_{{i_1 j_1}} = \frac{{1}}{{{factorial}}} \text{{{symbol}det}}^{{{{-1}}}} ({inv_latex})
-                        % assign -{drv_type} '{symbol}det', '{inv_symbol}'
-                        % assign -symbolic <H> '{permutation}'
-                    """.format(symbol=symbol[:-2], inv_symbol=symbol.replace('D', 'U'), dimension=dimension,
-                            factorial=math.factorial(dimension - 1), drv_type='%s <%s>' % tuple(drv_type.split('::')),
-                            det_latex=det_latex, inv_latex=inv_latex, permutation=('epsilon' + dimension * 'D')))
-                else:
-                    prefix = r'\epsilon^{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
-                             r'\epsilon^{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
-                    det_latex = prefix + ' '.join(r'\text{{{symbol}}}_{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))
-                    inv_latex = prefix + ' '.join(r'\text{{{symbol}}}_{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(2, 1 + dimension))
-                    self.parse(r"""
-                        % vardef '{permutation}' ({dimension}D)
-                        \text{{{symbol}det}} = \frac{{1}}{{({dimension})({factorial})}} {det_latex} \\
-                        \text{{{symbol}}}^{{i_1 j_1}} = \frac{{1}}{{{factorial}}} \text{{{symbol}det}}^{{{{-1}}}} ({inv_latex})
-                        % assign -{drv_type} '{symbol}det', '{inv_symbol}'
-                        % assign -symbolic <H> '{permutation}'
-                    """.format(symbol=symbol[:-2], inv_symbol=symbol.replace('D', 'U'), dimension=dimension,
-                            factorial=math.factorial(dimension - 1), drv_type='%s <%s>' % tuple(drv_type.split('::')),
-                            det_latex=det_latex, inv_latex=inv_latex, permutation=('epsilon' + dimension * 'U')))
+                self.parse(self._generate_metric(symbol, dimension, drv_type))
                 self.lexer.initialize(sentence, position)
                 self.lexer.lex()
             base_symbol = symbol.split('_d')[0]  if '_d'  in symbol \
@@ -959,25 +906,25 @@ class Parser:
                 if subexpr.func == Derivative:
                     function = subexpr.args[0].args[0]
                     if function.func == Derivative:
-                        base_func = function.args[0]
-                    else: base_func = function
-                    symbol = str(base_func.args[0])
-                    tensor = self._namespace[symbol]
-                    attribute, priority = tensor.drv_type.split('::')
-                    vphantom = self._property['vphantom']
-                    drv_type = vphantom if vphantom else 'symbolic'
-                    if index in self._property['basis']:
-                        drv_type = 'symbolic'
-                    elif priority == 'H' or (not vphantom and priority == 'L'):
-                        drv_type = attribute
-                    subtree.expr = self._define_pardrv(function, location, drv_type, index)
+                        subtree.expr = Derivative(function, index)
+                    else:
+                        symbol = str(function.args[0])
+                        tensor = self._namespace[symbol]
+                        attribute, priority = tensor.drv_type.split('::')
+                        vphantom = self._property['vphantom']
+                        drv_type = vphantom if vphantom else 'symbolic'
+                        if index in self._property['basis']:
+                            drv_type = 'symbolic'
+                        elif priority == 'H' or (not vphantom and priority == 'L'):
+                            drv_type = attribute
+                        subtree.expr = self._define_pardrv(function, location, drv_type, index)
                     del subtree.children[:]
                 elif subexpr.func == Function('Function'):
                     subtree.expr = subexpr.args[0]
                     del subtree.children[:]
             return tree.reconstruct()
         function = self._operator()
-        if order > 1 or index in self._property['basis']:
+        if function.func == Derivative or index in self._property['basis']:
             return Derivative(function, (index, order))
         symbol = str(function.args[0])
         tensor = self._namespace[symbol]
@@ -1029,19 +976,20 @@ class Parser:
                     indexing[i] = next(x for x in alphabet if x not in indexing)
             latex = Tensor.latex_format(Function('Tensor')(function.args[0],
                         *(Symbol(i) for i in indexing[:-1])))
+            covdrv_index = indexing[-1]
             if index[1] == 'U':
-                equation[0] += '^' + str(index[0]) + ' '
+                equation[0] += '^' + covdrv_index + ' '
                 bound_index = next(x for x in alphabet if x not in indexing)
                 prefix = '\\' if len(self._property['metric'][diacritic]) > 1 else ''
                 metric = prefix + self._property['metric'][diacritic]
                 if diacritic: metric = '\\%s{%s}' % (diacritic, metric)
-                equation[2] += '%s^{%s %s} ' % (metric, index[0], bound_index)
+                equation[2] += '%s^{%s %s} ' % (metric, covdrv_index, bound_index)
                 equation[3] += '_' + bound_index + ' '
             else:
-                equation[0] += '_' + str(index[0]) + ' '
-                equation[3] += '_' + str(index[0]) + ' '
+                equation[0] += '_' + covdrv_index + ' '
+                equation[3] += '_' + covdrv_index + ' '
             equation[0], equation[3] = equation[0] + latex, equation[3] + latex
-            if location == 'RHS' and symbol not in self._namespace:
+            if location == 'RHS' and (self._property['vphantom'] or symbol not in self._namespace):
                 sentence, position = self.lexer.sentence, self.lexer.mark()
                 if index[1] == 'U':
                     config = ' % assign -numeric \'' + symbol + '\''
@@ -1511,6 +1459,40 @@ class Parser:
         LHS_dimension = self._namespace[LHS.split('[')[0]].dimension
         return (re.sub(r'\[[^0-9\]]+\]', '[:]', LHS), RHS), LHS_dimension
 
+    def _generate_metric(self, symbol, dimension, drv_type):
+        latex_config = ''
+        if 'U' in symbol:
+            permutation = 'epsilon' + dimension * 'D'
+            if permutation not in self._namespace:
+                latex_config += "% vardef -symbolic <H> '{permutation}' ({dimension}D)".format(permutation=permutation, dimension=dimension)
+            prefix = r'\epsilon_{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
+                     r'\epsilon_{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
+            det_latex = prefix + ' '.join(r'\text{{{symbol}}}^{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))
+            inv_latex = prefix + ' '.join(r'\text{{{symbol}}}^{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(2, 1 + dimension))
+            latex_config += r"""
+                \text{{{symbol}det}} = \frac{{1}}{{({dimension})({factorial})}} {det_latex} \\
+                \text{{{symbol}}}_{{i_1 j_1}} = \frac{{1}}{{{factorial}}} \text{{{symbol}det}}^{{{{-1}}}} ({inv_latex})
+                % assign -{drv_type} '{symbol}det', '{inv_symbol}'
+            """.format(symbol=symbol[:-2], inv_symbol=symbol.replace('D', 'U'), dimension=dimension,
+                    factorial=math.factorial(dimension - 1), drv_type='%s <%s>' % tuple(drv_type.split('::')),
+                    det_latex=det_latex, inv_latex=inv_latex)
+        else:
+            permutation = 'epsilon' + dimension * 'U'
+            if permutation not in self._namespace:
+                latex_config += r"% vardef -symbolic <H> '{permutation}' ({dimension}D)".format(permutation=permutation, dimension=dimension)
+            prefix = r'\epsilon^{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
+                     r'\epsilon^{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
+            det_latex = prefix + ' '.join(r'\text{{{symbol}}}_{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))
+            inv_latex = prefix + ' '.join(r'\text{{{symbol}}}_{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(2, 1 + dimension))
+            latex_config += r"""
+                \text{{{symbol}det}} = \frac{{1}}{{({dimension})({factorial})}} {det_latex} \\
+                \text{{{symbol}}}^{{i_1 j_1}} = \frac{{1}}{{{factorial}}} \text{{{symbol}det}}^{{{{-1}}}} ({inv_latex})
+                % assign -{drv_type} '{symbol}det', '{inv_symbol}'
+            """.format(symbol=symbol[:-2], inv_symbol=symbol.replace('D', 'U'), dimension=dimension,
+                    factorial=math.factorial(dimension - 1), drv_type='%s <%s>' % tuple(drv_type.split('::')),
+                    det_latex=det_latex, inv_latex=inv_latex)
+        return latex_config
+
     @staticmethod
     def _generate_christoffel(function, metric):
         symbol = str(function.args[0])[:-3]
@@ -1546,7 +1528,7 @@ class Parser:
         latex = Tensor.latex_format(Function('Tensor')(function.args[0],
             *(Symbol(i) for i in indexing[:-1])))
         LHS = ('\\%s{\\nabla}' % diacritic if diacritic else '\\nabla') + ('_%s %s' % (covdrv_index, latex))
-        RHS = '\\partial_%s (%s)' % (covdrv_index, latex)
+        RHS = '\\partial_%s %s' % (covdrv_index, latex)
         for index, (_, position) in zip(indexing, Tensor.indexing(function)):
             alphabet = (chr(97 + n) for n in range(26))
             bound_index = next(x for x in alphabet if x not in indexing)
@@ -1810,6 +1792,11 @@ class Tensor:
         return 'Tensor(%s, %dD)' % (self.symbol, self.dimension)
 
     __str__ = __repr__
+
+# pylint: disable = unused-argument
+# @register_cell_magic
+# def parse_latex(line, cell):
+#     return parse(cell)
 
 class ParseOutput(tuple):
     """ Output Structure for IPython (Jupyter) """

@@ -41,22 +41,22 @@ class TestParser(unittest.TestCase):
         function = Function('Tensor')(Symbol('T'))
         self.assertEqual(
             Parser._generate_covdrv(function, 'beta'),
-            r'\nabla_\beta T = \partial_\beta (T)'
+            r'\nabla_\beta T = \partial_\beta T'
         )
         function = Function('Tensor')(Symbol('TUU'), Symbol('mu'), Symbol('nu'))
         self.assertEqual(
             Parser._generate_covdrv(function, 'beta'),
-            r'\nabla_\beta T^{\mu \nu} = \partial_\beta (T^{\mu \nu}) + \text{Gamma}^\mu_{a \beta} (T^{a \nu}) + \text{Gamma}^\nu_{a \beta} (T^{\mu a})'
+            r'\nabla_\beta T^{\mu \nu} = \partial_\beta T^{\mu \nu} + \text{Gamma}^\mu_{a \beta} (T^{a \nu}) + \text{Gamma}^\nu_{a \beta} (T^{\mu a})'
         )
         function = Function('Tensor')(Symbol('TUD'), Symbol('mu'), Symbol('nu'))
         self.assertEqual(
             Parser._generate_covdrv(function, 'beta'),
-            r'\nabla_\beta T^\mu_\nu = \partial_\beta (T^\mu_\nu) + \text{Gamma}^\mu_{a \beta} (T^a_\nu) - \text{Gamma}^a_{\nu \beta} (T^\mu_a)'
+            r'\nabla_\beta T^\mu_\nu = \partial_\beta T^\mu_\nu + \text{Gamma}^\mu_{a \beta} (T^a_\nu) - \text{Gamma}^a_{\nu \beta} (T^\mu_a)'
         )
         function = Function('Tensor')(Symbol('TDD'), Symbol('mu'), Symbol('nu'))
         self.assertEqual(
             Parser._generate_covdrv(function, 'beta'),
-            r'\nabla_\beta T_{\mu \nu} = \partial_\beta (T_{\mu \nu}) - \text{Gamma}^a_{\mu \beta} (T_{a \nu}) - \text{Gamma}^a_{\nu \beta} (T_{\mu a})'
+            r'\nabla_\beta T_{\mu \nu} = \partial_\beta T_{\mu \nu} - \text{Gamma}^a_{\mu \beta} (T_{a \nu}) - \text{Gamma}^a_{\nu \beta} (T_{\mu a})'
         )
 
     def test_expression_5(self):
@@ -69,7 +69,7 @@ class TestParser(unittest.TestCase):
         function = Parser._namespace['vU_cdD'].equation[0]
         self.assertEqual(
             Parser._generate_covdrv(function, 'a'),
-            r'\nabla_a \nabla_b v^\mu = \partial_a (\nabla_b v^\mu) + \text{Gamma}^\mu_{c a} (\nabla_b v^c) - \text{Gamma}^c_{b a} (\nabla_c v^\mu)'
+            r'\nabla_a \nabla_b v^\mu = \partial_a \nabla_b v^\mu + \text{Gamma}^\mu_{c a} (\nabla_b v^c) - \text{Gamma}^c_{b a} (\nabla_c v^\mu)'
         )
 
     def test_expression_6(self):
@@ -480,79 +480,100 @@ class TestParser(unittest.TestCase):
     def test_example_BSSN():
         import NRPy_param_funcs as par, reference_metric as rfm
         import BSSN.BSSN_RHSs as Brhs, BSSN.BSSN_quantities as Bq
+        import BSSN.BSSN_gauge_RHSs as Bgrhs
         Parser.clear_namespace()
         parse(r"""
-            % keydef basis [x, y, z]
-            % ignore "\\%", "\qquad"
-            % vardef 'deltaDD', 'vetU', 'lambdaU'
-            % vardef -numeric -sym01 'hDD', 'aDD', 'RbarDD'
-            % assign -numeric 'cf', 'alpha', 'trK', 'vetU', 'lambdaU'
-            % parse \hat{\gamma}_{ij} = \delta_{ij}
-            % assign -symbolic <H> -metric 'gammahatDD'
-            % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij}
-            % assign -numeric -metric 'gammabarDD'
             \begin{align}
-                %% replace LaTeX variable(s) with BSSN variable(s)
-                % srepl "\bar{A}" -> "\text{a}", "\beta" -> "\text{vet}", "K" -> "\text{trK}", "\bar{\Lambda}" -> "\text{lambda}"
+                % keydef basis [x, y, z]
+                % ignore "\\%", "\qquad"
 
-                %% replace 'phi' with conformal factor cf = W = e^{{-2\phi}}
-                % srepl "e^{{-4\phi}}" -> "\text{cf}^{{2}}"
-                % srepl "\partial_t \phi = <1..> \\" -> "\text{cf_rhs} = -2 \text{cf} (<1..>) \\"
-                % srepl -global "\partial_<1> \phi"         -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
-                % srepl -global "\partial_<1> \text{phi}"   -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
-                % srepl -global "\partial_<1> (\text{phi})" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                % vardef 'deltaDD'
+                % parse \hat{\gamma}_{ij} = \delta_{ij}
+                % assign -symbolic <H> -metric 'gammahatDD'
+                % vardef -numeric -sym01 'hDD'
+                % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij}
+                % assign -numeric -metric 'gammabarDD'
 
+                % vardef -numeric 'vetU'
+                % srepl "\beta" -> "\text{vet}"
                 %% upwind pattern inside Lie derivative expansion
                 % srepl -global "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{upwind} \partial_<1>"
-
                 %% substitute tensor identity (see appropriate BSSN notebook)
                 % srepl -global "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
 
+                % vardef -numeric 'alpha'
+                % vardef -numeric -sym01 'aDD'
+                % srepl "\bar{A}" -> "\text{a}"
                 % parse \bar{A}^i_j = \bar{\gamma}^{ik} \bar{A}_{kj}
                 % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
                 \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
                     + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right)
                     - 2 \alpha \bar{A}_{ij} \\
 
+                % vardef -numeric 'cf', 'trK'
+                % srepl "K" -> "\text{trK}"
+                %% replace 'phi' with conformal factor cf = W = e^{{-2\phi}}
+                % srepl "e^{-4\phi}" -> "\text{cf}^{{2}}"
+                % srepl "\partial_t \phi = <1..> \\" -> "\text{cf_rhs} = -2 \text{cf} (<1..>) \\"
+                % srepl -global "\partial_<1> \phi"       -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                % srepl -global "\partial_<1> \text{phi}" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
                 \partial_t \phi &= \mathcal{L}_\beta \phi
                     + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
 
-                % parse \bar{A}^{ij} = \bar{\gamma}^{ik} \bar{\gamma}^{jl} \bar{A}_{kl}
+                % parse \bar{A}^{ij} = \bar{\gamma}^{jk} \bar{A}^i_k
                 % srepl "\partial_t \text{trK}" -> "\text{trK_rhs}"
                 \partial_t K &= \mathcal{L}_\beta K
                     + \frac{1}{3} \alpha K^{{2}}
                     + \alpha \bar{A}_{ij} \bar{A}^{ij}
-                    - e^{{-4\phi}} \left(\bar{D}_i \bar{D}^i \alpha + 2 \bar{D}^i \alpha \bar{D}_i \phi\right) \\
+                    - e^{-4\phi} \left(\bar{D}_i \bar{D}^i \alpha + 2 \bar{D}^i \alpha \bar{D}_i \phi\right) \\
 
+                % vardef -numeric 'lambdaU'
+                % srepl "\bar{\Lambda}" -> "\text{lambda}"
                 % parse \Delta^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij}
                 % parse \Delta_{ijk}  = \bar{\gamma}_{il} \Delta^l_{jk}
                 % parse \Delta^k = \bar{\gamma}^{ij} \Delta^k_{ij}
                 % srepl "\partial_t \text{lambda}" -> "\text{Lambdabar_rhs}"
                 \partial_t \bar{\Lambda}^i &= \mathcal{L}_\beta \bar{\Lambda}^i + \bar{\gamma}^{jk} \hat{D}_j \hat{D}_k \beta^i
                     + \frac{2}{3} \Delta^i \bar{D}_k \beta^k + \frac{1}{3} \bar{D}^i \bar{D}_k \beta^k \\%
-                    &\qquad- 2 \bar{A}^{ij} (\partial_j \alpha - 6 \alpha \partial_j \phi)
+                    &\qquad- 2 \bar{A}^{ij} \left(\partial_j \alpha - 6 \alpha \partial_j \phi\right)
                     + 2 \alpha \bar{A}^{jk} \Delta^i_{jk} - \frac{4}{3} \alpha \bar{\gamma}^{ij} \partial_j K \\
 
+                % vardef -numeric -sym01 'RbarDD'
                 X_{ij} &= -2 \alpha \bar{D}_i \bar{D}_j \phi + 4 \alpha \bar{D}_i \phi \bar{D}_j \phi
                     + 2 \bar{D}_i \alpha \bar{D}_j \phi + 2 \bar{D}_j \alpha \bar{D}_i \phi
                     - \bar{D}_i \bar{D}_j \alpha + \alpha \bar{R}_{ij} \\
-                \hat{X}_{ij} &= X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl} \\
+                \hat{X}_{ij} &= X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl}
                 % srepl "\partial_t \text{a}" -> "\text{a_rhs}"
                 \partial_t \bar{A}_{ij} &= \mathcal{L}_\beta \bar{A}_{ij}
                     - \frac{2}{3} \bar{A}_{ij} \bar{D}_k \beta^k
                     - 2 \alpha \bar{A}_{ik} \bar{A}^k_j
                     + \alpha \bar{A}_{ij} K
-                    + e^{{-4\phi}} \hat{X}_{ij} \\
+                    + e^{-4\phi} \hat{X}_{ij} \\
+
+                % srepl "\partial_t \alpha" -> "\text{alpha_rhs}"
+                \partial_t \alpha &= \mathcal{L}_\beta \alpha - 2 \alpha K \\
+
+                % vardef -numeric 'eta', 'betU'
+                % srepl "B" -> "\text{bet}"
+                % srepl "\partial_t \text{vet}" -> "\text{vet_rhs}"
+                \partial_t \beta^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j \beta^i\right] + B^{i} \\
+                % srepl "\partial_t \text{bet}" -> "\text{bet_rhs}"
+                \partial_t B^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j B^i\right] + \frac{3}{4} \left(\partial_t \bar{\Lambda}^{i} - \left[\beta^j \vphantom{upwind} \bar{D}_j \bar{\Lambda}^{i}\right]\right) - \eta B^{i} \\
+
+                % parse \bar{R} = \bar{\gamma}^{ij} \bar{R}_{ij}
+                % srepl "\bar{D}^2" -> "\bar{D}^i \bar{D}_i", "\mathcal{<1>}" -> "<1>"
+                \mathcal{H} &= \frac{2}{3} K^{{2}} - \bar{A}_{ij} \bar{A}^{ij} + e^{-4\phi} \left(\bar{R} - 8 \bar{D}^i \phi \bar{D}_i \phi - 8 \bar{D}^2 \phi\right) \\
+                \mathcal{M}^i &= e^{-4\phi} \left(\hat{D}_j \bar{A}^{ij} + 6 \bar{A}^{ij}\partial_j \phi - \frac{2}{3} \bar{\gamma}^{ij} \partial_j K + \bar{A}^{jk} \Delta^i_{jk} + \bar{A}^{ik} \Delta^j_{jk}\right) \\
 
                 \bar{R}_{ij} &= -\frac{1}{2} \bar{\gamma}^{kl} \hat{D}_k \hat{D}_l \bar{\gamma}_{ij}
-                    + \frac{1}{2} (\bar{\gamma}_{ki} \hat{D}_j \bar{\Lambda}^k + \bar{\gamma}_{kj} \hat{D}_i \bar{\Lambda}^k)
-                    + \frac{1}{2} \Delta^k (\Delta_{ijk} + \Delta_{jik}) \\%
-                    &\qquad+ \bar{\gamma}^{kl} (\Delta^m_{ki} \Delta_{jml} + \Delta^m_{kj} \Delta_{iml} + \Delta^m_{ik} \Delta_{mjl}) 
+                    + \frac{1}{2} \left(\bar{\gamma}_{ki} \hat{D}_j \bar{\Lambda}^k + \bar{\gamma}_{kj} \hat{D}_i \bar{\Lambda}^k\right)
+                    + \frac{1}{2} \Delta^k \left(\Delta_{ijk} + \Delta_{jik}\right) \\%
+                    &\qquad+ \bar{\gamma}^{kl} \left(\Delta^m_{ki} \Delta_{jml} + \Delta^m_{kj} \Delta_{iml} + \Delta^m_{ik} \Delta_{mjl}\right)
             \end{align}
         """)
         par.set_parval_from_str('reference_metric::CoordSystem', 'Cartesian')
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'True')
-        rfm.reference_metric(); Brhs.BSSN_RHSs()
+        rfm.reference_metric(); Brhs.BSSN_RHSs(); Bgrhs.BSSN_gauge_RHSs()
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'False')
         Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
         assert_equal({'h_rhsDD': h_rhsDD,
@@ -560,12 +581,18 @@ class TestParser(unittest.TestCase):
                       'trK_rhs': trK_rhs,
                       'Lambdabar_rhsU': Lambdabar_rhsU,
                       'a_rhsDD': a_rhsDD,
+                      'alpha_rhs': alpha_rhs,
+                      'vet_rhsU': vet_rhsU,
+                      'bet_rhsU': bet_rhsU,
                       'RbarDD': RbarDD},
                      {'h_rhsDD': Brhs.h_rhsDD,
                       'cf_rhs': Brhs.cf_rhs,
                       'trK_rhs': Brhs.trK_rhs,
                       'Lambdabar_rhsU': Brhs.Lambdabar_rhsU,
                       'a_rhsDD': Brhs.a_rhsDD,
+                      'alpha_rhs': Bgrhs.alpha_rhs,
+                      'vet_rhsU': Bgrhs.vet_rhsU,
+                      'bet_rhsU': Bgrhs.bet_rhsU,
                       'RbarDD': Bq.RbarDD},
                     suppress_message=True)
 
