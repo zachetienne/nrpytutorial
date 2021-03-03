@@ -4,7 +4,7 @@
 
 # pylint: disable = import-error, protected-access, exec-used
 import sys; sys.path.append('..')
-from latex_parser import Tensor, Parser, parse_expr, parse
+from parse_latex import Tensor, Parser, parse_expr, parse
 from sympy import Function, Symbol, Matrix, simplify
 from UnitTesting.assert_equal import assert_equal
 import unittest, sys
@@ -97,11 +97,11 @@ class TestParser(unittest.TestCase):
     def test_srepl_macro(self):
         Parser.clear_namespace()
         parse(r"""
-            % srepl -global "<1>'" -> "\text{<1>prime}"
-            % srepl -global "\text{<1..>}_<2>" -> "\text{(<1..>)<2>}"
-            % srepl -global "<1>_{<2>}" -> "<1>_<2>", "<1>_<2>" -> "\text{<1>_<2>}"
-            % srepl -global "\text{(<1..>)<2>}" -> "\text{<1..>_<2>}"
-            % srepl -global "<1>^{<2>}" -> "<1>^<2>", "<1>^<2>" -> "<1>^{{<2>}}"
+            % srepl -persist "<1>'" -> "\text{<1>prime}"
+            % srepl -persist "\text{<1..>}_<2>" -> "\text{(<1..>)<2>}"
+            % srepl -persist "<1>_{<2>}" -> "<1>_<2>", "<1>_<2>" -> "\text{<1>_<2>}"
+            % srepl -persist "\text{(<1..>)<2>}" -> "\text{<1..>_<2>}"
+            % srepl -persist "<1>^{<2>}" -> "<1>^<2>", "<1>^<2>" -> "<1>^{{<2>}}"
         """)
         expr = r"x_n^4 + x'_n \exp(x_n y_n^2)"
         self.assertEqual(
@@ -109,7 +109,7 @@ class TestParser(unittest.TestCase):
             "x_n**4 + xprime_n*exp(x_n*y_n**2)"
         )
         Parser.clear_namespace()
-        parse(r""" % srepl -global "<1>'^{<2..>}" -> "\text{<1>prime}" """)
+        parse(r""" % srepl -persist "<1>'^{<2..>}" -> "\text{<1>prime}" """)
         expr = r"v'^{label}"
         self.assertEqual(
             str(parse_expr(expr)),
@@ -280,7 +280,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % vardef -nosym 'hUD' (4D)
+                % vardef 'hUD' (4D)
                 h = h^\mu{}_\mu
             """)),
             {'hUD', 'h'}
@@ -317,26 +317,34 @@ class TestParser(unittest.TestCase):
             '[vU1*wU2 - vU2*wU1, -vU0*wU2 + vU2*wU0, vU0*wU1 - vU1*wU0]'
         )
 
-    def test_example_4_1(self):
+    def test_example_4(self):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % vardef -anti01 'FUU' (4D)
-                % vardef -metric 'gDD' (4D)
+                % vardef -numeric -anti01 'FUU' (4D)
+                % vardef -numeric -metric 'gDD' (4D)
                 % vardef -const 'k'
-                J^\mu = (4\pi k)^{-1} \vphantom{numeric} \nabla_\nu F^{\mu\nu}
+                J^\mu = (4\pi k)^{-1} F^{\mu\nu}_{;\nu}
             """)),
             {'FUU', 'gUU', 'gdet', 'epsilonUUUU', 'gDD', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
         )
-
-    def test_example_4_2(self):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % vardef -anti01 'FUU' (4D)
-                % vardef -metric 'ghatDD' (4D)
+                % vardef -numeric -anti01 'FUU' (4D)
+                % vardef -numeric -metric 'gDD' (4D)
                 % vardef -const 'k'
-                J^\mu = (4\pi k)^{-1} \vphantom{numeric} \hat{\nabla}_\nu F^{\mu\nu}
+                J^\mu = (4\pi k)^{-1} \nabla_\nu F^{\mu\nu}
+            """)),
+            {'FUU', 'gUU', 'gdet', 'epsilonUUUU', 'gDD', 'FUU_dD', 'gDD_dD', 'GammaUDD', 'FUU_cdD', 'JU'}
+        )
+        Parser.clear_namespace()
+        self.assertEqual(
+            set(parse(r"""
+                % vardef -numeric -anti01 'FUU' (4D)
+                % vardef -numeric -metric 'ghatDD' (4D)
+                % vardef -const 'k'
+                J^\mu = (4\pi k)^{-1} \hat{\nabla}_\nu F^{\mu\nu}
             """)),
             {'FUU', 'ghatUU', 'ghatdet', 'epsilonUUUU',  'ghatDD', 'FUU_dD', 'ghatDD_dD', 'GammahatUDD', 'FUU_cdhatD', 'JU'}
         )
@@ -480,7 +488,7 @@ class TestParser(unittest.TestCase):
     def test_example_BSSN():
         import NRPy_param_funcs as par, reference_metric as rfm
         import BSSN.BSSN_RHSs as Brhs, BSSN.BSSN_quantities as Bq
-        import BSSN.BSSN_gauge_RHSs as Bgrhs
+        import BSSN.BSSN_gauge_RHSs as gaugerhs
         Parser.clear_namespace()
         parse(r"""
             \begin{align}
@@ -497,9 +505,9 @@ class TestParser(unittest.TestCase):
                 % vardef -numeric 'vetU'
                 % srepl "\beta" -> "\text{vet}"
                 %% upwind pattern inside Lie derivative expansion
-                % srepl -global "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{upwind} \partial_<1>"
+                % srepl -persist "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{upwind} \partial_<1>"
                 %% substitute tensor identity (see appropriate BSSN notebook)
-                % srepl -global "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
+                % srepl -persist "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
 
                 % vardef -numeric 'alpha'
                 % vardef -numeric -sym01 'aDD'
@@ -515,8 +523,8 @@ class TestParser(unittest.TestCase):
                 %% replace 'phi' with conformal factor cf = W = e^{{-2\phi}}
                 % srepl "e^{-4\phi}" -> "\text{cf}^{{2}}"
                 % srepl "\partial_t \phi = <1..> \\" -> "\text{cf_rhs} = -2 \text{cf} (<1..>) \\"
-                % srepl -global "\partial_<1> \phi"       -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
-                % srepl -global "\partial_<1> \text{phi}" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                % srepl -persist "\partial_<1> \phi"       -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                % srepl -persist "\partial_<1> \text{phi}" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
                 \partial_t \phi &= \mathcal{L}_\beta \phi
                     + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
 
@@ -542,7 +550,7 @@ class TestParser(unittest.TestCase):
                 X_{ij} &= -2 \alpha \bar{D}_i \bar{D}_j \phi + 4 \alpha \bar{D}_i \phi \bar{D}_j \phi
                     + 2 \bar{D}_i \alpha \bar{D}_j \phi + 2 \bar{D}_j \alpha \bar{D}_i \phi
                     - \bar{D}_i \bar{D}_j \alpha + \alpha \bar{R}_{ij} \\
-                \hat{X}_{ij} &= X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl}
+                \hat{X}_{ij} &= X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl} \\
                 % srepl "\partial_t \text{a}" -> "\text{a_rhs}"
                 \partial_t \bar{A}_{ij} &= \mathcal{L}_\beta \bar{A}_{ij}
                     - \frac{2}{3} \bar{A}_{ij} \bar{D}_k \beta^k
@@ -553,12 +561,13 @@ class TestParser(unittest.TestCase):
                 % srepl "\partial_t \alpha" -> "\text{alpha_rhs}"
                 \partial_t \alpha &= \mathcal{L}_\beta \alpha - 2 \alpha K \\
 
-                % vardef -numeric 'eta', 'betU'
+                % vardef -const 'eta'
+                % vardef -numeric 'betU'
                 % srepl "B" -> "\text{bet}"
                 % srepl "\partial_t \text{vet}" -> "\text{vet_rhs}"
-                \partial_t \beta^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j \beta^i\right] + B^{i} \\
+                \partial_t \beta^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j \beta^i\right] + B^i \\
                 % srepl "\partial_t \text{bet}" -> "\text{bet_rhs}"
-                \partial_t B^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j B^i\right] + \frac{3}{4} \left(\partial_t \bar{\Lambda}^{i} - \left[\beta^j \vphantom{upwind} \bar{D}_j \bar{\Lambda}^{i}\right]\right) - \eta B^{i} \\
+                \partial_t B^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j B^i\right] + \frac{3}{4} \left(\partial_t \bar{\Lambda}^i - \left[\beta^j \vphantom{upwind} \bar{D}_j \bar{\Lambda}^i\right]\right) - \eta B^i \\
 
                 % parse \bar{R} = \bar{\gamma}^{ij} \bar{R}_{ij}
                 % srepl "\bar{D}^2" -> "\bar{D}^i \bar{D}_i", "\mathcal{<1>}" -> "<1>"
@@ -573,7 +582,7 @@ class TestParser(unittest.TestCase):
         """)
         par.set_parval_from_str('reference_metric::CoordSystem', 'Cartesian')
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'True')
-        rfm.reference_metric(); Brhs.BSSN_RHSs(); Bgrhs.BSSN_gauge_RHSs()
+        rfm.reference_metric(); Brhs.BSSN_RHSs(); gaugerhs.BSSN_gauge_RHSs()
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'False')
         Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
         assert_equal({'h_rhsDD': h_rhsDD,
@@ -590,9 +599,9 @@ class TestParser(unittest.TestCase):
                       'trK_rhs': Brhs.trK_rhs,
                       'Lambdabar_rhsU': Brhs.Lambdabar_rhsU,
                       'a_rhsDD': Brhs.a_rhsDD,
-                      'alpha_rhs': Bgrhs.alpha_rhs,
-                      'vet_rhsU': Bgrhs.vet_rhsU,
-                      'bet_rhsU': Bgrhs.bet_rhsU,
+                      'alpha_rhs': gaugerhs.alpha_rhs,
+                      'vet_rhsU': gaugerhs.vet_rhsU,
+                      'bet_rhsU': gaugerhs.bet_rhsU,
                       'RbarDD': Bq.RbarDD},
                     suppress_message=True)
 
@@ -604,7 +613,7 @@ if __name__ == '__main__':
     for i in range(8):
         suite.addTest(TestParser('test_assignment_' + str(i + 1)))
     for i in range(6):
-        if i > 2:
+        if i > 3:
             suite.addTest(TestParser('test_example_' + str(i + 1) + '_1'))
             suite.addTest(TestParser('test_example_' + str(i + 1) + '_2'))
         else:
