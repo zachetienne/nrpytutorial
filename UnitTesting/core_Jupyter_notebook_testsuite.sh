@@ -9,7 +9,7 @@ for i in Tutorial-[A]*.ipynb Tutorial-[C-RT-Z]*.ipynb Tutorial-B[B-Z]*.ipynb Tut
     # For some reason (as of ~July 20, 2020) the hydro-without-hydro notebook takes too long in Travis, causing a timeout:
     #   Also as of Aug 3, 2020 the new WaveToyNRPy notebook is broken, as it seems Travis doesn't support parallel codegens
     if [ $i != "Tutorial-Start_to_Finish-BSSNCurvilinear-Neutron_Star-Hydro_without_Hydro.ipynb" ] && [ $i != "Tutorial-ETK_thorn-WaveToyNRPy.ipynb" ]; then
-        ./run_Jupyter_notebook.sh $i notimer
+        ./run_Jupyter_notebook.sh $i # notimer
         cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i
         git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'| \
             grep -v "metadata\":"|grep -v "\"execution\":"|grep -v "\"iopub."| \
@@ -21,7 +21,7 @@ done
 
 # GiRaFFE unit tests:
 for i in in_progress/Tutorial-Start_to_Finish-GiRaFFE_NRPy-1D_tests-staggered.ipynb in_progress/Tutorial-Start_to_Finish_UnitTest*; do
-    ./run_Jupyter_notebook.sh $i notimer
+    ./run_Jupyter_notebook.sh $i # notimer
     cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i
     git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'| \
         grep -v "metadata\":"|grep -v "\"execution\":"|grep -v "\"iopub."| \

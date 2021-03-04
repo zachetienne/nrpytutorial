@@ -76,7 +76,7 @@ then
     fi
     echo Doctest of cse_helpers.py finished.
 fi
-for file in tests/test_latex_parser.py; do
+for file in tests/test_parse_latex.py; do
     echo Running unittest on file: $file
     $PYTHONEXEC $file
     if [ $? == 1 ]
