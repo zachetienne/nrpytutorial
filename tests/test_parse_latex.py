@@ -561,18 +561,23 @@ class TestParser(unittest.TestCase):
                 % srepl "\partial_t \alpha" -> "\text{alpha_rhs}"
                 \partial_t \alpha &= \mathcal{L}_\beta \alpha - 2 \alpha K \\
 
-                % vardef -const 'eta'
                 % vardef -numeric 'betU'
                 % srepl "B" -> "\text{bet}"
                 % srepl "\partial_t \text{vet}" -> "\text{vet_rhs}"
                 \partial_t \beta^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j \beta^i\right] + B^i \\
+                
+                % vardef -const 'eta'
                 % srepl "\partial_t \text{bet}" -> "\text{bet_rhs}"
-                \partial_t B^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j B^i\right] + \frac{3}{4} \left(\partial_t \bar{\Lambda}^i - \left[\beta^j \vphantom{upwind} \bar{D}_j \bar{\Lambda}^i\right]\right) - \eta B^i \\
+                \partial_t B^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j B^i\right]
+                    + \frac{3}{4} \left(\partial_t \bar{\Lambda}^i - \left[\beta^j \vphantom{upwind} \bar{D}_j \bar{\Lambda}^i\right]\right)
+                    - \eta B^i \\
 
                 % parse \bar{R} = \bar{\gamma}^{ij} \bar{R}_{ij}
                 % srepl "\bar{D}^2" -> "\bar{D}^i \bar{D}_i", "\mathcal{<1>}" -> "<1>"
-                \mathcal{H} &= \frac{2}{3} K^{{2}} - \bar{A}_{ij} \bar{A}^{ij} + e^{-4\phi} \left(\bar{R} - 8 \bar{D}^i \phi \bar{D}_i \phi - 8 \bar{D}^2 \phi\right) \\
-                \mathcal{M}^i &= e^{-4\phi} \left(\hat{D}_j \bar{A}^{ij} + 6 \bar{A}^{ij}\partial_j \phi - \frac{2}{3} \bar{\gamma}^{ij} \partial_j K + \bar{A}^{jk} \Delta^i_{jk} + \bar{A}^{ik} \Delta^j_{jk}\right) \\
+                \mathcal{H} &= \frac{2}{3} K^{{2}} - \bar{A}_{ij} \bar{A}^{ij}
+                    + e^{-4\phi} \left(\bar{R} - 8 \bar{D}^i \phi \bar{D}_i \phi - 8 \bar{D}^2 \phi\right) \\
+                \mathcal{M}^i &= e^{-4\phi} \left(\hat{D}_j \bar{A}^{ij} + 6 \bar{A}^{ij}\partial_j \phi
+                    - \frac{2}{3} \bar{\gamma}^{ij} \partial_j K + \bar{A}^{jk} \Delta^i_{jk} + \bar{A}^{ik} \Delta^j_{jk}\right) \\
 
                 \bar{R}_{ij} &= -\frac{1}{2} \bar{\gamma}^{kl} \hat{D}_k \hat{D}_l \bar{\gamma}_{ij}
                     + \frac{1}{2} \left(\bar{\gamma}_{ki} \hat{D}_j \bar{\Lambda}^k + \bar{\gamma}_{kj} \hat{D}_i \bar{\Lambda}^k\right)
