@@ -83,7 +83,7 @@ class Lexer:
             ('PRIORITY',        r'\<L\>|\<H\>'),
             ('DIACRITIC',       r'\\hat|\\tilde|\\bar'),
             ('VPHANTOM',        r'\\vphantom'),
-            ('SYMMETRY',        r'const|metric|' + symmetry),
+            ('SYMMETRY',        r'const|metric|kronecker|permutation|' + symmetry),
             ('WEIGHT',          r'weight'),
             ('PERSIST',         r'persist'),
             ('PI',              r'\\pi'),
@@ -394,7 +394,18 @@ class Parser:
                 dimension = int(dimension)
                 self.expect('RPAREN')
             structure = None
-            if not symmetry and 'epsilon' in symbol:
+            if symmetry == 'kronecker':
+                rank = 0
+                for symbol in re.split(r'_d|_dup|_cd|_ld', symbol):
+                    for character in reversed(symbol):
+                        if character in ('U', 'D'):
+                            rank += 1
+                        else: break
+                if rank != 2:
+                    raise TensorError('cannot instantiate kronecker delta of rank ' + str(rank))
+                structure = ixp.declare_indexedexp(rank=rank, dimension=dimension)
+                for i in range(dimension): structure[i][i] = 1
+            elif symmetry == 'permutation':
                 # instantiate permutation (Levi-Civita) symbol using parity
                 def sgn(sequence):
                     """ Permutation Signature (Parity)"""
@@ -413,18 +424,7 @@ class Parser:
                 index = [chr(105 + n) for n in range(rank)]
                 prefix = '[' * rank + 'sgn([' + ', '.join(index) + '])'
                 suffix = ''.join(' for %s in range(%d)]' % (index[rank - i], dimension) for i in range(1, rank + 1))
-                structure  = eval(prefix + suffix, {'sgn': sgn})
-            if not symmetry and 'delta' in symbol:
-                rank = 0
-                for symbol in re.split(r'_d|_dup|_cd|_ld', symbol):
-                    for character in reversed(symbol):
-                        if character in ('U', 'D'):
-                            rank += 1
-                        else: break
-                if rank != 2:
-                    raise TensorError('cannot instantiate kronecker delta of rank ' + str(rank))
-                structure = ixp.declare_indexedexp(rank=rank, dimension=dimension)
-                for i in range(dimension): structure[i][i] = 1
+                structure = eval(prefix + suffix, {'sgn': sgn})
             if symmetry == 'const':
                 self._namespace[symbol] = Function('Constant')(Symbol(symbol, real=True))
             else:
@@ -1468,7 +1468,7 @@ class Parser:
         if 'U' in symbol:
             permutation = 'epsilon' + dimension * 'D'
             if permutation not in self._namespace:
-                latex_config += "% vardef -symbolic <H> '{permutation}' ({dimension}D)".format(permutation=permutation, dimension=dimension)
+                latex_config += "% vardef -symbolic <H> -permutation '{permutation}' ({dimension}D)".format(permutation=permutation, dimension=dimension)
             prefix = r'\epsilon_{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
                      r'\epsilon_{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
             det_latex = prefix + ' '.join(r'\text{{{symbol}}}^{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))
@@ -1483,7 +1483,7 @@ class Parser:
         else:
             permutation = 'epsilon' + dimension * 'U'
             if permutation not in self._namespace:
-                latex_config += r"% vardef -symbolic <H> '{permutation}' ({dimension}D)".format(permutation=permutation, dimension=dimension)
+                latex_config += r"% vardef -symbolic <H> -permutation '{permutation}' ({dimension}D)".format(permutation=permutation, dimension=dimension)
             prefix = r'\epsilon^{' + ' '.join('i_' + str(i) for i in range(1, 1 + dimension)) + '} ' + \
                      r'\epsilon^{' + ' '.join('j_' + str(i) for i in range(1, 1 + dimension)) + '} '
             det_latex = prefix + ' '.join(r'\text{{{symbol}}}_{{i_{n} j_{n}}}'.format(symbol=symbol[:-2], n=i) for i in range(1, 1 + dimension))

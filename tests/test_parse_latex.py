@@ -214,7 +214,7 @@ class TestParser(unittest.TestCase):
         parse(r"""
             % keydef basis [\theta, \phi]
             % vardef -const 'r'
-            % vardef 'deltaDD' (2D)
+            % vardef -kronecker 'deltaDD' (2D)
             % keydef index [a-z] (2D)
             % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align*}
@@ -307,7 +307,7 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
-                % vardef 'epsilonDDD' (3D)
+                % vardef -permutation 'epsilonDDD' (3D)
                 % vardef 'vU' (3D), 'wU' (3D)
                 u_i = \epsilon_{ijk} v^j w^k
             """)),
@@ -352,7 +352,7 @@ class TestParser(unittest.TestCase):
     def test_example_5_1(self):
         Parser.clear_namespace()
         parse(r"""
-            % vardef 'deltaDD' (4D)
+            % vardef -kronecker 'deltaDD' (4D)
             % vardef -const 'G', 'M'
             % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align}
@@ -489,13 +489,14 @@ class TestParser(unittest.TestCase):
         import NRPy_param_funcs as par, reference_metric as rfm
         import BSSN.BSSN_RHSs as Brhs, BSSN.BSSN_quantities as Bq
         import BSSN.BSSN_gauge_RHSs as gaugerhs
+        import BSSN.BSSN_constraints as bssncon
         Parser.clear_namespace()
         parse(r"""
             \begin{align}
                 % keydef basis [x, y, z]
                 % ignore "\\%", "\qquad"
 
-                % vardef 'deltaDD'
+                % vardef -kronecker 'deltaDD'
                 % parse \hat{\gamma}_{ij} = \delta_{ij}
                 % assign -symbolic <H> -metric 'gammahatDD'
                 % vardef -numeric -sym01 'hDD'
@@ -513,6 +514,7 @@ class TestParser(unittest.TestCase):
                 % vardef -numeric -sym01 'aDD'
                 % srepl "\bar{A}" -> "\text{a}"
                 % parse \bar{A}^i_j = \bar{\gamma}^{ik} \bar{A}_{kj}
+                % assign -numeric 'aUD'
                 % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
                 \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
                     + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right)
@@ -529,6 +531,7 @@ class TestParser(unittest.TestCase):
                     + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
 
                 % parse \bar{A}^{ij} = \bar{\gamma}^{jk} \bar{A}^i_k
+                % assign -numeric 'aUU'
                 % srepl "\partial_t \text{trK}" -> "\text{trK_rhs}"
                 \partial_t K &= \mathcal{L}_\beta K
                     + \frac{1}{3} \alpha K^{{2}}
@@ -565,7 +568,7 @@ class TestParser(unittest.TestCase):
                 % srepl "B" -> "\text{bet}"
                 % srepl "\partial_t \text{vet}" -> "\text{vet_rhs}"
                 \partial_t \beta^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j \beta^i\right] + B^i \\
-                
+
                 % vardef -const 'eta'
                 % srepl "\partial_t \text{bet}" -> "\text{bet_rhs}"
                 \partial_t B^i &= \left[\beta^j \vphantom{upwind} \bar{D}_j B^i\right]
@@ -576,8 +579,9 @@ class TestParser(unittest.TestCase):
                 % srepl "\bar{D}^2" -> "\bar{D}^i \bar{D}_i", "\mathcal{<1>}" -> "<1>"
                 \mathcal{H} &= \frac{2}{3} K^{{2}} - \bar{A}_{ij} \bar{A}^{ij}
                     + e^{-4\phi} \left(\bar{R} - 8 \bar{D}^i \phi \bar{D}_i \phi - 8 \bar{D}^2 \phi\right) \\
-                \mathcal{M}^i &= e^{-4\phi} \left(\hat{D}_j \bar{A}^{ij} + 6 \bar{A}^{ij}\partial_j \phi
-                    - \frac{2}{3} \bar{\gamma}^{ij} \partial_j K + \bar{A}^{jk} \Delta^i_{jk} + \bar{A}^{ik} \Delta^j_{jk}\right) \\
+
+                \mathcal{M}^i &= e^{-4\phi} \left(\bar{D}_j \bar{A}^{ij} + 6 \bar{A}^{ij} \partial_j \phi
+                    - \frac{2}{3} \bar{\gamma}^{ij} \partial_j K\right) \\
 
                 \bar{R}_{ij} &= -\frac{1}{2} \bar{\gamma}^{kl} \hat{D}_k \hat{D}_l \bar{\gamma}_{ij}
                     + \frac{1}{2} \left(\bar{\gamma}_{ki} \hat{D}_j \bar{\Lambda}^k + \bar{\gamma}_{kj} \hat{D}_i \bar{\Lambda}^k\right)
@@ -587,7 +591,8 @@ class TestParser(unittest.TestCase):
         """)
         par.set_parval_from_str('reference_metric::CoordSystem', 'Cartesian')
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'True')
-        rfm.reference_metric(); Brhs.BSSN_RHSs(); gaugerhs.BSSN_gauge_RHSs()
+        rfm.reference_metric(); Brhs.BSSN_RHSs()
+        gaugerhs.BSSN_gauge_RHSs(); bssncon.BSSN_constraints()
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'False')
         Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
         assert_equal({'h_rhsDD': h_rhsDD,
@@ -598,6 +603,8 @@ class TestParser(unittest.TestCase):
                       'alpha_rhs': alpha_rhs,
                       'vet_rhsU': vet_rhsU,
                       'bet_rhsU': bet_rhsU,
+                      'H': H,
+                      'MU': MU,
                       'RbarDD': RbarDD},
                      {'h_rhsDD': Brhs.h_rhsDD,
                       'cf_rhs': Brhs.cf_rhs,
@@ -607,6 +614,8 @@ class TestParser(unittest.TestCase):
                       'alpha_rhs': gaugerhs.alpha_rhs,
                       'vet_rhsU': gaugerhs.vet_rhsU,
                       'bet_rhsU': gaugerhs.bet_rhsU,
+                      'H': bssncon.H,
+                      'MU': bssncon.MU,
                       'RbarDD': Bq.RbarDD},
                     suppress_message=True)
 
