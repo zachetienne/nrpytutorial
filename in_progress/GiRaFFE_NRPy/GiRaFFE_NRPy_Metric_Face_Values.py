@@ -101,7 +101,7 @@ const int num_metric_gfs = 16;
 #endif /*WORKAROUND_ENABLED*/
 
 """,
-    rel_path_for_Cparams=os.path.join("../"))
+    rel_path_to_Cparams=os.path.join("../"))
 
     with open(os.path.join(Ccodesdir,"interpolate_metric_gfs_to_cell_faces.h"),"a") as file:
         file.write(interp_Cfunc)

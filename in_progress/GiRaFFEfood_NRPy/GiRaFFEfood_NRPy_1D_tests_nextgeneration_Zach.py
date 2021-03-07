@@ -94,9 +94,9 @@ M_PI  = par.Cparameters("#define",thismodule,["M_PI"], "")
 #################
 # Generic function for all 1D tests: Compute Ax,Ay,Az
 def Axyz_func(Ax_func,Ay_func,Az_func, stagger_enable, **params):
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
-    z = rfm.xxCart[2]
+    x = rfm.xx_to_Cart[0]
+    y = rfm.xx_to_Cart[1]
+    z = rfm.xx_to_Cart[2]
     # First Ax
     if stagger_enable:
         y += sp.Rational(1,2)*gri.dxx[1]
@@ -170,9 +170,9 @@ def ValenciavU_DAW(**params):
     gammamu = params["gammamu"]
     mu_AW   = params["mu_DAW"]
 
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
-    z = rfm.xxCart[2]
+    x = rfm.xx_to_Cart[0]
+    y = rfm.xx_to_Cart[1]
+    z = rfm.xx_to_Cart[2]
 
     # ### Set the vectors $B^i$ and $E^i$ for the velocity
     #
@@ -213,7 +213,7 @@ def ValenciavU_DAW(**params):
 
     EpU = ixp.zerorank1()
 
-    # Next, we must transform the the fields into the grid frame. We'll do the magnetic fields first.
+    # Next, we must transform the fields into the grid frame. We'll do the magnetic fields first.
     # \begin{align}
     #   B^x(0,x) = &\ B'^{x'}(\gamma_\mu x) , \\
     #   B^y(0,x) = &\ \gamma_\mu [ B'^y(\gamma_\mu x) - \mu E'^z(\gamma_\mu x) ] , \\

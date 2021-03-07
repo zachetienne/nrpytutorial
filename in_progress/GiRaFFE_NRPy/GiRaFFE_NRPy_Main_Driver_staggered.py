@@ -155,7 +155,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,REAL *xx[3],REAL *auxevol_gfs,REAL *in_gfs",
         body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints,Read_xxs",
-        rel_path_for_Cparams=os.path.join("../"))
+        rel_path_to_Cparams=os.path.join("../"))
 
     C2P_P2C.GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi)
 
@@ -172,7 +172,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,REAL *auxevol_gfs,REAL *in_gfs",
         body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints",
-        rel_path_for_Cparams=os.path.join("../"))
+        rel_path_to_Cparams=os.path.join("../"))
 
     import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
     # First calculate the conformal factor psi^4 = detgamma^(1/3)
@@ -211,7 +211,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,REAL *auxevol_gfs",
         body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints",
-        rel_path_for_Cparams=os.path.join("./"))
+        rel_path_to_Cparams=os.path.join("./"))
 
     rescaled_gammaDD = ixp.zerorank2(DIM=3)
     rescaled_gammaUU = ixp.zerorank2(DIM=3)
@@ -247,7 +247,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,REAL *auxevol_gfs",
         body     = C_code_kernel,
         loopopts ="AllPoints",
-        rel_path_for_Cparams=os.path.join("./"))
+        rel_path_to_Cparams=os.path.join("./"))
 
     desc = "Convert BSSN metric to ADM on the cell faces"
     name = "Workaround_BSSN_to_ADM_face"
@@ -256,7 +256,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,REAL *auxevol_gfs",
         body     = C_face_kernel,
         loopopts ="InteriorPoints",
-        rel_path_for_Cparams=os.path.join("./")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
+        rel_path_to_Cparams=os.path.join("./")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
     with open(os.path.join(out_dir,name+".h"),"w") as file:
         file.write(Ccode_function)
 

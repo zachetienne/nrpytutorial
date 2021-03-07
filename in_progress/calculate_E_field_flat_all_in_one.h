@@ -9,7 +9,7 @@ REAL HLLE_solve(REAL F0B1_r, REAL F0B1_l, REAL U_r, REAL U_l) {
 Calculate the electric flux on both faces in the input direction.
 The input count is an integer that is either 0 or 1. If it is 0, this implies
 that the components are input in order of a backwards permutation  and the final
-results will need to be multiplied by -1.0. If it is 1, then the permutation is fowards.
+results will need to be multiplied by -1.0. If it is 1, then the permutation is forwards.
  */
 void calculate_E_field_flat_all_in_one(const paramstruct *params,
                                        const REAL *Vr0,const REAL *Vr1,

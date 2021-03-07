@@ -137,7 +137,7 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
             params   = input_params_for_Stilde_flux,
             body     = fin.FD_outputC("returnstring",Stilde_flux_to_print,params=outCparams).replace("IDX4","IDX4S"),
             loopopts ="InteriorPoints",
-            rel_path_for_Cparams=os.path.join("../")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
+            rel_path_to_Cparams=os.path.join("../")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
 
         with open(os.path.join(out_dir,name+".h"),"w") as file:
             file.write(Ccode_function)
@@ -163,5 +163,5 @@ rhs_gfs[IDX4ptS(STILDED2GF,index)] += (auxevol_gfs[IDX4ptS(STILDE_FLUX_HLLED2GF,
         preloop  = pre_body,
         body     = FD_body,
         loopopts = "InteriorPoints",
-        rel_path_for_Cparams=os.path.join("../")
+        rel_path_to_Cparams=os.path.join("../")
     )

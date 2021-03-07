@@ -154,4 +154,4 @@ def write_out_functions_for_StildeD_source_term(outdir,outCparams,gammaDD,betaU,
                       +outputC(GRHD.S_tilde_source_termD[i],"Stilde_rhsD"+str(i),"returnstring",params=outCparams).replace("IDX4","IDX4S")\
                       +write_final_quantity[i],
             loopopts ="InteriorPoints",
-            rel_path_for_Cparams=os.path.join("../"))
+            rel_path_to_Cparams=os.path.join("../"))

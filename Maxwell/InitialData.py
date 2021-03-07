@@ -35,9 +35,9 @@ def Toroidal():
 
     global AidU, EidU, psi_ID
 
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
-    z = rfm.xxCart[2]
+    x = rfm.xx_to_Cart[0]
+    y = rfm.xx_to_Cart[1]
+    z = rfm.xx_to_Cart[2]
 
     AidD_Sph = ixp.zerorank1()
     # Set coordinate transformations:
@@ -60,9 +60,9 @@ def Toroidal():
     Jac_dxSphU_dxCartD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            Jac_dxSphU_dxCartD[i][j] = sp.diff(rfm.xxSph[i],rfm.xxCart[j])
+            Jac_dxSphU_dxCartD[i][j] = sp.diff(rfm.xxSph[i],rfm.xx_to_Cart[j])
 
-    #         Jac_dxCartU_dxSphD[i][j] = sp.diff(rfm.xxCart[i],rfm.xx[j])
+    #         Jac_dxCartU_dxSphD[i][j] = sp.diff(rfm.xx_to_Cart[i],rfm.xx[j])
     Jac_dxCartU_dxSphD,dummy = ixp.generic_matrix_inverter3x3(Jac_dxSphU_dxCartD)
 
     for i in range(DIM):
@@ -83,7 +83,7 @@ def Toroidal():
 
     for i in range(3):
         for k in range(3):
-            AidU_Cart[i] = AidU_Cart[i].subs(cart_xx[k], rfm.xxCart[k])
+            AidU_Cart[i] = AidU_Cart[i].subs(cart_xx[k], rfm.xx_to_Cart[k])
 
 #     if radial_like_dst_xx0:
 #         for j in range(3):

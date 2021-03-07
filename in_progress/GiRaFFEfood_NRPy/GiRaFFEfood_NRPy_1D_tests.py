@@ -95,8 +95,8 @@ def GiRaFFEfood_NRPy_1D_tests(stagger = False):
     gammamu = sp.sympify(1)/sp.sqrt(sp.sympify(1)-mu_AW**2)
 
     # We'll use reference_metric.py to define x and y
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
+    x = rfm.xx_to_Cart[0]
+    y = rfm.xx_to_Cart[1]
     if stagger:
         x_p_half = x + sp.Rational(1,2)*gri.dxx[0]
         y_p_half = y + sp.Rational(1,2)*gri.dxx[1]
@@ -179,7 +179,7 @@ def GiRaFFEfood_NRPy_1D_tests(stagger = False):
     EpU[2] = sp.sympify(1)
 
 
-    # Next, we must transform the the fields into the grid frame. We'll do the magnetic fields first.
+    # Next, we must transform the fields into the grid frame. We'll do the magnetic fields first.
     # \begin{align}
     #   B^x(0,x) = &\ B'^{x'}(\gamma_\mu x) , \\
     #   B^y(0,x) = &\ \gamma_\mu [ B'^y(\gamma_\mu x) - \mu E'^z(\gamma_\mu x) ] , \\
