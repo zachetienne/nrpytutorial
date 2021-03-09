@@ -192,9 +192,9 @@ def parse_outCparams_string(params):
                 sympy_major_version = int(sympy_version.split(".")[0])
                 sympy_minor_version = int(sympy_version.split(".")[1])
                 if sympy_major_version < 1 or (sympy_major_version == 1 and sympy_minor_version < 3):
-                    print('Error: SymPy version', sympy_version, 'does not support CSE preprocessing.')
-                    print('       Please update your SymPy version, or disable CSE preprocessing/GoldenKernels.')
-                    sys.exit(1)
+                    print('Warning: SymPy version', sympy_version, 'does not support CSE preprocessing. Disabling...')
+                    # print('         Please update your SymPy version, or disable CSE preprocessing/GoldenKernels.')
+                    CSE_preprocess = "False"
 
     return outCparams(preindent,includebraces,declareoutputvars,outCfileaccess,outCverbose,
                       CSE_enable,CSE_varprefix,CSE_sorting,CSE_preprocess,
