@@ -1050,7 +1050,6 @@ def add_to_Cfunc_dict__xx_to_Cart(rel_path_to_Cparams=os.path.join("./")):
 
 
 # Compute proper distance in all 3 directions. Used to find the appropriate timestep for the CFL condition.
-# Compute proper distance in all 3 directions. Used to find the appropriate timestep for the CFL condition.
 def ds_dirn(delxx, append_gridsuffix_to_xx=False):
     gridsuffix = ""  # Disable for now
     scalefactor_orthog_inj = []
@@ -1067,6 +1066,7 @@ def ds_dirn(delxx, append_gridsuffix_to_xx=False):
     for i in range(3):
         ds_dirn[i] = delxx[i]*scalefactor_orthog_inj[i]
     return ds_dirn
+
 
 # Find the appropriate timestep for the CFL condition.
 def add_to_Cfunc_dict__find_timestep(rel_path_to_Cparams=os.path.join("./"), enable_mask=False,
@@ -1407,13 +1407,6 @@ inline void """+funcname+"""(const paramstruct *restrict params, REAL *restrict 
     REAL xx0 = xx[0][i0];
     REAL xx1 = xx[1][i1];
     REAL xx2 = xx[2][i2];\n"""+Cout+"}\n")
-
-# Compute proper distance in all 3 directions. Used to find the appropriate timestep for the CFL condition.
-def ds_dirn(delxx):
-    ds_dirn = ixp.zerorank1(3)
-    for i in range(3):
-        ds_dirn[i] = delxx[i]*scalefactor_orthog[i]
-    return ds_dirn
 
 # Find the appropriate timestep for the CFL condition.
 def add_find_timestep_func_to_dict():
