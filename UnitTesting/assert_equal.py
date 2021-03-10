@@ -31,10 +31,14 @@ def compute_value(symdict, replaced, reduced, factor):
     for var, subexpr in replaced:
         for symbol in subexpr.free_symbols:
             subexpr = subexpr.subs(symbol, symdict[symbol])
+        if subexpr.atoms(sp.pi):
+            subexpr = subexpr.subs(sp.pi, mp.pi)
         symdict[var] = subexpr
     reduced = reduced[0]
     for symbol in reduced.free_symbols:
         reduced = reduced.subs(symbol, symdict[symbol])
+        if reduced.atoms(sp.pi):
+            reduced = reduced.subs(sp.pi, mp.pi)
     reduced = reduced.subs(sp.Function('NRPyAbs'), sp.Abs)
     value = mpc(sp.N(reduced)) if isinstance(reduced, complex) else mpf(reduced)
     mp.dps = precision
@@ -53,7 +57,7 @@ def update_vardict(vardict):
         symdict[free_symbol] = mpf(random.random())
     for var in vardict:
         # apply CSE to every expression in vardict
-        replaced, reduced = sp.cse(vardict[var], order='none')
+        replaced, reduced = sp.cse(vardict[var], order='none') # TODO .subs(sp.pi, mp.pi)
         # calculate value after substituting the unique random number
         # from each free symbol in symdict into every expression in vardict
         value = compute_value(symdict, replaced, reduced, factor=1)

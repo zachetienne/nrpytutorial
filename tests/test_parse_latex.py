@@ -164,6 +164,23 @@ class TestParser(unittest.TestCase):
                 % keydef basis [x, y]
                 % vardef 'uD' (2D), 'wD' (2D)
                 % keydef index [a-z] (2D)
+                u_x = x^{{2}} + 2x \\
+                u_y = y\sqrt{x} \\
+                v_a = u_a + w_a \\
+                % assign -numeric 'wD', 'vD'
+                T_{ab} = \partial^2_x v_0 (\partial_b v_a)
+            """)),
+            {'uD', 'wD', 'vD', 'vD_dD', 'wD_dD', 'TDD'}
+        )
+        self.assertEqual(str(TDD),
+            '[[2*wD_dD00 + 4*x + 4, 2*wD_dD01], [2*wD_dD10 + y/sqrt(x), 2*wD_dD11 + 2*sqrt(x)]]'
+        )
+        Parser.clear_namespace()
+        self.assertEqual(
+            set(parse(r"""
+                % keydef basis [x, y]
+                % vardef 'uD' (2D), 'wD' (2D)
+                % keydef index [a-z] (2D)
                 u_0 = x^{{2}} + 2x \\
                 u_1 = y\sqrt{x} \\
                 v_a = u_a + w_a \\
@@ -213,10 +230,9 @@ class TestParser(unittest.TestCase):
         Parser.clear_namespace()
         parse(r"""
             % keydef basis [\theta, \phi]
+            % vardef -empty 'gDD' (2D)
             % vardef -const 'r'
-            % vardef -kronecker 'deltaDD' (2D)
             % keydef index [a-z] (2D)
-            % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align*}
                 g_{0 0} &= r^{{2}} \\
                 g_{1 1} &= r^{{2}} \sin^2(\theta)
@@ -352,9 +368,8 @@ class TestParser(unittest.TestCase):
     def test_example_5_1(self):
         Parser.clear_namespace()
         parse(r"""
-            % vardef -kronecker 'deltaDD' (4D)
+            % vardef -empty 'gDD' (4D)
             % vardef -const 'G', 'M'
-            % parse g_{\mu\nu} = \delta_{\mu\nu}
             \begin{align}
                 g_{0 0} &= -\left(1 - \frac{2GM}{r}\right) \\
                 g_{1 1} &=  \left(1 - \frac{2GM}{r}\right)^{-1} \\
@@ -460,6 +475,27 @@ class TestParser(unittest.TestCase):
         self.assertEqual(simplify(E), 0)
         for i in range(3):
             assert_equal(pD[i], 0, suppress_message=True)
+
+    @staticmethod
+    def test_metric_symmetry():
+        Parser.clear_namespace()
+        parse(r"""
+            % vardef -empty 'gDD'
+            g_{1 0} = 1 \\
+            g_{2 0} = 2
+            % assign -metric 'gDD'
+        """)
+        assert_equal(gDD[0][1], 1, suppress_message=True)
+        assert_equal(gDD[0][2], 2, suppress_message=True)
+        Parser.clear_namespace()
+        parse(r"""
+            % vardef -empty 'gDD'
+            g_{0 1} = 1 \\
+            g_{0 2} = 2
+            % assign -metric 'gDD'
+        """)
+        assert_equal(gDD[1][0], 1, suppress_message=True)
+        assert_equal(gDD[2][0], 2, suppress_message=True)
 
     @staticmethod
     def test_metric_inverse():
@@ -632,6 +668,7 @@ if __name__ == '__main__':
             suite.addTest(TestParser('test_example_' + str(i + 1) + '_2'))
         else:
             suite.addTest(TestParser('test_example_' + str(i + 1)))
+    suite.addTest(TestParser('test_metric_symmetry'))
     suite.addTest(TestParser('test_metric_inverse'))
     suite.addTest(TestParser('test_example_BSSN'))
     result = unittest.TextTestRunner().run(suite)
