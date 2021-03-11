@@ -13,12 +13,13 @@ matrix:
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
-    - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Xenial CPython 2.7 (Python 2.7 + latest stable SymPy)"
+    - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal (20.04) pypy 3.6 (pypy3 + latest stable SymPy)"
       os: linux
-      dist: xenial
-      python: 2.7
+      dist: focal
+      python: pypy3.6-7.3.3
       before_script: pip install testfixtures
       install:
+        - python --version
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
         - pip install sympy mpmath jupyter matplotlib scipy
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
