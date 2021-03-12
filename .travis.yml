@@ -17,11 +17,12 @@ matrix:
       os: linux
       dist: focal
       python: pypy3.6-7.3.3
-      before_script: pip install testfixtures
+      before_script: pypy3 -mpip install testfixtures
       install:
         - python --version
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - pip install sympy mpmath jupyter matplotlib scipy==1.0.0
+        - sudo apt-get -y install liblapack3 libblas3 libblas-dev liblapack-dev
+        - pypy3 -mpip install sympy mpmath jupyter matplotlib scipy
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
     - name: "JUPYTER NOTEBOOK TESTS: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
