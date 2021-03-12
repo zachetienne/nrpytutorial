@@ -3,7 +3,7 @@ language: python
 
 matrix:
   include:
-    - name: "JUPYTER NOTEBOOK TESTS: SymPy-dev Ubuntu Linux Bionic Python 3.8.6 (Python 3 + latest *development* SymPy)"
+    - name: "JUPYTER NOTEBOOK TESTS: SymPy-dev Ubuntu Linux Bionic Python 3.8.6 (Python 3.8 + latest *development* SymPy)"
       os: linux
       dist: bionic
       python: 3.8.6
@@ -13,19 +13,31 @@ matrix:
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
-    - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal (20.04) pypy 3.6 (pypy3 + latest stable SymPy)"
+    - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal (20.04) Python 3.6.12 (Python 3.6 + latest stable SymPy)"
       os: linux
       dist: focal
-      python: pypy3.6-7.3.1
+      python: 3.6.12
       before_script: pypy3 -mpip install testfixtures
       install:
         - python --version
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - sudo apt-get -y install libopenblas0 libopenblas-dev "liblapack*" gfortran
-        - pypy3 -mpip install numpy
-        - pypy3 -mpip install scipy
-        - pypy3 -mpip install sympy mpmath jupyter matplotlib
+        - pip install scipy sympy mpmath jupyter matplotlib
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+
+    # WAYYY TOO SLOW. Don't know why.
+    # - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal (20.04) pypy 3.6 (pypy3 + latest stable SymPy)"
+    #   os: linux
+    #   dist: focal
+    #   python: pypy3.6-7.3.1
+    #   before_script: pypy3 -mpip install testfixtures
+    #   install:
+    #     - python --version
+    #     - sudo apt-get -y install texlive-latex-base pandoc colordiff
+    #     - sudo apt-get -y install libopenblas0 libopenblas-dev "liblapack*" gfortran
+    #     - pypy3 -mpip install numpy
+    #     - pypy3 -mpip install scipy
+    #     - pypy3 -mpip install sympy mpmath jupyter matplotlib
+    #   script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
     - name: "JUPYTER NOTEBOOK TESTS: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
       os: linux
