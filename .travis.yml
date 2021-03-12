@@ -21,6 +21,7 @@ matrix:
       install:
         - python --version
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
+        - sudo apt-get -y install openblas libopenblas-dev liblapack3 liblapack3-dev
         - pypy3 -mpip install numpy
         - pypy3 -mpip install scipy
         - pypy3 -mpip install sympy mpmath jupyter matplotlib
