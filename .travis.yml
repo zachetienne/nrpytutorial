@@ -21,7 +21,7 @@ matrix:
       install:
         - python --version
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - pip install sympy mpmath jupyter matplotlib scipy==1.5.0
+        - pip install sympy mpmath jupyter matplotlib scipy==1.0.0
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
     - name: "JUPYTER NOTEBOOK TESTS: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
