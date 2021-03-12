@@ -16,7 +16,7 @@ matrix:
     - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal (20.04) pypy 3.6 (pypy3 + latest stable SymPy)"
       os: linux
       dist: focal
-      python: pypy3.6
+      python: pypy3.6-7.3.1
       before_script: pypy3 -mpip install testfixtures
       install:
         - python --version
