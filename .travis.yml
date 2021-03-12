@@ -16,13 +16,14 @@ matrix:
     - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal (20.04) pypy 3.6 (pypy3 + latest stable SymPy)"
       os: linux
       dist: focal
-      python: pypy3.6-7.3.3
+      python: pypy3.6
       before_script: pypy3 -mpip install testfixtures
       install:
         - python --version
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
-        - sudo apt-get -y install liblapack3 libblas3 libblas-dev liblapack-dev
-        - pypy3 -mpip install sympy mpmath jupyter matplotlib scipy
+        - pypy3 -mpip install numpy
+        - pypy3 -mpip install scipy
+        - pypy3 -mpip install sympy mpmath jupyter matplotlib
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
     - name: "JUPYTER NOTEBOOK TESTS: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
