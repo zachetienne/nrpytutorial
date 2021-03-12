@@ -17,7 +17,7 @@ matrix:
       os: linux
       dist: focal
       python: 3.6.12
-      before_script: pypy3 -mpip install testfixtures
+      before_script: pip install testfixtures
       install:
         - python --version
         - sudo apt-get -y install texlive-latex-base pandoc colordiff
