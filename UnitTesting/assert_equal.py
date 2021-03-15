@@ -57,7 +57,7 @@ def update_vardict(vardict):
         symdict[free_symbol] = mpf(random.random())
     for var in vardict:
         # apply CSE to every expression in vardict
-        replaced, reduced = sp.cse(vardict[var], order='none') # TODO .subs(sp.pi, mp.pi)
+        replaced, reduced = sp.cse(vardict[var], order='none')
         # calculate value after substituting the unique random number
         # from each free symbol in symdict into every expression in vardict
         value = compute_value(symdict, replaced, reduced, factor=1)
