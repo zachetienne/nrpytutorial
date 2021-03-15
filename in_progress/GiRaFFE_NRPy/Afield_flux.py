@@ -179,7 +179,7 @@ def generate_Afield_flux_function_files(out_dir,subdir,alpha_face,gamma_faceDD,b
                        +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
                        +Memory_Write,
             loopopts ="InteriorPoints",
-            rel_path_for_Cparams=os.path.join("../"))
+            rel_path_to_Cparams=os.path.join("../"))
 
         desc = "Calculate the electric flux on the left face in direction " + str(flux_dirn) + "."
         name = "calculate_E_field_D" + str(flux_dirn) + "_left"
@@ -190,5 +190,5 @@ def generate_Afield_flux_function_files(out_dir,subdir,alpha_face,gamma_faceDD,b
                        +outputC(E_field_to_print,E_field_names,"returnstring",params="outCverbose=False").replace("IDX4","IDX4S")\
                        +Memory_Write,
             loopopts ="InteriorPoints",
-            rel_path_for_Cparams=os.path.join("../"))
+            rel_path_to_Cparams=os.path.join("../"))
 

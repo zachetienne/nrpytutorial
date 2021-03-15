@@ -19,8 +19,8 @@ thismodule = "GiRaFFEfood_NRPy_1D"
 
 def GiRaFFEfood_NRPy_1D_tests_fast_wave(stagger = False):
     # We'll use reference_metric.py to define x and y
-    x0 = rfm.xxCart[0]
-    y0 = rfm.xxCart[1]
+    x0 = rfm.xx_to_Cart[0]
+    y0 = rfm.xx_to_Cart[1]
 
     if stagger:
         x = x0 + sp.Rational(1,2)*gri.dxx[0]
@@ -56,8 +56,8 @@ def GiRaFFEfood_NRPy_1D_tests_fast_wave(stagger = False):
     #            0.7 if x > 0.1
     # B^z(0,x) = 0
 
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
+    x = rfm.xx_to_Cart[0]
+    y = rfm.xx_to_Cart[1]
 
     Byleft = sp.sympify(1)
     Bycenter = sp.sympify(1) - sp.Rational(15,10)*(x+sp.Rational(1,10))

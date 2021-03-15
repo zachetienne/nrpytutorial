@@ -56,7 +56,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     #         of xx0,xx1,xx2, so here we call sympify_integers__replace_rthph() to replace
     #         r,th,ph or x,y,z, respectively, with the appropriate functions of xx0,xx1,xx2
     #         as defined for this particular reference metric in reference_metric.py's
-    #         xxSph[] or xxCart[], respectively:
+    #         xxSph[] or xx_to_Cart[], respectively:
 
     # Note that substitution only works when the variable is not an integer. Hence the
     #         if isinstance(...,...) stuff:
@@ -71,7 +71,7 @@ def Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(CoordType_in, Sph_r_t
     if CoordType_in == "Spherical":
         r_th_ph_or_Cart_xyz_of_xx = rfm.xxSph
     elif CoordType_in == "Cartesian":
-        r_th_ph_or_Cart_xyz_of_xx = rfm.xxCart
+        r_th_ph_or_Cart_xyz_of_xx = rfm.xx_to_Cart
     else:
         print("Error: Can only convert ADM Cartesian or Spherical initial data to BSSN Curvilinear coords.")
         sys.exit(1)

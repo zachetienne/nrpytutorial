@@ -9,7 +9,7 @@ def test_Spherical():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -26,7 +26,7 @@ def test_SinhSpherical():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -44,7 +44,7 @@ def test_SinhSphericalv2():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -61,7 +61,7 @@ def test_NobleSphericalThetaOptionOne():
 
     function_and_global_dict = {'reference_metric(False)': ['UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(False)': '''
 import NRPy_param_funcs as par
@@ -78,7 +78,7 @@ def test_NobleSphericalThetaOptionTwo():
 
     function_and_global_dict = {'reference_metric(False)': ['UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(False)': '''
 import NRPy_param_funcs as par
@@ -95,7 +95,7 @@ def test_Cylindrical():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -112,7 +112,7 @@ def test_SinhCylindrical():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -129,7 +129,7 @@ def test_SinhCylindricalv2():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -146,7 +146,7 @@ def test_SymTP():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -163,7 +163,7 @@ def test_SinhSymTP():
 
     function_and_global_dict = {'reference_metric(True)': ['xxmin', 'xxmax', 'UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par
@@ -180,7 +180,7 @@ def test_Cartesian():
 
     function_and_global_dict = {'reference_metric(True)': ['UnitVectors', 'ReU', 'ReDD', 'ghatDD', 'ghatUU', 'detgammahat',
                        'detgammahatdD', 'detgammahatdDD', 'ReUdD', 'ReUdDD', 'ReDDdD', 'ReDDdDD', 'ghatDDdD',
-                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xxCart','xxSph','scalefactor_orthog']}
+                       'ghatDDdDD', 'GammahatUDD', 'GammahatUDDdD', 'Cart_to_xx','xx_to_Cart','xxSph','scalefactor_orthog']}
 
     initialization_string_dict = {'reference_metric(True)': '''
 import NRPy_param_funcs as par

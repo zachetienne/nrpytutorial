@@ -235,7 +235,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
     rfm.reference_metric()
 
     # Step 4: Output C code for the Eigen-Coordinate mapping from xx->Cartesian:
-    rfm.xxCart_h("EigenCoord_xxCart", os.path.join(Cparamspath,"set_Cparameters.h"), os.path.join(Ccodesdir, "EigenCoord_xxCart.h"))
+    rfm.xx_to_Cart_h("EigenCoord_xx_to_Cart", os.path.join(Cparamspath,"set_Cparameters.h"), os.path.join(Ccodesdir, "EigenCoord_xx_to_Cart.h"))
 
     # Step 5: Output the Eigen-Coordinate mapping from Cartesian->xx:
     # Step 5.a: Sanity check: First make sure that rfm.Cart_to_xx has been set. Error out if not!
@@ -327,7 +327,7 @@ const REAL evolgf_speed[NUM_EVOL_GFS] = """+var_speed_string+"""
     def dfdr_function(fd_order):
         # function to write c code to calculate dfdr term in Sommerfeld boundary condition
 
-        # Read what # of dimensions being usded
+        # Read what # of dimensions being used
         DIM = par.parval_from_str("grid::DIM")
 
         # Set up the chosen reference metric from chosen coordinate system, set within NRPy+
@@ -513,7 +513,7 @@ int8_t SHIFTSTENCIL2;
 """
         if fd_order == 4:
             contraction_term_func +="""
-// foward/backward finite difference coefficients
+// forward/backward finite difference coefficients
 const REAL u0 =-25./12.;
 const REAL u1 = 4.;
 const REAL u2 = -3.;
@@ -527,7 +527,7 @@ const REAL c2 = 1./12.;
 """
         if fd_order == 6:
             contraction_term_func +="""
-// foward/backward finite difference coefficients
+// forward/backward finite difference coefficients
 const REAL u0 = -49./20.;
 const REAL u1 =  6.;
 const REAL u2 = -15./2.;
@@ -555,7 +555,7 @@ const REAL c3 = 1./60;
 
     def write_sommerfeld_main_Ccode(self, Ccodesdir):
         main_Ccode = """
-// Boundary condtion driver routine: Apply BCs to all
+// Boundary condition driver routine: Apply BCs to all
 // boundary faces of the 3D numerical domain, filling in the
 // outer boundary ghost zone layers, starting with the innermost
 // layer and working outward.

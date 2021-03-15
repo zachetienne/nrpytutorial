@@ -30,13 +30,13 @@ def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=3):
     DIM = par.parval_from_str("grid::DIM")
 
     # Step 2: Set up Cartesian coordinates in terms of the native CoordSystem we have chosen.
-    #         E.g., if CoordSystem="Cartesian", then xxCart = [xx[0],xx[1],xx[2]]
-    #         or if CoordSystem="Spherical", then xxCart = [xx[0]*sp.sin(xx[1])*sp.cos(xx[2]),
+    #         E.g., if CoordSystem="Cartesian", then xx_to_Cart = [xx[0],xx[1],xx[2]]
+    #         or if CoordSystem="Spherical", then xx_to_Cart = [xx[0]*sp.sin(xx[1])*sp.cos(xx[2]),
     #                                                       xx[0]*sp.sin(xx[1])*sp.sin(xx[2]),
     #                                                       xx[0]*sp.cos(xx[1])]
     par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
-    rfm.reference_metric() # Must call this function to specify rfm.xxCart
-    xxCart = rfm.xxCart
+    rfm.reference_metric() # Must call this function to specify rfm.xx_to_Cart
+    xx_to_Cart = rfm.xx_to_Cart
 
     # Step 3: Declare free parameters intrinsic to these initial data
     time  = par.Cparameters("REAL", thismodule, "time",  default_time)
@@ -45,7 +45,7 @@ def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=3):
     # Step 4: Compute r
     r = sp.sympify(0)
     for i in range(DIM):
-        r += xxCart[i]**2
+        r += xx_to_Cart[i]**2
     r = sp.sqrt(r)
 
     # Step 5: Set initial data for uu and vv, where vv_ID = \partial_t uu_ID.
@@ -61,13 +61,13 @@ def PlaneWave(CoordSystem="Cartesian",default_time=0,default_k0=1,default_k1=1,d
     DIM = par.parval_from_str("grid::DIM")
 
     # Step 2: Set up Cartesian coordinates in terms of the native CoordSystem we have chosen.
-    #         E.g., if CoordSystem="Cartesian", then xxCart = [xx[0],xx[1],xx[2]]
-    #         or if CoordSystem="Spherical", then xxCart = [xx[0]*sp.sin(xx[1])*sp.cos(xx[2]),
+    #         E.g., if CoordSystem="Cartesian", then xx_to_Cart = [xx[0],xx[1],xx[2]]
+    #         or if CoordSystem="Spherical", then xx_to_Cart = [xx[0]*sp.sin(xx[1])*sp.cos(xx[2]),
     #                                                       xx[0]*sp.sin(xx[1])*sp.sin(xx[2]),
     #                                                       xx[0]*sp.cos(xx[1])]
     par.set_parval_from_str("reference_metric::CoordSystem",CoordSystem)
     rfm.reference_metric()
-    xxCart = rfm.xxCart
+    xx_to_Cart = rfm.xx_to_Cart
 
     # Step 3: Declare free parameters intrinsic to these initial data
     time = par.Cparameters("REAL", thismodule, "time", default_time)
@@ -79,7 +79,7 @@ def PlaneWave(CoordSystem="Cartesian",default_time=0,default_k0=1,default_k1=1,d
     # Step 5: Compute k_norm.x
     dot_product = sp.sympify(0)
     for i in range(DIM):
-        dot_product += kk[i] * xxCart[i]
+        dot_product += kk[i] * xx_to_Cart[i]
     dot_product /= kk_norm_factor
 
     # Step 6: Set initial data for uu and vv, where vv_ID = \partial_t uu_ID.

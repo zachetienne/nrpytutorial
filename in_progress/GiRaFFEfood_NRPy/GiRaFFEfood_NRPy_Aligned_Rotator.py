@@ -59,7 +59,7 @@ Omega_aligned_rotator = par.Cparameters("REAL",thismodule,"Omega_aligned_rotator
 
 def GiRaFFEfood_NRPy_Aligned_Rotator():
     r     = rfm.xxSph[0]
-    varpi = sp.sqrt(rfm.xxCart[0]**2 + rfm.xxCart[1]**2)
+    varpi = sp.sqrt(rfm.xx_to_Cart[0]**2 + rfm.xx_to_Cart[1]**2)
 
     mu = B_p_aligned_rotator * R_NS_aligned_rotator**3 / 2
 

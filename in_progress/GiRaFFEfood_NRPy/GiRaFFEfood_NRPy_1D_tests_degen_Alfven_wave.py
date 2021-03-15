@@ -95,7 +95,7 @@ def GiRaFFEfood_NRPy_1D_tests_degen_Alfven_wave(stagger = False):
     gammamu = sp.sympify(1)/sp.sqrt(sp.sympify(1)-mu_AW**2)
 
     # We'll use reference_metric.py to define x and y
-    x = rfm.xxCart[0]
+    x = rfm.xx_to_Cart[0]
     if stagger:
         x_p_half = x + sp.Rational(1,2)*gri.dxx[0]
 
@@ -180,7 +180,7 @@ def GiRaFFEfood_NRPy_1D_tests_degen_Alfven_wave(stagger = False):
 
     EpU = ixp.zerorank1()
 
-    # Next, we must transform the the fields into the grid frame. We'll do the magnetic fields first.
+    # Next, we must transform the fields into the grid frame. We'll do the magnetic fields first.
     # \begin{align}
     #   B^x(0,x) = &\ B'^{x'}(\gamma_\mu x) , \\
     #   B^y(0,x) = &\ \gamma_\mu [ B'^y(\gamma_\mu x) - \mu E'^z(\gamma_\mu x) ] , \\

@@ -185,7 +185,7 @@ def VacuumMaxwellRHSs_rescaled():
         Jac_dxCartU_dxOrigD = ixp.zerorank2()
         for i in range(DIM):
             for j in range(DIM):
-                Jac_dxCartU_dxOrigD[i][j] = sp.diff(rfm.xxCart[i], rfm.xx[j])
+                Jac_dxCartU_dxOrigD[i][j] = sp.diff(rfm.xx_to_Cart[i], rfm.xx[j])
 
         for i in range(DIM):
             for j in range(DIM):

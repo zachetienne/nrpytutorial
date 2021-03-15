@@ -131,7 +131,7 @@ def GiRaFFEfood_NRPy_Exact_Wald(gammaDD,M,KerrSchild_radial_shift,stagger = Fals
     ADdD = ixp.zerorank2()
     for i in range(3):
         for j in range(3):
-            ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xxCart[j]))
+            ADdD[i][j] = sp.simplify(sp.diff(AD[i],rfm.xx_to_Cart[j]))
 
     BU = ixp.zerorank1()
     for i in range(3):

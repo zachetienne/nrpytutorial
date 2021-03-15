@@ -48,9 +48,9 @@ def Psi4_tetrads():
 
     # Step 2.a: Declare the Cartesian x,y,z in terms of
     #           xx0,xx1,xx2.
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
-    z = rfm.xxCart[2]
+    x = rfm.xx_to_Cart[0]
+    y = rfm.xx_to_Cart[1]
+    z = rfm.xx_to_Cart[2]
 
     # Step 2.b: Declare detgamma and gammaUU from
     #           BSSN.ADM_in_terms_of_BSSN;
@@ -70,7 +70,7 @@ def Psi4_tetrads():
     Jac_dUCart_dDrfmUD = ixp.zerorank2()
     for i in range(DIM):
         for j in range(DIM):
-            Jac_dUCart_dDrfmUD[i][j] = sp.simplify(sp.diff(rfm.xxCart[i], rfm.xx[j]))
+            Jac_dUCart_dDrfmUD[i][j] = sp.simplify(sp.diff(rfm.xx_to_Cart[i], rfm.xx[j]))
 
     # Step 2.e: Invert above Jacobian to get needed d xx^j / d x_Cart^i
     Jac_dUrfm_dDCartUD, dummyDET = ixp.generic_matrix_inverter3x3(Jac_dUCart_dDrfmUD)

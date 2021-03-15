@@ -25,7 +25,7 @@ void set_up__bc_gz_map_and_parity_condns(const paramstruct *restrict params,
   LOOP_REGION(0,Nxx_plus_2NGHOSTS0,0,Nxx_plus_2NGHOSTS1,0,Nxx_plus_2NGHOSTS2) {
     // Step 1: Convert the (curvilinear) coordinate (x0,x1,x2) to Cartesian coordinates
     REAL xCart[3];
-    EigenCoord_xxCart(params, xx, i0,i1,i2, xCart);
+    EigenCoord_xx_to_Cart(params, xx, i0,i1,i2, xCart);
     REAL Cartx = xCart[0];
     REAL Carty = xCart[1];
     REAL Cartz = xCart[2];
@@ -47,7 +47,7 @@ void set_up__bc_gz_map_and_parity_condns(const paramstruct *restrict params,
     //           make sure that the Cartesian coordinate matches the Cartesian coordinate of
     //           x0(i0),x1(i1),x2(i2). If not, error out!
     REAL xCart_orig[3]; for(int ii=0;ii<3;ii++) xCart_orig[ii] = xCart[ii];
-    EigenCoord_xxCart(params, xx, i0_inbounds,i1_inbounds,i2_inbounds, xCart);
+    EigenCoord_xx_to_Cart(params, xx, i0_inbounds,i1_inbounds,i2_inbounds, xCart);
 
 //fprintf(stderr,"Cartesian agreement: ( %.15e %.15e %.15e ) ?= ( %.15e %.15e %.15e )\n",
 // (double)xCart_orig[0],(double)xCart_orig[1],(double)xCart_orig[2],

@@ -91,8 +91,8 @@ thismodule = __name__
 def GiRaFFEfood_NRPy_1D_tests_FFE_breakdown(stagger = False):
 
     # We'll use reference_metric.py to define x and y
-    x = rfm.xxCart[0]
-    y = rfm.xxCart[1]
+    x = rfm.xx_to_Cart[0]
+    y = rfm.xx_to_Cart[1]
     if stagger:
         x_p_half = x + sp.Rational(1,2)*gri.dxx[0]
         y_p_half = y + sp.Rational(1,2)*gri.dxx[1]

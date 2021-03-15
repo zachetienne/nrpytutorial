@@ -258,7 +258,7 @@ REAL find_accepted_Bx_order(REAL *Bx) {
     }
 """,
         loopopts="InteriorPoints",
-        rel_path_for_Cparams=os.path.join("../")).replace("= NGHOSTS","= NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
+        rel_path_to_Cparams=os.path.join("../")).replace("= NGHOSTS","= NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
 
     with open(os.path.join(outdir,"driver_AtoB.h"),"a") as file:
         file.write(driver_Ccode)

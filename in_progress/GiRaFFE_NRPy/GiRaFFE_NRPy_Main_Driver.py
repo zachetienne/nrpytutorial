@@ -74,7 +74,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *restrict params,const REAL *restrict in_gfs,REAL *restrict auxevol_gfs",
         body     = fin.FD_outputC("returnstring",parens_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints",
-        rel_path_for_Cparams=os.path.join("../"))
+        rel_path_to_Cparams=os.path.join("../"))
 
     xi_damping = par.Cparameters("REAL",thismodule,"xi_damping",0.1)
     GRFFE.compute_psi6Phi_rhs_damping_term(alpha,psi6Phi,xi_damping)
@@ -111,7 +111,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,const REAL *in_gfs,const REAL *auxevol_gfs,REAL *rhs_gfs",
         body     = fin.FD_outputC("returnstring",RHSs_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="InteriorPoints",
-        rel_path_for_Cparams=os.path.join("../")).replace("= NGHOSTS","= NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
+        rel_path_to_Cparams=os.path.join("../")).replace("= NGHOSTS","= NGHOSTS_A2B").replace("NGHOSTS+Nxx0","Nxx_plus_2NGHOSTS0-NGHOSTS_A2B").replace("NGHOSTS+Nxx1","Nxx_plus_2NGHOSTS1-NGHOSTS_A2B").replace("NGHOSTS+Nxx2","Nxx_plus_2NGHOSTS2-NGHOSTS_A2B")
     # Note the above .replace() functions. These serve to expand the loop range into the ghostzones, since
     # the second-order FD needs fewer than some other algorithms we use do.
     with open(os.path.join(out_dir,subdir,name+".h"),"w") as file:
@@ -175,7 +175,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,REAL *xx[3],REAL *auxevol_gfs,REAL *in_gfs",
         body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints,Read_xxs",
-        rel_path_for_Cparams=os.path.join("../"))
+        rel_path_to_Cparams=os.path.join("../"))
 
     C2P_P2C.GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi)
 
@@ -192,7 +192,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         params   ="const paramstruct *params,REAL *auxevol_gfs,REAL *in_gfs",
         body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
         loopopts ="AllPoints",
-        rel_path_for_Cparams=os.path.join("../"))
+        rel_path_to_Cparams=os.path.join("../"))
 
     # Write out the main driver itself:
     with open(os.path.join(out_dir,"GiRaFFE_NRPy_Main_Driver.h"),"w") as file:

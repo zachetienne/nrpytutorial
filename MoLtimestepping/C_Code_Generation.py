@@ -101,7 +101,7 @@ def MoL_C_Code_Generation(RK_method = "RK4", RHS_string = "", post_RHS_string = 
 # ODE: y' = f(t,y), y(t_0) = y_0
 # Starting at time t_n with solution having value y_n and trying to update to y_nplus1 with timestep dt
 
-# Example of scheme for RK4 with k_1, k_2, k_3, k_4 (Using non-diagonal algortihm) Notice this requires storage of
+# Example of scheme for RK4 with k_1, k_2, k_3, k_4 (Using non-diagonal algorithm) Notice this requires storage of
 # y_n, y_nplus1, k_1 through k_4
 
 # k_1      = dt*f(t_n, y_n)
