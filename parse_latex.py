@@ -617,7 +617,7 @@ class Parser:
                     indexed = True
         LHS, RHS = function, expand(tree.root.expr) if indexed else tree.root.expr
         # perform implied summation on indexed expression
-        (LHS, RHS), dimension = self._summation(LHS, RHS)
+        equation, dimension = self._summation(LHS, RHS)
         global_env = dict(sympy_env)
         global_env.update(self._property)
         global_env.update(self._namespace)
@@ -627,9 +627,8 @@ class Parser:
             if isinstance(global_env[key], Function('Constant')):
                 global_env[key] = global_env[key].args[0]
         # evaluate every implied summation and update namespace
-        exec('%s = %s' % (LHS, RHS), global_env)
+        exec(equation, global_env)
         symbol, indices = str(function.args[0]), function.args[1:]
-        if not indexed: symbol = LHS
         if any(isinstance(index, Integer) for index in indices):
             tensor = self._namespace[symbol]
             tensor.structure = global_env[symbol]
@@ -1189,7 +1188,8 @@ class Parser:
         raise ParseError('unexpected \'%s\' at position %d' %
             (sentence[position], position), sentence, position)
 
-    # <LOWER_INDEX> -> <LETTER> | <INTEGER> | '{' { <LETTER> [ '_' ( <INTEGER> | '{' <INTEGER> '}' ) ] | <INTEGER> }* [ ( ',' | ';' ) { <LETTER> [ '_' ( <INTEGER> | '{' <INTEGER> '}' ) ] }+ ] '}'
+    # <LOWER_INDEX> -> <LETTER> | <INTEGER> | '{' { <LETTER> [ '_' ( <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }+ '}' ) ] | <INTEGER> }*
+    #   [ ( ',' | ';' ) { <LETTER> [ '_' ( <LETTER> | <INTEGER> | '{' { <LETTER> | <INTEGER> }+ '}' ) ] }+ ] '}'
     def _lower_index(self):
         indexing, covariant = [], False
         def append_index():
@@ -1210,11 +1210,21 @@ class Parser:
                 append_index()
                 if self.accept('UNDERSCORE'):
                     grouped = self.accept('LBRACE')
+                    if not any(self.peek(token) for token in ('LETTER', 'INTEGER')):
+                        sentence, position = self.lexer.sentence, self.lexer.mark()
+                        raise ParseError('unexpected \'%s\' at position %d' %
+                            (sentence[position], position), sentence, position)
                     index = self._strip(self.lexer.lexeme)
-                    self.expect('INTEGER')
+                    self.lexer.lex()
                     index = str(indexing[-1]) + '_' + index
                     indexing[-1] = Symbol(index, real=True)
-                    if grouped: self.expect('RBRACE')
+                    if grouped:
+                        while self.peek('LETTER') or self.peek('INTEGER'):
+                            index = self._strip(self.lexer.lexeme)
+                            self.lexer.lex()
+                            index = str(indexing[-1]) + index
+                            indexing[-1] = Symbol(index, real=True)
+                        self.expect('RBRACE')
             if self.accept('COMMA'):
                 while self.peek('LETTER'):
                     order += 1
@@ -1440,7 +1450,7 @@ class Parser:
         # construct a tuple list of every LHS free index
         free_index_LHS, _ = self._separate_indexing(indexing, equation)
         # construct a tuple list of every RHS free index
-        free_index_RHS = []
+        free_index_RHS, symbol_LHS = [], Tensor(LHS).symbol
         iterable = RHS.args if RHS.func == Add else [RHS]
         LHS, RHS = Tensor(LHS).array_format(LHS), srepr(RHS)
         for element in iterable:
@@ -1509,8 +1519,16 @@ class Parser:
                 # position and cannot be summed over in any term
                 raise TensorError('unbalanced free index\n\n' + equation)
         # generate tensor instantiation with implied summation
-        for idx, _ in reversed(free_index_LHS):
-            RHS = '[%s for %s in range(%d)]' % (RHS, idx, idx_map[idx])
+        if symbol_LHS in self._namespace:
+            equation = len(free_index_LHS) * '    ' + '%s = %s' % (LHS, RHS)
+            for i, (idx, _) in enumerate(reversed(free_index_LHS)):
+                indent = len(free_index_LHS) - (i + 1)
+                equation = indent * '    ' + 'for %s in range(%d):\n' % (idx, idx_map[idx]) + equation
+            equation = [equation]
+        else:
+            for idx, _ in reversed(free_index_LHS):
+                RHS = '[%s for %s in range(%d)]' % (RHS, idx, idx_map[idx])
+            equation = [LHS.split('[')[0], RHS]
         if free_index_LHS:
             dimension = idx_map[free_index[0][0]]
             if any(idx_map[index] != dimension for index, _ in free_index):
@@ -1533,11 +1551,8 @@ class Parser:
                             for i, (idx, pos) in enumerate(indexing):
                                 if str(idx) == str(index):
                                     indexing[i] = ('%s + %s' % (idx, shift), pos)
-                RHS = RHS.replace(tensor.array_format(subexpr), tensor.array_format(indexing))
-        if rank == len(re.findall(r'\[([a-zA-Z]+(?:_[0-9]+)?)\]', LHS)):
-            return (LHS.split('[')[0], RHS), LHS_dimension
-        LHS_dimension = self._namespace[LHS.split('[')[0]].dimension
-        return (re.sub(r'\[[^0-9\]]+\]', '[:]', LHS), RHS), LHS_dimension
+                equation[-1] = equation[-1].replace(tensor.array_format(subexpr), tensor.array_format(indexing))
+        return ' = '.join(equation), LHS_dimension
 
     def _generate_metric(self, symbol, dimension, diff_type):
         latex_config = ''
