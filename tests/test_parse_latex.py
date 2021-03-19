@@ -66,7 +66,7 @@ class TestParser(unittest.TestCase):
             % vardef -diff_type=dD 'vU' (4D)
             T^\mu_b = \nabla_b v^\mu
         """)
-        function = Parser._namespace['vU_cdD'].equation[0]
+        function = Function('Tensor')(Symbol('vU_cdD'), Symbol('mu'), Symbol('b'))
         self.assertEqual(
             Parser._generate_covdrv(function, 'a'),
             r'\nabla_a \nabla_b v^\mu = \partial_a \nabla_b v^\mu + \text{Gamma}^\mu_{c a} (\nabla_b v^c) - \text{Gamma}^c_{b a} (\nabla_c v^\mu)'
@@ -553,10 +553,8 @@ class TestParser(unittest.TestCase):
                 % srepl -persist "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
 
                 % vardef -diff_type=dD 'alpha'
-                % vardef -diff_type=dD -symmetry=sym01 'aDD'
+                % vardef -diff_type=dD -symmetry=sym01 -metric='gammabar' 'aDD'
                 % srepl "\bar{A}" -> "\text{a}"
-                % parse \bar{A}^i_j = \bar{\gamma}^{ik} \bar{A}_{kj}
-                % assign -diff_type=dD 'aUD'
                 % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
                 \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
                     + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right)
@@ -572,8 +570,6 @@ class TestParser(unittest.TestCase):
                 \partial_t \phi &= \mathcal{L}_\beta \phi
                     + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
 
-                % parse \bar{A}^{ij} = \bar{\gamma}^{jk} \bar{A}^i_k
-                % assign -diff_type=dD 'aUU'
                 % srepl "\partial_t \text{trK}" -> "\text{trK_rhs}"
                 \partial_t K &= \mathcal{L}_\beta K
                     + \frac{1}{3} \alpha K^{{2}}
@@ -583,7 +579,7 @@ class TestParser(unittest.TestCase):
                 % vardef -diff_type=dD 'lambdaU'
                 % srepl "\bar{\Lambda}" -> "\text{lambda}"
                 % parse \Delta^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij}
-                % parse \Delta_{ijk}  = \bar{\gamma}_{il} \Delta^l_{jk}
+                % assign -metric='gammabar' 'DeltaUDD'
                 % parse \Delta^k = \bar{\gamma}^{ij} \Delta^k_{ij}
                 % srepl "\partial_t \text{lambda}" -> "\text{Lambdabar_rhs}"
                 \partial_t \bar{\Lambda}^i &= \mathcal{L}_\beta \bar{\Lambda}^i + \bar{\gamma}^{jk} \hat{D}_j \hat{D}_k \beta^i
