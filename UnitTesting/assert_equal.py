@@ -31,10 +31,14 @@ def compute_value(symdict, replaced, reduced, factor):
     for var, subexpr in replaced:
         for symbol in subexpr.free_symbols:
             subexpr = subexpr.subs(symbol, symdict[symbol])
+        if subexpr.atoms(sp.pi):
+            subexpr = subexpr.subs(sp.pi, mp.pi)
         symdict[var] = subexpr
     reduced = reduced[0]
     for symbol in reduced.free_symbols:
         reduced = reduced.subs(symbol, symdict[symbol])
+        if reduced.atoms(sp.pi):
+            reduced = reduced.subs(sp.pi, mp.pi)
     reduced = reduced.subs(sp.Function('NRPyAbs'), sp.Abs)
     value = mpc(sp.N(reduced)) if isinstance(reduced, complex) else mpf(reduced)
     mp.dps = precision
