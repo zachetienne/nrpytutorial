@@ -63,7 +63,7 @@ matrix:
       dist: xenial
       python: pypy2.7-6.0
       install:
-        - pip install mpmath sympy testfixtures
+        - pip install mpmath==1.2.0 sympy testfixtures
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
     - name: "Ubuntu Linux Xenial pypy3.5-6.0 (only pypy3.5 test with latest stable SymPy)"
