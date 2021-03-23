@@ -9,6 +9,7 @@ if nrpy_dir_path not in sys.path:
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
+import GiRaFFEfood_NRPy.GiRaFFEfood_NRPy_Common_Functions as gfcf # Some useful functions for GiRaFFE initial data.
 # Step 1a: Set commonly used parameters.
 thismodule = __name__
 
@@ -29,7 +30,7 @@ def fp_of_r(x,M):
     Lp = -sp.Rational(1,2) * (sp.log(sp.sympify(1)-x)/x + sp.log(x)/(sp.sympify(1)-x))
     f  = (sp.sympify(6)*r*r-sp.sympify(3)*M)*sp.Rational(1,8)/(M**3) + (sp.sympify(2)*r-sp.sympify(3)*M)*sp.Rational(1,4)/(M*M)*Lp\
         +(sp.sympify(3)*M-12*r)*sp.Rational(1,12)/(M*M)*sp.log(r*sp.Rational(1,2)/M) + (M*M+sp.sympify(3)*M*r-sp.sympify(6)*r*r)*sp.Rational(1,3)/r\
-        -M*sp.Rational(1,3)/(r*r) + *sp.Rational(1,2)/M - 2*r/(M*M)
+        -M*sp.Rational(1,3)/(r*r) + sp.Rational(1,2)/M - 2*r/(M*M)
 
 def Ar_SM(r,theta,phi, **params):
     C = params["C"]
@@ -69,7 +70,7 @@ def ValenciavU_SM(r,theta,phi, **params):
                betaU[0]*sqrtgammaDET*a*C*sp.Rational(1,8)/(r*r)*(sp.sympify(1)+sp.sympify(4)*M/r)
     EsphU[2] = betaU[0]/(alpha*M)*C*a*a*fp_of_r(r,M)*sp.cos(theta)*sp.sin(theta)**2
 
-    EU = change_basis_spherical_to_Cartesian(EsphU)
-    BU = change_basis_spherical_to_Cartesian(BsphU)
+    EU = gfcf.change_basis_spherical_to_Cartesian(EsphU)
+    BU = gfcf.change_basis_spherical_to_Cartesian(BsphU)
 
-    return compute_ValenciavU_from_EU_and_BU(EU, BU)
+    return gfcf.compute_ValenciavU_from_EU_and_BU(EU, BU)
