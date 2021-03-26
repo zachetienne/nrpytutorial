@@ -213,6 +213,7 @@ class Parser:
             self._property['vphantom'] = None
         def excepthook(exception_type, exception, traceback):
             if not debug:
+                # remove traceback from exception message
                 print('%s: %s' % (exception_type.__name__, exception))
             else: sys.__excepthook__(exception_type, exception, traceback)
         sys.excepthook = excepthook
@@ -235,7 +236,6 @@ class Parser:
             self._srepl()
         sentence = self.lexer.sentence[self.lexer.mark():]
         stack = []; i = i_1 = i_2 = i_3 = 0
-        # replace comma/semicolon with operator notation for parenthetical expression(s)
         while i < len(sentence):
             lexeme = sentence[i]
             if   lexeme == '(': stack.append(i)
@@ -244,6 +244,7 @@ class Parser:
                 if i_2 < len(sentence) and sentence[i_2] != '_':
                     i_1 = i_2 = 0
             elif i_2 != 0:
+                # replace comma notation with operator notation for parenthetical expression(s)
                 if lexeme == ',' and sentence[i - 1] == '{':
                     i_3 = sentence.find('}', i) + 1
                     subexpr, indexing = sentence[i_1:i_2], sentence[i_2:i_3][3:-1]
@@ -251,6 +252,7 @@ class Parser:
                     operator = ' '.join('\\partial_' + index for index in indexing)
                     sentence = sentence.replace(sentence[i_1:i_3], operator + ' ' + subexpr)
                     i = i_1 + len(operator + ' ' + subexpr) - 1
+                # replace semicolon notation with operator notation for parenthetical expression(s)
                 elif lexeme == ';' and sentence[i - 1] == '{':
                     i_3 = sentence.find('}', i) + 1
                     subexpr, indexing = sentence[i_1:i_2], sentence[i_2:i_3][3:-1]
@@ -639,7 +641,7 @@ class Parser:
                     indexed = True
         LHS, RHS = function, expand(tree.root.expr) if indexed else tree.root.expr
         # perform implied summation on indexed expression
-        LHS_RHS, dimension = self._summation(LHS, RHS, '%s = %s' % equation[0])
+        LHS_RHS, dimension = self._summation(LHS, RHS)
         global_env = dict(sympy_env)
         global_env.update(self._property)
         global_env.update(self._namespace)
@@ -1044,7 +1046,7 @@ class Parser:
         vector = self._strip(self._symbol())
         func_list, expression = self._expand_product(location, 'ld', vector)
         for symbol, function in func_list:
-            if location == 'RHS':
+            if location == 'RHS' and (self._property['vphantom'] or symbol not in self._namespace):
                 sentence, position = self.lexer.sentence, self.lexer.mark()
                 symbol = str(function.args[0])
                 tensor = Tensor(function, self._namespace[symbol].dimension)
@@ -1437,7 +1439,7 @@ class Parser:
         return func_list, product
 
     @staticmethod
-    def _separate_indexing(indexing, equation):
+    def _separate_indexing(indexing, symbol_LHS):
         free_index, bound_index = [], []
         indexing = [(str(idx), pos) for idx, pos in indexing]
         # iterate over every unique index in the subexpression
@@ -1456,13 +1458,13 @@ class Parser:
                     # raise exception upon violation of the following rule:
                     # a bound index must appear exactly once as a superscript
                     # and exactly once as a subscript in any single term
-                    raise TensorError('illegal bound index \'%s\'\n\n%s' % (index, equation))
+                    raise TensorError('illegal bound index \'%s\' in %s' % (index, symbol_LHS))
                 bound_index.append(index)
             # identify every free index on the RHS
             else: free_index.extend(index_tuple)
         return uniquify(free_index), bound_index
 
-    def _summation(self, LHS, RHS, equation):
+    def _summation(self, LHS, RHS):
         rank, indexing = Tensor(LHS).rank, []
         tree = ExprTree(LHS)
         for subtree in tree.preorder():
@@ -1476,10 +1478,11 @@ class Parser:
                     if index not in self._property['basis']:
                         if re.match(r'[a-zA-Z]+(?:_[0-9]+)?', str(index)):
                             indexing.append((index, 'D'))
+        symbol_LHS = Tensor(LHS).symbol
         # construct a tuple list of every LHS free index
-        free_index_LHS, _ = self._separate_indexing(indexing, equation)
+        free_index_LHS, _ = self._separate_indexing(indexing, symbol_LHS)
         # construct a tuple list of every RHS free index
-        free_index_RHS, symbol_LHS = [], Tensor(LHS).symbol
+        free_index_RHS = []
         iterable = RHS.args if RHS.func == Add else [RHS]
         LHS, RHS = Tensor(LHS).array_format(LHS), srepr(RHS)
         for element in iterable:
@@ -1535,7 +1538,7 @@ class Parser:
                     modified = modified.replace(srepr(subexpr), derivative)
                     tmp = srepr(subexpr).replace(srepr(argument), Tensor(argument).array_format(argument))
                     modified = modified.replace(tmp, derivative)
-            free_index, bound_index = self._separate_indexing(indexing, equation)
+            free_index, bound_index = self._separate_indexing(indexing, symbol_LHS)
             free_index_RHS.append(free_index)
             # generate implied summation over every bound index
             for idx in bound_index:
@@ -1548,8 +1551,8 @@ class Parser:
                 # position and cannot be summed over in any term
                 set_LHS = set(idx for idx, _ in free_index_LHS)
                 set_RHS = set(idx for idx, _ in free_index_RHS[i])
-                raise TensorError('unbalanced free index %s\n\n%s' % \
-                    (set_LHS.symmetric_difference(set_RHS), equation))
+                raise TensorError('unbalanced free index %s in %s' % \
+                    (set_LHS.symmetric_difference(set_RHS), symbol_LHS))
         # generate tensor instantiation with implied summation
         if symbol_LHS in self._namespace:
             equation = len(free_index_LHS) * '    ' + '%s = %s' % (LHS, RHS)
