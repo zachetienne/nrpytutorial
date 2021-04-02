@@ -217,8 +217,8 @@ class TestParser(unittest.TestCase):
             % vardef -const 'r'
             % keydef index [a-z] (2D)
             \begin{align*}
-                g_{0 0} &= r^2 \\
-                g_{1 1} &= r^2 \sin^2(\theta)
+                g_{0 0} &= r^{{2}} \\
+                g_{1 1} &= r^{{2}} \sin^2(\theta)
             \end{align*}
             % assign -metric 'gDD'
             \begin{align*}
@@ -261,6 +261,8 @@ class TestParser(unittest.TestCase):
         self.assertEqual(str(gammaDD),
             '[[gDD11, gDD12, gDD13], [gDD12, gDD22, gDD23], [gDD13, gDD23, gDD33]]'
         )
+
+    def test_assignment_9(self):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
@@ -275,7 +277,7 @@ class TestParser(unittest.TestCase):
             '[TUU01*vD0 + TUU02*vD1, TUU11*vD0 + TUU12*vD1, TUU21*vD0 + TUU22*vD1]'
         )
 
-    def test_assignment_9(self):
+    def test_assignment_10(self):
         Parser.clear_namespace()
         self.assertEqual(
             set(parse(r"""
@@ -284,19 +286,6 @@ class TestParser(unittest.TestCase):
                 B^{a b}_c = A^{a b}_c
             """)),
             {'ADDD', 'BUUD', 'gdet', 'gDD', 'AUUD', 'AUUU', 'gUU', 'epsilonUUU'}
-        )
-
-    def test_assignment_10(self):
-        Parser.clear_namespace()
-        self.assertEqual(
-            set(parse(r"""
-                % vardef 'r', 'vD'
-                w_i = (r^2 + r_0) v_i
-            """)),
-            {'wD', 'vD'}
-        )
-        self.assertEqual(str(wD[0]),
-            'r**2*vD0 + r_0*vD0'
         )
 
     def test_example_1(self):
@@ -552,28 +541,23 @@ class TestParser(unittest.TestCase):
                 %% substitute tensor identity (see appropriate BSSN notebook)
                 % srepl -persist "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
 
-                % vardef -diff_type=dD 'alpha'
                 % vardef -diff_type=dD -symmetry=sym01 -metric='gammabar' 'aDD'
                 % srepl "\bar{A}" -> "\text{a}"
                 % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
                 \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
-                    + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right)
-                    - 2 \alpha \bar{A}_{ij} \\
+                    + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right) - 2 \alpha \bar{A}_{ij} \\
 
                 % vardef -diff_type=dD 'cf', 'trK'
                 % srepl "K" -> "\text{trK}"
                 %% replace 'phi' with conformal factor cf = W = e^{{-2\phi}}
                 % srepl "e^{-4\phi}" -> "\text{cf}^{{2}}"
                 % srepl "\partial_t \phi = <1..> \\" -> "\text{cf_rhs} = -2 \text{cf} (<1..>) \\"
-                % srepl -persist "\partial_<1> \phi"       -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
-                % srepl -persist "\partial_<1> \text{phi}" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
-                \partial_t \phi &= \mathcal{L}_\beta \phi
-                    + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
+                % srepl -persist "\partial_<1> \phi" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                \partial_t \phi &= \mathcal{L}_\beta \phi + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
 
+                % vardef -diff_type=dD 'alpha'
                 % srepl "\partial_t \text{trK}" -> "\text{trK_rhs}"
-                \partial_t K &= \mathcal{L}_\beta K
-                    + \frac{1}{3} \alpha K^{{2}}
-                    + \alpha \bar{A}_{ij} \bar{A}^{ij}
+                \partial_t K &= \mathcal{L}_\beta K + \frac{1}{3} \alpha K^{{2}} + \alpha \bar{A}_{ij} \bar{A}^{ij}
                     - e^{-4\phi} \left(\bar{D}_i \bar{D}^i \alpha + 2 \bar{D}^i \alpha \bar{D}_i \phi\right) \\
 
                 % vardef -diff_type=dD 'lambdaU'
@@ -593,11 +577,8 @@ class TestParser(unittest.TestCase):
                     - \bar{D}_i \bar{D}_j \alpha + \alpha \bar{R}_{ij} \\
                 \hat{X}_{ij} &= X_{ij} - \frac{1}{3} \bar{\gamma}_{ij} \bar{\gamma}^{kl} X_{kl} \\
                 % srepl "\partial_t \text{a}" -> "\text{a_rhs}"
-                \partial_t \bar{A}_{ij} &= \mathcal{L}_\beta \bar{A}_{ij}
-                    - \frac{2}{3} \bar{A}_{ij} \bar{D}_k \beta^k
-                    - 2 \alpha \bar{A}_{ik} \bar{A}^k_j
-                    + \alpha \bar{A}_{ij} K
-                    + e^{-4\phi} \hat{X}_{ij} \\
+                \partial_t \bar{A}_{ij} &= \mathcal{L}_\beta \bar{A}_{ij} - \frac{2}{3} \bar{A}_{ij} \bar{D}_k \beta^k
+                    - 2 \alpha \bar{A}_{ik} \bar{A}^k_j + \alpha \bar{A}_{ij} K + e^{-4\phi} \hat{X}_{ij} \\
 
                 % srepl "\partial_t \alpha" -> "\text{alpha_rhs}"
                 \partial_t \alpha &= \mathcal{L}_\beta \alpha - 2 \alpha K \\
@@ -610,8 +591,7 @@ class TestParser(unittest.TestCase):
                 % vardef -const 'eta'
                 % srepl "\partial_t \text{bet}" -> "\text{bet_rhs}"
                 \partial_t B^i &= \left[\beta^j \vphantom{dupD} \bar{D}_j B^i\right]
-                    + \frac{3}{4} \left(\partial_t \bar{\Lambda}^i - \left[\beta^j \vphantom{dupD} \bar{D}_j \bar{\Lambda}^i\right]\right)
-                    - \eta B^i \\
+                    + \frac{3}{4} \left(\partial_t \bar{\Lambda}^i - \left[\beta^j \vphantom{dupD} \bar{D}_j \bar{\Lambda}^i\right]\right) - \eta B^i \\
 
                 % parse \bar{R} = \bar{\gamma}^{ij} \bar{R}_{ij}
                 % srepl "\bar{D}^2" -> "\bar{D}^i \bar{D}_i", "\mathcal{<1>}" -> "<1>"

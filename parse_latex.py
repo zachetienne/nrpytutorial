@@ -177,7 +177,7 @@ class Parser:
         <TERM>          -> <FACTOR> { [ '/' ] <FACTOR> }*
         <FACTOR>        -> <BASE> { '^' <EXPONENT> }*
         <BASE>          -> [ '-' ] ( <NUMBER> | <COMMAND> | <OPERATOR> | <SUBEXPR> )
-        <EXPONENT>      -> <BASE> | '{' <BASE> '}' | '{' '{' <BASE> '}' '}'
+        <EXPONENT>      -> <BASE> | '{' <EXPRESSION> '}' | '{' '{' <EXPRESSION> '}' '}'
         <SUBEXPR>       -> '(' <EXPRESSION> ')' | '[' <EXPRESSION> ']' | '\' '{' <EXPRESSION> '\' '}'
         <COMMAND>       -> <FUNC> | <FRAC> | <SQRT> | <NLOG> | <TRIG>
         <FUNC>          -> <FUNC_CMD> <SUBEXPR>
@@ -340,22 +340,32 @@ class Parser:
             new = self.lexer.lexeme[1:-1]
             if persist and [old, new] not in self._property['srepl']:
                 self._property['srepl'].append([old, new])
+            self.lexer.mark()
             self.expect('STRING')
-            sentence, position = self.lexer.sentence, self.lexer.mark()
-            lexer = Lexer(); lexer.initialize(old); lexer.lex()
-            substr_syntax = [(lexer.lexeme, lexer.token)]
+            self.lexer.reset(); self.lexer.mark()
+            lexer = Lexer(); lexer.initialize(old)
+            substr_syntax = []
             for token in lexer.tokenize():
                 substr_syntax.append((lexer.lexeme, token))
-            string_syntax = [(self.lexer.index, self.lexer.lexeme, self.lexer.token)]
+            string_syntax = []
             for token in self.lexer.tokenize():
                 string_syntax.append((self.lexer.index, self.lexer.lexeme, token))
+            sentence = self.lexer.sentence
             i_1 = i_2 = offset = 0
             for i, (index, lexeme, token) in enumerate(string_syntax):
-                if substr_syntax[0][0] == lexeme or substr_syntax[0][1] == 'GROUP':
+                if substr_syntax[0][0] == lexeme or substr_syntax[0][1] == 'GROUP' or token == 'TEXT_CMD':
                     k, index, varmap = i, index - len(lexeme), {}
                     for j, (_lexeme, _token) in enumerate(substr_syntax, start=i):
                         if k >= len(string_syntax): break
-                        if _token == 'GROUP':
+                        if _token == 'LETTER' and string_syntax[k][2] == 'TEXT_CMD':
+                            letter_1 = _lexeme[1:] if len(_lexeme) > 1 else _lexeme
+                            letter_2, l = string_syntax[k + 2][1], 2
+                            while string_syntax[k + l + 1][2] != 'RBRACE':
+                                letter_2 += string_syntax[k + l + 1][1]
+                                l += 1
+                            if letter_1 != letter_2: break
+                            k += l + 1
+                        elif _token == 'GROUP':
                             varmap[_lexeme] = string_syntax[k][1]
                             if _lexeme[-2] == '.':
                                 l, string = k + 1, varmap[_lexeme]
@@ -376,8 +386,8 @@ class Parser:
                             sentence = sentence[:i_1] + new_repl + sentence[i_2:]
                             offset += len(new_repl) - len(old_repl)
                         k += 1
-            self.lexer.sentence, self.lexer.marker = sentence, position
-            self.lexer.reset()
+            self.lexer.sentence = sentence
+            self.lexer.reset(); self.lexer.lex()
             if not self.accept('COMMA'): break
 
     # <VARDEF> -> <VARDEF_MACRO> { '-' ( <OPTION> | <ZERO> ) }* <VARIABLE> { ',' <VARIABLE> }* [ '(' <DIMENSION> ')' ]
@@ -411,7 +421,6 @@ class Parser:
                 self.expect('DIMENSION')
                 dimension = int(dimension)
                 self.expect('RPAREN')
-            rank = 0
             if symmetry == 'const':
                 self._namespace[symbol] = Function('Constant')(Symbol(symbol, real=True))
             else:
@@ -423,17 +432,6 @@ class Parser:
                     tensor.structure = [[1 if i == j else 0 for j in range(dimension)] for i in range(dimension)]
                 tensor.symmetry = ('sym01' if symmetry in ('kron', 'metric') else symmetry)
                 self._define_tensor(tensor, zero=zero)
-                rank = tensor.rank
-            if rank == 0:
-                sentence, position = self.lexer.sentence, self.lexer.mark()
-                self.lexer.initialize(
-                    'srepl "{symbol}^{{<1>}}" -> "{symbol}^<1>", "{symbol}^<1>" -> "{symbol}^{{{{<1>}}}}", \
-                           "{symbol}_{{<1>}}" -> "{symbol}_<1>", "{symbol}_<1>" -> "\\text{{{symbol}_<1>}}"\n'
-                     .format(symbol=symbol) + sentence)
-                self.lexer.lex(); self._srepl()
-                sentence = self.lexer.sentence[self.lexer.mark():]
-                self.lexer.initialize(sentence, position)
-                self.lexer.lex()
             if symmetry == 'metric':
                 diacritic = next(diacritic for diacritic in ('bar', 'hat', 'tilde', '') if diacritic in symbol)
                 self._property['metric'][diacritic] = re.split(diacritic if diacritic else r'[UD]', symbol)[0]
@@ -720,13 +718,13 @@ class Parser:
         raise ParseError('unexpected \'%s\' at position %d' %
             (sentence[position], position), sentence, position)
 
-    # <EXPONENT> -> <BASE> | '{' <BASE> '}' | '{' '{' <BASE> '}' '}'
+    # <EXPONENT> -> <BASE> | '{' <EXPRESSION> '}' | '{' '{' <EXPRESSION> '}' '}'
     def _exponent(self):
         if self.accept('LBRACE'):
             if self.accept('LBRACE'):
-                base = self._base()
+                base = self._expression()
                 self.expect('RBRACE')
-            else: base = self._base()
+            else: base = self._expression()
             self.expect('RBRACE')
             return base
         return self._base()
