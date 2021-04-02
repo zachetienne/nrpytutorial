@@ -62,27 +62,29 @@ def change_basis_spherical_to_Cartesian(somevector_sphD):
 def Axyz_func_spherical(Ar_func,At_func,Ap_func, stagger_enable, **params):
     KerrSchild_radial_shift = params["KerrSchild_radial_shift"]
     r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
-    print(r)
     theta = rfm.xxSph[1]
     phi   = rfm.xxSph[2]
     AsphD = ixp.zerorank1()
-    # First Ax
     if stagger_enable:
-        y += sp.Rational(1,2)*gri.dxx[1]
-        z += sp.Rational(1,2)*gri.dxx[2]
-    AsphD[0] = Ar_func(r,theta,phi, **params)
-    # Then Ay
-    if stagger_enable:
-        x += sp.Rational(1,2)*gri.dxx[0]
-        y -= sp.Rational(1,2)*gri.dxx[1]
-        z += sp.Rational(1,2)*gri.dxx[2]
-    AsphD[1] = At_func(r,theta,phi, **params)
-    # Finally Az
-    if stagger_enable:
-        x += sp.Rational(1,2)*gri.dxx[0]
-        y += sp.Rational(1,2)*gri.dxx[1]
-        z -= sp.Rational(1,2)*gri.dxx[2]
-    AsphD[2] = Ap_func(r,theta,phi, **params)
+        # First Ax
+        AsphD[0] = Ar_func(r,theta,phi, **params)
+        # Then Ay
+        AsphD[1] = At_func(r,theta,phi, **params)
+        # Finally Az
+        AsphD[2] = Ap_func(r,theta,phi, **params)
+    else:
+        # First Ax
+        AsphD[0] = Ar_func(r.subs(rfm.xx[1],rfm.xx[1]+sp.Rational(1,2)*gri.dxx[1]).subs(rfm.xx[2],rfm.xx[2]+sp.Rational(1,2)*gri.dxx[2]),
+                           theta.subs(rfm.xx[1],rfm.xx[1]+sp.Rational(1,2)*gri.dxx[1]).subs(rfm.xx[2],rfm.xx[2]+sp.Rational(1,2)*gri.dxx[2]),
+                           phi.subs(rfm.xx[1],rfm.xx[1]+sp.Rational(1,2)*gri.dxx[1]).subs(rfm.xx[2],rfm.xx[2]+sp.Rational(1,2)*gri.dxx[2]), **params)
+        # Then Ay
+        AsphD[1] = At_func(r.subs(rfm.xx[0],rfm.xx[0]+sp.Rational(1,2)*gri.dxx[0]).subs(rfm.xx[2],rfm.xx[2]+sp.Rational(1,2)*gri.dxx[2]),
+                           theta.subs(rfm.xx[0],rfm.xx[0]+sp.Rational(1,2)*gri.dxx[0]).subs(rfm.xx[2],rfm.xx[2]+sp.Rational(1,2)*gri.dxx[2]),
+                           phi.subs(rfm.xx[0],rfm.xx[0]+sp.Rational(1,2)*gri.dxx[0]).subs(rfm.xx[2],rfm.xx[2]+sp.Rational(1,2)*gri.dxx[2]), **params)
+        # Finally Az
+        AsphD[2] = Ap_func(r.subs(rfm.xx[0],rfm.xx[0]+sp.Rational(1,2)*gri.dxx[0]).subs(rfm.xx[1],rfm.xx[1]+sp.Rational(1,2)*gri.dxx[1]),
+                           theta.subs(rfm.xx[0],rfm.xx[0]+sp.Rational(1,2)*gri.dxx[0]).subs(rfm.xx[1],rfm.xx[1]+sp.Rational(1,2)*gri.dxx[1]),
+                           phi.subs(rfm.xx[0],rfm.xx[0]+sp.Rational(1,2)*gri.dxx[0]).subs(rfm.xx[1],rfm.xx[1]+sp.Rational(1,2)*gri.dxx[1]), **params)
 
     # Use the Jacobian matrix to transform the vectors to Cartesian coordinates.
     AD = change_basis_spherical_to_Cartesian(AsphD)

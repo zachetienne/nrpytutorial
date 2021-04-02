@@ -17,7 +17,7 @@ rfm.reference_metric()
 thismodule = __name__
 
 def GiRaFFEfood_NRPy_generate_initial_data(ID_type = "DegenAlfvenWave", stagger_enable = False,**params):
-    global AD, ValenciaVU
+    global AD, Valencia_vU
 #     if ID_type == "DegenAlfvenWave":
 #         mu_DAW = par.Cparameters("REAL",thismodule,["mu_DAW"], -0.5) # The wave speed
 #         AD = Axyz_func(Ax_DAW, Ay_DAW, Az_DAW, stagger_enable,
@@ -29,3 +29,4 @@ def GiRaFFEfood_NRPy_generate_initial_data(ID_type = "DegenAlfvenWave", stagger_
     if ID_type == "SplitMonopole":
         import GiRaFFEfood_NRPy.GiRaFFEfood_NRPy_Split_Monopole as gfsm
         AD = gfcf.Axyz_func_spherical(gfsm.Ar_SM,gfsm.Ath_SM,gfsm.Aph_SM,stagger_enable,**params)
+        Valencia_vU = gfsm.ValenciavU_func_SM(**params)
