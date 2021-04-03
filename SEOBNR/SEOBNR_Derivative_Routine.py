@@ -12,13 +12,6 @@ import sympy as sp                # SymPy: The Python computer algebra package u
 import sys, os                    # Standard Python modules for multiplatform OS-level functions
 from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a Python array; store left- and right-
                                               #   hand sides of mathematical expressions
-# As of April 2021, "sp.sympify("Q+1")" fails because Q is a reserved keyword.
-#   This is the workaround, courtesy Ken Sible.
-custom_global_dict = {}
-exec('from sympy import *', custom_global_dict)
-del custom_global_dict['Q']
-custom_parse_expr = lambda expr: sp.parse_expr(expr, global_dict=custom_global_dict)
-
 # Step 1.b: Check for a sufficiently new version of SymPy (for validation)
 # Ignore the rc's and b's for release candidates & betas.
 sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
@@ -26,6 +19,16 @@ sympy_version_decimal = float(int(sympy_version.split(".")[0]) + int(sympy_versi
 if sympy_version_decimal < 1.2:
     print('Error: NRPy+ does not support SymPy < 1.2')
     sys.exit(1)
+
+# As of April 2021, "sp.sympify("Q+1")" fails because Q is a reserved keyword.
+#   This is the workaround, courtesy Ken Sible.
+custom_global_dict = {}
+exec('from sympy import *', custom_global_dict)
+del custom_global_dict['Q']
+if sympy_version_decimal > 1.2:
+    custom_parse_expr = lambda expr: sp.parse_expr(expr, global_dict=custom_global_dict)
+else:
+    custom_parse_expr = lambda expr: sp.sympify(expr)
 
 # Step 1.c: Name of the directory containing the input file
 inputdir = "SEOBNR"
