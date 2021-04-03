@@ -12,6 +12,12 @@ import sympy as sp                # SymPy: The Python computer algebra package u
 import sys, os                    # Standard Python modules for multiplatform OS-level functions
 from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a Python array; store left- and right-
                                               #   hand sides of mathematical expressions
+# As of April 2021, "sp.sympify("Q+1")" fails because Q is a reserved keyword.
+#   This is the workaround, courtesy Ken Sible.
+custom_global_dict = {}
+exec('from sympy import *', custom_global_dict)
+del custom_global_dict['Q']
+custom_parse_expr = lambda expr: sp.parse_expr(expr, global_dict=custom_global_dict)
 
 # Step 1.b: Check for a sufficiently new version of SymPy (for validation)
 # Ignore the rc's and b's for release candidates & betas.
@@ -103,8 +109,8 @@ def symbolic_parital_derivative():
     lhss = []
     rhss = []
     for i in range(len(lr)):
-        lhss.append(sp.sympify(lr[i].lhs))
-        rhss.append(sp.sympify(lr[i].rhs))
+        lhss.append(custom_parse_expr(lr[i].lhs))
+        rhss.append(custom_parse_expr(lr[i].rhs))
 
     # Step 3.a: Create `input_constants` array and populate with SymPy symbols
     m1,m2,tortoise,eta,KK,k0,k1,EMgamma,d1v2,dheffSSv2 = sp.symbols('m1 m2 tortoise eta KK k0 k1 EMgamma d1v2 dheffSSv2',
@@ -152,8 +158,8 @@ def symbolic_parital_derivative():
     lhss_deriv = []
     rhss_deriv = []
     for i in range(len(rhss)):
-        lhss_deriv.append(sp.sympify(str(lhss[i])+"prm"))
-        newrhs = sp.sympify(str(sp.diff(rhss[i],xx)).replace("(xx)","").replace(", xx","prm").replace("Derivative",""))
+        lhss_deriv.append(custom_parse_expr(str(lhss[i])+"prm"))
+        newrhs = custom_parse_expr(str(sp.diff(rhss[i],xx)).replace("(xx)","").replace(", xx","prm").replace("Derivative",""))
         rhss_deriv.append(newrhs)
 
     # Step 7.b: Call the simplication function and then copy results
