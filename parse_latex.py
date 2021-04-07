@@ -2,6 +2,7 @@
 # Author: Ken Sible
 # Email:  ksible *at* outlook *dot* com
 
+# pylint: disable = attribute-defined-outside-init, protected-access, exec-used
 from sympy import Function, Derivative, Symbol, Integer, Rational, Float, Pow, Add, Mul
 from sympy import sin, cos, tan, sinh, cosh, tanh, asin, acos, atan, asinh, acosh, atanh
 from sympy import pi, exp, log, sqrt, expand, diff, srepr
@@ -10,13 +11,6 @@ from functional import uniquify
 from expr_tree import ExprTree
 import math, indexedexp as ixp
 import re, sys, warnings
-
-# pylint: disable = attribute-defined-outside-init, protected-access, exec-used
-sympy_env = (('sin', sin), ('cos', cos), ('tan', tan), ('sinh', sinh), ('cosh', cosh), ('tanh', tanh),
-    ('asin', asin), ('acos', acos), ('atan', atan), ('asinh', asinh), ('acosh', acosh), ('atanh', atanh),
-    ('pi', pi), ('exp', exp), ('log', log), ('sqrt', sqrt), ('diff', diff),
-    ('Add', Add), ('Mul', Mul), ('Integer', Integer), ('Rational', Rational), ('Float', Float),
-    ('Pow', Pow), ('Symbol', Symbol), ('Function', Function), ('Derivative', Derivative))
 
 class Lexer:
     """ LaTeX Lexer
@@ -640,9 +634,9 @@ class Parser:
         LHS, RHS = function, expand(tree.root.expr) if indexed else tree.root.expr
         # perform implied summation on indexed expression
         LHS_RHS, dimension = self._summation(LHS, RHS)
-        global_env = dict(sympy_env)
+        global_env = self._namespace.copy()
         global_env.update(self._property)
-        global_env.update(self._namespace)
+        exec('from sympy import *', global_env)
         for key in global_env:
             if isinstance(global_env[key], Tensor):
                 global_env[key] = global_env[key].structure
