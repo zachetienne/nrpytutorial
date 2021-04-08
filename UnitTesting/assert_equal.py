@@ -7,14 +7,6 @@ from mpmath import mp, mpf, mpc, fabs, log10
 import sympy as sp, sys, random
 
 def expand_vardict(vardict):
-    """ Expand Variable Dictionary
-
-        >>> expand_vardict({ \
-                'v': ['0', '1', '2'], \
-                'M': [['00', '01', '02'], ['10', '11', '12'], ['20', '21', '22']] \
-            }) # doctest: +ELLIPSIS
-        {'v[0]': '0', 'v[1]': '1', ... 'M[2][1]': '21', 'M[2][2]': '22'}
-    """
     if all(not isinstance(vardict[var], list) for var in vardict):
         return vardict
     for var in vardict:
