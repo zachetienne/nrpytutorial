@@ -56,6 +56,7 @@ matrix:
       install:
         - pip install mpmath testfixtures
         - pip install -U git+https://github.com/sympy/sympy/
+        - pip install nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
     - name: "Ubuntu Linux Xenial pypy2.7-6.0 (only pypy2.7 test)"
@@ -63,13 +64,15 @@ matrix:
       dist: xenial
       python: pypy2.7-6.0
       install:
-        - pip install mpmath==1.1.0 sympy testfixtures
+        - pip install mpmath==1.1.0 sympy testfixtures nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy
 
     - name: "Ubuntu Linux Xenial pypy3.5-6.0 (only pypy3.5 test with latest stable SymPy)"
       os: linux
       dist: xenial
       python: pypy3.5-6.0
+      install:
+        - pip install nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh pypy3
 
     - name: "Windows Python 3.9 (only Windows test; note Travis considers Windows unsupported/experimental)"
@@ -82,7 +85,7 @@ matrix:
         - python -m ensurepip
         - python -m pip install --upgrade pip wheel
       install:
-        - pip3 install mpmath sympy
+        - pip install mpmath sympy nrpylatex
       env:
         - PATH=/c/Python39:/c/Python39/Scripts:$PATH
         - PYTHONPATH=.:./UnitTesting/:$PYTHONPATH
@@ -92,7 +95,8 @@ matrix:
       os: osx
       language: sh
       python: 3.7
-      before_script: pip3 install mpmath sympy
+      install:
+        - pip3 install mpmath sympy nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     # https://docs.travis-ci.com/user/languages/python/
@@ -100,13 +104,16 @@ matrix:
       os: osx
       osx_image: xcode10.2  # Python 3.7.2 running on macOS 10.14.3
       language: shell       # 'language: python' is an error on Travis CI macOS
-      before_script: pip3 install mpmath sympy
+      install:
+        - pip3 install mpmath sympy nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     - name: "Ubuntu Linux Xenial CPython 3.4.5 (earliest Python 3 version tested)"
       os: linux
       dist: trusty
       python: 3.4.5
+      install:
+        - pip3 install mpmath sympy nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     # According to https://github.com/tornadoweb/tornado/blob/master/.travis.yml:
@@ -117,6 +124,8 @@ matrix:
       os: linux
       dist: xenial
       python: 3.5.2
+      install:
+        - pip3 install mpmath sympy nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     # Unstable at times (pip / matplotlib broken):
@@ -137,17 +146,22 @@ matrix:
       os: linux
       dist: bionic
       python: 2.7.18
-      before_script: pip install sympy==1.3 mpmath testfixtures
+      install:
+        - pip install mpmath sympy==1.3 testfixtures nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh python2
 
     - name: "Ubuntu Linux Bionic Python 3.6.9 (default Python3 in Ubuntu 18.04)"
       os: linux
       dist: bionic
       python: 3.6.9
+      install:
+        - pip3 install mpmath sympy nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
 
     - name: "Ubuntu Linux Bionic Python 3.8.3 (closest to NRPy+ core development infrastructure)"
       os: linux
       dist: bionic
       python: 3.8.3
+      install:
+        - pip3 install mpmath sympy nrpylatex
       script: ./UnitTesting/run_NRPy_UnitTests.sh python3
