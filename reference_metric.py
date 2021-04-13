@@ -321,9 +321,8 @@ def reference_metric(SymPySimplifyExpressions=True, enable_compute_hatted_quanti
 
         if CoordSystem == "SinhSymTP":
             xxmax[0] = sp.sympify(1)
-            # With xxmax[0] == AMAX, sinh(xx0/AMAX) will evaluate to a number between 0 and 1.
-            #   Similarly, sinh(xx0/(AMAX*SINHWAA)) / sinh(1/SINHWAA) will also evaluate to a number between 0 and 1.
-            #   Then AA = AMAX*sinh(xx0/(AMAX*SINHWAA)) / sinh(1/SINHWAA) will evaluate to a number between 0 and AMAX.
+            # With xxmax[0] = 1, sinh(xx0/SINHWAA) / sinh(1/SINHWAA) will evaluate to a number between 0 and 1.
+            #   Then AA = AMAX * sinh(xx0/SINHWAA) / sinh(1/SINHWAA) will evaluate to a number between 0 and AMAX.
             AA = AMAX * (sp.exp(xx[0] / SINHWAA) - sp.exp(-xx[0] / SINHWAA)) / (sp.exp(1 / SINHWAA) - sp.exp(-1 / SINHWAA))
 
         var1 = sp.sqrt(AA**2 + (bScale * sp.sin(xx[1]))**2)
