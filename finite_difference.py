@@ -257,11 +257,17 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
             FDORDER += par.parval_from_str("FD_KO_ORDER__CENTDERIVS_PLUS")
 
     STENCILSIZE = FDORDER+1
-    UPDOWNWIND = 0
+    UPDOWNWIND_stencil_shift = 0
+    # dup/dnD = single-point-offset upwind/downwinding.
     if "dupD" in derivstring:
-        UPDOWNWIND =  1
+        UPDOWNWIND_stencil_shift =  1
     elif "ddnD" in derivstring:
-        UPDOWNWIND = -1
+        UPDOWNWIND_stencil_shift = -1
+    # dfullup/dnD = full upwind/downwinding.
+    elif "dfullupD" in derivstring:
+        UPDOWNWIND_stencil_shift =  int(FDORDER/2)
+    elif "dfulldnD" in derivstring:
+        UPDOWNWIND_stencil_shift = -int(FDORDER/2)
 
     # Step 1: Set up matrix based on the stencil size (FDORDER+1).
     #         See documentation above for details on how this
@@ -272,7 +278,7 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
             if i == 0:
                 M[(i,j)] = 1 # Setting n^0 = 1 for all n, including n=0, because this matches the pattern
             else:
-                dist_from_xeq0_col = j - sp.Rational((STENCILSIZE - 1),2) + UPDOWNWIND
+                dist_from_xeq0_col = j - sp.Rational((STENCILSIZE - 1),2) + UPDOWNWIND_stencil_shift
                 if dist_from_xeq0_col==0:
                     M[(i,j)] = 0
                 else:
@@ -329,7 +335,7 @@ def compute_fdcoeffs_fdstencl(derivstring,FDORDER=-1):
 
                 # Next store finite difference stencil point
                 # corresponding to coefficient.
-                gridpt_posn = i - int((STENCILSIZE-1)/2) + UPDOWNWIND
+                gridpt_posn = i - int((STENCILSIZE-1)/2) + UPDOWNWIND_stencil_shift
                 if gridpt_posn != 0:
                     dirn = int(derivstring[len(derivstring)-1])
                     idx4[dirn] = gridpt_posn
