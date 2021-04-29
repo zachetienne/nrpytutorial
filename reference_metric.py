@@ -439,7 +439,7 @@ def reference_metric(SymPySimplifyExpressions=True, enable_compute_hatted_quanti
         # Declare basic parameters of the coordinate system and their default values
         AMPLXYZ, SINHWXYZ = par.Cparameters("REAL", thismodule,
                                             ["AMPLXYZ", "SINHWXYZ"],
-                                            [     10.0,        0.2], gridsuffix=gridsuffix)
+                                            [     10.0,        0.2])
 
         # Compute (xx_to_Cart0,xx_to_Cart1,xx_to_Cart2) from (xx0,xx1,xx2)
         for ii in [0, 1, 2]:
