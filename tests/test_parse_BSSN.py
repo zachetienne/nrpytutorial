@@ -33,34 +33,36 @@ class TestParser(unittest.TestCase):
                 % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij}
                 % assign -diff_type=dD -metric 'gammabarDD'
 
-                % vardef -diff_type=dD 'vetU'
                 % srepl "\beta" -> "\text{vet}"
+                % vardef -diff_type=dD 'vetU'
                 %% upwind pattern inside Lie derivative expansion
-                % srepl -persist "\text{vet}^<1> \partial_<1>" -> "\text{vet}^<1> \vphantom{dupD} \partial_<1>"
+                % srepl -persist "\text{vet}^{<1>} \partial_{<1>}" -> "\text{vet}^{<1>} \vphantom{dupD} \partial_{<1>}"
                 %% substitute tensor identity (see appropriate BSSN notebook)
-                % srepl -persist "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
+                % srepl "\bar{D}_k \text{vet}^k" -> "(\partial_k \text{vet}^k + \frac{\partial_k \text{gammahatdet} \text{vet}^k}{2 \text{gammahatdet}})"
 
-                % vardef -diff_type=dD -symmetry=sym01 -metric='gammabar' 'aDD'
                 % srepl "\bar{A}" -> "\text{a}"
+                % vardef -diff_type=dD -symmetry=sym01 'aDD'
+                % assign -metric='gammabar' 'aDD'
                 % srepl "\partial_t \bar{\gamma}" -> "\text{h_rhs}"
                 \partial_t \bar{\gamma}_{ij} &= \mathcal{L}_\beta \bar{\gamma}_{ij}
                     + \frac{2}{3} \bar{\gamma}_{ij} \left(\alpha \bar{A}^k{}_k - \bar{D}_k \beta^k\right) - 2 \alpha \bar{A}_{ij} \\
 
-                % vardef -diff_type=dD 'cf', 'trK'
                 % srepl "K" -> "\text{trK}"
-                %% replace 'phi' with conformal factor cf = W = e^{{-2\phi}}
-                % srepl "e^{-4\phi}" -> "\text{cf}^{{2}}"
+                % vardef -diff_type=dD 'cf', 'trK'
+                %% replace 'phi' with conformal factor cf = W = e^{-2\phi}
+                % srepl "e^{-4\phi}" -> "\text{cf}^2"
                 % srepl "\partial_t \phi = <1..> \\" -> "\text{cf_rhs} = -2 \text{cf} (<1..>) \\"
-                % srepl -persist "\partial_<1> \phi" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
+                % srepl -persist "\partial_{<1>} \phi" -> "\partial_{<1>} \text{cf} \frac{-1}{2 \text{cf}}"
+                % srepl "\partial_<1> \phi" -> "\partial_<1> \text{cf} \frac{-1}{2 \text{cf}}"
                 \partial_t \phi &= \mathcal{L}_\beta \phi + \frac{1}{6} \left(\bar{D}_k \beta^k - \alpha K \right) \\
 
                 % vardef -diff_type=dD 'alpha'
                 % srepl "\partial_t \text{trK}" -> "\text{trK_rhs}"
-                \partial_t K &= \mathcal{L}_\beta K + \frac{1}{3} \alpha K^{{2}} + \alpha \bar{A}_{ij} \bar{A}^{ij}
+                \partial_t K &= \mathcal{L}_\beta K + \frac{1}{3} \alpha K^2 + \alpha \bar{A}_{ij} \bar{A}^{ij}
                     - e^{-4\phi} \left(\bar{D}_i \bar{D}^i \alpha + 2 \bar{D}^i \alpha \bar{D}_i \phi\right) \\
 
-                % vardef -diff_type=dD 'lambdaU'
                 % srepl "\bar{\Lambda}" -> "\text{lambda}"
+                % vardef -diff_type=dD 'lambdaU'
                 % parse \Delta^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij}
                 % assign -metric='gammabar' 'DeltaUDD'
                 % parse \Delta^k = \bar{\gamma}^{ij} \Delta^k_{ij}
@@ -82,8 +84,8 @@ class TestParser(unittest.TestCase):
                 % srepl "\partial_t \alpha" -> "\text{alpha_rhs}"
                 \partial_t \alpha &= \mathcal{L}_\beta \alpha - 2 \alpha K \\
 
-                % vardef -diff_type=dD 'betU'
                 % srepl "B" -> "\text{bet}"
+                % vardef -diff_type=dD 'betU'
                 % srepl "\partial_t \text{vet}" -> "\text{vet_rhs}"
                 \partial_t \beta^i &= \left[\beta^j \vphantom{dupD} \bar{D}_j \beta^i\right] + B^i \\
 
@@ -94,7 +96,7 @@ class TestParser(unittest.TestCase):
 
                 % parse \bar{R} = \bar{\gamma}^{ij} \bar{R}_{ij}
                 % srepl "\bar{D}^2" -> "\bar{D}^i \bar{D}_i", "\mathcal{<1>}" -> "<1>"
-                \mathcal{H} &= \frac{2}{3} K^{{2}} - \bar{A}_{ij} \bar{A}^{ij}
+                \mathcal{H} &= \frac{2}{3} K^2 - \bar{A}_{ij} \bar{A}^{ij}
                     + e^{-4\phi} \left(\bar{R} - 8 \bar{D}^i \phi \bar{D}_i \phi - 8 \bar{D}^2 \phi\right) \\
 
                 \mathcal{M}^i &= e^{-4\phi} \left(\bar{D}_j \bar{A}^{ij} + 6 \bar{A}^{ij} \partial_j \phi
