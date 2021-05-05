@@ -44,7 +44,7 @@ def Axyz_func_Cartesian(Ax_func,Ay_func,Az_func, stagger_enable, **params):
     return AD
 
 # Generic function to convert contravariant vectors from a spherical to Cartesian basis.
-def change_basis_spherical_to_Cartesian(somevector_sphD):
+def change_basis_spherical_to_Cartesian_D(somevector_sphD):
     # Use the Jacobian matrix to transform the vectors to Cartesian coordinates.
     drrefmetric__dx_0UDmatrix = sp.Matrix([[sp.diff(rfm.xxSph[0],rfm.xx[0]), sp.diff(rfm.xxSph[0],rfm.xx[1]), sp.diff(rfm.xxSph[0],rfm.xx[2])],
                                            [sp.diff(rfm.xxSph[1],rfm.xx[0]), sp.diff(rfm.xxSph[1],rfm.xx[1]), sp.diff(rfm.xxSph[1],rfm.xx[2])],
@@ -57,6 +57,22 @@ def change_basis_spherical_to_Cartesian(somevector_sphD):
             somevectorD[i] = drrefmetric__dx_0UDmatrix[(j,i)]*somevector_sphD[j]
 
     return somevectorD
+
+# Generic function to convert covariant vectors from a spherical to Cartesian basis.
+def change_basis_spherical_to_Cartesian_U(somevector_sphU):
+    # Use the Jacobian matrix to transform the vectors to Cartesian coordinates.
+    drrefmetric__dx_0UDmatrix = sp.Matrix([[sp.diff(rfm.xxSph[0],rfm.xx[0]), sp.diff(rfm.xxSph[0],rfm.xx[1]), sp.diff(rfm.xxSph[0],rfm.xx[2])],
+                                           [sp.diff(rfm.xxSph[1],rfm.xx[0]), sp.diff(rfm.xxSph[1],rfm.xx[1]), sp.diff(rfm.xxSph[1],rfm.xx[2])],
+                                           [sp.diff(rfm.xxSph[2],rfm.xx[0]), sp.diff(rfm.xxSph[2],rfm.xx[1]), sp.diff(rfm.xxSph[2],rfm.xx[2])]])
+    dx__drrefmetric_0UDmatrix = drrefmetric__dx_0UDmatrix.inv()
+
+    somevectorU = ixp.zerorank1()
+
+    for i in range(3):
+        for j in range(3):
+            somevectorU[i] = dx__drrefmetric_0UDmatrix[(j,i)]*somevector_sphU[j]
+
+    return somevectorU
 
 # Generic function for all 1D tests: Compute Ax,Ay,Az
 def Axyz_func_spherical(Ar_func,At_func,Ap_func, stagger_enable, **params):
@@ -87,12 +103,12 @@ def Axyz_func_spherical(Ar_func,At_func,Ap_func, stagger_enable, **params):
                            phi.subs(rfm.xx[0],rfm.xx[0]+sp.Rational(1,2)*gri.dxx[0]).subs(rfm.xx[1],rfm.xx[1]+sp.Rational(1,2)*gri.dxx[1]), **params)
 
     # Use the Jacobian matrix to transform the vectors to Cartesian coordinates.
-    AD = change_basis_spherical_to_Cartesian(AsphD)
+    AD = change_basis_spherical_to_Cartesian_D(AsphD)
     return AD
 
 # Generic function for all 1D tests: Valencia 3-velocity from EU and BU
-def compute_ValenciavU_from_EU_and_BU(EU, BU, gammaDD=None):
-    # Now, we calculate v^i = ([ijk] E^j B^k) / B^2,
+def compute_ValenciavU_from_ED_and_BU(ED, BU, gammaDD=None):
+    # Now, we calculate v^i = ([ijk] E_j B_k) / B^2,
     # where [ijk] is the Levi-Civita symbol and B^2 = \gamma_{ij} B^i B^j$ is a trivial dot product in flat space.
     LeviCivitaSymbolDDD = ixp.LeviCivitaSymbol_dim3_rank3()
 
@@ -106,10 +122,14 @@ def compute_ValenciavU_from_EU_and_BU(EU, BU, gammaDD=None):
         for j in range(3):
             B2 += gammaDD[i][j] * BU[i] * BU[j]
 
+    BD = ixp.zerorank1()
+    for i in range(3):
+        for j in range(3):
+            BD[i] = gammaDD[i][j]*BU[j]
     ValenciavU = ixp.zerorank1()
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * EU[j] * BU[k] / B2
+                ValenciavU[i] += LeviCivitaSymbolDDD[i][j][k] * ED[j] * BD[k] / B2
 
     return ValenciavU
