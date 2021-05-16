@@ -3,25 +3,23 @@
 # Email:  ksible *at* outlook *dot* com
 
 # pylint: disable = import-error, protected-access, exec-used
-import sys; sys.path.append('..')
-from sympy import Function, Symbol, Matrix, simplify
 from UnitTesting.assert_equal import assert_equal
-from nrpylatex import *
+from nrpylatex import parse_latex
 import unittest, sys
+
+import NRPy_param_funcs as par, reference_metric as rfm
+import BSSN.BSSN_RHSs as Brhs, BSSN.BSSN_quantities as Bq
+import BSSN.BSSN_gauge_RHSs as gaugerhs
+import BSSN.BSSN_constraints as bssncon
 
 class TestParser(unittest.TestCase):
 
     def setUp(self):
         self.maxDiff = None
-        ignore_override(True)
 
     @staticmethod
     def test_example_BSSN():
-        import NRPy_param_funcs as par, reference_metric as rfm
-        import BSSN.BSSN_RHSs as Brhs, BSSN.BSSN_quantities as Bq
-        import BSSN.BSSN_gauge_RHSs as gaugerhs
-        import BSSN.BSSN_constraints as bssncon
-        parse(r"""
+        parse_latex(r"""
             \begin{align}
                 % keydef basis [x, y, z]
                 % ignore "\\%", "\qquad"
@@ -107,11 +105,13 @@ class TestParser(unittest.TestCase):
                     + \frac{1}{2} \Delta^k \left(\Delta_{ijk} + \Delta_{jik}\right) \\%
                     &\qquad+ \bar{\gamma}^{kl} \left(\Delta^m_{ki} \Delta_{jml} + \Delta^m_{kj} \Delta_{iml} + \Delta^m_{ik} \Delta_{mjl}\right)
             \end{align}
-        """)
+        """, ignore_warning=True)
         par.set_parval_from_str('reference_metric::CoordSystem', 'Cartesian')
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'True')
-        rfm.reference_metric(); Brhs.BSSN_RHSs()
-        gaugerhs.BSSN_gauge_RHSs(); bssncon.BSSN_constraints()
+        rfm.reference_metric()
+        Brhs.BSSN_RHSs()
+        gaugerhs.BSSN_gauge_RHSs()
+        bssncon.BSSN_constraints()
         par.set_parval_from_str('BSSN.BSSN_quantities::LeaveRicciSymbolic', 'False')
         Bq.RicciBar__gammabarDD_dHatD__DGammaUDD__DGammaU()
         assert_equal({'h_rhsDD': h_rhsDD,
