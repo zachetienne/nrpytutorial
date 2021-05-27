@@ -30,10 +30,10 @@ def GiRaFFEfood_NRPy_generate_initial_data(ID_type = "DegenAlfvenWave", stagger_
 #         AD = Axyz_func(Ax_FW, Ay_FW, Az_FW, stagger_enable)
 #         ValenciaVU = ValenciavU_FW()
     if ID_type == "ExactWald":
-        import GiRaFFEfood_NRPy.GiRaFFEfood_NRPy_Exact_Wald as gfew
+        import GiRaFFEfood_NRPy_Exact_Wald as gfew
         AD = gfcf.Axyz_func_spherical(gfew.Ar_EW,gfew.Ath_EW,gfew.Aph_EW,stagger_enable,**params)
         ValenciavU = gfew.ValenciavU_func_EW(**params)
     elif ID_type == "SplitMonopole":
-        import GiRaFFEfood_NRPy.GiRaFFEfood_NRPy_Split_Monopole as gfsm
+        import GiRaFFEfood_NRPy_Split_Monopole as gfsm
         AD = gfcf.Axyz_func_spherical(gfsm.Ar_SM,gfsm.Ath_SM,gfsm.Aph_SM,stagger_enable,**params)
         ValenciavU = gfsm.ValenciavU_func_SM(**params)
