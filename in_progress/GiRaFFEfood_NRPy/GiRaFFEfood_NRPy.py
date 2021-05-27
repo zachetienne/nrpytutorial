@@ -4,11 +4,14 @@ import os,sys
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
+giraffefood_dir_path = os.path.join("GiRaFFEfood_NRPy")
+if giraffefood_dir_path not in sys.path:
+    sys.path.append(giraffefood_dir_path)
 
 # Step 0: Import the NRPy+ core modules and set the reference metric to Cartesian
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import reference_metric as rfm   # NRPy+: Reference metric support
-import GiRaFFEfood_NRPy.GiRaFFEfood_NRPy_Common_Functions as gfcf # Some useful functions for GiRaFFE initial data.
+import GiRaFFEfood_NRPy_Common_Functions as gfcf # Some useful functions for GiRaFFE initial data.
 
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()

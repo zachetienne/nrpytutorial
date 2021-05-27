@@ -4,6 +4,12 @@ import os,sys
 nrpy_dir_path = os.path.join("..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
+giraffefood_dir_path = os.path.join("in_progress","GiRaFFEfood_NRPy")
+if giraffefood_dir_path not in sys.path:
+    sys.path.append(giraffefood_dir_path)
+giraffefood_dir_path = os.path.join("GiRaFFEfood_NRPy")
+if giraffefood_dir_path not in sys.path:
+    sys.path.append(giraffefood_dir_path)
 
 # Step 0: Import the NRPy+ core modules and set the reference metric to Cartesian
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
