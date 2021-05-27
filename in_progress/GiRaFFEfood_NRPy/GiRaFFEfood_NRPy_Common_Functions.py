@@ -89,7 +89,6 @@ def Axyz_func_spherical(Ar_func,At_func,Ap_func, stagger_enable, **params):
 
     # Use the Jacobian matrix to transform the vectors to Cartesian coordinates.
     AD = change_basis_spherical_to_Cartesian_D(AsphD)
-#     from GiRaFFEfood_NRPy.GiRaFFEfood_NRPy_Split_Monopole import fp_of_r
 #     M = params["M"]
 #     AD[2] = fp_of_r(rfm.xxSph[0] + KerrSchild_radial_shift,M)
     if stagger_enable:

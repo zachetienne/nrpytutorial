@@ -7,6 +7,9 @@ if nrpy_dir_path not in sys.path:
 nrpy_dir_path = os.path.join("../..")
 if nrpy_dir_path not in sys.path:
     sys.path.append(nrpy_dir_path)
+giraffefood_dir_path = os.path.join("GiRaFFEfood_NRPy")
+if giraffefood_dir_path not in sys.path:
+    sys.path.append(giraffefood_dir_path)
 
 # Step 0.a: Import the NRPy+ core modules and set the reference metric to Cartesian
 from outputC import nrpyAbs
