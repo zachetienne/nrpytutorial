@@ -16,6 +16,10 @@ import GiRaFFEfood_NRPy_Common_Functions as gfcf # Some useful functions for GiR
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
 
+# We import all ID modules ahead of time so that options can be changed *before* generating the functions.
+import GiRaFFEfood_NRPy_Exact_Wald as gfew
+import GiRaFFEfood_NRPy_Split_Monopole as gfsm
+
 # Step 1a: Set commonly used parameters.
 thismodule = __name__
 
@@ -30,10 +34,8 @@ def GiRaFFEfood_NRPy_generate_initial_data(ID_type = "DegenAlfvenWave", stagger_
 #         AD = Axyz_func(Ax_FW, Ay_FW, Az_FW, stagger_enable)
 #         ValenciaVU = ValenciavU_FW()
     if ID_type == "ExactWald":
-        import GiRaFFEfood_NRPy_Exact_Wald as gfew
         AD = gfcf.Axyz_func_spherical(gfew.Ar_EW,gfew.Ath_EW,gfew.Aph_EW,stagger_enable,**params)
         ValenciavU = gfew.ValenciavU_func_EW(**params)
     elif ID_type == "SplitMonopole":
-        import GiRaFFEfood_NRPy_Split_Monopole as gfsm
         AD = gfcf.Axyz_func_spherical(gfsm.Ar_SM,gfsm.Ath_SM,gfsm.Aph_SM,stagger_enable,**params)
         ValenciavU = gfsm.ValenciavU_func_SM(**params)

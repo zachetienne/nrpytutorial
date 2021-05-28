@@ -86,18 +86,21 @@ def ValenciavU_func_SM(**params):
     r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
     theta = rfm.xxSph[1]
     phi   = rfm.xxSph[2]
+    z     = rfm.xx_to_Cart[2]
+
+    split_C_SM = noif.coord_geq_bound(z,sp.sympify(0))*C_SM - noif.coord_less_bound(z,sp.sympify(0))*C_SM
 
     BsphU = ixp.zerorank1()
-    BsphU[0] = C_SM*alpha*M*M/(r*r) + \
-               C_SM*alpha*a*a*M*M*sp.Rational(1,2)/(r**4)*(-sp.sympify(2)*sp.cos(theta) + (r/M)**2*(sp.sympify(1)+sp.sympify(3)*sp.cos(sp.sympify(2)*theta))*f_of_r(r,M))
-    BsphU[1] = -C_SM*alpha*a*a/(r*r) * sp.sin(theta)*sp.cos(theta)*fp_of_r(r,M)
-    BsphU[2] = -C_SM*alpha*a*M*sp.Rational(1,8)/(r*r)*(sp.sympify(1)+sp.sympify(4)*M/r)
+    BsphU[0] = split_C_SM*alpha*M*M/(r*r) + \
+               split_C_SM*alpha*a*a*M*M*sp.Rational(1,2)/(r**4)*(-sp.sympify(2)*sp.cos(theta) + (r/M)**2*(sp.sympify(1)+sp.sympify(3)*sp.cos(sp.sympify(2)*theta))*f_of_r(r,M))
+    BsphU[1] = -split_C_SM*alpha*a*a/(r*r) * sp.sin(theta)*sp.cos(theta)*fp_of_r(r,M)
+    BsphU[2] = -split_C_SM*alpha*a*M*sp.Rational(1,8)/(r*r)*(sp.sympify(1)+sp.sympify(4)*M/r)
 
     EsphD = ixp.zerorank1()
-    EsphD[0] = -C_SM*a**3/(sp.sympify(8)*alpha*M**3)*fp_of_r(r,M)*sp.cos(theta)*sp.sin(theta)**2
-    EsphD[1] = -C_SM*a*sp.Rational(1,8)/alpha*(sp.sin(theta) + a*a*f_of_r(r,M)*sp.sin(theta)*(sp.sympify(2)*sp.cos(theta)**2-sp.sin(theta)**2)) - \
-               betaU[0]*sqrtgammaDET*a*C_SM*sp.Rational(1,8)/(r*r)*(sp.sympify(1)+sp.sympify(4)*M/r)
-    EsphD[2] = betaU[0]/(alpha*M)*C_SM*a*a*fp_of_r(r,M)*sp.cos(theta)*sp.sin(theta)**2
+    EsphD[0] = -split_C_SM*a**3/(sp.sympify(8)*alpha*M**3)*fp_of_r(r,M)*sp.cos(theta)*sp.sin(theta)**2
+    EsphD[1] = -split_C_SM*a*sp.Rational(1,8)/alpha*(sp.sin(theta) + a*a*f_of_r(r,M)*sp.sin(theta)*(sp.sympify(2)*sp.cos(theta)**2-sp.sin(theta)**2)) - \
+               betaU[0]*sqrtgammaDET*a*split_C_SM*sp.Rational(1,8)/(r*r)*(sp.sympify(1)+sp.sympify(4)*M/r)
+    EsphD[2] = betaU[0]/(alpha*M)*split_C_SM*a*a*fp_of_r(r,M)*sp.cos(theta)*sp.sin(theta)**2
 
     ED = gfcf.change_basis_spherical_to_Cartesian_D(EsphD)
     BU = gfcf.change_basis_spherical_to_Cartesian_U(BsphU)
