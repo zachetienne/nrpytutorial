@@ -16,7 +16,7 @@ from outputC import nrpyAbs
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
-import GiRaFFEfood_NRPy.GiRaFFEfood_NRPy_Common_Functions as gfcf # Some useful functions for GiRaFFE initial data.
+import GiRaFFEfood_NRPy_Common_Functions as gfcf # Some useful functions for GiRaFFE initial data.
 import reference_metric as rfm   # NRPy+: Reference metric support
 import Min_Max_and_Piecewise_Expressions as noif
 par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
