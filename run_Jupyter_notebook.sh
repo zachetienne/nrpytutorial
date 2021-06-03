@@ -32,7 +32,9 @@ if [ "$2" == "notimer" ]; then
     else
         echo BACKTRACE:
         echo git diff $1
-        git diff $1 | cat
+        cat in_progress/Validation/out_GiRaFFEfood_NRPy_test.txt
+        git diff $1 2>&1 | cat
+        exit 1
     fi
 else
     if time jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1;
@@ -42,6 +44,8 @@ else
     else
         echo BACKTRACE:
         echo git diff $1
-        git diff $1 | cat
+        cat in_progress/Validation/out_GiRaFFEfood_NRPy_test.txt
+        git diff $1 2>&1 | cat
+        exit 1
     fi
 fi
