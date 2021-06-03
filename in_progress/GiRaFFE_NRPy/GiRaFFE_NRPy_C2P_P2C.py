@@ -109,21 +109,12 @@ def GiRaFFE_NRPy_P2C(gammaDD,betaU,alpha,  ValenciavU,BU, sqrt4pi):
     # First compute stress-energy tensor T4UU and T4UD:
 
     GRHD.compute_sqrtgammaDET(gammaDD)
-#     GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
-    R = sp.sympify(0)
-    for i in range(3):
-        for j in range(3):
-            R += gammaDD[i][j] * ValenciavU[i] * ValenciavU[j]
-    u4U_ito_ValenciavU = ixp.zerorank1(DIM=4)
-    u4U_ito_ValenciavU[0] = 1 / (alpha * sp.sqrt(1 - R))
-    # u^i = u^0 ( alpha v^i_{(n)} - beta^i ), where v^i_{(n)} is the Valencia 3-velocity
-    for i in range(3):
-        u4U_ito_ValenciavU[i + 1] = u4U_ito_ValenciavU[0] * (alpha * ValenciavU[i] - betaU[i])
+    GRHD.u4U_in_terms_of_ValenciavU__rescale_ValenciavU_by_applying_speed_limit(alpha, betaU, gammaDD, ValenciavU)
 
-    GRFFE.compute_smallb4U_with_driftvU_for_FFE(gammaDD, betaU, alpha, u4U_ito_ValenciavU, BU, sqrt4pi)
+    GRFFE.compute_smallb4U_with_driftvU_for_FFE(gammaDD, betaU, alpha, GRHD.u4U_ito_ValenciavU, BU, sqrt4pi)
     GRFFE.compute_smallbsquared(gammaDD, betaU, alpha, GRFFE.smallb4_with_driftv_for_FFE_U)
 
-    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4_with_driftv_for_FFE_U, GRFFE.smallbsquared, u4U_ito_ValenciavU)
+    GRFFE.compute_TEM4UU(gammaDD, betaU, alpha, GRFFE.smallb4_with_driftv_for_FFE_U, GRFFE.smallbsquared, GRHD.u4U_ito_ValenciavU)
     GRFFE.compute_TEM4UD(gammaDD, betaU, alpha, GRFFE.TEM4UU)
 
     # Compute conservative variables in terms of primitive variables
