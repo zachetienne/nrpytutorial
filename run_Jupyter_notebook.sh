@@ -25,7 +25,23 @@ else
 fi
 
 if [ "$2" == "notimer" ]; then
-    jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1
+    if jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1;
+    then
+        echo
+        # do nothing
+    else
+        echo BACKTRACE:
+        echo git diff $1
+        git diff $1 | cat
+    fi
 else
-    time jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1
+    if time jupyter nbconvert --to notebook --inplace --execute --ExecutePreprocessor.timeout=-1 $1;
+    then
+        echo
+        # do nothing
+    else
+        echo BACKTRACE:
+        echo git diff $1
+        git diff $1 | cat
+    fi
 fi
