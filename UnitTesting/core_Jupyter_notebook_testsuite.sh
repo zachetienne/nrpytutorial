@@ -2,6 +2,8 @@
 
 set -e # Error out if any commands complete with an error.
 
+./run_Jupyter_notebook.sh in_progress/Tutorial-Start_to_Finish_UnitTest-GiRaFFEfood_NRPy-3D_tests.ipynb # notimer
+
 # Skip Baikal and all Start-to-Finish notebooks, except ScalarWave for now
 # Tutorial-Start_to_Finish-ScalarWave*.ipynb
 # Let's try all but Psi4 Start-to-Finish and Baikal notebooks. Also cmdlinehelper yields whitespace differences in Python 2.7
