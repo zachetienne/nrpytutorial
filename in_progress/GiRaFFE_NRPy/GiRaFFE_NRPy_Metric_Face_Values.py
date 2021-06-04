@@ -25,7 +25,7 @@ def GiRaFFE_NRPy_FCVAL(Ccodesdir):
 #define A1  -0.0625
 #define COMPUTE_FCVAL(METRICm2,METRICm1,METRIC,METRICp1) (AM2*(METRICm2) + AM1*(METRICm1) + A0*(METRIC) + A1*(METRICp1))
 
-const int metric_gfs_list[16] = {GAMMADD00GF,
+const int metric_gfs_list[10] = {GAMMADD00GF,
                                  GAMMADD01GF,
                                  GAMMADD02GF,
                                  GAMMADD11GF,
@@ -34,15 +34,9 @@ const int metric_gfs_list[16] = {GAMMADD00GF,
                                  BETAU0GF,
                                  BETAU1GF,
                                  BETAU2GF,
-                                 ALPHAGF,
-                                 GAMMAUU00GF,
-                                 GAMMAUU01GF,
-                                 GAMMAUU02GF,
-                                 GAMMAUU11GF,
-                                 GAMMAUU12GF,
-                                 GAMMAUU22GF};
+                                 ALPHAGF};
 
-const int metric_gfs_face_list[16] = {GAMMA_FACEDD00GF,
+const int metric_gfs_face_list[10] = {GAMMA_FACEDD00GF,
                                       GAMMA_FACEDD01GF,
                                       GAMMA_FACEDD02GF,
                                       GAMMA_FACEDD11GF,
@@ -51,15 +45,9 @@ const int metric_gfs_face_list[16] = {GAMMA_FACEDD00GF,
                                       BETA_FACEU0GF,
                                       BETA_FACEU1GF,
                                       BETA_FACEU2GF,
-                                      ALPHA_FACEGF,
-                                      GAMMA_FACEUU00GF,
-                                      GAMMA_FACEUU01GF,
-                                      GAMMA_FACEUU02GF,
-                                      GAMMA_FACEUU11GF,
-                                      GAMMA_FACEUU12GF,
-                                      GAMMA_FACEUU22GF};
+                                      ALPHA_FACEGF};
 
-const int num_metric_gfs = 16;
+const int num_metric_gfs = 10;
 """)
 
     desc = "Interpolate metric gridfunctions to cell faces"
@@ -74,9 +62,9 @@ const int num_metric_gfs = 16;
         body     ="""    for(int gf = 0;gf < num_metric_gfs;gf++) {
         in_gf  = metric_gfs_list[gf];
         out_gf = metric_gfs_face_list[gf];
-        for (int i2 = 2*(flux_dirn==3);i2 < Nxx_plus_2NGHOSTS2-1*(flux_dirn==3);i2++) {
-            for (int i1 = 2*(flux_dirn==2);i1 < Nxx_plus_2NGHOSTS1-1*(flux_dirn==2);i1++) {
-                for (int i0 = 2*(flux_dirn==1);i0 < Nxx_plus_2NGHOSTS0-1*(flux_dirn==1);i0++) {
+        for (int i2 = 2;i2 < Nxx_plus_2NGHOSTS2-1;i2++) {
+            for (int i1 = 2;i1 < Nxx_plus_2NGHOSTS1-1;i1++) {
+                for (int i0 = 2;i0 < Nxx_plus_2NGHOSTS0-1;i0++) {
                     Qm2 = auxevol_gfs[IDX4S(in_gf,i0-2*kronecker_delta[flux_dirn][0],i1-2*kronecker_delta[flux_dirn][1],i2-2*kronecker_delta[flux_dirn][2])];
                     Qm1 = auxevol_gfs[IDX4S(in_gf,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
                     Qp0 = auxevol_gfs[IDX4S(in_gf,i0,i1,i2)];
@@ -86,20 +74,6 @@ const int num_metric_gfs = 16;
             }
         }
     }
-#ifdef WORKAROUND_ENABLED
-        for (int i2 = 2*(flux_dirn==3);i2 < Nxx_plus_2NGHOSTS2-1*(flux_dirn==3);i2++) {
-            for (int i1 = 2*(flux_dirn==2);i1 < Nxx_plus_2NGHOSTS1-1*(flux_dirn==2);i1++) {
-                for (int i0 = 2*(flux_dirn==1);i0 < Nxx_plus_2NGHOSTS0-1*(flux_dirn==1);i0++) {
-                Qm2 = auxevol_gfs[IDX4S(PHIGF,i0-2*kronecker_delta[flux_dirn][0],i1-2*kronecker_delta[flux_dirn][1],i2-2*kronecker_delta[flux_dirn][2])];
-                Qm1 = auxevol_gfs[IDX4S(PHIGF,i0-kronecker_delta[flux_dirn][0],i1-kronecker_delta[flux_dirn][1],i2-kronecker_delta[flux_dirn][2])];
-                Qp0 = auxevol_gfs[IDX4S(PHIGF,i0,i1,i2)];
-                Qp1 = auxevol_gfs[IDX4S(PHIGF,i0+kronecker_delta[flux_dirn][0],i1+kronecker_delta[flux_dirn][1],i2+kronecker_delta[flux_dirn][2])];
-                auxevol_gfs[IDX4S(PHI_FACEGF,i0,i1,i2)] = COMPUTE_FCVAL(Qm2,Qm1,Qp0,Qp1);
-            }
-        }
-    }
-#endif /*WORKAROUND_ENABLED*/
-
 """,
     rel_path_to_Cparams=os.path.join("../"))
 

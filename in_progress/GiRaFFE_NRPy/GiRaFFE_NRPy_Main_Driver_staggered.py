@@ -73,10 +73,6 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     gri.register_gridfunctions("AUXEVOL","cmax_z")
     gri.register_gridfunctions("AUXEVOL","cmin_z")
 
-    phi = gri.register_gridfunctions("AUXEVOL","phi") # Needed only for ADM-BSSN-ADM workaround
-    phi_face = gri.register_gridfunctions("AUXEVOL","phi_face") # Needed only for ADM-BSSN-ADM workaround
-    gammaUU = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gammaUU","sym01",DIM=3)
-
     subdir = "RHSs"
     stgsrc.GiRaFFE_NRPy_Source_Terms(os.path.join(out_dir,subdir))
 
@@ -101,7 +97,6 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     alpha_face = gri.register_gridfunctions("AUXEVOL","alpha_face")
     gamma_faceDD = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gamma_faceDD","sym01")
     beta_faceU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","beta_faceU")
-    gamma_faceUU = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","gamma_faceUU","sym01")
 
     # We'll need some more gridfunctions, now, to represent the reconstructions of BU and ValenciavU
     # on the right and left faces
@@ -124,8 +119,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
                                        Valenciav_rU,B_rU,Valenciav_lU,B_lU,
-                                       Stilde_flux_HLLED, sqrt4pi,
-                                       write_cmax_cmin=True, gamma_faceUU=gamma_faceUU, phi_face=phi_face)
+                                       Stilde_flux_HLLED, sqrt4pi, write_cmax_cmin=True)
 
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))
@@ -174,92 +168,6 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
         loopopts ="AllPoints",
         rel_path_to_Cparams=os.path.join("../"))
 
-    import sympy as sp                # SymPy: The Python computer algebra package upon which NRPy+ depends
-    # First calculate the conformal factor psi^4 = detgamma^(1/3)
-    _gammaUU, gammaDET = ixp.symm_matrix_inverter3x3(gammaDD) # _gammaUU unused.
-    psi4 = sp.cbrt(gammaDET)
-    phi_expression = sp.Rational(1,4)*sp.log(psi4)
-    # Rescale gammaDD: gammabarDD = gammaDD/psi4
-    gammabarDD = ixp.zerorank2(DIM=3)
-    gammabarUU = ixp.zerorank2(DIM=3)
-    for i in range(3):
-        for j in range(3):
-            gammabarDD[i][j] = gammaDD[i][j]/psi4
-            gammabarUU[i][j] = gammaUU[i][j]*psi4
-    # Generate a kernel to convert to BSSN:
-    # We'll convert the metric in place to ensure compatibility with our metric face interpolator
-    values_to_print = [
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD00"),rhs=gammabarDD[0][0]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD01"),rhs=gammabarDD[0][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD02"),rhs=gammabarDD[0][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=gammabarDD[1][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=gammabarDD[1][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=gammabarDD[2][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","phi"),rhs=phi_expression),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU00"),rhs=gammabarUU[0][0]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU01"),rhs=gammabarUU[0][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU02"),rhs=gammabarUU[0][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU11"),rhs=gammabarUU[1][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU12"),rhs=gammabarUU[1][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU22"),rhs=gammabarUU[2][2])
-                      ]
-
-    desc = "Convert ADM metric to BSSN"
-    name = "Workaround_ADM_to_BSSN"
-    outCfunction(
-        outfile  = os.path.join(out_dir,name+".h"), desc=desc, name=name,
-        params   ="const paramstruct *params,REAL *auxevol_gfs",
-        body     = fin.FD_outputC("returnstring",values_to_print,params=outCparams).replace("IDX4","IDX4S"),
-        loopopts ="AllPoints",
-        rel_path_to_Cparams=os.path.join("./"))
-
-    rescaled_gammaDD = ixp.zerorank2(DIM=3)
-    rescaled_gammaUU = ixp.zerorank2(DIM=3)
-    for i in range(3):
-        for j in range(3):
-            # Here, gammaDD actually represents gammabarDD, but recall that we converted in place.
-            rescaled_gammaDD[i][j] = gammaDD[i][j]*sp.exp(4*phi)
-            rescaled_gammaUU[i][j] = gammaUU[i][j]/sp.exp(4*phi)
-    # We'll convert the metric in place to ensure compatibility with our metric face interpolator
-    values_to_print = [
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD00"),rhs=rescaled_gammaDD[0][0]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD01"),rhs=rescaled_gammaDD[0][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD02"),rhs=rescaled_gammaDD[0][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD11"),rhs=rescaled_gammaDD[1][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD12"),rhs=rescaled_gammaDD[1][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaDD22"),rhs=rescaled_gammaDD[2][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU00"),rhs=rescaled_gammaUU[0][0]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU01"),rhs=rescaled_gammaUU[0][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU02"),rhs=rescaled_gammaUU[0][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU11"),rhs=rescaled_gammaUU[1][1]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU12"),rhs=rescaled_gammaUU[1][2]),
-                       lhrh(lhs=gri.gfaccess("auxevol_gfs","gammaUU22"),rhs=rescaled_gammaUU[2][2])
-                      ]
-
-    C_code_kernel = fin.FD_outputC("returnstring",values_to_print,params=outCparams)\
-                       .replace("IDX4","IDX4S")
-    C_face_kernel = C_code_kernel.replace("GAMMA","GAMMA_FACE").replace("PHIGF","PHI_FACEGF")
-
-    desc = "Convert BSSN metric to ADM"
-    name = "Workaround_BSSN_to_ADM"
-    outCfunction(
-        outfile  = os.path.join(out_dir,name+".h"), desc=desc, name=name,
-        params   ="const paramstruct *params,REAL *auxevol_gfs",
-        body     = C_code_kernel,
-        loopopts ="AllPoints",
-        rel_path_to_Cparams=os.path.join("./"))
-
-    desc = "Convert BSSN metric to ADM on the cell faces"
-    name = "Workaround_BSSN_to_ADM_face"
-    Ccode_function = outCfunction(
-        outfile  = "returnstring", desc=desc, name=name,
-        params   ="const paramstruct *params,REAL *auxevol_gfs",
-        body     = C_face_kernel,
-        loopopts ="InteriorPoints",
-        rel_path_to_Cparams=os.path.join("./")).replace("NGHOSTS+Nxx0","NGHOSTS+Nxx0+1").replace("NGHOSTS+Nxx1","NGHOSTS+Nxx1+1").replace("NGHOSTS+Nxx2","NGHOSTS+Nxx2+1")
-    with open(os.path.join(out_dir,name+".h"),"w") as file:
-        file.write(Ccode_function)
-
     # Write out the main driver itself:
     with open(os.path.join(out_dir,"GiRaFFE_NRPy_Main_Driver.h"),"w") as file:
         file.write(r"""// Structure to track ghostzones for PPM:
@@ -291,53 +199,6 @@ const int NUM_RECONSTRUCT_GFS = 15;
 #include "boundary_conditions/GiRaFFE_boundary_conditions.h"
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
-#include "Workaround_ADM_to_BSSN.h"
-#include "Workaround_BSSN_to_ADM.h"
-#include "Workaround_BSSN_to_ADM_face.h"
-
-/*void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
-#include "set_Cparameters.h"
-    char filename[100];
-    sprintf(filename,"BU0_override-%08d.bin",n);
-    FILE *out2D = fopen(filename, "rb");
-    fread(auxevol_gfs+BU0GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
-          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
-    fclose(out2D);
-    sprintf(filename,"BU1_override-%08d.bin",n);
-    out2D = fopen(filename, "rb");
-    fread(auxevol_gfs+BU1GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
-          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
-    fclose(out2D);
-    sprintf(filename,"BU2_override-%08d.bin",n);
-    out2D = fopen(filename, "rb");
-    fread(auxevol_gfs+BU2GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
-          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
-    fclose(out2D);
-}*/
-
-void workaround_Valencia_to_Drift_velocity_full(const paramstruct *params, REAL *vU0, const REAL *alpha, const REAL *betaU0) {
-#include "set_Cparameters.h"
-    // Converts Valencia 3-velocities to Drift 3-velocities for testing. The variable argument
-    // vu0 is any Valencia 3-velocity component or reconstruction thereof.
-#pragma omp parallel for
-    for (int i2 = 0;i2 < Nxx_plus_2NGHOSTS2;i2++) for (int i1 = 0;i1 < Nxx_plus_2NGHOSTS1;i1++) for (int i0 = 0;i0 < Nxx_plus_2NGHOSTS0;i0++) {
-        int ii = IDX3S(i0,i1,i2);
-        // Here, we modify the velocity in place.
-        vU0[ii] = alpha[ii]*vU0[ii]-betaU0[ii];
-    }
-}
-
-void workaround_Drift_to_Valencia_velocity_full(const paramstruct *params, REAL *vU0, const REAL *alpha, const REAL *betaU0) {
-#include "set_Cparameters.h"
-    // Converts Drift 3-velocities to Valencia 3-velocities for testing. The variable argument
-    // vu0 is any drift (i.e. IllinoisGRMHD's definition) 3-velocity component or reconstruction thereof.
-#pragma omp parallel for
-    for (int i2 = 0;i2 < Nxx_plus_2NGHOSTS2;i2++) for (int i1 = 0;i1 < Nxx_plus_2NGHOSTS1;i1++) for (int i0 = 0;i0 < Nxx_plus_2NGHOSTS0;i0++) {
-        int ii = IDX3S(i0,i1,i2);
-        // Here, we modify the velocity in place.
-        vU0[ii] = (vU0[ii]+betaU0[ii])/alpha[ii];
-    }
-}
 
 void workaround_Valencia_to_Drift_velocity(const paramstruct *params, REAL *vU0, const REAL *alpha, const REAL *betaU0, const REAL flux_dirn) {
 #include "set_Cparameters.h"
@@ -450,14 +311,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
 
   int flux_dirn;
   flux_dirn=0;
-#ifdef WORKAROUND_ENABLED
-  Workaround_ADM_to_BSSN(params,auxevol_gfs);
-#endif /*WORKAROUND_ENABLED*/
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
-#ifdef WORKAROUND_ENABLED
-  Workaround_BSSN_to_ADM(params,auxevol_gfs);
-  Workaround_BSSN_to_ADM_face(params,auxevol_gfs);
-#endif /*WORKAROUND_ENABLED*/
   // ftilde = 0 in GRFFE, since P=rho=0.
 
   /* There are two stories going on here:
@@ -483,25 +337,9 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BZ_CENTER; ww++;
   which_prims_to_reconstruct[ww]=BY_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
-#ifdef WORKAROUND_ENABLED
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-#endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
-#ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU0GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU0GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,flux_dirn+1);
-#endif /*WORKAROUND_ENABLED*/
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^x face values to be consistent with BX_STAGGER.
 #pragma omp parallel for
@@ -570,14 +408,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU0GF,flux_dirn+1);
   workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
 #endif /*WORKAROUND_ENABLED*/
-#ifdef WORKAROUND_ENABLED
-  Workaround_ADM_to_BSSN(params,auxevol_gfs);
-#endif /*WORKAROUND_ENABLED*/
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
-#ifdef WORKAROUND_ENABLED
-  Workaround_BSSN_to_ADM(params,auxevol_gfs);
-  Workaround_BSSN_to_ADM_face(params,auxevol_gfs);
-#endif /*WORKAROUND_ENABLED*/
   ww=0;
   // Reconstruct other primitives last!
   which_prims_to_reconstruct[ww]=VX;        ww++;
@@ -589,25 +420,9 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BX_STAGGER;ww++;
   which_prims_to_reconstruct[ww]=BZ_STAGGER;ww++;
   num_prims_to_reconstruct=ww;
-#ifdef WORKAROUND_ENABLED
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-#endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
-#ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU0GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU0GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,flux_dirn+1);
-#endif /*WORKAROUND_ENABLED*/
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^y face values to be consistent with BY_STAGGER.
 #pragma omp parallel for
@@ -646,11 +461,11 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
         const REAL gyy = auxevol_gfs[IDX4ptS(GAMMADD11GF,index)];
         const REAL gyz = auxevol_gfs[IDX4ptS(GAMMADD12GF,index)];
         const REAL gzz = auxevol_gfs[IDX4ptS(GAMMADD22GF,index)];
-        psi6center[index] = log(sqrt( gxx*gyy*gzz
-                                   -  gxx*gyz*gyz
-                                   +2*gxy*gxz*gyz
-                                   -  gyy*gxz*gxz
-                                   -  gzz*gxy*gxy ))/6.0;
+        psi6center[index] = sqrt( gxx*gyy*gzz
+                               -  gxx*gyz*gyz
+                               +2*gxy*gxz*gyz
+                               -  gyy*gxz*gxz
+                               -  gzz*gxy*gxy );
       }
 #pragma omp parallel for
   for(int k=0;k<Nxx_plus_2NGHOSTS2;k++) for(int j=1;j<Nxx_plus_2NGHOSTS1-2;j++) for(int i=1;i<Nxx_plus_2NGHOSTS0-2;i++) {
@@ -718,14 +533,7 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
   workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,flux_dirn+1);
 #endif /*WORKAROUND_ENABLED*/
-#ifdef WORKAROUND_ENABLED
-  Workaround_ADM_to_BSSN(params,auxevol_gfs);
-#endif /*WORKAROUND_ENABLED*/
   interpolate_metric_gfs_to_cell_faces(params,auxevol_gfs,flux_dirn+1);
-#ifdef WORKAROUND_ENABLED
-  Workaround_BSSN_to_ADM(params,auxevol_gfs);
-  Workaround_BSSN_to_ADM_face(params,auxevol_gfs);
-#endif /*WORKAROUND_ENABLED*/
   // Reconstruct other primitives last!
   ww=0;
   which_prims_to_reconstruct[ww]=VX;        ww++;
@@ -737,25 +545,9 @@ void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol
   which_prims_to_reconstruct[ww]=BX_STAGGER; ww++;
   which_prims_to_reconstruct[ww]=BY_STAGGER; ww++;
   num_prims_to_reconstruct=ww;
-#ifdef WORKAROUND_ENABLED
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-#endif /*WORKAROUND_ENABLED*/
   // This function is housed in the file: "reconstruct_set_of_prims_PPM_GRFFE.C"
   reconstruct_set_of_prims_PPM_GRFFE_NRPy(params, auxevol_gfs, flux_dirn+1, num_prims_to_reconstruct,
                                           which_prims_to_reconstruct, in_prims, out_prims_r, out_prims_l, temporary);
-#ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU0GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU0GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_LU2GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU0GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU0GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU1GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU1GF,flux_dirn+1);
-  workaround_Drift_to_Valencia_velocity(params,auxevol_gfs+Nxxp2NG012*VALENCIAV_RU2GF,auxevol_gfs+Nxxp2NG012*ALPHA_FACEGF,auxevol_gfs+Nxxp2NG012*BETA_FACEU2GF,flux_dirn+1);
-#endif /*WORKAROUND_ENABLED*/
   //Right and left face values of BI_CENTER are used in GRFFE__S_i__flux computation (first to compute b^a).
   //   Instead of reconstructing, we simply set B^z face values to be consistent with BZ_STAGGER.
 #pragma omp parallel for
@@ -954,16 +746,6 @@ void GiRaFFE_NRPy_post_step(const paramstruct *restrict params,REAL *xx[3],REAL 
     // Then, recompute StildeD to be consistent with the new velocities
     //GiRaFFE_NRPy_prims_to_cons(params,auxevol_gfs,evol_gfs);
     // Finally, apply outflow boundary conditions to the velocities.
-#ifdef WORKAROUND_ENABLED
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Valencia_to_Drift_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-#endif /*WORKAROUND_ENABLED*/
     apply_bcs_velocity(params,auxevol_gfs);
-#ifdef WORKAROUND_ENABLED
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU0GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU0GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU1GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU1GF);
-  workaround_Drift_to_Valencia_velocity_full(params,auxevol_gfs+Nxxp2NG012*VALENCIAVU2GF,auxevol_gfs+Nxxp2NG012*ALPHAGF,auxevol_gfs+Nxxp2NG012*BETAU2GF);
-#endif /*WORKAROUND_ENABLED*/
 }
 """)

@@ -74,13 +74,6 @@ static void Lorenz_psi6phi_rhs__add_gauge_terms_to_A_i_rhs(const paramstruct *pa
         num_vars_to_interp = 11;
         // We may set interp_limits to be more general than we need.
         int interp_limits[6] = {-1,1,-1,1,-1,1}; SET_INDEX_ARRAYS_NRPY_3DBLOCK(interp_limits);
-        //SET_INDEX_ARRAYS_NRPY_3DBLOCK(interp_limits);
-//         for(int ww=0;ww<num_vars_to_interp;ww++) {
-//           int whichvar=vars_to_interpolate[ww];
-//           // Read in variable at interp. stencil points from main memory, store in INTERP_VARS.
-//           for(int kk=PLUS0;kk<=PLUS1;kk++) for(int jj=PLUS0;jj<=PLUS1;jj++) for(int ii=PLUS0;ii<=PLUS1;ii++) {
-//                 INTERP_VARS[whichvar][kk][jj][ii] = in_vars[whichvar][index_arr_3DB[kk][jj][ii]]; }
-//         }
         // Major change here to invert the metric on the spot!
         // Read in variable at interp. stencil points from main memory, store in INTERP_VARS.
         for(int kk=PLUS0;kk<=PLUS1;kk++) for(int jj=PLUS0;jj<=PLUS1;jj++) for(int ii=PLUS0;ii<=PLUS1;ii++) {
