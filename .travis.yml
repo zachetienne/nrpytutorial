@@ -8,7 +8,7 @@ matrix:
       dist: bionic
       python: 3.8.6
       install:
-        - sudo apt-get -y install texlive-latex-base pandoc colordiff
+        - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev
         - pip install mpmath jupyter matplotlib scipy
         - pip install -U git+https://github.com/sympy/sympy/
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
@@ -20,7 +20,7 @@ matrix:
       before_script: pip install testfixtures
       install:
         - python --version
-        - sudo apt-get -y install texlive-latex-base pandoc colordiff
+        - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev
         - pip install scipy sympy mpmath jupyter matplotlib
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
@@ -32,7 +32,7 @@ matrix:
     #   before_script: pypy3 -mpip install testfixtures
     #   install:
     #     - python --version
-    #     - sudo apt-get -y install texlive-latex-base pandoc colordiff
+    #     - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev
     #     - sudo apt-get -y install libopenblas0 libopenblas-dev "liblapack*" gfortran
     #     - pypy3 -mpip install numpy
     #     - pypy3 -mpip install scipy
@@ -44,7 +44,7 @@ matrix:
       dist: bionic
       python: 2.7.18
       install:
-        - sudo apt-get -y install texlive-latex-base pandoc colordiff
+        - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev
         - pip install mpmath jupyter matplotlib scipy
         - pip install sympy==1.2
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
