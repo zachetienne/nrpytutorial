@@ -44,7 +44,7 @@ matrix:
       dist: bionic
       python: 2.7.18
       install:
-        - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-devv
+        - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev
         - pip install mpmath jupyter matplotlib scipy
         - pip install sympy==1.2
       script: ./UnitTesting/core_Jupyter_notebook_testsuite.sh
