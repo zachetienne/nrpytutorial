@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NUM_JOBS=1
+NUM_JOBS=0
 
 count=0
 mkdir ../src
