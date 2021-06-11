@@ -7,19 +7,19 @@
 #          Zachariah B. Etienne
 
 # First we import needed core NRPy+ modules
-import shutil, os, sys                     # Standard Python modules for multiplatform OS-level functions
-import sympy as sp                         # SymPy: The Python computer algebra package upon which NRPy+ depends
-from outputC import outputC                # NRPy+: Core C code output module
-import finite_difference as fin            # NRPy+: finite differences module
-import loop as lp                          # NRPy+: C loops module
-import NRPy_param_funcs as par             # NRPy+: Parameter interface
-import grid as gri                         # NRPy+: Functions having to do with numerical grids
-import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import reference_metric as rfm             # NRPy+: Reference metric support
-import cmdline_helper as cmd               # NRPy+: Multi-platform Python command-line interface
-import BSSN.BSSN_quantities as Bq          # NRPy+: BSSN quantities
-import BSSN.ADM_in_terms_of_BSSN as BtoA   # NRPy+: ADM quantities in terms of BSSN quantities
-import BSSN.ADMBSSN_tofrom_4metric as ADMg # NRPy+: ADM 4-metric to/from ADM or BSSN quantities
+import shutil, os, sys                        # Standard Python modules for multiplatform OS-level functions
+from outputC import lhrh,outCfunction,outputC # NRPy+: Core C code output module
+import sympy as sp                            # SymPy: The Python computer algebra package upon which NRPy+ depends
+import finite_difference as fin               # NRPy+: finite differences module
+import loop as lp                             # NRPy+: C loops module
+import NRPy_param_funcs as par                # NRPy+: Parameter interface
+import grid as gri                            # NRPy+: Functions having to do with numerical grids
+import indexedexp as ixp                      # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm                # NRPy+: Reference metric support
+import cmdline_helper as cmd                  # NRPy+: Multi-platform Python command-line interface
+import BSSN.BSSN_quantities as Bq             # NRPy+: BSSN quantities
+import BSSN.ADM_in_terms_of_BSSN as BtoA      # NRPy+: ADM quantities in terms of BSSN quantities
+import BSSN.ADMBSSN_tofrom_4metric as ADMg    # NRPy+: ADM 4-metric to/from ADM or BSSN quantities
 
 # Checking Python version for correct import syntax
 import sys
