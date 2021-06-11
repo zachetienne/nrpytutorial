@@ -12,6 +12,7 @@ from scipy.sparse import spdiags        # SciPy: Sparse, tri-diagonal matrix set
 from scipy.sparse import csc_matrix     # SciPy: Sparse matrix optimization function
 from scipy.sparse.linalg import spsolve # SciPy: Solver of linear systems involving sparse matrices
 from outputC import outputC             # NRPy+: Core C code output module
+import loop as lp                       # NRPy+: C loops module
 import NRPy_param_funcs as par          # NRPy+: Parameter interface
 import grid as gri                      # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp                # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
