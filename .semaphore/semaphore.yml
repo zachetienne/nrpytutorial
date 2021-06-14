@@ -161,7 +161,7 @@ blocks:
             - pypy3 --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
-            - sudo ./UnitTesting/run_NRPy_UnitTests.sh pypy3
+            - ./UnitTesting/run_NRPy_UnitTests.sh pypy3
   # - name: "SymPy-dev, Ubuntu Linux Bionic Python 3.8.3 (default Python 3 in Ubuntu Bionic)"
   #   dependencies: []
   #   task:
