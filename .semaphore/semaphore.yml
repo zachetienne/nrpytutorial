@@ -151,6 +151,8 @@ blocks:
           commands:
             - sudo apt-get update
             - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff libgsl-dev
+            - pypy -m ensurepip
+            - pypy -mpip install -U pip wheel
             - pypy -mpip install -U sympy mpmath testfixtures nrpylatex
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pypy --version
