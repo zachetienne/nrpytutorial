@@ -99,6 +99,22 @@ blocks:
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python3
+  - name: "Ubuntu Linux Bionic pypy2 (default PyPy in Ubuntu Bionic)"
+    dependencies: []
+    task:
+      jobs:
+        - name: "Ubuntu Linux Bionic pypy2 (default PyPy in Ubuntu Bionic)"
+          commands:
+            - sudo apt-get update
+            - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff gcc libgsl-dev
+            - virtualenv -p /usr/bin/pypy ~/pypy2
+            - source ~/pypy2/bin/activate
+            - pip install -U pip setuptools
+            - pip install sympy mpmath testfixtures nrpylatex
+            - pypy --version
+            - git clone https://github.com/zachetienne/nrpytutorial.git
+            - cd nrpytutorial
+            - ./UnitTesting/run_NRPy_UnitTests.sh pypy
   - name: "SymPy-dev, Ubuntu Linux Bionic Python 3.8.3 (default Python 3 in Ubuntu Bionic)"
     dependencies: []
     task:
