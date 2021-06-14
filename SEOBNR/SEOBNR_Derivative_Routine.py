@@ -15,7 +15,7 @@ from outputC import superfast_uniq, lhrh      # Remove duplicate entries from a 
 # Step 1.b: Check for a sufficiently new version of SymPy (for validation)
 # Ignore the rc's and b's for release candidates & betas.
 sympy_version = sp.__version__.replace('rc', '...').replace('b', '...')
-sympy_version_decimal = float(int(sympy_version.split(".")[0]) + int(sympy_version.split(".")[1])/10.0)
+sympy_version_decimal = float(sympy_version.split(".")[0]) + float(sympy_version.split(".")[1])/10.0
 if sympy_version_decimal < 1.2:
     print('Error: NRPy+ does not support SymPy < 1.2')
     sys.exit(1)
