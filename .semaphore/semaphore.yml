@@ -89,7 +89,6 @@ blocks:
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python3
-agent:
   machine:
     type: e1-standard-2
     os_image: ubuntu2004
