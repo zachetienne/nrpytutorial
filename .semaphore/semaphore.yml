@@ -1,3 +1,5 @@
+# For a nice multiple OS/platform semaphore.yml example, see:
+# https://github.com/semaphoreci-demos/semaphore-demo-workflows/blob/multi-platform/.semaphore/semaphore.yml
 version: v1.0
 name: NRPy+ CI
 agent:
@@ -19,6 +21,7 @@ blocks:
             - sem-version python 3.8
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
+            - python3 --version
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip3 install -U pip setuptools
             - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
@@ -64,6 +67,7 @@ blocks:
             - sem-version python 2.7
             - pip install -U pip setuptools
             - pip install sympy==1.2 mpmath testfixtures nrpylatex
+            - python2 --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python2
@@ -75,6 +79,7 @@ blocks:
           commands:
             - pip3 install -U pip setuptools
             - pip3 install sympy mpmath testfixtures nrpylatex
+            - python3 --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python3
@@ -84,23 +89,27 @@ blocks:
       jobs:
         - name: "Ubuntu Linux Bionic Python 3.8.3 (default Python 3 in Ubuntu Bionic)"
           commands:
+            - python3 --version
             - pip3 install -U pip setuptools mpmath testfixtures
             - pip3 install pip install -U git+https://github.com/sympy/sympy/ nrpylatex
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python3
-  machine:
-    type: e1-standard-2
-    os_image: ubuntu2004
+
   - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
     dependencies: []
     task:
+      agent:
+        machine:
+          type: e1-standard-2
+          os_image: ubuntu2004
       jobs:
         - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
           commands:
             # - sem-version python 3.8
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
+            - python3 --version
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip3 install -U pip setuptools
             - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
@@ -110,12 +119,17 @@ blocks:
   - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
     dependencies: []
     task:
+      agent:
+        machine:
+          type: e1-standard-2
+          os_image: ubuntu2004
       jobs:
         - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
           commands:
             # - sem-version python 3.8
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
+            - python3 --version
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip3 install -U pip setuptools
             - pip3 install testfixtures mpmath jupyter matplotlib scipy nrpylatex
