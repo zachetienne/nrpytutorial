@@ -315,7 +315,7 @@ import time
 print("Now compiling, should take ~2 seconds...\n")
 start = time.time()
 # cmd.C_compile(os.path.join(out_dir,"GiRaFFEfood_NRPy_unit_test.C"), os.path.join(out_dir,"GiRaFFEfood_NRPy_unit_test"))
-get_ipython().system('g++ -Ofast -fopenmp -march=native -funroll-loops Validation/GiRaFFEfood_NRPy_unit_test.C -o Validation/GiRaFFEfood_NRPy_unit_test -lstdc++')
+get_ipython().system('g++ -std=gnu++11 -Ofast -fopenmp -march=native -funroll-loops Validation/GiRaFFEfood_NRPy_unit_test.C -o Validation/GiRaFFEfood_NRPy_unit_test -lstdc++')
 end = time.time()
 print("Finished in "+str(end-start)+" seconds.\n\n")
 
