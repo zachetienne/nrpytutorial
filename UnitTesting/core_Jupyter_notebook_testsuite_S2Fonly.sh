@@ -25,7 +25,7 @@ for i in Tutorial-Start_to_Finish-*[^4].ipynb; do
             grep -v "\"shell.execute"|grep -v "\"version\":"|grep -v "   }"$|grep -v "   },"$| cdiff |cat
         #    git diff $i | grep -v "image/png" | cdiff | cat
         #    echo Number of lines different in the git diff: `git diff|grep -v image/png|wc -l`
-    fi
+#    fi
 done
 
 # ./run_Jupyter_notebook.sh Tutorial-Finite_Difference_Derivatives.ipynb && git diff Tutorial-Finite_Difference_Derivatives.ipynb && \
