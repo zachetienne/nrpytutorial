@@ -56,20 +56,20 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
 
     # Step 3: Compile the executable
     if compile_mode=="safe":
-        compile_string = "gcc -O2 -g -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
+        compile_string = "gcc -std=gnu99 -O2 -g -fopenmp "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
         Execute_input_string(compile_string, os.devnull)
         # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
         if not os.path.isfile(main_C_output_file):
             # Step 3.A: Revert to more compatible gcc compile option
             print("Most safe failed. Removing -fopenmp:")
-            compile_string = "gcc -O2 "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
+            compile_string = "gcc -std=gnu99 -O2 "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
             Execute_input_string(compile_string, os.devnull)
         if not os.path.isfile(main_C_output_file):
             print("Sorry, compilation failed")
             sys.exit(1)
     elif compile_mode=="icc":
         check_executable_exists("icc")
-        compile_string = "icc -O2 -xHost -qopenmp -unroll "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
+        compile_string = "icc -std=gnu99 -O2 -xHost -qopenmp -unroll "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
         Execute_input_string(compile_string, os.devnull)
         # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
         if not os.path.isfile(main_C_output_file):
@@ -93,7 +93,7 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
         if not os.path.isfile(main_C_output_file):
             # Step 3.B: Revert to maximally compatible gcc compile option
             print("Next-to-most optimized compilation failed. Moving to maximally-compatible gcc compile option:")
-            compile_string = "gcc -O2 "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
+            compile_string = "gcc -std=gnu99 -O2 "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
             Execute_input_string(compile_string, os.devnull)
         # Step 3.C: If there are still missing components within the compiler, say compilation failed
         if not os.path.isfile(main_C_output_file):
