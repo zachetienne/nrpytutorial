@@ -17,7 +17,7 @@ set -e # Error out if any commands complete with an error.
 for i in Tutorial-Start_to_Finish-*[^4].ipynb; do
     # For some reason (as of ~July 20, 2020) the hydro-without-hydro notebook takes too long in Travis, causing a timeout:
     #   Also as of Aug 3, 2020 the new WaveToyNRPy notebook is broken, as it seems Travis doesn't support parallel codegens
-#    if [ $i != "Tutorial-Start_to_Finish-BSSNCurvilinear-Neutron_Star-Hydro_without_Hydro.ipynb" ] && [ $i != "Tutorial-ETK_thorn-WaveToyNRPy.ipynb" ] && [ $i != "Tutorial-Start_to_Finish-FishboneMoncriefID_standalone.ipynb" ]; then
+    if [ $i != "Tutorial-Start_to_Finish-BSSNCurvilinear-Neutron_Star-Hydro_without_Hydro.ipynb" ] && [ $i != "Tutorial-ETK_thorn-WaveToyNRPy.ipynb" ] && [ $i != "Tutorial-Start_to_Finish-FishboneMoncriefID_standalone.ipynb" ]; then
         ./run_Jupyter_notebook.sh $i # notimer
         cat $i | sed "s/\\\r\\\n/\\\n/g" > $i-new && mv $i-new $i
         git diff $i |grep -v "image/png"|grep -E "^\-|^\+"|grep -v  '^\-\-\-'| \
@@ -25,7 +25,7 @@ for i in Tutorial-Start_to_Finish-*[^4].ipynb; do
             grep -v "\"shell.execute"|grep -v "\"version\":"|grep -v "   }"$|grep -v "   },"$| cdiff |cat
         #    git diff $i | grep -v "image/png" | cdiff | cat
         #    echo Number of lines different in the git diff: `git diff|grep -v image/png|wc -l`
-#    fi
+    fi
 done
 
 # ./run_Jupyter_notebook.sh Tutorial-Finite_Difference_Derivatives.ipynb && git diff Tutorial-Finite_Difference_Derivatives.ipynb && \
