@@ -109,8 +109,7 @@ blocks:
         - name: "GiRaFFE JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
           commands:
             - sudo apt-get update
-            - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc g++ libgsl-dev
-            - sudo apt-get -y --only-upgrade install gcc g++
+            - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc-8 g++-8 libgsl-dev
             - sem-version python 3.8
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip3 install -U pip setuptools
@@ -152,7 +151,7 @@ blocks:
           commands:
             - sudo apt-get update
             - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff libgsl-dev
-            - wget https://bootstrap.pypa.io/get-pip.py
+            - wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
             - pypy get-pip.py
             - pypy -mpip install -U pip wheel
             - pypy -mpip install -U sympy mpmath testfixtures nrpylatex
