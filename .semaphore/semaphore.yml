@@ -147,11 +147,6 @@ blocks:
           commands:
             - sudo apt-get update
             - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff gcc libgsl-dev
-            - virtualenv -p /usr/bin/pypy /tmp/pypy2
-            - source /tmp/pypy2/bin/activate
-            - which python
-            - which pypy
-            - which pip
             - sudo pip install sympy mpmath testfixtures nrpylatex
             - pypy --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
