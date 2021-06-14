@@ -110,8 +110,8 @@ blocks:
           commands:
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc-8 g++-8 libgsl-dev
-            - update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 50
-            - update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 50
+            - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 50
+            - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 50
             - gcc --version
             - sem-version python 3.8
             - export PATH=$PATH:/home/semaphore/.local/bin
@@ -154,15 +154,15 @@ blocks:
           commands:
             - sudo apt-get update
             - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff libgsl-dev
-            - wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
-            - pypy get-pip.py
-            - pypy -mpip install -U pip wheel
-            - pypy -mpip install -U sympy mpmath testfixtures nrpylatex
+            # - wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+            # - pypy get-pip.py
+            - sudo pypy -mpip install -U pip wheel
+            - sudo pypy -mpip install -U sympy mpmath testfixtures nrpylatex
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pypy --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
-            - ./UnitTesting/run_NRPy_UnitTests.sh pypy
+            - sudo ./UnitTesting/run_NRPy_UnitTests.sh pypy
   # - name: "SymPy-dev, Ubuntu Linux Bionic Python 3.8.3 (default Python 3 in Ubuntu Bionic)"
   #   dependencies: []
   #   task:
