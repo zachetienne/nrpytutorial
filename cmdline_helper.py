@@ -82,13 +82,13 @@ def C_compile(main_C_output_path, main_C_output_file, compile_mode="optimized", 
             print("Sorry, compilation failed")
             sys.exit(1)
     elif compile_mode=="optimized":
-        compile_string = "gcc -Ofast -fopenmp -march=native -funroll-loops "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
+        compile_string = "gcc -std=gnu99 -Ofast -fopenmp -march=native -funroll-loops "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
         Execute_input_string(compile_string, os.devnull)
         # Check if executable exists (i.e., compile was successful), if not, try with more conservative compile flags.
         if not os.path.isfile(main_C_output_file):
             # Step 3.A: Revert to more compatible gcc compile option
             print("Most optimized compilation failed. Removing -march=native:")
-            compile_string = "gcc -Ofast -fopenmp -funroll-loops "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
+            compile_string = "gcc -std=gnu99 -Ofast -fopenmp -funroll-loops "+str(main_C_output_path)+" -o "+str(main_C_output_file)+" -lm"+additional_libraries
             Execute_input_string(compile_string, os.devnull)
         if not os.path.isfile(main_C_output_file):
             # Step 3.B: Revert to maximally compatible gcc compile option
