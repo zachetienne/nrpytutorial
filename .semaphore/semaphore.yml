@@ -18,9 +18,9 @@ blocks:
       jobs:
         - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
           commands:
-            - sem-version python 3.8
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc libgsl-dev
+            - sem-version python 3.8
             - python3 --version
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip3 install -U pip setuptools
@@ -34,9 +34,9 @@ blocks:
       jobs:
         - name: "JUPYTER NOTEBOOK TESTS: SymPy-1.2 Ubuntu Linux Bionic Python 2.7.18 (oldest SymPy version tested/supported by NRPy+ [ref metric])"
           commands:
-            - sem-version python 2.7
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc libgsl-dev
+            - sem-version python 2.7
             - python2 --version
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip install -U pip setuptools
@@ -128,7 +128,7 @@ blocks:
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python3
 
-  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
+  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.8.5 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
     dependencies: []
     task:
       agent:
@@ -136,7 +136,7 @@ blocks:
           type: e1-standard-2
           os_image: ubuntu2004
       jobs:
-        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
+        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.8.5 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
           commands:
             # - sem-version python 3.8
             - sudo apt-get update
@@ -148,7 +148,7 @@ blocks:
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
-  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
+  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.8.5 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
     dependencies: []
     task:
       agent:
@@ -156,7 +156,7 @@ blocks:
           type: e1-standard-2
           os_image: ubuntu2004
       jobs:
-        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
+        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.8.5 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
           commands:
             # - sem-version python 3.8
             - sudo apt-get update
