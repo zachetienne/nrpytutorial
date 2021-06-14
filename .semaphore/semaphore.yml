@@ -101,17 +101,15 @@ blocks:
   - name: "GiRaFFE JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
     dependencies: []
     task:
-      # agent:
-      #   machine:
-      #     type: e1-standard-2
-      #     os_image: ubuntu2004
+      agent:
+        machine:
+          type: e1-standard-2
+          os_image: ubuntu2004
       jobs:
         - name: "GiRaFFE JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
           commands:
             - sudo apt-get update
-            - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc-8 g++-8 libgsl-dev
-            - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 100
-            - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100
+            - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev
             - gcc --version
             - sem-version python 3.8
             - export PATH=$PATH:/home/semaphore/.local/bin
@@ -146,24 +144,24 @@ blocks:
   #           - git clone https://github.com/zachetienne/nrpytutorial.git
   #           - cd nrpytutorial
   #           - ./UnitTesting/run_NRPy_UnitTests.sh python3
-  - name: "Ubuntu Linux Bionic pypy2 (default PyPy in Ubuntu Bionic)"
+  - name: "Ubuntu Linux Bionic pypy3 (default PyPy in Ubuntu Bionic)"
     dependencies: []
     task:
       jobs:
-        - name: "Ubuntu Linux Bionic pypy2 (default PyPy in Ubuntu Bionic)"
+        - name: "Ubuntu Linux Bionic pypy3 (default PyPy in Ubuntu Bionic)"
           commands:
             - sudo apt-get update
-            - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff libgsl-dev
-            - virtualenv -p /usr/bin/pypy /tmp/pypy2
-            - source /tmp/pypy2/bin/activate
+            - sudo apt-get -y install pypy3 texlive-latex-base pandoc colordiff libgsl-dev
+            - virtualenv -p /usr/bin/pypy3 /tmp/pypy3
+            - source /tmp/pypy3/bin/activate
             - which python
-            - which pypy
+            - which pypy3
             - pip install -U sympy mpmath testfixtures nrpylatex
             - export PATH=$PATH:/home/semaphore/.local/bin
-            - pypy --version
+            - pypy3 --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
-            - sudo ./UnitTesting/run_NRPy_UnitTests.sh pypy
+            - sudo ./UnitTesting/run_NRPy_UnitTests.sh pypy3
   # - name: "SymPy-dev, Ubuntu Linux Bionic Python 3.8.3 (default Python 3 in Ubuntu Bionic)"
   #   dependencies: []
   #   task:
