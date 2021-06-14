@@ -146,8 +146,9 @@ blocks:
         - name: "Ubuntu Linux Bionic pypy2 (default PyPy in Ubuntu Bionic)"
           commands:
             - sudo apt-get update
-            - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff gcc libgsl-dev
-            - sudo pip install sympy mpmath testfixtures nrpylatex
+            - sudo apt-get -y install pypy texlive-latex-base pandoc colordiff gcc8 g++8 g++8-multilib libgsl-dev
+            - pypy -mpip install -U sympy mpmath testfixtures nrpylatex
+            - export PATH=$PATH:/home/semaphore/.local/bin
             - pypy --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
