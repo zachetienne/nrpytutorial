@@ -152,7 +152,7 @@ blocks:
             - which python
             - which pypy
             - which pip
-            - pip install sympy mpmath testfixtures nrpylatex
+            - sudo pip install sympy mpmath testfixtures nrpylatex
             - pypy --version
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
