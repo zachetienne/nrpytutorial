@@ -110,6 +110,9 @@ blocks:
           commands:
             - sudo apt-get update
             - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc-8 g++-8 libgsl-dev
+            - update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 50
+            - update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 50
+            - gcc --version
             - sem-version python 3.8
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip3 install -U pip setuptools
