@@ -1,5 +1,5 @@
 # NRPy+, SENRv2, and the NRPy+ Jupyter Tutorial
-[![Build Status](https://travis-ci.com/zachetienne/nrpytutorial.svg?branch=master)](https://travis-ci.com/zachetienne/nrpytutorial)
+[![Build Status](https://nrpytutorial.semaphoreci.com/badges/nrpytutorial.svg)](https://nrpytutorial.semaphoreci.com/projects/nrpytutorial/)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/zachetienne/nrpytutorial/master?filepath=NRPyPlus_Tutorial.ipynb)
 [![LGTM Grade](https://img.shields.io/lgtm/grade/python/github/zachetienne/nrpytutorial)](http://lgtm.com/projects/g/zachetienne/nrpytutorial/)
 

@@ -10,11 +10,11 @@ agent:
 #      image: 'registry.semaphoreci.com/python:3.9'
 
 blocks:
-  - name: "NO S2F JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
+  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
     dependencies: []
     task:
       jobs:
-        - name: "NO S2F JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
+        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
           commands:
             - sem-version python 3.8
             - sudo apt-get update
@@ -24,22 +24,22 @@ blocks:
             - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
-            - ./UnitTesting/core_Jupyter_notebook_testsuite_noS2F.sh
-  - name: "S2F JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
-    dependencies: []
-    task:
-      jobs:
-        - name: "S2F JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
-          commands:
-            - sem-version python 3.8
-            - sudo apt-get update
-            - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
-            - export PATH=$PATH:/home/semaphore/.local/bin
-            - pip3 install -U pip setuptools
-            - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
-            - git clone https://github.com/zachetienne/nrpytutorial.git
-            - cd nrpytutorial
-            - ./UnitTesting/core_Jupyter_notebook_testsuite_S2Fonly.sh
+            - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+  # - name: "S2F JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
+  #   dependencies: []
+  #   task:
+  #     jobs:
+  #       - name: "S2F JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
+  #         commands:
+  #           - sem-version python 3.8
+  #           - sudo apt-get update
+  #           - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
+  #           - export PATH=$PATH:/home/semaphore/.local/bin
+  #           - pip3 install -U pip setuptools
+  #           - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
+  #           - git clone https://github.com/zachetienne/nrpytutorial.git
+  #           - cd nrpytutorial
+  #           - ./UnitTesting/core_Jupyter_notebook_testsuite_S2Fonly.sh
   # - name: "GiR JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
   #   dependencies: []
   #   task:
@@ -55,15 +55,15 @@ blocks:
   #           - git clone https://github.com/zachetienne/nrpytutorial.git
   #           - cd nrpytutorial
   #           - ./UnitTesting/core_Jupyter_notebook_testsuite_GiRonly.sh
-  - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
+  - name: "SymPy1.2, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
     dependencies: []
     task:
       jobs:
-        - name: "SymPy1.3, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
+        - name: "SymPy1.2, Ubuntu Linux Bionic Python 2.7.18 (earliest versions supported by UnitTests)"
           commands:
             - sem-version python 2.7
             - pip install -U pip setuptools
-            - pip install sympy==1.3 mpmath testfixtures nrpylatex
+            - pip install sympy==1.2 mpmath testfixtures nrpylatex
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python2
@@ -89,3 +89,39 @@ blocks:
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/run_NRPy_UnitTests.sh python3
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu2004
+  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
+    dependencies: []
+    task:
+      jobs:
+        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
+          commands:
+            # - sem-version python 3.8
+            - sudo apt-get update
+            - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
+            - export PATH=$PATH:/home/semaphore/.local/bin
+            - pip3 install -U pip setuptools
+            - pip3 install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
+            - git clone https://github.com/zachetienne/nrpytutorial.git
+            - cd nrpytutorial
+            - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+  - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
+    dependencies: []
+    task:
+      jobs:
+        - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.6.12 (Default Python 3 in Ubuntu Focal + latest DEVEL SymPy)"
+          commands:
+            # - sem-version python 3.8
+            - sudo apt-get update
+            - sudo apt-get -y install texlive-latex-base pandoc colordiff gcc
+            - export PATH=$PATH:/home/semaphore/.local/bin
+            - pip3 install -U pip setuptools
+            - pip3 install testfixtures mpmath jupyter matplotlib scipy nrpylatex
+            - pip3 install -U git+https://github.com/sympy/sympy/
+            - git clone https://github.com/zachetienne/nrpytutorial.git
+            - cd nrpytutorial
+            - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+    
