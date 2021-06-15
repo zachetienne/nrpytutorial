@@ -25,7 +25,7 @@ if sympy_version_decimal < 1.2:
 custom_global_dict = {}
 exec('from sympy import *', custom_global_dict)
 del custom_global_dict['Q']
-if sympy_version_decimal > 1.2:
+if sympy_version_decimal >= 1.6:
     custom_parse_expr = lambda expr: sp.parse_expr(expr, global_dict=custom_global_dict)
 else:
     custom_parse_expr = lambda expr: sp.sympify(expr)

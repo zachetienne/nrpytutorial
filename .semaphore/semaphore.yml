@@ -43,7 +43,6 @@ blocks:
             - pip install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
-            - ipython --log-level=DEBUG Tutorial-SEOBNR_Derivative_Routine.py
             - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
   - name: "JUPYTER NOTEBOOK TESTS: Ubuntu Linux Focal CPython 3.8.5 (Default Python 3 in Ubuntu Focal + latest stable SymPy)"
     dependencies: []
