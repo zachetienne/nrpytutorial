@@ -101,10 +101,10 @@ blocks:
   - name: "GiRaFFE JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
     dependencies: []
     task:
-      agent:
-        machine:
-          type: e1-standard-2
-          os_image: ubuntu2004
+      # agent:
+      #   machine:
+      #     type: e1-standard-2
+      #     os_image: ubuntu2004
       jobs:
         - name: "GiRaFFE JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
           commands:
