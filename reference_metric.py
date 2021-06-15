@@ -1402,7 +1402,7 @@ def xx_to_Cart_h(funcname,cparamsloc,outfile):
 
     with open(outfile, "w") as file:
         file.write("""
-inline void """+funcname+"""(const paramstruct *restrict params, REAL *restrict xx[3],const int i0,const int i1,const int i2, REAL xCart[3]) {
+static inline void """+funcname+"""(const paramstruct *restrict params, REAL *restrict xx[3],const int i0,const int i1,const int i2, REAL xCart[3]) {
 #include """+"\""+cparamsloc+"\""+"""
     REAL xx0 = xx[0][i0];
     REAL xx1 = xx[1][i1];
