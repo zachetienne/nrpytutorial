@@ -40,7 +40,7 @@ blocks:
             - python2 --version
             - export PATH=$PATH:/home/semaphore/.local/bin
             - pip install -U pip setuptools
-            - pip install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
+            - pip install testfixtures sympy==1.2 mpmath jupyter matplotlib scipy nrpylatex
             - git clone https://github.com/zachetienne/nrpytutorial.git
             - cd nrpytutorial
             - ./UnitTesting/core_Jupyter_notebook_testsuite.sh
