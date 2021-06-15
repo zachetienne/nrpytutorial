@@ -43,12 +43,14 @@ else
         # do nothing
     else
         echo BACKTRACE:
-        if jupyter nbconvert --to python $1 --output=debug.py;
+        if jupyter nbconvert --to python $1;
         then
+            FILENAME=`echo $1 | sed 's/ipynb/py/g'`
+            echo $FILENAME
             if (( $PYTHONMAJORVERSION == 3 )); then
-                ipython3 --log-level=DEBUG debug.py
+                ipython3 --log-level=DEBUG $FILENAME
             else
-                ipython --log-level=DEBUG debug.py
+                ipython --log-level=DEBUG $FILENAME
             fi
             exit 1
         else
