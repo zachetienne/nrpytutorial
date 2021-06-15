@@ -109,7 +109,7 @@ blocks:
         - name: "GiRaFFE JUPYTER NOTEBOOK TESTS: Ubuntu Linux Bionic CPython 3.8.3 (Default Python 3 in Ubuntu Bionic + latest stable SymPy)"
           commands:
             - sudo apt-get update
-            - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev ffmpeg gcc-7 g++-7
+            - sudo apt-get -y install texlive-latex-base pandoc colordiff libgsl-dev ffmpeg
             - gcc --version; g++ --version
             - sem-version python 3.8
             - export PATH=$PATH:/home/semaphore/.local/bin
