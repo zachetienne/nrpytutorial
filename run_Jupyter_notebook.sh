@@ -43,9 +43,17 @@ else
         # do nothing
     else
         echo BACKTRACE:
-        echo git diff $1
-        cat in_progress/Validation/out_GiRaFFEfood_NRPy_test.txt
-        git diff $1 2>&1 | cat
-        exit 1
+        if jupyter nbconvert --to python $1 --output=debug.py;
+        then
+            if (( $PYTHONMAJORVERSION == 3 )); then
+                ipython3 --log-level=DEBUG debug.py
+            else
+                ipython --log-level=DEBUG debug.py
+            fi
+            exit 1
+        else
+            echo ERROR: could not convert $1 to a Python script!
+            exit 1
+        fi
     fi
 fi
