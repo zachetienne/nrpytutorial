@@ -79,6 +79,7 @@ disable=too-many-arguments,redefined-outer-name,wrong-import-position,too-many-l
         line-too-long,              # ADDED
         bad-whitespace,             # ADDED
         global-variable-undefined,  # ADDED
+        missing-docstring,          # ADDED
         print-statement,
         parameter-unpacking,
         unpacking-in-except,
