@@ -13,29 +13,23 @@ from scipy.sparse import csc_matrix     # SciPy: Sparse matrix optimization func
 from scipy.sparse.linalg import spsolve # SciPy: Solver of linear systems involving sparse matrices
 from outputC import outputC             # NRPy+: Core C code output module
 import loop as lp                       # NRPy+: C loops module
-import NRPy_param_funcs as par          # NRPy+: Parameter interface
-import grid as gri                      # NRPy+: Functions having to do with numerical grids
-import indexedexp as ixp                # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm          # NRPy+: Reference metric support
 import cmdline_helper as cmd            # NRPy+: Multi-platform Python command-line interface
-import shutil, os, sys                  # Standard Python modules for multiplatform OS-level functions
+import os,sys                           # Standard Python modules for multiplatform OS-level functions
 
 def ScalarField_InitialData(outputname,Ccodesdir,ID_Family,
                             pulse_amplitude,pulse_center,pulse_width,NR,rmax,
                             lapse_condition="Pre-collapsed",CoordSystem="Spherical",
                             sinhA=None,sinhW=None):
     
-    RMAX  = rmax
-    SIGMA = pulse_width
-
     if CoordSystem == "Spherical":
-        r  = np.linspace(0,RMAX,NR+1) # Set the r array
+        r  = np.linspace(0,rmax,NR+1) # Set the r array
         dr = np.zeros(NR)
         for i in range(NR):
             dr[i] = r[1]-r[0]
         r  = np.delete(r-dr[0]/2,0)      # Shift the vector by -dr/2 and remove the negative entry
     elif CoordSystem == "SinhSpherical":
-        if sinhA == None or sinhW == None:
+        if sinhA is None or sinhW is None:
             print("Error: SinhSpherical coordinates require initialization of both sinhA and sinhW")
             sys.exit(1)
         else:
@@ -151,7 +145,7 @@ def ScalarField_InitialData(outputname,Ccodesdir,ID_Family,
     print("Parameters: amplitude         = "+str(phi0)+",\n" \
           "            center            = "+str(r0)+",\n"   \
           "            width             = "+str(sigma)+",\n"   \
-          "            domain size       = "+str(RMAX)+",\n"   \
+          "            domain size       = "+str(rmax)+",\n"   \
           "            number of points  = "+str(NR)+",\n"
           "            Initial data file = "+str(outputname)+".\n")
 

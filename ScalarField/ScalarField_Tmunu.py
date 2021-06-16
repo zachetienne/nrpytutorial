@@ -7,19 +7,12 @@
 #          Zachariah B. Etienne
 
 # First we import needed core NRPy+ modules
-import shutil, os, sys                        # Standard Python modules for multiplatform OS-level functions
-from outputC import lhrh,outCfunction,outputC # NRPy+: Core C code output module
-import sympy as sp                            # SymPy: The Python computer algebra package upon which NRPy+ depends
-import finite_difference as fin               # NRPy+: finite differences module
-import loop as lp                             # NRPy+: C loops module
-import NRPy_param_funcs as par                # NRPy+: Parameter interface
-import grid as gri                            # NRPy+: Functions having to do with numerical grids
-import indexedexp as ixp                      # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
-import reference_metric as rfm                # NRPy+: Reference metric support
-import cmdline_helper as cmd                  # NRPy+: Multi-platform Python command-line interface
-import BSSN.BSSN_quantities as Bq             # NRPy+: BSSN quantities
-import BSSN.ADM_in_terms_of_BSSN as BtoA      # NRPy+: ADM quantities in terms of BSSN quantities
-import BSSN.ADMBSSN_tofrom_4metric as ADMg    # NRPy+: ADM 4-metric to/from ADM or BSSN quantities
+import sys                                 # Standard Python modules for multiplatform OS-level functions
+import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
+import reference_metric as rfm             # NRPy+: Reference metric support
+import BSSN.BSSN_quantities as Bq          # NRPy+: BSSN quantities
+import BSSN.ADM_in_terms_of_BSSN as BtoA   # NRPy+: ADM quantities in terms of BSSN quantities
+import BSSN.ADMBSSN_tofrom_4metric as ADMg # NRPy+: ADM 4-metric to/from ADM or BSSN quantities
 
 # Checking Python version for correct import syntax
 import sys
@@ -28,7 +21,7 @@ if sys.version_info[0] == 3:
 elif sys.version_info[0] == 2:
     import ScalarField_declare_gridfunctions as sfgfs
 
-def ScalarField_Tmunu(Ccodesdir=None):
+def ScalarField_Tmunu():
 
     global T4UU
 
@@ -56,9 +49,7 @@ def ScalarField_Tmunu(Ccodesdir=None):
     gammaUU = BtoA.gammaUU
 
     # Step 1.h: Define scalar field quantitites
-    sf, sfM = sfgfs.declare_scalar_field_gridfunctions_if_not_declared_already()
     sf_dD   = ixp.declarerank1("sf_dD")
-    Phi     = sf_dD[0]
     Pi      = sfgfs.sfM
 
     # Step 2a: Set up \partial^{t}\varphi = Pi/alpha
@@ -86,19 +77,3 @@ def ScalarField_Tmunu(Ccodesdir=None):
     for mu in range(4):
         for nu in range(4):
             T4UU[mu][nu] = sf4dU[mu]*sf4dU[nu] - g4UU[mu][nu]*sf4d2/2
-
-    if Ccodesdir is not None:
-        GFT4UU    = ixp.register_gridfunctions_for_single_rank2("AUXEVOL","T4UU","sym01",DIM=4)
-        lhrh_list = []
-        for mu in range(4):
-            for nu in range(mu,4):
-                lhrh_list.append(lhrh(lhs=gri.gfaccess("auxevol_gfs","T4UU"+str(mu)+str(nu)),rhs=T4UU[mu][nu]))
-
-        desc = """This function computes the energy-momentum tensor of a massless scalar field"""
-        name = "ScalarField_TMUNU"
-        outCparams = "preindent=1,outCverbose=False,includebraces=False"
-        outCfunction(
-            outfile=os.path.join(Ccodesdir, name + ".h"), desc=desc, name=name,
-            params="""rfm_struct *restrict rfmstruct,const paramstruct *restrict params,const REAL *restrict in_gfs, REAL *restrict auxevol_gfs""",
-            body=fin.FD_outputC("returnstring",lhrh_list,params="outCverbose=False,includebraces=False").replace("IDX4","IDX4S"),
-                                loopopts="InteriorPoints,Enable_rfm_precompute")
