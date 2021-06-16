@@ -8,18 +8,12 @@
 
 # First we import needed core NRPy+ modules
 import sys                                 # Standard Python modules for multiplatform OS-level functions
+import sympy as sp                         # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm             # NRPy+: Reference metric support
 import BSSN.BSSN_quantities as Bq          # NRPy+: BSSN quantities
 import BSSN.ADM_in_terms_of_BSSN as BtoA   # NRPy+: ADM quantities in terms of BSSN quantities
 import BSSN.ADMBSSN_tofrom_4metric as ADMg # NRPy+: ADM 4-metric to/from ADM or BSSN quantities
-
-# Checking Python version for correct import syntax
-import sys
-if sys.version_info[0] == 3:
-    import ScalarField.ScalarField_declare_gridfunctions as sfgfs
-elif sys.version_info[0] == 2:
-    import ScalarField_declare_gridfunctions as sfgfs
 
 def ScalarField_Tmunu():
 
@@ -50,7 +44,7 @@ def ScalarField_Tmunu():
 
     # Step 1.h: Define scalar field quantitites
     sf_dD   = ixp.declarerank1("sf_dD")
-    Pi      = sfgfs.sfM
+    Pi      = sp.Symbol("sfM",real=True)
 
     # Step 2a: Set up \partial^{t}\varphi = Pi/alpha
     sf4dU = ixp.zerorank1(DIM=4)
