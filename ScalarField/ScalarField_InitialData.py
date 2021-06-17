@@ -6,6 +6,7 @@
 #          Zachariah B. Etienne
 
 # First we import needed core NRPy+ modules
+import os,sys                           # Standard Python modules for multiplatform OS-level functions
 import sympy as sp                      # SymPy: The Python computer algebra package upon which NRPy+ depends
 import numpy as np                      # NumPy: A large collection of mathematical functions for Python
 from scipy.sparse import spdiags        # SciPy: Sparse, tri-diagonal matrix setup function
@@ -14,8 +15,6 @@ from scipy.sparse.linalg import spsolve # SciPy: Solver of linear systems involv
 from outputC import outputC             # NRPy+: Core C code output module
 import loop as lp                       # NRPy+: C loops module
 import reference_metric as rfm          # NRPy+: Reference metric support
-import cmdline_helper as cmd            # NRPy+: Multi-platform Python command-line interface
-import os,sys                           # Standard Python modules for multiplatform OS-level functions
 
 def ScalarField_InitialData(outputname,Ccodesdir,ID_Family,
                             pulse_amplitude,pulse_center,pulse_width,NR,rmax,
