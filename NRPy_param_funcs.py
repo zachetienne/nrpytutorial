@@ -190,7 +190,7 @@ def Cparameters(c_type, module, names, default_vals, assumption="Real"):
         for i in range(len(names)):
             default_val_list.append(default_vals)
     else:
-        # If defaultvals *is* a list, then make sure it has the same number of elements as "names".
+        # If default_vals *is* a list, then make sure it has the same number of elements as "names".
         if len(default_vals) != len(names):
             print("Error in Cparameters(): Was provided a list of variables:\n"+str(names)+"\n")
             print("and a list of their default values:\n" + str(default_vals) + "\n")
