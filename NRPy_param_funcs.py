@@ -10,58 +10,67 @@
 import sympy as sp                   # Import SymPy
 import os, sys                       # Standard Python: OS-independent system functions
 from collections import namedtuple   # Standard Python: Enable namedtuple data type
+import re
+import textwrap
+
+wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent="  ", width=100)
 
 glb_params_list = []  # = where we store NRPy+ parameters and default values of parameters. A list of named tuples
 glb_paramsvals_list = []  # = where we store NRPy+ parameter values.
-glb_param  = namedtuple('glb_param', 'type module parname defaultval')
+glb_param = namedtuple('glb_param', 'type module parname defaultval')
 
 glb_Cparams_list = []  # = where we store C runtime parameters and default values of parameters. A list of named tuples
-glb_Cparam = namedtuple('glb_Cparam','type module parname defaultval')
+glb_Cparam = namedtuple('glb_Cparam', 'type module parname defaultval')
 
 veryverbose = False
 
-def initialize_param(input):
-    if get_params_idx(input) == -1:
-        glb_params_list.append(input)
-        glb_paramsvals_list.append(input.defaultval)
-    else:
-        if veryverbose == True:
-            print("initialize_param() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
 
-def initialize_Cparam(input):
-    if get_params_idx(input,Cparam=True) == -1:
-        glb_Cparams_list.append(input)
+def initialize_param(param):
+    if get_params_idx(param) == -1:
+        glb_params_list.append(param)
+        glb_paramsvals_list.append(param.defaultval)
     else:
         if veryverbose == True:
-            print("initialize_Cparam() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
+            print("initialize_param() minor warning: Did nothing; already initialized parameter " + param.module + "::" + param.parname)
+
+
+def initialize_Cparam(param):
+    if get_params_idx(param, Cparam=True) == -1:
+        glb_Cparams_list.append(param)
+    else:
+        if veryverbose == True:
+            print("initialize_Cparam() minor warning: Did nothing; already initialized parameter " + param.module + "::" + param.parname)
+
 
 # Given the named tuple `input` and list of named tuples `params`,
 #    defined according to namedtuple('param', 'type module name defaultval'),
 #    where in the case of `input`, defaultval need not be set,
 #    return the list index of `params` that matches `input`.
 # On error returns -1
-def get_params_idx(input,Cparam=False):
+def get_params_idx(param, Cparam=False):
     # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
     if Cparam==False:
-        list = [i for i, v in enumerate(glb_params_list)
-                if (input.type=="ignoretype" or input.type==v[0]) and input.module == v[1] and input.parname == v[2]]
+        lst = [i for i, v in enumerate(glb_params_list)
+               if (param.type == "ignoretype" or param.type == v[0]) and param.module == v[1] and param.parname == v[2]]
     else:
-        list = [i for i, v in enumerate(glb_Cparams_list) if input.parname == v[2]]
-    if list == []:
-        return -1 # No match found => error out!
-    if len(list) > 1:
-        print("Error: Found multiple parameters matching "+str(input))
+        lst = [i for i, v in enumerate(glb_Cparams_list) if param.parname == v[2]]
+    if lst == []:
+        return -1  # No match found => error out!
+    if len(lst) > 1:
+        print("Error: Found multiple parameters matching " + str(param))
         sys.exit(1)
-    return list.pop() # pop() returns the index
+    return lst.pop()  # pop() returns the index
 
-def get_params_value(input):
-    idx = get_params_idx(input)
+
+def get_params_value(param):
+    idx = get_params_idx(param)
     if idx < 0:
-        print("Error: could not find a parameter matching:",input)
-        print("Full list of modules:\n",glb_params_list)
+        print("Error: could not find a parameter matching:", param)
+        print("Full list of modules:\n", wrapper.fill(str(glb_params_list)))
         sys.exit(1)
     else:
         return glb_paramsvals_list[idx]
+
 
 #
 def idx_from_str(varname,modname=""):
@@ -72,21 +81,23 @@ def idx_from_str(varname,modname=""):
 
     # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
     if modname == "":
-        list = [i for i, v in enumerate(glb_params_list) if v[2] == varname]
+        lst = [i for i, v in enumerate(glb_params_list) if v[2] == varname]
     else:
-        list = [i for i, v in enumerate(glb_params_list) if (v[1] == modname and v[2] == varname)]
-    if list == []:
-        print("Error: Could not find a parameter matching \""+varname+"\" in ",glb_params_list)
+        lst = [i for i, v in enumerate(glb_params_list) if (v[1] == modname and v[2] == varname)]
+    if lst == []:
+        print("Error: Could not find a parameter matching \""+varname+"\" in \n",wrapper.fill(str(glb_params_list)))
         sys.exit(1)
-    if len(list) > 1:
+    if len(lst) > 1:
         print("Error: Found more than one parameter named \""+varname+"\". Use get_params_value() instead.")
         sys.exit(1)
-    return list.pop()
+    return lst.pop()
+
 
 def parval_from_str(string):
     return glb_paramsvals_list[idx_from_str(string)]
 
-def set_parval_from_str(string,value):
+
+def set_parval_from_str(string, value):
     glb_paramsvals_list[idx_from_str(string)] = value
 
 # parse_param_string__set__params_and_paramsvars:
@@ -101,8 +112,7 @@ def set_parval_from_str(string,value):
 #   line. You should set filename = "" if reading from the
 #   command line. This ensures the error messages are
 #   appropriate for the context.
-import re
-def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
+def set_paramsvals_value(line, filename="", FindMainModuleMode=False):
     MainModuleFound = True
     if FindMainModuleMode == True:
         MainModuleFound = False
