@@ -179,7 +179,7 @@ def set_paramsvals_value(line, filename="", FindMainModuleMode=False):
                     sys.exit(1)
                 glb_paramsvals_list[idx] = single_param_def[2]
 
-def Cparameters(type, module, names, default_vals, assumption="Real"):
+def Cparameters(c_type, module, names, default_vals, assumption="Real"):
     output = []
     # if names is not a list, make it a list, to
     #      simplify the remainder of this routine.
@@ -267,16 +267,16 @@ def generate_Cparameters_Ccodes(directory="./"):
         returnstring = ""
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type == "char":
-                Ctype = "char *"
+                c_type = "char *"
             else:
-                Ctype = glb_Cparams_list[i].type
+                c_type = glb_Cparams_list[i].type
 
             pointer = "->"
             if pointerEnable==False:
                 pointer = "."
 
-            if not ((Ctype == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or Ctype == "#define"):
-                Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params"+pointer+glb_Cparams_list[i].parname + ";\n"
+            if not ((c_type == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or c_type == "#define"):
+                Coutput = "const "+c_type+" "+glb_Cparams_list[i].parname+" = "+"params"+pointer+glb_Cparams_list[i].parname + ";\n"
                 returnstring += Coutput
         return returnstring
 
