@@ -179,7 +179,7 @@ def set_paramsvals_value(line, filename="", FindMainModuleMode=False):
                     sys.exit(1)
                 glb_paramsvals_list[idx] = single_param_def[2]
 
-def Cparameters(type,module,names,defaultvals,assumption="Real"):
+def Cparameters(type, module, names, default_vals, assumption="Real"):
     output = []
     # if names is not a list, make it a list, to
     #      simplify the remainder of this routine.
