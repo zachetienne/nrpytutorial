@@ -10,58 +10,67 @@
 import sympy as sp                   # Import SymPy
 import os, sys                       # Standard Python: OS-independent system functions
 from collections import namedtuple   # Standard Python: Enable namedtuple data type
+import re
+import textwrap
+
+wrapper = textwrap.TextWrapper(initial_indent="", subsequent_indent="  ", width=100)
 
 glb_params_list = []  # = where we store NRPy+ parameters and default values of parameters. A list of named tuples
 glb_paramsvals_list = []  # = where we store NRPy+ parameter values.
-glb_param  = namedtuple('glb_param', 'type module parname defaultval')
+glb_param = namedtuple('glb_param', 'type module parname defaultval')
 
 glb_Cparams_list = []  # = where we store C runtime parameters and default values of parameters. A list of named tuples
-glb_Cparam = namedtuple('glb_Cparam','type module parname defaultval')
+glb_Cparam = namedtuple('glb_Cparam', 'type module parname defaultval')
 
 veryverbose = False
 
-def initialize_param(input):
-    if get_params_idx(input) == -1:
-        glb_params_list.append(input)
-        glb_paramsvals_list.append(input.defaultval)
-    else:
-        if veryverbose == True:
-            print("initialize_param() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
 
-def initialize_Cparam(input):
-    if get_params_idx(input,Cparam=True) == -1:
-        glb_Cparams_list.append(input)
+def initialize_param(param):
+    if get_params_idx(param) == -1:
+        glb_params_list.append(param)
+        glb_paramsvals_list.append(param.defaultval)
     else:
         if veryverbose == True:
-            print("initialize_Cparam() minor warning: Did nothing; already initialized parameter "+input.module+"::"+input.parname)
+            print("initialize_param() minor warning: Did nothing; already initialized parameter " + param.module + "::" + param.parname)
+
+
+def initialize_Cparam(param):
+    if get_params_idx(param, Cparam=True) == -1:
+        glb_Cparams_list.append(param)
+    else:
+        if veryverbose == True:
+            print("initialize_Cparam() minor warning: Did nothing; already initialized parameter " + param.module + "::" + param.parname)
+
 
 # Given the named tuple `input` and list of named tuples `params`,
 #    defined according to namedtuple('param', 'type module name defaultval'),
 #    where in the case of `input`, defaultval need not be set,
 #    return the list index of `params` that matches `input`.
 # On error returns -1
-def get_params_idx(input,Cparam=False):
+def get_params_idx(param, Cparam=False):
     # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
     if Cparam==False:
-        list = [i for i, v in enumerate(glb_params_list)
-                if (input.type=="ignoretype" or input.type==v[0]) and input.module == v[1] and input.parname == v[2]]
+        lst = [i for i, v in enumerate(glb_params_list)
+               if (param.type == "ignoretype" or param.type == v[0]) and param.module == v[1] and param.parname == v[2]]
     else:
-        list = [i for i, v in enumerate(glb_Cparams_list) if input.parname == v[2]]
-    if list == []:
-        return -1 # No match found => error out!
-    if len(list) > 1:
-        print("Error: Found multiple parameters matching "+str(input))
+        lst = [i for i, v in enumerate(glb_Cparams_list) if param.parname == v[2]]
+    if lst == []:
+        return -1  # No match found => error out!
+    if len(lst) > 1:
+        print("Error: Found multiple parameters matching " + str(param))
         sys.exit(1)
-    return list.pop() # pop() returns the index
+    return lst.pop()  # pop() returns the index
 
-def get_params_value(input):
-    idx = get_params_idx(input)
+
+def get_params_value(param):
+    idx = get_params_idx(param)
     if idx < 0:
-        print("Error: could not find a parameter matching:",input)
-        print("Full list of modules:\n",glb_params_list)
+        print("Error: could not find a parameter matching:", param)
+        print("Full list of modules:\n", wrapper.fill(str(glb_params_list)))
         sys.exit(1)
     else:
         return glb_paramsvals_list[idx]
+
 
 #
 def idx_from_str(varname,modname=""):
@@ -72,21 +81,23 @@ def idx_from_str(varname,modname=""):
 
     # inspired by: https://stackoverflow.com/questions/2917372/how-to-search-a-list-of-tuples-in-python:
     if modname == "":
-        list = [i for i, v in enumerate(glb_params_list) if v[2] == varname]
+        lst = [i for i, v in enumerate(glb_params_list) if v[2] == varname]
     else:
-        list = [i for i, v in enumerate(glb_params_list) if (v[1] == modname and v[2] == varname)]
-    if list == []:
-        print("Error: Could not find a parameter matching \""+varname+"\" in ",glb_params_list)
+        lst = [i for i, v in enumerate(glb_params_list) if (v[1] == modname and v[2] == varname)]
+    if lst == []:
+        print("Error: Could not find a parameter matching \""+varname+"\" in \n",wrapper.fill(str(glb_params_list)))
         sys.exit(1)
-    if len(list) > 1:
+    if len(lst) > 1:
         print("Error: Found more than one parameter named \""+varname+"\". Use get_params_value() instead.")
         sys.exit(1)
-    return list.pop()
+    return lst.pop()
+
 
 def parval_from_str(string):
     return glb_paramsvals_list[idx_from_str(string)]
 
-def set_parval_from_str(string,value):
+
+def set_parval_from_str(string, value):
     glb_paramsvals_list[idx_from_str(string)] = value
 
 # parse_param_string__set__params_and_paramsvars:
@@ -101,8 +112,7 @@ def set_parval_from_str(string,value):
 #   line. You should set filename = "" if reading from the
 #   command line. This ensures the error messages are
 #   appropriate for the context.
-import re
-def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
+def set_paramsvals_value(line, filename="", FindMainModuleMode=False):
     MainModuleFound = True
     if FindMainModuleMode == True:
         MainModuleFound = False
@@ -169,30 +179,32 @@ def set_paramsvals_value(line,filename="", FindMainModuleMode=False):
                     sys.exit(1)
                 glb_paramsvals_list[idx] = single_param_def[2]
 
-def Cparameters(type,module,names,defaultvals,assumption="Real"):
+def Cparameters(c_type, module, names, default_vals, assumption="Real"):
     output = []
     # if names is not a list, make it a list, to
     #      simplify the remainder of this routine.
-    if not isinstance(names,list):
+    if not isinstance(names, list):
         names = [names]
-    defaultval_list = []
-    if not isinstance(defaultvals,list):
+    default_val_list = []
+    if not isinstance(default_vals, list):
         for i in range(len(names)):
-            defaultval_list.append(defaultvals)
+            default_val_list.append(default_vals)
     else:
-        # If defaultvals *is* a list, then make sure it has the same number of elements as "names".
-        if len(defaultvals) != len(names):
+        # If default_vals *is* a list, then make sure it has the same number of elements as "names".
+        if len(default_vals) != len(names):
             print("Error in Cparameters(): Was provided a list of variables:\n"+str(names)+"\n")
-            print("and a list of their default values:\n"+str(defaultvals)+"\n")
-            print("but the lists have different lengths ("+str(len(names))+" != "+str(len(defaultvals))+")\n")
+            print("and a list of their default values:\n" + str(default_vals) + "\n")
+            print("but the lists have different lengths (" + str(len(names)) +" != " + str(len(default_vals)) + ")\n")
             sys.exit(1)
-        defaultval_list = defaultvals
-    for i in range(len(names)):
-        initialize_Cparam(glb_Cparam(type, module, names[i], defaultval_list[i]))
+        default_val_list = default_vals
+
+    names = [name for name in names]
+    for idx, name in enumerate(names):
+        initialize_Cparam(glb_Cparam(c_type, module, name, default_val_list[idx]))
         if assumption == "Real":
-            tmp = sp.Symbol(names[i], real=True) # Assumes all Cparameters are real.
+            tmp = sp.Symbol(name, real=True)  # Assumes all Cparameters are real.
         elif assumption == "RealPositive":
-            tmp = sp.Symbol(names[i], real=True, positive=True) # Assumes all Cparameters are real and positive.
+            tmp = sp.Symbol(name, real=True, positive=True)  # Assumes all Cparameters are real and positive.
         else:
             print("Error: assumption "+str(assumption)+" not supported.")
             sys.exit(1)
@@ -212,31 +224,39 @@ def generate_Cparameters_Ccodes(directory="./"):
 
     # Step 2: Generate C code to declare C paramstruct;
     #         output to "declare_Cparameters_struct.h"
-    with open(os.path.join(directory,"declare_Cparameters_struct.h"), "w") as file:
+    #         We want the elements of this struct to be *sorted*,
+    #         to ensure that the struct is consistently ordered
+    #         for checkpointing purposes.
+    with open(os.path.join(directory, "declare_Cparameters_struct.h"), "w") as file:
         file.write("typedef struct __paramstruct__ {\n")
+        CCodelines = []
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type != "#define":
                 if glb_Cparams_list[i].type == "char":
-                    Ctype = "char *"
+                    c_type = "char *"
                 else:
-                    Ctype = glb_Cparams_list[i].type
-                file.write(Ctype + " " + glb_Cparams_list[i].parname + ";\n")
+                    c_type = glb_Cparams_list[i].type
+                comment = "  // " + glb_Cparams_list[i].module + "::" + glb_Cparams_list[i].parname
+                CCodelines.append("    " + c_type + " " + glb_Cparams_list[i].parname + ";" + comment + "\n")
+        for line in sorted(CCodelines):
+            file.write(line)
         file.write("} paramstruct;\n")
 
     # Step 3: Generate C code to set all elements in
     #         C paramstruct to default values; output to
     #         "set_Cparameters_default.h"
-    with open(os.path.join(directory,"set_Cparameters_default.h"), "w") as file:
+    with open(os.path.join(directory, "set_Cparameters_default.h"), "w") as file:
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type != "#define":
-                Coutput = "params." + glb_Cparams_list[i].parname
-                if isinstance(glb_Cparams_list[i].defaultval, (bool,int,float)):
-                    Coutput += " = " + str(glb_Cparams_list[i].defaultval).lower() + ";\n"
+                c_output = "params." + glb_Cparams_list[i].parname
+                comment = "  // " + glb_Cparams_list[i].module + "::" + glb_Cparams_list[i].parname
+                if isinstance(glb_Cparams_list[i].defaultval, (bool, int, float)):
+                    c_output += " = " + str(glb_Cparams_list[i].defaultval).lower() + ";" + comment + "\n"
                 elif glb_Cparams_list[i].type == "char" and isinstance(glb_Cparams_list[i].defaultval, (str)):
-                    Coutput += " = \"" + str(glb_Cparams_list[i].defaultval).lower() + "\";\n"
+                    c_output += " = \"" + str(glb_Cparams_list[i].defaultval).lower() + "\";" + comment + "\n"
                 else:
-                    Coutput += " = " + str(glb_Cparams_list[i].defaultval) + ";\n"
-                file.write(Coutput)
+                    c_output += " = " + str(glb_Cparams_list[i].defaultval) + ";" + comment + "\n"
+                file.write(c_output)
 
     # Step 4: Generate C code to set C parameter constants
     #         (i.e., all ints != -12345678 and REALs != 1e300);
@@ -247,37 +267,38 @@ def generate_Cparameters_Ccodes(directory="./"):
         returnstring = ""
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type == "char":
-                Ctype = "char *"
+                c_type = "char *"
             else:
-                Ctype = glb_Cparams_list[i].type
+                c_type = glb_Cparams_list[i].type
 
             pointer = "->"
             if pointerEnable==False:
                 pointer = "."
 
-            if not ((Ctype == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or Ctype == "#define"):
-                Coutput = "const "+Ctype+" "+glb_Cparams_list[i].parname+" = "+"params"+pointer+glb_Cparams_list[i].parname + ";\n"
+            if not ((c_type == "REAL" and glb_Cparams_list[i].defaultval == 1e300) or c_type == "#define"):
+                Coutput = "const "+c_type+" "+glb_Cparams_list[i].parname+" = "+"params"+pointer+glb_Cparams_list[i].parname + ";\n"
                 returnstring += Coutput
         return returnstring
 
-    with open(os.path.join(directory,"set_Cparameters.h"), "w") as file:
+    with open(os.path.join(directory, "set_Cparameters.h"), "w") as file:
         file.write(gen_set_Cparameters(pointerEnable=True))
-    with open(os.path.join(directory,"set_Cparameters-nopointer.h"), "w") as file:
+    with open(os.path.join(directory, "set_Cparameters-nopointer.h"), "w") as file:
         file.write(gen_set_Cparameters(pointerEnable=False))
 
     # Step 4.b: Output SIMD version, set_Cparameters-SIMD.h
-    with open(os.path.join(directory,"set_Cparameters-SIMD.h"), "w") as file:
+    with open(os.path.join(directory, "set_Cparameters-SIMD.h"), "w") as file:
         for i in range(len(glb_Cparams_list)):
             if glb_Cparams_list[i].type == "char":
-                Ctype = "char *"
+                c_type = "char *"
             else:
-                Ctype = glb_Cparams_list[i].type
+                c_type = glb_Cparams_list[i].type
 
+            comment = "  // " + glb_Cparams_list[i].module + "::" + glb_Cparams_list[i].parname
             parname = glb_Cparams_list[i].parname
-            if Ctype == "REAL" and glb_Cparams_list[i].defaultval != 1e300:
-                Coutput =  "const REAL            NOSIMD" + parname + " = " + "params->" + glb_Cparams_list[i].parname + ";\n"
-                Coutput += "const REAL_SIMD_ARRAY " + parname + " = ConstSIMD(NOSIMD" + parname + ");\n"
-                file.write(Coutput)
-            elif glb_Cparams_list[i].defaultval != 1e300 and Ctype !="#define":
-                Coutput = "const "+Ctype+" "+parname + " = " + "params->" + glb_Cparams_list[i].parname + ";\n"
-                file.write(Coutput)
+            if c_type == "REAL" and glb_Cparams_list[i].defaultval != 1e300:
+                c_output =  "const REAL            NOSIMD" + parname + " = " + "params->" + glb_Cparams_list[i].parname + ";"+comment+"\n"
+                c_output += "const REAL_SIMD_ARRAY " + parname + " = ConstSIMD(NOSIMD" + parname + ");"+comment+"\n"
+                file.write(c_output)
+            elif glb_Cparams_list[i].defaultval != 1e300 and c_type != "#define":
+                c_output = "const "+c_type+" "+parname + " = " + "params->" + glb_Cparams_list[i].parname + ";"+comment+"\n"
+                file.write(c_output)

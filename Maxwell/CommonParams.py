@@ -24,11 +24,11 @@ thismodule = __name__
 #          specified in the parameter file.
 
 # amplitude
-amp = par.Cparameters("REAL",thismodule,"amp", defaultvals=1.0)
+amp = par.Cparameters("REAL",thismodule,"amp", default_vals=1.0)
 
 # lambda
-lam = par.Cparameters("REAL",thismodule,"lam", defaultvals=1.0)
+lam = par.Cparameters("REAL",thismodule,"lam", default_vals=1.0)
 
-time = par.Cparameters("REAL",thismodule,"time", defaultvals=0.0)
+time = par.Cparameters("REAL",thismodule,"time", default_vals=0.0)
 
-wavespeed = par.Cparameters("REAL",thismodule,"wavespeed", defaultvals=1.0)
+wavespeed = par.Cparameters("REAL",thismodule,"wavespeed", default_vals=1.0)

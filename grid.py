@@ -4,29 +4,29 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-import NRPy_param_funcs as par     # NRPy+: Parameter interface
-import sympy as sp                 # Import SymPy, a computer algebra system written entirely in Python
-from collections import namedtuple # Standard Python `collections` module: defines named tuples data structure
-import os                          # Standard Python module for multiplatform OS-level functions
+import NRPy_param_funcs as par      # NRPy+: Parameter interface
+import sympy as sp                  # Import SymPy, a computer algebra system written entirely in Python
+from collections import namedtuple  # Standard Python `collections` module: defines named tuples data structure
+import os                           # Standard Python module for multiplatform OS-level functions
 
 # Initialize globals related to the grid
 glb_gridfcs_list = []
-glb_gridfc  = namedtuple('gridfunction', 'gftype name rank DIM')
+glb_gridfc = namedtuple('gridfunction', 'gftype name rank DIM')
 
 thismodule = __name__
 par.initialize_param(par.glb_param("char", thismodule, "GridFuncMemAccess", "SENRlike"))
-par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle","210"))
+par.initialize_param(par.glb_param("char", thismodule, "MemAllocStyle", "210"))
 par.initialize_param(par.glb_param("int",  thismodule, "DIM", 3))
 
 Nxx = par.Cparameters("int", thismodule,["Nxx0","Nxx1","Nxx2"],[64,32,64]) # Default to 64x32x64 grid
 Nxx_plus_2NGHOSTS = par.Cparameters("int", thismodule,
                       ["Nxx_plus_2NGHOSTS0","Nxx_plus_2NGHOSTS1","Nxx_plus_2NGHOSTS2"],
                       [                  70,                  38,                  70]) # Default to 64x32x64 grid w/ NGHOSTS=3
-xx  = par.Cparameters("REAL",thismodule,[ "xx0", "xx1", "xx2"],1e300) # These are C variables, not parameters, and
+xx = par.Cparameters("REAL", thismodule, ["xx0", "xx1", "xx2"],1e300) # These are C variables, not parameters, and
                                                                       # will be overwritten; best to initialize to crazy
                                                                       # number to ensure they are overwritten!
-dxx   = par.Cparameters("REAL",thismodule,[   "dxx0",   "dxx1",   "dxx2"],0.1)
-invdx = par.Cparameters("REAL",thismodule,[ "invdx0", "invdx1", "invdx2"],1.0)
+dxx = par.Cparameters("REAL", thismodule, ["dxx0", "dxx1", "dxx2"], 0.1)
+invdx = par.Cparameters("REAL", thismodule, ["invdx0", "invdx1", "invdx2"], 1.0)
 
 def variable_type(var):
     var_is_gf = False

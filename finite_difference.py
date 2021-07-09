@@ -9,11 +9,11 @@
 # Author: Zachariah B. Etienne
 #         zachetie **at** gmail **dot* com
 
-from outputC import parse_outCparams_string, outC_function_dict # NRPy+: Core C code output module
+from outputC import parse_outCparams_string, outC_function_dict  # NRPy+: Core C code output module
 import NRPy_param_funcs as par   # NRPy+: parameter interface
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri               # NRPy+: Functions having to do with numerical grids
-import os, sys                     # Standard Python module for multiplatform OS-level functions
+import os, sys                   # Standard Python module for multiplatform OS-level functions
 from finite_difference_helpers import extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists
 from finite_difference_helpers import generate_list_of_deriv_vars_from_lhrh_sympyexpr_list
 from finite_difference_helpers import read_gfs_from_memory, FDparams, construct_Ccode

@@ -7,7 +7,6 @@
 #          Zachariah B. Etienne
 
 # First we import needed core NRPy+ modules
-import sys                                 # Standard Python modules for multiplatform OS-level functions
 import sympy as sp                         # SymPy: The Python computer algebra package upon which NRPy+ depends
 import indexedexp as ixp                   # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm             # NRPy+: Reference metric support
