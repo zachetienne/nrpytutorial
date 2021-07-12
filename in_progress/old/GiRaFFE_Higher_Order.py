@@ -418,24 +418,15 @@ def GiRaFFE_Higher_Order():
 
 
     # Step 2.2: Derivatives of the electromagnetic stress-energy tensor
-
-    # We already have a handy function to define the Levi-Civita symbol in WeylScalars
-    import WeylScal4NRPy.WeylScalars_Cartesian as weyl
-    # Initialize the Levi-Civita tensor by setting it equal to the Levi-Civita symbol
-    LeviCivitaSymbolDDD = weyl.define_LeviCivitaSymbol_rank3()
-    LeviCivitaTensorDDD = ixp.zerorank3()
-    LeviCivitaTensorUUU = ixp.zerorank3()
-
-    global gammaUU,gammadet
     gammaUU = ixp.register_gridfunctions_for_single_rank2("AUX","gammaUU","sym01")
     gammadet = gri.register_gridfunctions("AUX","gammadet")
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
 
-    for i in range(DIM):
-        for j in range(DIM):
-            for k in range(DIM):
-                LeviCivitaTensorDDD[i][j][k] = LeviCivitaSymbolDDD[i][j][k] * sp.sqrt(gammadet)
-                LeviCivitaTensorUUU[i][j][k] = LeviCivitaSymbolDDD[i][j][k] / sp.sqrt(gammadet)
+    # We already have a handy function to define the Levi-Civita symbol in indexedexp.py
+    # Initialize the Levi-Civita tensor by setting it equal to the Levi-Civita symbol
+    LeviCivitaSymbolDDD = ixp.LeviCivitaSymbol_dim3_rank3()
+    LeviCivitaTensorDDD = ixp.LeviCivitaTensorDDD_dim3_rank3(sp.sqrt(gammadet))
+    LeviCivitaTensorUUU = ixp.LeviCivitaTensorUUU_dim3_rank3(sp.sqrt(gammadet))
 
     # AD_dD = ixp.declarerank2("AD_dD","nosym")
 
