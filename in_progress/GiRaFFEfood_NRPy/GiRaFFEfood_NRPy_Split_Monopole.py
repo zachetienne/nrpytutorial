@@ -55,9 +55,9 @@ def fp_of_r(r,M):
     Lp  = sp.sympify(0) + noif.coord_greater_bound(x,sp.sympify(0))*noif.coord_less_bound(x,sp.sympify(1)) * -sp.Rational(1,2) *\
          (sp.log(noif.coord_less_bound(x,sp.sympify(1))*(sp.sympify(1)-x) + noif.coord_geq_bound(x,sp.sympify(1)))/(x+sp.sympify(1e-100))\
          +sp.log(noif.coord_greater_bound(x,sp.sympify(0))*x + noif.coord_leq_bound(x,sp.sympify(1)))/(sp.sympify(1)-x+sp.sympify(1e-100)))
-    fp  = sp.sympify(3)*r*(r-M)*sp.Rational(1,4)/(M**3)#*L + (sp.sympify(2)*r-sp.sympify(3)*M)*sp.Rational(1,4)/(M*M)*Lp#\
-#          +(sp.sympify(3)*M-12*r)*sp.Rational(1,12)/(M*M)*sp.log(r*sp.Rational(1,2)/M) + (M*M+sp.sympify(3)*M*r-sp.sympify(6)*r*r)*sp.Rational(1,12)/(r*M*M)\
-#          -M*sp.Rational(1,3)/(r*r) + sp.Rational(1,2)/M - r/(M*M)
+    fp  = sp.sympify(3)*r*(r-M)*sp.Rational(1,4)/(M**3)*L + (sp.sympify(2)*r-sp.sympify(3)*M)*sp.Rational(1,4)/(M*M)*Lp\
+          +(sp.sympify(3)*M-12*r)*sp.Rational(1,12)/(M*M)*sp.log(r*sp.Rational(1,2)/M) + (M*M+sp.sympify(3)*M*r-sp.sympify(6)*r*r)*sp.Rational(1,12)/(r*M*M)\
+          -M*sp.Rational(1,3)/(r*r) + sp.Rational(1,2)/M - r/(M*M)
     return fp
 
 def Ar_SM(r,theta,phi, **params):
@@ -85,7 +85,6 @@ def ValenciavU_func_SM(**params):
     KerrSchild_radial_shift = params["KerrSchild_radial_shift"]
     r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
     theta = rfm.xxSph[1]
-    phi   = rfm.xxSph[2]
     z     = rfm.xx_to_Cart[2]
 
     split_C_SM = noif.coord_geq_bound(z,sp.sympify(0))*C_SM - noif.coord_less_bound(z,sp.sympify(0))*C_SM

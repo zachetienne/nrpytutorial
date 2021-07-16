@@ -44,7 +44,6 @@ def ValenciavU_func_EW(**params):
     KerrSchild_radial_shift = params["KerrSchild_radial_shift"]
     r     = rfm.xxSph[0] + KerrSchild_radial_shift # We are setting the data up in Shifted Kerr-Schild coordinates
     theta = rfm.xxSph[1]
-    phi   = rfm.xxSph[2]
 
     LeviCivitaTensorUUU = ixp.LeviCivitaTensorUUU_dim3_rank3(sqrtgammaDET)
 

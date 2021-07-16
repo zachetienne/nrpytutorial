@@ -77,8 +77,7 @@ def calculate_Stilde_flux(flux_dirn,alpha_face,gamma_faceDD,beta_faceU,\
         Stilde_fluxD[mom_comp] = HLLE_solver(chsp.cmax, chsp.cmin, Fr, Fl, Ur, Ul)
 
 def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=None, gamma_faceDD=None, beta_faceU=None,
-                                    Valenciav_rU=None, B_rU=None, Valenciav_lU=None, B_lU=None,
-                                    Stilde_flux_HLLED = None, sqrt4pi=None,
+                                    Valenciav_rU=None, B_rU=None, Valenciav_lU=None, B_lU=None, sqrt4pi=None,
                                     outCparams = "outCverbose=False,CSE_sorting=none", write_cmax_cmin=False):
     if not inputs_provided:
         # We will pass values of the gridfunction on the cell faces into the function. This requires us
@@ -96,7 +95,7 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
         sqrt4pi = par.Cparameters("REAL",thismodule,"sqrt4pi","sqrt(4.0*M_PI)")
 
         # We'll also need to store the results of the HLLE step between functions.
-        Stilde_flux_HLLED = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Stilde_flux_HLLED")
+        ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Stilde_flux_HLLED")
 
     if write_cmax_cmin:
         # In the staggered case, we will also want to output cmax and cmin

@@ -105,7 +105,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     Valenciav_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_lU",DIM=3)
     B_lU = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","B_lU",DIM=3)
 
-    Stilde_flux_HLLED = ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Stilde_flux_HLLED")
+    ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Stilde_flux_HLLED")
 
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rrU",DIM=3)
     ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Valenciav_rlU",DIM=3)
@@ -118,8 +118,7 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
     Af.GiRaFFE_NRPy_Afield_flux(os.path.join(out_dir, subdir))
 
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
-                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU,
-                                       Stilde_flux_HLLED, sqrt4pi, write_cmax_cmin=True)
+                                       Valenciav_rU,B_rU,Valenciav_lU,B_lU, sqrt4pi, write_cmax_cmin=True)
 
     subdir = "boundary_conditions"
     cmd.mkdir(os.path.join(out_dir,subdir))

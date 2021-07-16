@@ -418,8 +418,8 @@ def GiRaFFE_Higher_Order():
 
 
     # Step 2.2: Derivatives of the electromagnetic stress-energy tensor
-    gammaUU = ixp.register_gridfunctions_for_single_rank2("AUX","gammaUU","sym01")
-    gammadet = gri.register_gridfunctions("AUX","gammadet")
+    ixp.register_gridfunctions_for_single_rank2("AUX","gammaUU","sym01")
+    gri.register_gridfunctions("AUX","gammadet")
     gammaUU, gammadet = ixp.symm_matrix_inverter3x3(gammaDD)
 
     # We already have a handy function to define the Levi-Civita symbol in indexedexp.py

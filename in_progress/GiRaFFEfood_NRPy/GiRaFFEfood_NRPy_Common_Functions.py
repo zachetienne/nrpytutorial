@@ -106,7 +106,7 @@ def compute_ValenciavU_from_ED_and_BU(ED, BU, gammaDD=None):
     # where [ijk] is the Levi-Civita symbol and B^2 = \gamma_{ij} B^i B^j$ is a trivial dot product in flat space.
 
     # In flat spacetime, use the Minkowski metric; otherwise, use the input metric.
-    if gammaDD==None:
+    if gammaDD is None:
         gammaDD = ixp.zerorank2()
         for i in range(3):
             gammaDD[i][i] = sp.sympify(1)
