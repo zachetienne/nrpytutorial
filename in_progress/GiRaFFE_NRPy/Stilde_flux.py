@@ -97,12 +97,7 @@ def generate_C_code_for_Stilde_flux(out_dir,inputs_provided = False, alpha_face=
         # We'll also need to store the results of the HLLE step between functions.
         ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Stilde_flux_HLLED")
 
-    if write_cmax_cmin:
-        # In the staggered case, we will also want to output cmax and cmin
-        # If we want to write cmax and cmin, we will need to be able to change auxevol_gfs:
-        input_params_for_Stilde_flux = "const paramstruct *params,REAL *auxevol_gfs,REAL *rhs_gfs"
-    else:
-        input_params_for_Stilde_flux = "const paramstruct *params,const REAL *auxevol_gfs,REAL *rhs_gfs"
+    input_params_for_Stilde_flux = "const paramstruct *params,REAL *auxevol_gfs,REAL *rhs_gfs"
 
     if write_cmax_cmin:
         name_suffixes = ["_x","_y","_z"]

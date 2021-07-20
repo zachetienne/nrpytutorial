@@ -144,6 +144,9 @@ def GiRaFFE_NRPy_Main_Driver_generate_all(out_dir):
 
     subdir = "RHSs"
     Af.GiRaFFE_NRPy_Afield_flux(os.path.join(out_dir,subdir))
+
+    ixp.register_gridfunctions_for_single_rank1("AUXEVOL","Stilde_flux_HLLED")
+
     Sf.generate_C_code_for_Stilde_flux(os.path.join(out_dir,subdir), True, alpha_face,gamma_faceDD,beta_faceU,
                                        Valenciav_rU,B_rU,Valenciav_lU,B_lU,sqrt4pi)
 
@@ -221,26 +224,6 @@ const int NUM_RECONSTRUCT_GFS = 6;
 #include "A2B/driver_AtoB.h"
 #include "C2P/GiRaFFE_NRPy_cons_to_prims.h"
 #include "C2P/GiRaFFE_NRPy_prims_to_cons.h"
-
-void override_BU_with_old_GiRaFFE(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const int n) {
-#include "set_Cparameters.h"
-    char filename[100];
-    sprintf(filename,"BU0_override-%08d.bin",n);
-    FILE *out2D = fopen(filename, "rb");
-    fread(auxevol_gfs+BU0GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
-          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
-    fclose(out2D);
-    sprintf(filename,"BU1_override-%08d.bin",n);
-    out2D = fopen(filename, "rb");
-    fread(auxevol_gfs+BU1GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
-          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
-    fclose(out2D);
-    sprintf(filename,"BU2_override-%08d.bin",n);
-    out2D = fopen(filename, "rb");
-    fread(auxevol_gfs+BU2GF*Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,
-          sizeof(double),Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2,out2D);
-    fclose(out2D);
-}
 
 void GiRaFFE_NRPy_RHSs(const paramstruct *restrict params,REAL *restrict auxevol_gfs,const REAL *restrict in_gfs,REAL *restrict rhs_gfs) {
 #include "set_Cparameters.h"
