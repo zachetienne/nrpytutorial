@@ -21,14 +21,14 @@ class TestParser(unittest.TestCase):
     def test_example_BSSN():
         parse_latex(r"""
             \begin{align}
-                % keydef basis [x, y, z]
+                % attrib coord [x, y, z]
                 % ignore "\\%", "\qquad"
 
                 % vardef -kron deltaDD
-                % parse \hat{\gamma}_{ij} = \delta_{ij}
+                % parse \hat{\gamma}_{ij} = \delta_{ij} \\
                 % assign -diff_type=symbolic -metric gammahatDD
                 % vardef -diff_type=dD -symmetry=sym01 hDD
-                % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij}
+                % parse \bar{\gamma}_{ij} = h_{ij} + \hat{\gamma}_{ij} \\
                 % assign -diff_type=dD -metric gammabarDD
 
                 % srepl "\beta" -> "\text{vet}"
@@ -61,9 +61,9 @@ class TestParser(unittest.TestCase):
 
                 % srepl "\bar{\Lambda}" -> "\text{lambda}"
                 % vardef -diff_type=dD lambdaU
-                % parse \Delta^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij}
+                % parse \Delta^k_{ij} = \bar{\Gamma}^k_{ij} - \hat{\Gamma}^k_{ij} \\
                 % assign -metric=gammabar DeltaUDD
-                % parse \Delta^k = \bar{\gamma}^{ij} \Delta^k_{ij}
+                % parse \Delta^k = \bar{\gamma}^{ij} \Delta^k_{ij} \\
                 % srepl "\partial_t \text{lambda}" -> "\text{Lambdabar_rhs}"
                 \partial_t \bar{\Lambda}^i &= \mathcal{L}_\beta \bar{\Lambda}^i + \bar{\gamma}^{jk} \hat{D}_j \hat{D}_k \beta^i
                     + \frac{2}{3} \Delta^i \bar{D}_k \beta^k + \frac{1}{3} \bar{D}^i \bar{D}_k \beta^k \\%
@@ -92,7 +92,7 @@ class TestParser(unittest.TestCase):
                 \partial_t B^i &= \left[\beta^j \vphantom{dupD} \bar{D}_j B^i\right]
                     + \frac{3}{4} \left(\partial_t \bar{\Lambda}^i - \left[\beta^j \vphantom{dupD} \bar{D}_j \bar{\Lambda}^i\right]\right) - \eta B^i \\
 
-                % parse \bar{R} = \bar{\gamma}^{ij} \bar{R}_{ij}
+                % parse \bar{R} = \bar{\gamma}^{ij} \bar{R}_{ij} \\
                 % srepl "\bar{D}^2" -> "\bar{D}^i \bar{D}_i", "\mathcal{<1>}" -> "<1>"
                 \mathcal{H} &= \frac{2}{3} K^2 - \bar{A}_{ij} \bar{A}^{ij}
                     + e^{-4\phi} \left(\bar{R} - 8 \bar{D}^i \phi \bar{D}_i \phi - 8 \bar{D}^2 \phi\right) \\
