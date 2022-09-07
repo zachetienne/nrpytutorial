@@ -164,11 +164,15 @@ def EinsteinToolkit_SIMD_declare_C_params(ThornName):
     return SIMD_declare_C_params_str
 
 
-def set_ETK_func_params_preloop(func_name_suffix, enable_SIMD=True):
+def set_ETK_func_params_preloop(name, enable_SIMD=True):
     params = "CCTK_ARGUMENTS"
-    preloop = """  DECLARE_CCTK_ARGUMENTS;"""
+    preloop = r"""  #ifdef DECLARE_CCTK_ARGUMENTS_"""+name+r"""
+  DECLARE_CCTK_ARGUMENTS_CHECKED("""+name+r""");
+  #else
+  DECLARE_CCTK_ARGUMENTS;
+  #endif"""
     ThornName = "Baikal"
-    if "BaikalVacuum" in func_name_suffix:
+    if "BaikalVacuum" in name:
         ThornName = "BaikalVacuum"
     if enable_SIMD:
         preloop += EinsteinToolkit_SIMD_declare_C_params(ThornName)
@@ -314,7 +318,7 @@ def add_rhs_eval_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os.path.jo
     enableCparameters=True
     # Set up preloop in case we're outputting code for the Einstein Toolkit (ETK)
     if par.parval_from_str("grid::GridFuncMemAccess") == "ETK":
-        params, preloop = set_ETK_func_params_preloop(func_name_suffix)
+        params, preloop = set_ETK_func_params_preloop(name)
         enableCparameters=False
 
     FD_outCparams = "outCverbose=False,enable_SIMD=" + str(enable_SIMD)
@@ -432,7 +436,7 @@ def add_Ricci_eval_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os.path.
     enableCparameters=True
     # Set up preloop in case we're outputting code for the Einstein Toolkit (ETK)
     if par.parval_from_str("grid::GridFuncMemAccess") == "ETK":
-        params, preloop = set_ETK_func_params_preloop(func_name_suffix)
+        params, preloop = set_ETK_func_params_preloop(name)
         enableCparameters=False
 
     if enable_split_for_optimizations_doesnt_help and FDorder >= 8:
@@ -538,7 +542,7 @@ def add_BSSN_constraints_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os
     enableCparameters=True
     # Set up preloop in case we're outputting code for the Einstein Toolkit (ETK)
     if par.parval_from_str("grid::GridFuncMemAccess") == "ETK":
-        params, preloop = set_ETK_func_params_preloop(func_name_suffix)
+        params, preloop = set_ETK_func_params_preloop(name)
         enableCparameters=False
 
     FD_outCparams = "outCverbose=False,enable_SIMD=" + str(enable_SIMD)
@@ -589,7 +593,7 @@ def add_enforce_detgammahat_constraint_to_Cfunction_dict(includes=None, rel_path
     enableCparameters=True
     # Set up preloop in case we're outputting code for the Einstein Toolkit (ETK)
     if par.parval_from_str("grid::GridFuncMemAccess") == "ETK":
-        params, preloop = set_ETK_func_params_preloop(func_name_suffix, enable_SIMD=False)
+        params, preloop = set_ETK_func_params_preloop(name, enable_SIMD=False)
         enableCparameters=False
 
     FD_outCparams = "outCverbose=False,enable_SIMD=False"
