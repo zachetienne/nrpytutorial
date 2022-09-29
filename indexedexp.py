@@ -311,9 +311,72 @@ def register_gridfunctions_for_single_rank2(gf_type, gf_basename, symmetry_optio
 
 def declarerank3(symbol, symmetry, DIM=-1):
     return declare_indexedexp(rank=3, symbol=symbol, symmetry=symmetry, dimension=DIM)
+    
+def register_gridfunctions_for_single_rank3(gf_type, gf_basename, symmetry_option, DIM=-1, f_infinity=0.0, wavespeed=1.0):
+    # Step 0: Verify the gridfunction basename is valid:
+    gri.verify_gridfunction_basename_is_valid(gf_basename)
+
+    # Step 1: Declare a list of lists of SymPy variables,
+    #         where IDX_OBJ_TMP[i][j][k] = gf_basename+str(i)+str(j)+str(k)
+    IDX_OBJ_TMP = declarerank3(gf_basename,symmetry_option, DIM)
+
+    # Step 2: register each gridfunction, being careful not
+    #         not to store duplicates due rank-3 to symmetries.
+    if DIM==-1:
+        DIM = par.parval_from_str("DIM")
+    # Register only unique gridfunctions. Otherwise
+    # rank-3 symmetries might result in duplicates
+    gf_list = []
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                save = True
+                for l in range(len(gf_list)):
+                    if gf_list[l] == str(IDX_OBJ_TMP[i][j][k]):
+                        save = False
+                if save == True:
+                    gf_list.append(str(IDX_OBJ_TMP[i][j][k]))
+
+    gri.register_gridfunctions(gf_type, gf_list, rank=3, is_indexed=True, DIM=DIM,
+                               f_infinity=f_infinity, wavespeed=wavespeed)
+
+    # Step 3: Return array of SymPy variables
+    return IDX_OBJ_TMP
 
 def declarerank4(symbol, symmetry, DIM=-1):
     return declare_indexedexp(rank=4, symbol=symbol, symmetry=symmetry, dimension=DIM)
+    
+def register_gridfunctions_for_single_rank4(gf_type, gf_basename, symmetry_option, DIM=-1, f_infinity=0.0, wavespeed=1.0):
+    # Step 0: Verify the gridfunction basename is valid:
+    gri.verify_gridfunction_basename_is_valid(gf_basename)
+
+    # Step 1: Declare a list of lists of SymPy variables,
+    #         where IDX_OBJ_TMP[i][j][k][m] = gf_basename+str(i)+str(j)+str(k)+str(m)
+    IDX_OBJ_TMP = declarerank4(gf_basename,symmetry_option, DIM)
+
+    # Step 2: register each gridfunction, being careful not
+    #         not to store duplicates due rank-4 to symmetries.
+    if DIM==-1:
+        DIM = par.parval_from_str("DIM")
+    # Register only unique gridfunctions. Otherwise
+    # rank-4 symmetries might result in duplicates
+    gf_list = []
+    for i in range(DIM):
+        for j in range(DIM):
+            for k in range(DIM):
+                for m in range(DIM):
+                    save = True
+                    for l in range(len(gf_list)):
+                        if gf_list[l] == str(IDX_OBJ_TMP[i][j][k][m]):
+                            save = False
+                    if save == True:
+                        gf_list.append(str(IDX_OBJ_TMP[i][j][k][m]))
+
+    gri.register_gridfunctions(gf_type, gf_list, rank=4, is_indexed=True, DIM=DIM,
+                               f_infinity=f_infinity, wavespeed=wavespeed)
+
+    # Step 3: Return array of SymPy variables
+    return IDX_OBJ_TMP
 
 class NonInvertibleMatrixError(ZeroDivisionError):
     """ Matrix Not Invertible; Division By Zero """
