@@ -183,7 +183,8 @@ def BSSN_RHSs__generate_symbolic_expressions(LapseCondition="OnePlusLog",
                                              ShiftCondition="GammaDriving2ndOrder_Covariant",
                                              enable_KreissOliger_dissipation=True,
                                              enable_stress_energy_source_terms=False,
-                                             leave_Ricci_symbolic=True):
+                                             leave_Ricci_symbolic=True,
+                                             enable_klein_gordon_coupling=False):
     ######################################
     # START: GENERATE SYMBOLIC EXPRESSIONS
     starttime = print_msg_with_timing("BSSN_RHSs", msg="Symbolic", startstop="start")
@@ -262,6 +263,21 @@ def BSSN_RHSs__generate_symbolic_expressions(LapseCondition="OnePlusLog",
             lhs_names.append("hDD" + str(i) + str(j))
             rhs_exprs.append(rhs.h_rhsDD[i][j])
 
+    # Scalar Field (Klein-Gordon) equations
+    if enable_klein_gordon_coupling:
+        import ScalarField.ScalarField_RHSs as SFrhs
+        SFrhs.ScalarField_RHSs()
+        if enable_KreissOliger_dissipation:
+            sf_dKOD  = ixp.declarerank1("sf_dKOD")
+            sfM_dKOD = ixp.declarerank1("sfM_dKOD")
+            for i in range(3):
+                SFrhs.sf_rhs  += diss_strength * sf_dKOD[i]  * rfm.ReU[i]
+                SFrhs.sfM_rhs += diss_strength * sfM_dKOD[i] * rfm.ReU[i]
+        lhs_names.append("sf")
+        rhs_exprs.append(SFrhs.sf_rhs)
+        lhs_names.append("sfM")
+        rhs_exprs.append(SFrhs.sfM_rhs)
+
     # Sort the lhss list alphabetically, and rhss to match.
     #   This ensures the RHSs are evaluated in the same order
     #   they're allocated in memory:
@@ -283,7 +299,7 @@ def add_rhs_eval_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os.path.jo
                                    LapseCondition="OnePlusLog", ShiftCondition="GammaDriving2ndOrder_Covariant",
                                    enable_KreissOliger_dissipation=False, enable_stress_energy_source_terms=False,
                                    leave_Ricci_symbolic=True, OMP_pragma_on="i2",
-                                   func_name_suffix=""):
+                                   func_name_suffix="", enable_klein_gordon_coupling=False):
     if includes is None:
         includes = []
     if enable_SIMD:
@@ -307,7 +323,8 @@ def add_rhs_eval_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os.path.jo
         BSSN_RHSs__generate_symbolic_expressions(LapseCondition=LapseCondition, ShiftCondition=ShiftCondition,
                                                  enable_KreissOliger_dissipation=enable_KreissOliger_dissipation,
                                                  enable_stress_energy_source_terms=enable_stress_energy_source_terms,
-                                                 leave_Ricci_symbolic=leave_Ricci_symbolic)
+                                                 leave_Ricci_symbolic=leave_Ricci_symbolic,
+                                                 enable_klein_gordon_coupling=enable_klein_gordon_coupling)
 
     # Construct body:
     preloop=""
