@@ -1028,17 +1028,10 @@ def get_EigenCoord():
 
 
 # Compute proper distance in all 3 directions. Used to find the appropriate timestep for the CFL condition.
-def ds_dirn(delxx, append_gridsuffix_to_xx=False):
-    gridsuffix = ""  # Disable for now
+def ds_dirn(delxx):
     scalefactor_orthog_inj = []
     for i in range(3):
-        if append_gridsuffix_to_xx:
-            scalefactor_orthog_inj.append(scalefactor_orthog[i].
-                                          subs(xx[0], sp.sympify(str(xx[0]) + gridsuffix)).
-                                          subs(xx[1], sp.sympify(str(xx[1]) + gridsuffix)).
-                                          subs(xx[2], sp.sympify(str(xx[2]) + gridsuffix)))
-        else:
-            scalefactor_orthog_inj.append(scalefactor_orthog[i])
+        scalefactor_orthog_inj.append(scalefactor_orthog[i])
 
     ds_dirn = ixp.zerorank1(3)
     for i in range(3):
@@ -1047,9 +1040,9 @@ def ds_dirn(delxx, append_gridsuffix_to_xx=False):
 
 
 # Find the appropriate timestep for the CFL condition.
-def add_to_Cfunction_dict__find_timestep(rel_path_to_Cparams=os.path.join("./"), enable_mask=False,
-                                         output_dt_local_h_only=False, use_unit_wavespeed=False):
-    gridsuffix = ""  # Disable for now
+# Find the appropriate timestep for the CFL condition.
+def add_to_Cfunction_dict__find_timestep(rel_path_to_Cparams=os.path.join("./"),
+                                         use_unit_wavespeed=False, set_dsmin_gridfunction=False):
     ##############################
     # Step 1: Function description
     desc = "Find the CFL-constrained timestep"
@@ -1058,61 +1051,51 @@ def add_to_Cfunction_dict__find_timestep(rel_path_to_Cparams=os.path.join("./"),
     c_type = "REAL"
     ##############################
     # Step 3: Function name
-    name = "find_timestep" + gridsuffix
+    name = "find_timestep"
     ##############################
     # Step 4: Prior to the main loop
-    preloop = "    REAL dsmin = 1e38; // Start with a crazy high value... close to the largest number in single precision."
+    preloop = "  REAL dsmin = 1e38; // Start with a crazy high value... close to the largest number in single precision."
     ##############################
     # Step 5: Loop options
-    loopopts = "InteriorPoints,Read_xxs,DisableOpenMP"
-    if gridsuffix != "":
-        loopopts += ","+gridsuffix
+    loopopts = "Read_xxs,DisableOpenMP"
+    loopopts += ",InteriorPoints"
     ##############################
     # Step 6: function input parameters
     params = "const paramstruct *restrict params, REAL *restrict xx[3], const REAL CFL_FACTOR"
-    if enable_mask:
-        params += ", int8_t *restrict mask"
+    if set_dsmin_gridfunction:
+        registered_already = False
+        for i in range(len(gri.glb_gridfcs_list)):
+            if gri.glb_gridfcs_list[i].name == "dsmin":
+                registered_already = True
+        if not registered_already:
+            gri.register_gridfunctions("AUXEVOL", "dsmin")
+        params += ", REAL *restrict dsminGF"
     ##############################
     # Step 7: function body
     # Compute proper distance in all 3 directions.
-    if output_dt_local_h_only:
-        ds_drn = ds_dirn(gri.dxx, append_gridsuffix_to_xx=True)
-    else:
-        ds_drn = ds_dirn(gri.dxx, append_gridsuffix_to_xx=False)
-    ds_dirn_h = outputC([ds_drn[0], ds_drn[1], ds_drn[2]], ["ds_dirn0", "ds_dirn1", "ds_dirn2"], "returnstring").\
-        replace("dxx0", "dxx0"+gridsuffix).\
-        replace("dxx1", "dxx1"+gridsuffix).\
-        replace("dxx2", "dxx2"+gridsuffix)
-    body = "REAL ds_dirn0, ds_dirn1, ds_dirn2;\n" + ds_dirn_h + """
+    ds_drn = ds_dirn(gri.dxx)
+    ds_dirn_h = outputC([ds_drn[0], ds_drn[1], ds_drn[2]], ["ds_dirn0", "ds_dirn1", "ds_dirn2"], "returnstring")
+    indent = "  "
+    body = ""
+    body += "REAL ds_dirn0, ds_dirn1, ds_dirn2;\n" + indent_Ccode(ds_dirn_h,indent) + """
 #ifndef MIN
 #define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
 #endif\n"""
-    indent = ""
-    if enable_mask:
-        body += "if(mask[IDX3S" + gridsuffix + "(i0,i1,i2)] >= 0) {\n"
-        indent = "    "
-    if not output_dt_local_h_only:
-        # not output_dt_local_h_only -> seeking dsmin over the entire grid, over all directions
-        body += indent + "// Set dsmin = MIN(dsmin, ds_dirn0, ds_dirn1, ds_dirn2):\n"
-        body += indent + "dsmin = MIN(dsmin, MIN(ds_dirn0, MIN(ds_dirn1, ds_dirn2)));\n"
-    else:
-        # output_dt_local_h_only means we seek a minimum over all directions at given gridpoint only
-        body += indent + "// Set dt_local["+gridsuffix.replace("_grid", "")+"] = MIN(ds_dirn0, ds_dirn1, ds_dirn2) * CFL_FACTOR/wavespeed :\n"
-        body += indent + "dt_local["+gridsuffix.replace("_grid", "")+"] = MIN(ds_dirn0, MIN(ds_dirn1, ds_dirn2)) * CFL_FACTOR/wavespeed;\n"
-        if use_unit_wavespeed:
-            body = body.replace("wavespeed", "1.0")
-    if enable_mask:
-        body += "}\n"
-
-    if output_dt_local_h_only:
-        return body.\
-            replace("ds_dirn0", "ds_dirn0"+gridsuffix).\
-            replace("ds_dirn1", "ds_dirn1"+gridsuffix).\
-            replace("ds_dirn2", "ds_dirn2"+gridsuffix)
+    # not output_dt_local_h_only -> seeking dsmin over the entire grid, over all directions
+    body += "// Set dsmin = MIN(dsmin, ds_dirn0, ds_dirn1, ds_dirn2):\n"
+    body += "dsmin = MIN(dsmin, MIN(fabs(ds_dirn0), MIN(fabs(ds_dirn1), fabs(ds_dirn2))));\n"
+    if set_dsmin_gridfunction:
+        body += r"""
+{
+  REAL ds_dirn0, ds_dirn1, ds_dirn2;
+""" + indent_Ccode(ds_dirn_h, indent) + r"""
+  dsminGF[IDX3S(i0,i1,i2)] = MIN(dsmin, MIN(fabs(ds_dirn0), MIN(fabs(ds_dirn1), fabs(ds_dirn2))));
+}
+"""
 
     ##############################
     # Step 8: after the loop
-    postloop = "    return dsmin*CFL_FACTOR/wavespeed;\n"
+    postloop = "return dsmin*CFL_FACTOR/wavespeed;\n"
     if use_unit_wavespeed:
         postloop = postloop.replace("wavespeed", "1.0")
     ##############################
@@ -1124,7 +1107,7 @@ def add_to_Cfunction_dict__find_timestep(rel_path_to_Cparams=os.path.join("./"),
         name    =name,
         params  =params,
         preloop =preloop,
-        body    =body,
+        body    =indent_Ccode(body, "  "),
         loopopts=loopopts,
         postloop=postloop,
         rel_path_to_Cparams=rel_path_to_Cparams)
@@ -1132,10 +1115,9 @@ def add_to_Cfunction_dict__find_timestep(rel_path_to_Cparams=os.path.join("./"),
 
 # Find the appropriate timestep for the CFL condition.
 def add_to_Cfunc_dict__find_dsmin(rel_path_to_Cparams=os.path.join("./")):
-    gridsuffix = ""  # Disable for now
     desc = "Find dsmin = min_i sqrt(ghat_{ii} dx^i dx^i)"
     c_type = "REAL"
-    name = "find_dsmin" + gridsuffix
+    name = "find_dsmin"
     params = "const paramstruct *restrict params, const int i0i1i2[3], const REAL *restrict xx[3]"
     body = """
   REAL dsmin = 1e38; // Start with a crazy high value... close to the largest number in single precision.
@@ -1144,13 +1126,10 @@ def add_to_Cfunc_dict__find_dsmin(rel_path_to_Cparams=os.path.join("./")):
   const REAL xx2 = xx[2][i0i1i2[2]];
 """
     # Compute proper distance in all 3 directions.
-    ds_drn = ds_dirn(gri.dxx, append_gridsuffix_to_xx=False)
+    ds_drn = ds_dirn(gri.dxx)
     body += "  REAL ds_dirn0, ds_dirn1, ds_dirn2;\n"
     body += outputC([ds_drn[0], ds_drn[1], ds_drn[2]], ["ds_dirn0", "ds_dirn1", "ds_dirn2"], "returnstring",
-                        params="outCverbose=false,includebraces=false").\
-                    replace("dxx0", "dxx0"+gridsuffix).\
-                    replace("dxx1", "dxx1"+gridsuffix).\
-                    replace("dxx2", "dxx2"+gridsuffix)
+                        params="outCverbose=false,includebraces=false")
     body += """
 #ifndef MIN
 #define MIN(A, B) ( ((A) < (B)) ? (A) : (B) )
@@ -1322,7 +1301,6 @@ static inline void """+funcname+"""(const paramstruct *restrict params, REAL *re
 # Construct Cart_to_xx_and_nearest_i0i1i2() C function for
 #   mapping from Cartesian->xx for the chosen CoordSystem.
 def add_to_Cfunc_dict__Cart_to_xx_and_nearest_i0i1i2(rel_path_to_Cparams=os.path.join("./"), relative_to="local_grid_center"):
-    gridsuffix = ""  # Disable for now
     CoordSystem = par.parval_from_str("reference_metric::CoordSystem")
 
     prefunc = ""
@@ -1331,7 +1309,7 @@ def add_to_Cfunc_dict__Cart_to_xx_and_nearest_i0i1i2(rel_path_to_Cparams=os.path
     namesuffix = ""
     if relative_to == "global_grid_center":
         namesuffix = "_" + relative_to
-    name = "Cart_to_xx_and_nearest_i0i1i2" + namesuffix + gridsuffix
+    name = "Cart_to_xx_and_nearest_i0i1i2" + namesuffix
     params = "const paramstruct *restrict params, const REAL xCart[3], REAL xx[3], int Cart_to_i0i1i2[3]"
 
     preloop = ""
@@ -1347,10 +1325,10 @@ def add_to_Cfunc_dict__Cart_to_xx_and_nearest_i0i1i2(rel_path_to_Cparams=os.path
     //      origin of the grid is at global xCart (x,y,z) = (1,1,1), then
     //      (Cartx,Carty,Cartz) = (-1,-1,-1)
     // Therefore, (Cartx,Carty,Cartz) = (xCart[0]-originx, xCart[1]-originy, xCart[2]-originz)
-    const REAL Cartx = xCart[0] - Cart_originx_GRIDSFX_;
-    const REAL Carty = xCart[1] - Cart_originy_GRIDSFX_;
-    const REAL Cartz = xCart[2] - Cart_originz_GRIDSFX_;
-""".replace("_GRIDSFX_", gridsuffix)
+    const REAL Cartx = xCart[0] - Cart_originx;
+    const REAL Carty = xCart[1] - Cart_originy;
+    const REAL Cartz = xCart[2] - Cart_originz;
+"""
     elif relative_to == "global_grid_center":
         preloop = """
     const REAL Cartx = xCart[0];
@@ -1372,11 +1350,11 @@ def add_to_Cfunc_dict__Cart_to_xx_and_nearest_i0i1i2(rel_path_to_Cparams=os.path
     body += """
     // Then find the nearest index (i0,i1,i2) on underlying grid to (x,y,z)
     // Recall that:
-    // xx[0][j] = xxmin[0] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*params->dxx0"""+gridsuffix+"""; // Cell-centered grid.
-    //   --> j = (int) ( (xx[0][j] - xxmin[0]) / params->dxx0"""+gridsuffix+""" + (1.0/2.0) + NGHOSTS )
-    Cart_to_i0i1i2[0] = (int)( ( xx[0] - ("""+str(xxmin[0])+""") ) / params->dxx0"""+gridsuffix+""" + (1.0/2.0) + NGHOSTS - 0.5 ); // Account for (int) typecast rounding down
-    Cart_to_i0i1i2[1] = (int)( ( xx[1] - ("""+str(xxmin[1])+""") ) / params->dxx1"""+gridsuffix+""" + (1.0/2.0) + NGHOSTS - 0.5 ); // Account for (int) typecast rounding down
-    Cart_to_i0i1i2[2] = (int)( ( xx[2] - ("""+str(xxmin[2])+""") ) / params->dxx2"""+gridsuffix+""" + (1.0/2.0) + NGHOSTS - 0.5 ); // Account for (int) typecast rounding down
+    // xx[0][j] = xxmin[0] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*params->dxx0; // Cell-centered grid.
+    //   --> j = (int) ( (xx[0][j] - xxmin[0]) / params->dxx0 + (1.0/2.0) + NGHOSTS )
+    Cart_to_i0i1i2[0] = (int)( ( xx[0] - ("""+str(xxmin[0])+""") ) / params->dxx0 + (1.0/2.0) + NGHOSTS - 0.5 ); // Account for (int) typecast rounding down
+    Cart_to_i0i1i2[1] = (int)( ( xx[1] - ("""+str(xxmin[1])+""") ) / params->dxx1 + (1.0/2.0) + NGHOSTS - 0.5 ); // Account for (int) typecast rounding down
+    Cart_to_i0i1i2[2] = (int)( ( xx[2] - ("""+str(xxmin[2])+""") ) / params->dxx2 + (1.0/2.0) + NGHOSTS - 0.5 ); // Account for (int) typecast rounding down
 """
     add_to_Cfunction_dict(
         includes=[os.path.join(rel_path_to_Cparams, "NRPy_basic_defines.h")],
@@ -1391,8 +1369,6 @@ def add_to_Cfunc_dict__Cart_to_xx_and_nearest_i0i1i2(rel_path_to_Cparams=os.path
 
 
 def add_to_Cfunc_dict_set_Nxx_dxx_invdx_params__and__xx(rel_path_to_Cparams=os.path.join("./"), NGHOSTS_is_a_param=False):
-    gridsuffix = ""  # Disable for now.
-
     def set_xxmin_xxmax():
         outstr = ""
         for dirn in range(3):
@@ -1401,17 +1377,17 @@ def add_to_Cfunc_dict_set_Nxx_dxx_invdx_params__and__xx(rel_path_to_Cparams=os.p
         return outstr
     body = """
     // Override parameter defaults with values based on command line arguments and NGHOSTS.
-    params->Nxx0""" + gridsuffix + r""" = Nxx[0];
-    params->Nxx1""" + gridsuffix + r""" = Nxx[1];
-    params->Nxx2""" + gridsuffix + r""" = Nxx[2];
+    params->Nxx0 = Nxx[0];
+    params->Nxx1 = Nxx[1];
+    params->Nxx2 = Nxx[2];
 """
     NGHOSTS_prefix=""
     if NGHOSTS_is_a_param:
         NGHOSTS_prefix="params->"
     body += """
-    params->Nxx_plus_2NGHOSTS0""" + gridsuffix + """ = Nxx[0] + 2*"""+NGHOSTS_prefix+"""NGHOSTS;
-    params->Nxx_plus_2NGHOSTS1""" + gridsuffix + """ = Nxx[1] + 2*"""+NGHOSTS_prefix+"""NGHOSTS;
-    params->Nxx_plus_2NGHOSTS2""" + gridsuffix + """ = Nxx[2] + 2*"""+NGHOSTS_prefix+"""NGHOSTS;
+    params->Nxx_plus_2NGHOSTS0 = Nxx[0] + 2*"""+NGHOSTS_prefix+"""NGHOSTS;
+    params->Nxx_plus_2NGHOSTS1 = Nxx[1] + 2*"""+NGHOSTS_prefix+"""NGHOSTS;
+    params->Nxx_plus_2NGHOSTS2 = Nxx[2] + 2*"""+NGHOSTS_prefix+"""NGHOSTS;
     // Now that params->Nxx_plus_2NGHOSTS* has been set, and below we need e.g., Nxx_plus_2NGHOSTS*, we include set_Cparameters.h here:
 #include \"""" + os.path.join(rel_path_to_Cparams, "set_Cparameters.h") + """\"
     // Step 0d: Set up space and time coordinates
@@ -1437,11 +1413,11 @@ def add_to_Cfunc_dict_set_Nxx_dxx_invdx_params__and__xx(rel_path_to_Cparams=os.p
     // Step 0d.iii: Set params.dxx{0,1,2}, params.invdx{0,1,2}, and uniform coordinate grids xx[3][]
 """
     for dirn in ["0", "1", "2"]:
-        body += "    params->dxx"+dirn+gridsuffix+" = (xxmax["+dirn+"] - xxmin["+dirn+"]) / ((REAL)Nxx["+dirn+"]);\n"
-        body += "    params->invdx"+dirn+gridsuffix+" = 1.0/params->dxx"+dirn+gridsuffix+";\n"
-        body += """    xx["""+dirn+"""] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS"""+dirn+gridsuffix + """);
-    for(int j=0;j<Nxx_plus_2NGHOSTS"""+dirn+gridsuffix+""";j++)
-        xx["""+dirn+"""][j] = xxmin["""+dirn+"""] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*params->dxx"""+dirn+gridsuffix+"""; // Cell-centered grid.\n"""
+        body += "    params->dxx"+dirn+" = (xxmax["+dirn+"] - xxmin["+dirn+"]) / ((REAL)Nxx["+dirn+"]);\n"
+        body += "    params->invdx"+dirn+" = 1.0/params->dxx"+dirn+";\n"
+        body += """    xx["""+dirn+"""] = (REAL *)malloc(sizeof(REAL)*Nxx_plus_2NGHOSTS"""+dirn + """);
+    for(int j=0;j<Nxx_plus_2NGHOSTS"""+dirn+""";j++)
+        xx["""+dirn+"""][j] = xxmin["""+dirn+"""] + ((REAL)(j-NGHOSTS) + (1.0/2.0))*params->dxx"""+dirn+"""; // Cell-centered grid.\n"""
         if dirn != "2":
             body += "\n"
 
@@ -1449,13 +1425,12 @@ def add_to_Cfunc_dict_set_Nxx_dxx_invdx_params__and__xx(rel_path_to_Cparams=os.p
         includes=[os.path.join(rel_path_to_Cparams, "NRPy_basic_defines.h")],
         desc  ="Override default values for Nxx{0,1,2}, Nxx_plus_2NGHOSTS{0,1,2}, dxx{0,1,2}, and invdx{0,1,2}; and set xx[3][]",
         c_type="void",
-        name  ="set_Nxx_dxx_invdx_params__and__xx"+gridsuffix,
+        name  ="set_Nxx_dxx_invdx_params__and__xx",
         params="const int EigenCoord, const int Nxx[3],paramstruct *restrict params, REAL *restrict xx[3]",
         body  =body,
         enableCparameters=False)  # Cparameters here must be #include'd in body, not at top of function as usual.
 
 def add_to_Cfunc_dict_xx_to_Cart(rel_path_to_Cparams=os.path.join("./")):
-    gridsuffix = ""  # Disable for now
     # Arbitrary-coordinate NRPy+ file output, Part 1: output the conversion from (x0,x1,x2) to Cartesian (x,y,z)
     #    Suppose grid origin is at 1,1,1. Then the Cartesian gridpoint at 1,2,3 will be 2,3,4; hence
     #    the xx_to_Cart[i]+gri.Cart_origin[i] below:
@@ -1467,17 +1442,14 @@ def add_to_Cfunc_dict_xx_to_Cart(rel_path_to_Cparams=os.path.join("./")):
                    xx_to_Cart[1]+gri.Cart_origin[1],
                    xx_to_Cart[2]+gri.Cart_origin[2]],
                   ["xCart[0]", "xCart[1]", "xCart[2]"],
-                  "returnstring", params="preindent=1"). \
-        replace("Cart_originx", "Cart_originx" + gridsuffix).\
-        replace("Cart_originy", "Cart_originy" + gridsuffix).\
-        replace("Cart_originz", "Cart_originz" + gridsuffix)
+                  "returnstring", params="preindent=1")
 
     add_to_Cfunction_dict(
         includes=[os.path.join(rel_path_to_Cparams, "NRPy_basic_defines.h")],
         desc    ="Compute Cartesian coordinates given local grid coordinate (xx0,xx1,xx2), "
                  "  accounting for the origin of this grid being possibly offcenter.",
         c_type  ="void",
-        name    ="xx_to_Cart"+gridsuffix,
+        name    ="xx_to_Cart",
         params  ="const paramstruct *restrict params, REAL *restrict xx[3],const int i0,const int i1,const int i2, REAL xCart[3]",
         body    =body,
         rel_path_to_Cparams=rel_path_to_Cparams)
@@ -1527,8 +1499,8 @@ def register_NRPy_basic_defines(enable_rfm_precompute=False):
 
 
 def register_C_functions(rel_path_to_Cparams=os.path.join("./"), enable_rfm_precompute=False,
-                         use_unit_wavespeed_for_find_timestep=False, enable_mask=False, append_coordsuffix=False):
-    add_to_Cfunction_dict__find_timestep(rel_path_to_Cparams=rel_path_to_Cparams, enable_mask=enable_mask,
+                         use_unit_wavespeed_for_find_timestep=False):
+    add_to_Cfunction_dict__find_timestep(rel_path_to_Cparams=rel_path_to_Cparams,
                                          use_unit_wavespeed=use_unit_wavespeed_for_find_timestep)
     add_to_Cfunc_dict_xx_to_Cart(rel_path_to_Cparams=rel_path_to_Cparams)
     add_to_Cfunc_dict_set_Nxx_dxx_invdx_params__and__xx(rel_path_to_Cparams=rel_path_to_Cparams)
