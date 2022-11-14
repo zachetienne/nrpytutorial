@@ -50,7 +50,7 @@ def ScalarWave_RHSs():
 
     # Step 2: Register gridfunctions that are needed as input
     #         to the scalar wave RHS expressions.
-    uu, vv = gri.register_gridfunctions("EVOL", ["uu", "vv"])
+    uu, vv = gri.register_gridfunctions("EVOL", ["uu", "vv"], f_infinity=[2.0, 0.0], wavespeed=[1.0, 1.0])
 
     # Step 3: Declare the rank-2 indexed expression \partial_{ij} u,
     #         which is symmetric about interchange of indices i and j

@@ -60,7 +60,7 @@ def ScalarWaveCurvilinear_RHSs():
 
     # Step 4: Register gridfunctions that are needed as input
     #         to the scalar wave RHS expressions.
-    uu, vv = gri.register_gridfunctions("EVOL",["uu","vv"])
+    uu, vv = gri.register_gridfunctions("EVOL", ["uu", "vv"], f_infinity=[2.0, 0.0], wavespeed=[1.0, 1.0])
 
     # Step 5a: Declare the rank-1 indexed expression \partial_{i} u,
     #          Derivative variables like these must have an underscore

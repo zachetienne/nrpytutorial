@@ -25,7 +25,7 @@ from ScalarWave.CommonParams import wavespeed # NRPy+: Common parameters for all
 thismodule = __name__
 
 # Set up spherically-symmetric Gaussian initial data
-def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=3):
+def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=2):
     # Step 1: Set parameters for the wave
     DIM = par.parval_from_str("grid::DIM")
 
@@ -51,8 +51,9 @@ def SphericalGaussian(CoordSystem="Cartesian",default_time=0,default_sigma=3):
     # Step 5: Set initial data for uu and vv, where vv_ID = \partial_t uu_ID.
     global uu_ID, vv_ID
     # uu_ID = (r - wavespeed*time)/r * sp.exp(- (r - wavespeed*time)**2 / (2*sigma**2) )
+    # By convention, limit(uu, r->infinity) = 2. This ensures that relative error is well defined.
     uu_ID = (+(r - wavespeed * time) / r * sp.exp(- (r - wavespeed * time) ** 2 / (2 * sigma ** 2))
-             +(r + wavespeed * time) / r * sp.exp(- (r + wavespeed * time) ** 2 / (2 * sigma ** 2))) + sp.sympify(1)
+             +(r + wavespeed * time) / r * sp.exp(- (r + wavespeed * time) ** 2 / (2 * sigma ** 2))) + sp.sympify(2)
     vv_ID = sp.diff(uu_ID, time)
 
 # Set up monochromatic plane-wave initial data
@@ -84,6 +85,7 @@ def PlaneWave(CoordSystem="Cartesian",default_time=0,default_k0=1,default_k1=1,d
 
     # Step 6: Set initial data for uu and vv, where vv_ID = \partial_t uu_ID.
     global uu_ID, vv_ID
+    # By convention, we set uu such that it is never zero. This ensures that relative error in uu is well defined.
     uu_ID = sp.sin(dot_product - wavespeed * time) + 2
     vv_ID = sp.diff(uu_ID, time)
 
