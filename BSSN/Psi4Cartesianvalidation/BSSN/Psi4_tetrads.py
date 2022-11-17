@@ -1,1 +1,0 @@
-../../Psi4_tetrads.py
