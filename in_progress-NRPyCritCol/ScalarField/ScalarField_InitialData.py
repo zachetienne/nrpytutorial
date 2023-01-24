@@ -15,30 +15,14 @@ from scipy.sparse.linalg import spsolve # SciPy: Solver of linear systems involv
 import outputC as outC                  # NRPy+: Core C code output module
 import reference_metric as rfm          # NRPy+: Reference metric support
 
-def ScalarField_InitialData(outputname,ID_Family,
-                            pulse_amplitude,pulse_center,pulse_width,NR,rmax,
-                            lapse_condition="Pre-collapsed",CoordSystem="Spherical",
-                            sinhA=None,sinhW=None):
+def ScalarField_InitialData(outputname, ID_Family, Nr, rmax,
+                            pulse_amplitude, pulse_center, pulse_width):
 
-    if CoordSystem == "Spherical":
-        r  = np.linspace(0,rmax,NR+1) # Set the r array
-        dr = np.zeros(NR)
-        for i in range(NR):
-            dr[i] = r[1]-r[0]
-        r  = np.delete(r-dr[0]/2,0)      # Shift the vector by -dr/2 and remove the negative entry
-    elif CoordSystem == "SinhSpherical":
-        if sinhA is None or sinhW is None:
-            print("Error: SinhSpherical coordinates require initialization of both sinhA and sinhW")
-            sys.exit(1)
-        else:
-            x  = np.linspace(0,1.0,NR+1)
-            dx = 1.0/(NR+1)
-            x  = np.delete(x-dx/2,0)      # Shift the vector by -dx/2 and remove the negative entry
-            r  = sinhA * np.sinh( x/sinhW ) / np.sinh( 1.0/sinhW )
-            dr = sinhA * np.cosh( x/sinhW ) / np.sinh( 1.0/sinhW ) * dx
-    else:
-        print("Error: Unknown coordinate system")
-        sys.exit(1)
+    # Set the step size and the r coordinate
+    dr = rmax/Nr
+    r  = np.empty(Nr)
+    for i in range(Nr):
+        r[i] = (i-0.5)*dr
 
     # Set the step size squared
     dr2   = dr**2
@@ -75,35 +59,35 @@ def ScalarField_InitialData(outputname,ID_Family,
     main_diag = np.pi * dr2 * Phi(phi0,r,r0,sigma)**2 - 2
 
     # Update the first element of the main diagonal
-    main_diag[0] += 1 - dr[0]/r[0]
+    main_diag[0] += 1 - dr/r[0]
 
     # Update the last element of the main diagonal
-    main_diag[NR-1] += - (2 * dr[NR-1] / r[NR-1])*(1 + dr[NR-1] / r[NR-1])
+    main_diag[Nr-1] += - (2 * dr / r[Nr-1])*(1 + dr / r[Nr-1])
 
     # Set the upper diagonal, ignoring the last point in the r array
-    upper_diag = np.zeros(NR)
-    upper_diag[1:] = 1 + dr[:-1]/r[:-1]
+    upper_diag = np.zeros(Nr)
+    upper_diag[1:] = 1 + dr/r[:-1]
 
     # Set the lower diagonal, start counting the r array at the second element
-    lower_diag = np.zeros(NR)
-    lower_diag[:-1] = 1 - dr[1:]/r[1:]
+    lower_diag = np.zeros(Nr)
+    lower_diag[:-1] = 1 - dr/r[1:]
 
     # Change the last term in the lower diagonal to its correct value
-    lower_diag[NR-2] = 2
+    lower_diag[Nr-2] = 2
 
     # Set the sparse matrix A by adding up the three diagonals
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.spdiags.html
-    A = spdiags([main_diag,upper_diag,lower_diag],[0,1,-1],NR,NR)
+    A = spdiags([main_diag,upper_diag,lower_diag],[0,1,-1],Nr,Nr)
 
     # Then compress the sparse matrix A column wise, so that SciPy can invert it later
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html
     A = csc_matrix(A)
 
     # Set up the right-hand side of the linear system: s
-    s = np.zeros(NR)
+    s = np.zeros(Nr)
 
     # Update the last entry of the vector s
-    s[NR-1] = - (2 * dr[NR-1] / r[NR-1])*(1 + dr[NR-1] / r[NR-1])
+    s[Nr-1] = - (2 * dr / r[Nr-1])*(1 + dr / r[Nr-1])
 
     # Compress the vector s column-wise
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csc_matrix.html
@@ -113,38 +97,20 @@ def ScalarField_InitialData(outputname,ID_Family,
     # https://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.sparse.linalg.spsolve.html
     psi = spsolve(A, s.T)
 
-    if lapse_condition == "Pre-collapsed":
-        ID_alpha = psi**(-2)
-
-        if sys.version_info[0] == 3:
-            np.savetxt(outputname, list(zip( r, ID_sf, psi**4, ID_alpha )),fmt="%.15e")
-
-        elif sys.version_info[0] == 2:
-            np.savetxt(outputname, zip( r, ID_sf, psi**4, ID_alpha ),fmt="%.15e")
-
-    elif lapse_condition == "Unity":
-        ID_alpha = np.ones(NR)
-
-        if sys.version_info[0] == 3:
-            np.savetxt(outputname, list(zip( r, ID_sf, psi**4, ID_alpha )),fmt="%.15e")
-
-        elif sys.version_info[0] == 2:
-            np.savetxt(outputname, zip( r, ID_sf, psi**4, ID_alpha ),fmt="%.15e")
-
-    else:
-        print("Error: unknown lapse condition. Available options are: \"Pre-collapsed\" and \"Unity\"")
-        return
+    if sys.version_info[0] == 3:
+        np.savetxt(outputname, list(zip( r, ID_sf, psi )),fmt="%.15e")
+    elif sys.version_info[0] == 2:
+        np.savetxt(outputname, zip( r, ID_sf, psi ),fmt="%.15e")
 
     print("Generated the ADM initial data for the gravitational collapse \n" \
-          "of a massless scalar field in "+CoordSystem+" coordinates.\n")
+          "of a massless scalar field in spherical coordinates.\n")
     print("Type of initial condition: Scalar field: \"Gaussian\" Shell\n"\
-          "                         ADM quantities: Time-symmetric\n"\
-          "                        Lapse condition: "+lapse_condition)
+          "                         ADM quantities: Time-symmetric\n")
     print("Parameters: amplitude         = "+str(phi0)+",\n" \
           "            center            = "+str(r0)+",\n"   \
           "            width             = "+str(sigma)+",\n"   \
           "            domain size       = "+str(rmax)+",\n"   \
-          "            number of points  = "+str(NR)+",\n"
+          "            number of points  = "+str(Nr)+",\n"
           "            Initial data file = "+str(outputname)+".\n")
 
 def ID_scalarfield_ADM_quantities(Ccodesdir=".",new_way=False):
