@@ -185,3 +185,12 @@ Butcher_dict['DP8']=(
 [sp.sympify(1), sp.Rational(403863854, 491063109), sp.sympify(0), sp.sympify(0), sp.Rational(-5068492393, 434740067), sp.Rational(-411421997, 543043805), sp.Rational(652783627, 914296604), sp.Rational(11173962825, 925320556), sp.Rational(-13158990841, 6184727034), sp.Rational(3936647629, 1978049680), sp.Rational(-160528059, 685178525), sp.Rational(248638103, 1413531060), sp.sympify(0)],
 ["", sp.Rational(14005451, 335480064), sp.sympify(0), sp.sympify(0), sp.sympify(0), sp.sympify(0), sp.Rational(-59238493, 1068277825), sp.Rational(181606767, 758867731), sp.Rational(561292985, 797845732), sp.Rational(-1041891430, 1371343529), sp.Rational(760417239, 1151165299), sp.Rational(118820643, 751138087), sp.Rational(-528747749, 2220607170), sp.Rational(1, 4)]]
 , 8)
+
+# TESTING for ADAPTIVE METHODS
+
+Butcher_dict['AHE'] = (
+[[sp.sympify(0)],
+[sp.sympify(1), sp.sympify(1)],
+["", sp.Rational(1,2), sp.Rational(1,2)],
+["", sp.sympify(1), sp.sympify(0)]]
+, 2)
