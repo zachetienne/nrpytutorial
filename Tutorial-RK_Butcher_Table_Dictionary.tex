@@ -1243,6 +1243,18 @@ J. R.; Prince, P. J. (1981)}) Butcher table is:
 \end{Verbatim}
 \end{tcolorbox}
 
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{18}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AHE}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
+\PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{p}{,} \PY{l+m+mi}{2}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
     \hypertarget{step-3-code-validation-against-moltimestepping.rk_butcher_table_dictionary-nrpy-module-back-to-top}{%
 \section{\texorpdfstring{Step 3: Code validation against
 \texttt{MoLtimestepping.RK\_Butcher\_Table\_Dictionary} NRPy+ module
@@ -1259,7 +1271,7 @@ module.
 We analyze all key/value entries in the dictionary for consistency.
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{18}{\boxspacing}
+\prompt{In}{incolor}{19}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{c+c1}{\PYZsh{} Step 3: Code validation against MoLtimestepping.RK\PYZus{}Butcher\PYZus{}Table\PYZus{}Dictionary NRPy+ module}
 \PY{k+kn}{import} \PY{n+nn}{sys}  \PY{c+c1}{\PYZsh{} Standard Python module for multiplatform OS\PYZhy{}level functions}
@@ -1367,7 +1379,7 @@ the first-order Euler method, creating the simplest Adaptive method.
 \end{array} \]
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{19}{\boxspacing}
+\prompt{In}{incolor}{20}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AHE}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
 \PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
@@ -1377,6 +1389,26 @@ the first-order Euler method, creating the simplest Adaptive method.
 \PY{p}{,} \PY{l+m+mi}{2}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
+
+    \hypertarget{step-4.a.i-adaptive-bogacki-shampine-method-back-to-top}{%
+\subsubsection{\texorpdfstring{Step 4.a.i: Adaptive Bogacki-Shampine
+Method {[}Back to
+\hyperref[toc]{top}{]}}{Step 4.a.i: Adaptive Bogacki-Shampine Method {[}Back to {]}}}\label{step-4.a.i-adaptive-bogacki-shampine-method-back-to-top}}
+
+\[\label{bogackishampine}\]
+
+\href{https://en.wikipedia.org/wiki/Bogacki\%E2\%80\%93Shampine_method}{The
+Bogacki-Shampine Method} is a third order method with a second order
+corrective.
+
+\[\begin{array}{c|cc}
+    0 & \\
+    1/2 & 11/2 & \\ 
+    3/4 & 0 & 3/4 & \\
+    1 & 2/9 & 1/3 & 4/9 & \hline
+     & 1/2 & 1/2 \\
+     & 1 & 0
+\end{array} \]
 
     \hypertarget{step-5-output-this-notebook-to-latex-formatted-pdf-file-back-to-top}{%
 \section{\texorpdfstring{Step 5: Output this notebook to
@@ -1393,7 +1425,7 @@ directory, with filename \url{Tutorial-RK_Butcher_Table_Dictionary.pdf}.
 PDF file through another means.)
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{20}{\boxspacing}
+\prompt{In}{incolor}{21}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{import} \PY{n+nn}{cmdline\PYZus{}helper} \PY{k}{as} \PY{n+nn}{cmd}    \PY{c+c1}{\PYZsh{} NRPy+: Multi\PYZhy{}platform Python command\PYZhy{}line interface}
 \PY{n}{cmd}\PY{o}{.}\PY{n}{output\PYZus{}Jupyter\PYZus{}notebook\PYZus{}to\PYZus{}LaTeXed\PYZus{}PDF}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Tutorial\PYZhy{}RK\PYZus{}Butcher\PYZus{}Table\PYZus{}Dictionary}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
