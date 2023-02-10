@@ -532,7 +532,12 @@ This notebook is organized as follows
     \def\labelenumiii{\arabic{enumiii}.}
     \tightlist
     \item
-      \hyperref[heuneuler]{Step 4.a.i}: Euler's Method
+      \hyperref[heuneuler]{Step 4.a.i}: Adaptive Heun-Euler Method
+    \item
+      \hyperref[bogackishampine]{Step 4.a.ii}: Adaptibe Bogacki-Shampine
+      Method
+    \item
+      \hyperref[rkfehlberg]{Step 4.a.iii}: Adaptibe Runge-Kutta-Fehlberg
     \end{enumerate}
   \end{enumerate}
 \item
@@ -1215,7 +1220,7 @@ J. R.; Prince, P. J. (1981)}) Butcher table is:
     \frac{13}{20} & \frac{246121993}{1340847787} & 0 & 0 & \frac{-37695042795}{15268766246} & \frac{-309121744}{1061227803} & \frac{-12992083}{490766935} & \frac{6005943493}{2108947869} & \frac{393006217}{1396673457} & \frac{123872331}{1001029789} & \\
     \frac{1201146811}{1299019798} & \frac{-1028468189}{846180014} & 0 & 0 & \frac{8478235783}{508512852} & \frac{1311729495}{1432422823} & \frac{-10304129995}{1701304382} & \frac{-48777925059}{3047939560} & \frac{15336726248}{1032824649} & \frac{-45442868181}{3398467696} & \frac{3065993473}{597172653} & \\
     1 & \frac{185892177}{718116043} & 0 & 0 & \frac{-3185094517}{667107341} & \frac{-477755414}{1098053517} & \frac{-703635378}{230739211} & \frac{5731566787}{1027545527} & \frac{5232866602}{850066563} & \frac{-4093664535}{808688257} & \frac{3962137247}{1805957418} & \frac{65686358}{487910083} & \\
-    1 & \frac{403863854}{491063109} & 0 & 0 & \frac{-5068492393}{434740067} & \frac{-411421997}{543043805} & \frac{652783627}{914296604} & \frac{11173962825}{925320556} & \frac{-13158990841}{6184727034} & \frac{3936647629}{1978049680} & \frac{-160528059}{685178525} & \frac{248638103}{1413531060} & 0 & \\
+    1 & \frac{403863854}{491063109} & 0 & 0 & \frac{-5068492393}{434740067} & \frac{-411421997}{543043805} & \frac{652783627}{914296604} & \frac{11173962825}{925320556} & \frac{-13158990841}{6184727034} & \frac{3936647629}{1978049680} & \frac{-160528059}{685178525} & \frac{248638103}{1413531060} & 0 & \\ \hline
     & \frac{14005451}{335480064} & 0 & 0 & 0 & 0 & \frac{-59238493}{1068277825} & \frac{181606767}{758867731} & \frac{561292985}{797845732} & \frac{-1041891430}{1371343529} & \frac{760417239}{1151165299} & \frac{118820643}{751138087} & \frac{-528747749}{2220607170} & \frac{1}{4}
 \end{array}.\]
 
@@ -1379,36 +1384,89 @@ the first-order Euler method, creating the simplest Adaptive method.
 \end{array} \]
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{20}{\boxspacing}
+\prompt{In}{incolor}{24}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AHE}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
 \PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
 \PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{]}\PY{p}{,}
 \PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{]}\PY{p}{,}
 \PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
-\PY{p}{,} \PY{l+m+mi}{2}\PY{p}{)}
+\PY{p}{,} \PY{l+m+mi}{1}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
-    \hypertarget{step-4.a.i-adaptive-bogacki-shampine-method-back-to-top}{%
-\subsubsection{\texorpdfstring{Step 4.a.i: Adaptive Bogacki-Shampine
+    \hypertarget{step-4.a.ii-adaptive-bogacki-shampine-method-back-to-top}{%
+\subsubsection{\texorpdfstring{Step 4.a.ii: Adaptive Bogacki-Shampine
 Method {[}Back to
-\hyperref[toc]{top}{]}}{Step 4.a.i: Adaptive Bogacki-Shampine Method {[}Back to {]}}}\label{step-4.a.i-adaptive-bogacki-shampine-method-back-to-top}}
+\hyperref[toc]{top}{]}}{Step 4.a.ii: Adaptive Bogacki-Shampine Method {[}Back to {]}}}\label{step-4.a.ii-adaptive-bogacki-shampine-method-back-to-top}}
 
 \[\label{bogackishampine}\]
 
 \href{https://en.wikipedia.org/wiki/Bogacki\%E2\%80\%93Shampine_method}{The
-Bogacki-Shampine Method} is a third order method with a second order
+Bogacki-Shampine Method} is a second order method with a third order
+error estimator.
+
+\[\begin{array}{c|cc}
+    0 & \\
+    1/2 & 1/2 & \\ 
+    3/4 & 0 & 3/4 & \\
+    1 & 2/9 & 1/3 & 4/9 & \\ \hline
+     & 2/9 & 1/3 & 4/9 & 0 \\
+     & 7/24 & 1/4 & 1/3 & 1/8
+\end{array} \]
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{25}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ABS}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
+\PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{3}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{3}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{7}\PY{p}{,}\PY{l+m+mi}{24}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{3}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{p}{,} \PY{l+m+mi}{3}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{step-4.a.iii-adaptive-runge-kutta-fehlberg-back-to-top}{%
+\subsubsection{\texorpdfstring{Step 4.a.iii: Adaptive
+Runge-Kutta-Fehlberg {[}Back to
+\hyperref[toc]{top}{]}}{Step 4.a.iii: Adaptive Runge-Kutta-Fehlberg {[}Back to {]}}}\label{step-4.a.iii-adaptive-runge-kutta-fehlberg-back-to-top}}
+
+\[\label{rkfehlberg}\]
+
+\href{https://en.wikipedia.org/wiki/Runge\%E2\%80\%93Kutta\%E2\%80\%93Fehlberg_method}{The
+Runge-Kutta-Fehlberg Method} is a fourth order method with a fifth order
 corrective.
 
 \[\begin{array}{c|cc}
     0 & \\
-    1/2 & 11/2 & \\ 
-    3/4 & 0 & 3/4 & \\
-    1 & 2/9 & 1/3 & 4/9 & \hline
-     & 1/2 & 1/2 \\
-     & 1 & 0
+    1/4 & 1/4 & \\ 
+    3/8 & 3/32 & 9/32 & \\
+    12/13 & 1932/2197 & -7200/2197 & 7296/2197 & \\
+    1 & 439/216 & -8 & 3680/513 & -845/4104 &  \\ 
+    1/2 & -8/27 & 2 & -3544/2565 & 1859/4104 & -11/40 \\ \hline
+     & 16/135 & 0 & 6656/12825 & 28561/56430 & -9/50 & 2/55 \\
+     & 25/216 & 0 & 1048/2565 & 2197/4104 & -1/5 & 0
 \end{array} \]
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{27}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ARKF}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
+\PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{32}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{32}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{,}\PY{l+m+mi}{13}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1932}\PY{p}{,}\PY{l+m+mi}{2197}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{7200}\PY{p}{,}\PY{l+m+mi}{2197}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{7296}\PY{p}{,}\PY{l+m+mi}{2197}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{439}\PY{p}{,}\PY{l+m+mi}{216}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3680}\PY{p}{,}\PY{l+m+mi}{513}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{845}\PY{p}{,}\PY{l+m+mi}{4104}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{8}\PY{p}{,}\PY{l+m+mi}{27}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{3544}\PY{p}{,}\PY{l+m+mi}{2565}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{1859.4104}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{11}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{16}\PY{p}{,}\PY{l+m+mi}{135}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{6656}\PY{p}{,}\PY{l+m+mi}{12825}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{28561}\PY{p}{,}\PY{l+m+mi}{56430}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{50}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{55}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{25}\PY{p}{,}\PY{l+m+mi}{216}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1048}\PY{p}{,}\PY{l+m+mi}{2565}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2197}\PY{p}{,}\PY{l+m+mi}{4104}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
 
     \hypertarget{step-5-output-this-notebook-to-latex-formatted-pdf-file-back-to-top}{%
 \section{\texorpdfstring{Step 5: Output this notebook to
@@ -1425,7 +1483,7 @@ directory, with filename \url{Tutorial-RK_Butcher_Table_Dictionary.pdf}.
 PDF file through another means.)
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{21}{\boxspacing}
+\prompt{In}{incolor}{22}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{import} \PY{n+nn}{cmdline\PYZus{}helper} \PY{k}{as} \PY{n+nn}{cmd}    \PY{c+c1}{\PYZsh{} NRPy+: Multi\PYZhy{}platform Python command\PYZhy{}line interface}
 \PY{n}{cmd}\PY{o}{.}\PY{n}{output\PYZus{}Jupyter\PYZus{}notebook\PYZus{}to\PYZus{}LaTeXed\PYZus{}PDF}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Tutorial\PYZhy{}RK\PYZus{}Butcher\PYZus{}Table\PYZus{}Dictionary}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
