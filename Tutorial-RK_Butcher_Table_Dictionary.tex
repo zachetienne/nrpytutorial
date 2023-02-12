@@ -534,10 +534,16 @@ This notebook is organized as follows
     \item
       \hyperref[heuneuler]{Step 4.a.i}: Adaptive Heun-Euler Method
     \item
-      \hyperref[bogackishampine]{Step 4.a.ii}: Adaptibe Bogacki-Shampine
+      \hyperref[bogackishampine]{Step 4.a.ii}: Adaptive Bogacki-Shampine
       Method
     \item
-      \hyperref[rkfehlberg]{Step 4.a.iii}: Adaptibe Runge-Kutta-Fehlberg
+      \hyperref[rkfehlberg]{Step 4.a.iii}: Adaptive Runge-Kutta-Fehlberg
+    \item
+      \hyperref[ack]{Step 4.a.iv}: Adaptive Cash-Karp
+    \item
+      \hyperref[adp54]{Step 4.a.v}: Adaptive Dormand-Prince 5(4)
+    \item
+      \hyperref[adp8]{Step 4.a.vi}: Adaptive Dormand-Prince 8(7)
     \end{enumerate}
   \end{enumerate}
 \item
@@ -1313,8 +1319,8 @@ expliclt in function, nonetheless need to be implemented differently.
 They have an extra row at the bottom of their butcher tables which
 define a second method of a different order. Adaptive Runge-Kutta-Like
 methods will calculate the predicted values of both results and use the
-difference between them to estimate the error in a highly efficient
-manner. Details can be found on the Runge-Kutta
+difference between them to estimate the error of the lower-order method
+in a highly efficient manner. Details can be found on the Runge-Kutta
 \href{https://en.wikipedia.org/wiki/Runge\%E2\%80\%93Kutta_methods\#Adaptive_Runge\%E2\%80\%93Kutta_methods}{wikipedia
 page}.
 
@@ -1346,6 +1352,8 @@ threshhold the scheme will discard the step and try again at a smaller
 timestep, and if the error is below a provided threshhold the scheme
 will increase the step size (but in general it will not discard the
 data, it already calculated it, why waste it?).
+
+The higher order method is the higher row of b-coefficients.
 
     \hypertarget{step-4.a-generating-a-dictionary-of-butcher-tables-for-explicit-runge-kutta-techniques-back-to-top}{%
 \subsection{\texorpdfstring{Step 4.a: Generating a Dictionary of Butcher
@@ -1384,7 +1392,7 @@ the first-order Euler method, creating the simplest Adaptive method.
 \end{array} \]
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{24}{\boxspacing}
+\prompt{In}{incolor}{20}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AHE}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
 \PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
@@ -1403,8 +1411,7 @@ Method {[}Back to
 \[\label{bogackishampine}\]
 
 \href{https://en.wikipedia.org/wiki/Bogacki\%E2\%80\%93Shampine_method}{The
-Bogacki-Shampine Method} is a second order method with a third order
-error estimator.
+Bogacki-Shampine Method} is a third and second order method.
 
 \[\begin{array}{c|cc}
     0 & \\
@@ -1416,7 +1423,7 @@ error estimator.
 \end{array} \]
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{25}{\boxspacing}
+\prompt{In}{incolor}{21}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ABS}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
 \PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
@@ -1437,22 +1444,21 @@ Runge-Kutta-Fehlberg {[}Back to
 \[\label{rkfehlberg}\]
 
 \href{https://en.wikipedia.org/wiki/Runge\%E2\%80\%93Kutta\%E2\%80\%93Fehlberg_method}{The
-Runge-Kutta-Fehlberg Method} is a fourth order method with a fifth order
-corrective.
+Runge-Kutta-Fehlberg Method} is a fifth and fourth order method.
 
 \[\begin{array}{c|cc}
     0 & \\
-    1/4 & 1/4 & \\ 
-    3/8 & 3/32 & 9/32 & \\
-    12/13 & 1932/2197 & -7200/2197 & 7296/2197 & \\
-    1 & 439/216 & -8 & 3680/513 & -845/4104 &  \\ 
-    1/2 & -8/27 & 2 & -3544/2565 & 1859/4104 & -11/40 \\ \hline
-     & 16/135 & 0 & 6656/12825 & 28561/56430 & -9/50 & 2/55 \\
-     & 25/216 & 0 & 1048/2565 & 2197/4104 & -1/5 & 0
+    \frac{1}{4} & \frac{1}{4} & \\ 
+    \frac{3}{8} & \frac{3}{32} & \frac{9}{32} & \\
+    \frac{12}{13} & \frac{1932}{2197} & \frac{-7200}{2197} & \frac{7296}{2197} & \\
+    1 & \frac{439}{216} & -8 & \frac{3680}{513} & \frac{-845}{4104} &  \\ 
+    \frac{1}{2} & \frac{-8}{27} & 2 & \frac{-3544}{2565} & \frac{1859}{4104} & \frac{11}{40} \\ \hline
+     & \frac{16}{135} & 0 & \frac{6656}{12825} & \frac{28561}{56430} & \frac{-9}{50} & \frac{2}{55} \\
+     & \frac{25}{216} & 0 & \frac{1048}{2565} & \frac{2197}{4104} & \frac{-1}{5} & 0
 \end{array} \]
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{27}{\boxspacing}
+\prompt{In}{incolor}{22}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ARKF}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
 \PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
@@ -1465,6 +1471,133 @@ corrective.
 \PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{16}\PY{p}{,}\PY{l+m+mi}{135}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{6656}\PY{p}{,}\PY{l+m+mi}{12825}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{28561}\PY{p}{,}\PY{l+m+mi}{56430}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{50}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{55}\PY{p}{)}\PY{p}{]}\PY{p}{,}
 \PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{25}\PY{p}{,}\PY{l+m+mi}{216}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1048}\PY{p}{,}\PY{l+m+mi}{2565}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2197}\PY{p}{,}\PY{l+m+mi}{4104}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
 \PY{p}{,} \PY{l+m+mi}{4}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{step-4.a.iv-adaptive-cash-karp-back-to-top}{%
+\subsubsection{\texorpdfstring{Step 4.a.iv: Adaptive Cash-Karp {[}Back
+to
+\hyperref[toc]{top}{]}}{Step 4.a.iv: Adaptive Cash-Karp {[}Back to {]}}}\label{step-4.a.iv-adaptive-cash-karp-back-to-top}}
+
+\[\label{ack}\]
+
+\href{https://en.wikipedia.org/wiki/Cash\%E2\%80\%93Karp_method}{The
+Cash-Karp Method} is a fifth and fourth order method.
+
+\[\begin{array}{c|cc}
+    0 & \\
+    \frac{1}{5} & \frac{1}{5} & \\ 
+    \frac{3}{10} & \frac{3}{40} & \frac{9}{40} & \\
+    \frac{3}{5} & \frac{3}{10} & \frac{-9}{10} & \frac{6}{5} & \\
+    1 & \frac{-11}{54} & \frac{5}{2} & \frac{-70}{27} & \frac{35}{27} &  \\ 
+    \frac{7}{8} & \frac{1631}{55296} & \frac{175}{512} & \frac{575}{1384} & \frac{44275}{110592} & \frac{-253}{4096} \\ \hline
+     & \frac{37}{378} & 0 & \frac{250}{621} & \frac{125}{594} & 0 & \frac{512}{1771} \\
+     & \frac{2825}{27648} & 0 & \frac{18575}{48384} & \frac{13525}{55296} & \frac{277}{14336} & \frac{1}{4}
+\end{array} \]
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{23}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ACK}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
+\PY{p}{[}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{,}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{6}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{11}\PY{p}{,}\PY{l+m+mi}{54}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{70}\PY{p}{,}\PY{l+m+mi}{27}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{35}\PY{p}{,}\PY{l+m+mi}{27}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{7}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1631}\PY{p}{,}\PY{l+m+mi}{55296}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{175}\PY{p}{,}\PY{l+m+mi}{512}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{575}\PY{p}{,}\PY{l+m+mi}{13824}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{44275}\PY{p}{,}\PY{l+m+mi}{110592}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{253}\PY{p}{,}\PY{l+m+mi}{4096}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{37}\PY{p}{,}\PY{l+m+mi}{378}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{250}\PY{p}{,}\PY{l+m+mi}{621}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{125}\PY{p}{,}\PY{l+m+mi}{594}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{512}\PY{p}{,}\PY{l+m+mi}{1771}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2825}\PY{p}{,}\PY{l+m+mi}{27648}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{18575}\PY{p}{,}\PY{l+m+mi}{48384}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{13525}\PY{p}{,}\PY{l+m+mi}{55296}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{277}\PY{p}{,}\PY{l+m+mi}{14336}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{p}{,} \PY{l+m+mi}{5}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{step-4.a.v-adaptive-dormand-prince-54-back-to-top}{%
+\subsubsection{\texorpdfstring{Step 4.a.v: Adaptive Dormand-Prince 5(4)
+{[}Back to
+\hyperref[toc]{top}{]}}{Step 4.a.v: Adaptive Dormand-Prince 5(4) {[}Back to {]}}}\label{step-4.a.v-adaptive-dormand-prince-54-back-to-top}}
+
+\[\label{adp54}\]
+
+\href{https://en.wikipedia.org/wiki/Dormand\%E2\%80\%93Prince_method}{The
+Dormand-Prince5(4) Method} is a fifth and fourth order method.
+
+\[\begin{array}{c|ccccccc}
+    0 & \\
+    \frac{1}{5} & \frac{1}{5} & \\ 
+    \frac{3}{10} & \frac{3}{40} & \frac{9}{40} & \\
+    \frac{4}{5} & \frac{44}{45} & \frac{-56}{15} & \frac{32}{9} & \\ 
+    \frac{8}{9} & \frac{19372}{6561} & \frac{−25360}{2187} & \frac{64448}{6561} & \frac{−212}{729} & \\
+    1 & \frac{9017}{3168} & \frac{−355}{33} & \frac{46732}{5247} & \frac{49}{176} & \frac{−5103}{18656} & \\
+    1 & \frac{35}{384} & 0 & \frac{500}{1113} & \frac{125}{192} & \frac{−2187}{6784} & \frac{11}{84} & \\ \hline
+     & \frac{35}{384} & 0 & \frac{500}{1113} & \frac{125}{192} & \frac{−2187}{6784} & \frac{11}{84} & 0 \\
+& \frac{5179}{57600} & 0 & \frac{7571}{16695} & \frac{393}{640} & \frac{−92097}{339200} & \frac{187}{2100} & \frac{1}{40}
+\end{array}. \]
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{24}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ADP5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{=} \PY{p}{(}
+\PY{p}{[}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{10}\PY{p}{)}\PY{p}{,}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{4}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{44}\PY{p}{,}\PY{l+m+mi}{45}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{56}\PY{p}{,}\PY{l+m+mi}{15}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{32}\PY{p}{,}\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{8}\PY{p}{,}\PY{l+m+mi}{9}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{19372}\PY{p}{,}\PY{l+m+mi}{6561}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{25360}\PY{p}{,}\PY{l+m+mi}{2187}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{64448}\PY{p}{,}\PY{l+m+mi}{6561}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{212}\PY{p}{,}\PY{l+m+mi}{729}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{9017}\PY{p}{,}\PY{l+m+mi}{3168}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{355}\PY{p}{,}\PY{l+m+mi}{33}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{46732}\PY{p}{,}\PY{l+m+mi}{5247}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{49}\PY{p}{,}\PY{l+m+mi}{176}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{5103}\PY{p}{,}\PY{l+m+mi}{18656}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{35}\PY{p}{,}\PY{l+m+mi}{384}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{,}\PY{l+m+mi}{1113}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{125}\PY{p}{,}\PY{l+m+mi}{192}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{2187}\PY{p}{,}\PY{l+m+mi}{6784}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{11}\PY{p}{,}\PY{l+m+mi}{84}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{35}\PY{p}{,}\PY{l+m+mi}{384}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{500}\PY{p}{,}\PY{l+m+mi}{1113}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{125}\PY{p}{,}\PY{l+m+mi}{192}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{2187}\PY{p}{,}\PY{l+m+mi}{6784}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{11}\PY{p}{,}\PY{l+m+mi}{84}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{5179}\PY{p}{,}\PY{l+m+mi}{57600}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{7571}\PY{p}{,}\PY{l+m+mi}{16695}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{393}\PY{p}{,}\PY{l+m+mi}{640}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{92097}\PY{p}{,}\PY{l+m+mi}{339200}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{187}\PY{p}{,}\PY{l+m+mi}{2100}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{p}{,} \PY{l+m+mi}{5}\PY{p}{)}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \hypertarget{step-4.vi-adaptive-dormand-prince-87-back-to-top}{%
+\subsubsection{\texorpdfstring{Step 4.vi: Adaptive Dormand-Prince 8(7)
+{[}Back to
+\hyperref[toc]{top}{]}}{Step 4.vi: Adaptive Dormand-Prince 8(7) {[}Back to {]}}}\label{step-4.vi-adaptive-dormand-prince-87-back-to-top}}
+
+\[\label{adp8}\]
+
+\href{https://en.wikipedia.org/wiki/Runge\%E2\%80\%93Kutta\%E2\%80\%93Fehlberg_method}{The
+Domand-Prince 8(7?) Method} is an eighth and seventh(?) order method.
+
+\[\begin{array}{c|ccccccccc}
+    0 & \\
+    \frac{1}{18} & \frac{1}{18} & \\
+    \frac{1}{12} & \frac{1}{48} & \frac{1}{16} & \\
+    \frac{1}{8} & \frac{1}{32} & 0 & \frac{3}{32} & \\
+    \frac{5}{16} & \frac{5}{16} & 0 & \frac{-75}{64} & \frac{75}{64} & \\
+    \frac{3}{8} & \frac{3}{80} & 0 & 0 & \frac{3}{16} & \frac{3}{20} & \\
+    \frac{59}{400} & \frac{29443841}{614563906} & 0 & 0 & \frac{77736538}{692538347} & \frac{-28693883}{1125000000} & \frac{23124283}{1800000000} & \\
+    \frac{93}{200} & \frac{16016141}{946692911} & 0 & 0 & \frac{61564180}{158732637} & \frac{22789713}{633445777} & \frac{545815736}{2771057229} & \frac{-180193667}{1043307555} & \\
+    \frac{5490023248}{9719169821} & \frac{39632708}{573591083} & 0 & 0 & \frac{-433636366}{683701615} & \frac{-421739975}{2616292301} & \frac{100302831}{723423059} & \frac{790204164}{839813087} & \frac{800635310}{3783071287} & \\
+    \frac{13}{20} & \frac{246121993}{1340847787} & 0 & 0 & \frac{-37695042795}{15268766246} & \frac{-309121744}{1061227803} & \frac{-12992083}{490766935} & \frac{6005943493}{2108947869} & \frac{393006217}{1396673457} & \frac{123872331}{1001029789} & \\
+    \frac{1201146811}{1299019798} & \frac{-1028468189}{846180014} & 0 & 0 & \frac{8478235783}{508512852} & \frac{1311729495}{1432422823} & \frac{-10304129995}{1701304382} & \frac{-48777925059}{3047939560} & \frac{15336726248}{1032824649} & \frac{-45442868181}{3398467696} & \frac{3065993473}{597172653} & \\
+    1 & \frac{185892177}{718116043} & 0 & 0 & \frac{-3185094517}{667107341} & \frac{-477755414}{1098053517} & \frac{-703635378}{230739211} & \frac{5731566787}{1027545527} & \frac{5232866602}{850066563} & \frac{-4093664535}{808688257} & \frac{3962137247}{1805957418} & \frac{65686358}{487910083} & \\
+    1 & \frac{403863854}{491063109} & 0 & 0 & \frac{-5068492393}{434740067} & \frac{-411421997}{543043805} & \frac{652783627}{914296604} & \frac{11173962825}{925320556} & \frac{-13158990841}{6184727034} & \frac{3936647629}{1978049680} & \frac{-160528059}{685178525} & \frac{248638103}{1413531060} & 0 & \\ \hline
+    & \frac{14005451}{335480064} & 0 & 0 & 0 & 0 & \frac{-59238493}{1068277825} & \frac{181606767}{758867731} & \frac{561292985}{797845732} & \frac{-1041891430}{1371343529} & \frac{760417239}{1151165299} & \frac{118820643}{751138087} & \frac{-528747749}{2220607170} & \frac{1}{4} \\
+    & \frac{13451932}{455176623} & 0 & 0 & 0 & 0 & \frac{-808719846}{976000145} & \frac{1757004468}{5645159321} & \frac{656045339}{265891186} & \frac{-3867574721}{1518517206} & \frac{465885868}{322736535} & \frac{53011238}{667516719} & \frac{2}{45} & 0 \\
+\end{array}.\]
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{25}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ADP8}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{p}{(}
+\PY{p}{[}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{18}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{18}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{12}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{48}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{16}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{8}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{32}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+m+mi}{32}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{,} \PY{l+m+mi}{16}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{5}\PY{p}{,} \PY{l+m+mi}{16}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{75}\PY{p}{,} \PY{l+m+mi}{64}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{75}\PY{p}{,} \PY{l+m+mi}{64}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+m+mi}{8}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+m+mi}{80}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+m+mi}{16}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,} \PY{l+m+mi}{20}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{59}\PY{p}{,} \PY{l+m+mi}{400}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{29443841}\PY{p}{,} \PY{l+m+mi}{614563906}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{77736538}\PY{p}{,} \PY{l+m+mi}{692538347}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{28693883}\PY{p}{,} \PY{l+m+mi}{1125000000}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{23124283}\PY{p}{,} \PY{l+m+mi}{1800000000}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{93}\PY{p}{,} \PY{l+m+mi}{200}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{16016141}\PY{p}{,} \PY{l+m+mi}{946692911}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{61564180}\PY{p}{,} \PY{l+m+mi}{158732637}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{22789713}\PY{p}{,} \PY{l+m+mi}{633445777}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{545815736}\PY{p}{,} \PY{l+m+mi}{2771057229}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{180193667}\PY{p}{,} \PY{l+m+mi}{1043307555}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{5490023248}\PY{p}{,} \PY{l+m+mi}{9719169821}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{39632708}\PY{p}{,} \PY{l+m+mi}{573591083}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{433636366}\PY{p}{,} \PY{l+m+mi}{683701615}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{421739975}\PY{p}{,} \PY{l+m+mi}{2616292301}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{100302831}\PY{p}{,} \PY{l+m+mi}{723423059}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{790204164}\PY{p}{,} \PY{l+m+mi}{839813087}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{800635310}\PY{p}{,} \PY{l+m+mi}{3783071287}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{13}\PY{p}{,} \PY{l+m+mi}{20}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{246121993}\PY{p}{,} \PY{l+m+mi}{1340847787}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{37695042795}\PY{p}{,} \PY{l+m+mi}{15268766246}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{309121744}\PY{p}{,} \PY{l+m+mi}{1061227803}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{12992083}\PY{p}{,} \PY{l+m+mi}{490766935}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{6005943493}\PY{p}{,} \PY{l+m+mi}{2108947869}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{393006217}\PY{p}{,} \PY{l+m+mi}{1396673457}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{123872331}\PY{p}{,} \PY{l+m+mi}{1001029789}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1201146811}\PY{p}{,} \PY{l+m+mi}{1299019798}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1028468189}\PY{p}{,} \PY{l+m+mi}{846180014}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{8478235783}\PY{p}{,} \PY{l+m+mi}{508512852}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1311729495}\PY{p}{,} \PY{l+m+mi}{1432422823}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{10304129995}\PY{p}{,} \PY{l+m+mi}{1701304382}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{48777925059}\PY{p}{,} \PY{l+m+mi}{3047939560}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{15336726248}\PY{p}{,} \PY{l+m+mi}{1032824649}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{45442868181}\PY{p}{,} \PY{l+m+mi}{3398467696}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3065993473}\PY{p}{,} \PY{l+m+mi}{597172653}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{185892177}\PY{p}{,} \PY{l+m+mi}{718116043}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{3185094517}\PY{p}{,} \PY{l+m+mi}{667107341}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{477755414}\PY{p}{,} \PY{l+m+mi}{1098053517}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{703635378}\PY{p}{,} \PY{l+m+mi}{230739211}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{5731566787}\PY{p}{,} \PY{l+m+mi}{1027545527}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{5232866602}\PY{p}{,} \PY{l+m+mi}{850066563}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{4093664535}\PY{p}{,} \PY{l+m+mi}{808688257}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3962137247}\PY{p}{,} \PY{l+m+mi}{1805957418}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{65686358}\PY{p}{,} \PY{l+m+mi}{487910083}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{403863854}\PY{p}{,} \PY{l+m+mi}{491063109}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{5068492393}\PY{p}{,} \PY{l+m+mi}{434740067}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{411421997}\PY{p}{,} \PY{l+m+mi}{543043805}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{652783627}\PY{p}{,} \PY{l+m+mi}{914296604}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{11173962825}\PY{p}{,} \PY{l+m+mi}{925320556}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{13158990841}\PY{p}{,} \PY{l+m+mi}{6184727034}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3936647629}\PY{p}{,} \PY{l+m+mi}{1978049680}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{160528059}\PY{p}{,} \PY{l+m+mi}{685178525}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{248638103}\PY{p}{,} \PY{l+m+mi}{1413531060}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{14005451}\PY{p}{,} \PY{l+m+mi}{335480064}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{59238493}\PY{p}{,} \PY{l+m+mi}{1068277825}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{181606767}\PY{p}{,} \PY{l+m+mi}{758867731}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{561292985}\PY{p}{,} \PY{l+m+mi}{797845732}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1041891430}\PY{p}{,} \PY{l+m+mi}{1371343529}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{760417239}\PY{p}{,} \PY{l+m+mi}{1151165299}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{118820643}\PY{p}{,} \PY{l+m+mi}{751138087}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{528747749}\PY{p}{,} \PY{l+m+mi}{2220607170}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{13451932}\PY{p}{,} \PY{l+m+mi}{455176623}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{808719846}\PY{p}{,} \PY{l+m+mi}{976000145}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1757004468}\PY{p}{,} \PY{l+m+mi}{5645159321}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{656045339}\PY{p}{,} \PY{l+m+mi}{265891186}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{3867574721}\PY{p}{,} \PY{l+m+mi}{1518517206}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{465885868}\PY{p}{,} \PY{l+m+mi}{322736535}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{53011238}\PY{p}{,} \PY{l+m+mi}{667516719}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,} \PY{l+m+mi}{45}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{p}{,} \PY{l+m+mi}{8}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -1483,7 +1616,7 @@ directory, with filename \url{Tutorial-RK_Butcher_Table_Dictionary.pdf}.
 PDF file through another means.)
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{22}{\boxspacing}
+\prompt{In}{incolor}{26}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{import} \PY{n+nn}{cmdline\PYZus{}helper} \PY{k}{as} \PY{n+nn}{cmd}    \PY{c+c1}{\PYZsh{} NRPy+: Multi\PYZhy{}platform Python command\PYZhy{}line interface}
 \PY{n}{cmd}\PY{o}{.}\PY{n}{output\PYZus{}Jupyter\PYZus{}notebook\PYZus{}to\PYZus{}LaTeXed\PYZus{}PDF}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Tutorial\PYZhy{}RK\PYZus{}Butcher\PYZus{}Table\PYZus{}Dictionary}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
