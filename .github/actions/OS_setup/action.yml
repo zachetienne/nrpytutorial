@@ -31,11 +31,13 @@ runs:
       # after selecting a specific mirror, we need to run 'apt-get update'
       sudo apt-get update
       sudo apt-get install -y texlive-latex-base colordiff pandoc ffmpeg
+    shell: bash
   - run: |
       python -m pip install --upgrade pip setuptools
       python -m pip install --upgrade nbconvert
       python -m pip install testfixtures ${{ inputs.sympy-version }} mpmath jupyter matplotlib scipy nrpylatex
       if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    shell: bash
 
 #
 #ubuntu 22
