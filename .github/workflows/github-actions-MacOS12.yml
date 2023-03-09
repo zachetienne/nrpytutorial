@@ -20,7 +20,7 @@ jobs:
     - name: Setup OS and python environment
       uses: ./.github/actions/OS_setup
       with:
-        OS: 'ubuntu'
+        OS: 'Mac'
         python-version: ${{ matrix.python-version }}
         sympy-version: 'sympy'
     - name: UnitTests
