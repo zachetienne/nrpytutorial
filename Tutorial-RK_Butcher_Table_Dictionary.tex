@@ -547,7 +547,9 @@ This notebook is organized as follows
     \end{enumerate}
   \end{enumerate}
 \item
-  \hyperref[latex_pdf_output]{Step 5}: Output this notebook to
+  \hyperref[adamsbashforth]{Step 5}: The Adams Bashforth Method
+\item
+  \hyperref[latex_pdf_output]{Step 6}: Output this notebook to
   \(\LaTeX\)-formatted PDF file
 \end{enumerate}
 
@@ -1355,6 +1357,11 @@ data, it already calculated it, why waste it?).
 
 The higher order method is the higher row of b-coefficients.
 
+Note: these methods have not been validated in full, though this will be
+added later. They \emph{have} been validated individually to check that
+the first-step orders for both of their evaluations are near the
+expected values, but that is not currently in any notebook.
+
     \hypertarget{step-4.a-generating-a-dictionary-of-butcher-tables-for-explicit-runge-kutta-techniques-back-to-top}{%
 \subsection{\texorpdfstring{Step 4.a: Generating a Dictionary of Butcher
 Tables for Explicit Runge Kutta Techniques {[}Back to
@@ -1363,12 +1370,12 @@ Tables for Explicit Runge Kutta Techniques {[}Back to
 \[\label{codebutchera}\]
 
 As before, we can store all of the Butcher tables in Python's
-\textbf{Dictionary} format using the curly brackets \{\} and `key':value
-pairs. The `key' will be the \emph{name} of the Runge Kutta method and
-the value will be the Butcher table itself stored as a list of lists.
-The convergence order for each Runge Kutta method is also stored. We
-will construct the dictionary \texttt{Butcher\_dict} one Butcher table
-at a time in the following sections.
+\textbf{Dictionary} format usingf the curly brackets \{\} and
+`key':value pairs. The `key' will be the \emph{name} of the Runge Kutta
+method and the value will be the Butcher table itself stored as a list
+of lists. The convergence order for each Runge Kutta method is also
+stored. We will add to the dictionary \texttt{Butcher\_dict} one Butcher
+table at a time in the following sections.
 
 Adaptive methods are all prefaced with an A in their name, for clarity's
 sake.
@@ -1454,7 +1461,7 @@ Runge-Kutta-Fehlberg Method} is a fifth and fourth order method.
     1 & \frac{439}{216} & -8 & \frac{3680}{513} & \frac{-845}{4104} &  \\ 
     \frac{1}{2} & \frac{-8}{27} & 2 & \frac{-3544}{2565} & \frac{1859}{4104} & \frac{11}{40} \\ \hline
      & \frac{16}{135} & 0 & \frac{6656}{12825} & \frac{28561}{56430} & \frac{-9}{50} & \frac{2}{55} \\
-     & \frac{25}{216} & 0 & \frac{1048}{2565} & \frac{2197}{4104} & \frac{-1}{5} & 0
+     & \frac{25}{216} & 0 & \frac{1408}{2565} & \frac{2197}{4104} & \frac{-1}{5} & 0
 \end{array} \]
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
@@ -1466,11 +1473,10 @@ Runge-Kutta-Fehlberg Method} is a fifth and fourth order method.
 \PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3}\PY{p}{,}\PY{l+m+mi}{32}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{32}\PY{p}{)}\PY{p}{]}\PY{p}{,}
 \PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{12}\PY{p}{,}\PY{l+m+mi}{13}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1932}\PY{p}{,}\PY{l+m+mi}{2197}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{7200}\PY{p}{,}\PY{l+m+mi}{2197}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{7296}\PY{p}{,}\PY{l+m+mi}{2197}\PY{p}{)}\PY{p}{]}\PY{p}{,}
 \PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{439}\PY{p}{,}\PY{l+m+mi}{216}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{8}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{3680}\PY{p}{,}\PY{l+m+mi}{513}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{845}\PY{p}{,}\PY{l+m+mi}{4104}\PY{p}{)}\PY{p}{]}\PY{p}{,}
-\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{8}\PY{p}{,}\PY{l+m+mi}{27}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{3544}\PY{p}{,}\PY{l+m+mi}{2565}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{1859.4104}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{11}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{]}\PY{p}{,}
-
+\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{8}\PY{p}{,}\PY{l+m+mi}{27}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{3544}\PY{p}{,}\PY{l+m+mi}{2565}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1859}\PY{p}{,}\PY{l+m+mi}{4104}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{11}\PY{p}{,}\PY{l+m+mi}{40}\PY{p}{)}\PY{p}{]}\PY{p}{,}
 \PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{16}\PY{p}{,}\PY{l+m+mi}{135}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{6656}\PY{p}{,}\PY{l+m+mi}{12825}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{28561}\PY{p}{,}\PY{l+m+mi}{56430}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{9}\PY{p}{,}\PY{l+m+mi}{50}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,}\PY{l+m+mi}{55}\PY{p}{)}\PY{p}{]}\PY{p}{,}
-\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{25}\PY{p}{,}\PY{l+m+mi}{216}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1048}\PY{p}{,}\PY{l+m+mi}{2565}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2197}\PY{p}{,}\PY{l+m+mi}{4104}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
-\PY{p}{,} \PY{l+m+mi}{4}\PY{p}{)}
+\PY{p}{[}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{25}\PY{p}{,}\PY{l+m+mi}{216}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{1408}\PY{p}{,}\PY{l+m+mi}{2565}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mi}{2197}\PY{p}{,}\PY{l+m+mi}{4104}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{5}\PY{p}{)}\PY{p}{,} \PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{p}{,} \PY{l+m+mi}{5}\PY{p}{)}
 \end{Verbatim}
 \end{tcolorbox}
 
@@ -1558,7 +1564,7 @@ Dormand-Prince5(4) Method} is a fifth and fourth order method.
 \[\label{adp8}\]
 
 \href{https://en.wikipedia.org/wiki/Runge\%E2\%80\%93Kutta\%E2\%80\%93Fehlberg_method}{The
-Domand-Prince 8(7?) Method} is an eighth and seventh(?) order method.
+Domand-Prince 8(7?) Method} is an eighth and seventh order method.
 
 \[\begin{array}{c|ccccccccc}
     0 & \\
@@ -1601,10 +1607,236 @@ Domand-Prince 8(7?) Method} is an eighth and seventh(?) order method.
 \end{Verbatim}
 \end{tcolorbox}
 
-    \hypertarget{step-5-output-this-notebook-to-latex-formatted-pdf-file-back-to-top}{%
-\section{\texorpdfstring{Step 5: Output this notebook to
+    \hypertarget{step-5-the-adams-bashforth-method-back-to-top}{%
+\section{\texorpdfstring{Step 5: The Adams-Bashforth Method {[}Back to
+\hyperref[toc]{top}{]}}{Step 5: The Adams-Bashforth Method {[}Back to {]}}}\label{step-5-the-adams-bashforth-method-back-to-top}}
+
+\[\label{adamsbashforth}\]
+
+    There is one method we have on offer that is not an RK-style method.
+Instead of taking the previous step and evolving to the next one, it
+takes into account several prior steps and extrapolates from them to the
+next step. This is the Adams-Bashforth method. Its primary weakness is
+that it requires several points be evaluated before it can run
+(specifically, points equal to the desired order of the method).
+However, its strengths are that it takes into account longer-scale
+patterns as well as being able to be scaled up to arbitrary order. More
+detailed information can be found on the
+\href{https://en.wikipedia.org/wiki/Linear_multistep_method}{Wikipedia
+page}.
+
+The first few Adams-Bashforth methods are as follows.
+
+\[y_{n+1} = y_n + hf(y_n,t_n)\]
+\[y_{n+2} = y_{n+1} + h\left( \frac32 f(y_{n+1},t_{n+1}) - \frac12 f(y_n,t_n) \right)\]
+\[y_{n+3} = y_{n+2} + h\left( \frac{23}{12}f(y_{n+2},t_{n+2}) - \frac{16}{12} f(y_{n+1},t_{n+1}) + \frac{5}{12} f(y_n,t_n) \right)\]
+
+Careful readers may have noticed that the first Adams-Bashforth (AB)
+method is identical to the Euler method. Note that the second and
+third-order AB methods require 2 and 3 previous points, respectively, to
+evaluate the next one. This trend continues to arbitrary order. In
+general, a method of order s can be stated as
+
+\[ y_{n+s} = y_{n+s-1} + h \sum_{i=0}^{s-1} a_i f(y_{n+i},t_{n+i}). \]
+
+For any singular method, only a vector needs to be specified, the values
+\(a_i\) for the order in question. These coefficients have a closed-form
+expression for them, although it isn't neat.
+
+\[a_{s-j-1} = \frac{(-1)^j}{j!(s-j-1)!} \int_0^1 \prod_{i=0;i\neq j}^{s-1} (u+i) du\]
+
+From this arbitrary order methods can be chosen. In order to get the
+order number of points that AB requires to extrapolate, there are a
+couple of options. If the user does not wish to use RK methods, one can
+use a ``ramping up'' effect, starting with the first order AB method,
+then using those values in the second order, then the second order in
+the third, and so on until the desired order is reached. More often,
+though, an RK method is used at the start and then extrapolation is
+passed to the AB method. Do note: the AB method as dictated here
+requires that the step size be constant, since it cares a lot about the
+relation between the previous points. While it is possible to make a
+generic AB method that can take points separated by any variable step
+size, that functionality is not included here as it would ruin the
+closed-form relatively simple analytic expression for the coefficients.
+
+Rather than providing a single table, we actually have a code that can
+generate a table for \emph{any} AB method, though by default we have it
+create one of order 19, chosen because it's an arbitrarily large number
+that we should never need to use. Strictly speaking, only one vector of
+values is required for an AB method, but when we generate the 19th order
+vector, we also choose to generate all previous orders so if we wished
+to use a pure-AB method without relying on RK to seed values, we have
+access to the lower-order methods.
+
+Of note: use of the AB method indicates that the really high order
+methods are not necessarily more accurate, believed to be due to
+roundoff error acumulating over time. It has been observed (though not
+rigorously proven) that once an AB method is calculating near roundoff
+error, higher order methods will be less accurate, so the best AB order
+to use is likely he lowest order one that evaluates near roundoff error.
+
+Note: this method has not yet been fully validated. There have been
+individual validation checks for orders 1 through 9, but the higher
+order methods become all but impossible to get any information out of
+due to their rising error. None of this is done in this notebook,
+internal validation will have to be added.
+
+    \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
+\prompt{In}{incolor}{26}{\boxspacing}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+\PY{k+kn}{import} \PY{n+nn}{sympy} \PY{k}{as} \PY{n+nn}{sp}
+\PY{k+kn}{from} \PY{n+nn}{sympy} \PY{k+kn}{import} \PY{n}{symbols}
+\PY{k+kn}{from} \PY{n+nn}{sympy} \PY{k+kn}{import} \PY{n}{integrate}
+
+\PY{c+c1}{\PYZsh{}okay so our goal here is to calculate the coefficients to arbitrary precision for}
+\PY{c+c1}{\PYZsh{}Adams\PYZhy{}Bashforth methods}
+
+\PY{c+c1}{\PYZsh{}this does not work to generate an order 1 method. But why would you need to generate}
+\PY{c+c1}{\PYZsh{}that, it\PYZsq{}s just a 1x1 matrix with a 1 in it.}
+\PY{n}{order} \PY{o}{=} \PY{l+m+mi}{19} \PY{c+c1}{\PYZsh{}change this if you want different orders. Default 19, which takes several seconds to generate.}
+\PY{n}{pythonButcher} \PY{o}{=} \PY{p}{[}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{0.0}\PY{o}{/}\PY{l+m+mf}{1.0}\PY{p}{)}\PY{p}{,}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{0.0}\PY{o}{/}\PY{l+m+mf}{1.0}\PY{p}{)}\PY{p}{]}\PY{p}{,}
+                 \PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{0.0}\PY{o}{/}\PY{l+m+mf}{1.0}\PY{p}{)}\PY{p}{,}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{0.0}\PY{o}{/}\PY{l+m+mf}{1.0}\PY{p}{)}\PY{p}{]}\PY{p}{]}
+\PY{c+c1}{\PYZsh{}just to initialize it, we\PYZsq{}ll set it in a minute}
+
+\PY{n}{n} \PY{o}{=} \PY{l+m+mi}{1}
+\PY{k}{while} \PY{n}{n} \PY{o}{\PYZlt{}} \PY{n}{order}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{:} \PY{c+c1}{\PYZsh{}12 is the order GSL stops at, so surely it\PYZsq{}ll be enough? (increase later)}
+    \PY{n}{j} \PY{o}{=} \PY{l+m+mi}{0}
+    \PY{k}{while} \PY{n}{j} \PY{o}{\PYZlt{}} \PY{n}{n}\PY{p}{:} \PY{c+c1}{\PYZsh{}the number of coefficients in each method is equal to the order.}
+
+        \PY{c+c1}{\PYZsh{}set up the product}
+        \PY{n}{x} \PY{o}{=} \PY{n}{symbols}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{x}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+        \PY{n}{expr} \PY{o}{=} \PY{n}{x}
+        \PY{n}{i} \PY{o}{=} \PY{l+m+mi}{0}
+        \PY{k}{while} \PY{n}{i} \PY{o}{\PYZlt{}} \PY{n}{n}\PY{p}{:}
+            \PY{k}{if} \PY{n}{i} \PY{o}{==} \PY{n}{j}\PY{p}{:}
+                \PY{n}{i} \PY{o}{=} \PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}
+            \PY{k}{else}\PY{p}{:}
+                \PY{n}{expr} \PY{o}{=} \PY{n}{expr}\PY{o}{*}\PY{p}{(}\PY{n}{x} \PY{o}{+} \PY{n}{i}\PY{p}{)}
+                \PY{n}{i} \PY{o}{=} \PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}
+        \PY{n}{expr} \PY{o}{=} \PY{n}{expr}\PY{o}{/}\PY{n}{x}
+        \PY{n}{expr2} \PY{o}{=} \PY{n}{integrate}\PY{p}{(}\PY{n}{expr}\PY{p}{,}\PY{p}{(}\PY{n}{x}\PY{p}{,}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}
+        \PY{n}{expr2} \PY{o}{=} \PY{n}{expr2} \PY{o}{*} \PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mf}{1.0}\PY{p}{)}\PY{o}{*}\PY{o}{*}\PY{n}{j}\PY{p}{,}\PY{p}{(}\PY{n}{sp}\PY{o}{.}\PY{n}{factorial}\PY{p}{(}\PY{n}{j}\PY{p}{)}\PY{o}{*} \PY{n}{sp}\PY{o}{.}\PY{n}{factorial}\PY{p}{(}\PY{n}{n} \PY{o}{\PYZhy{}} \PY{n}{j} \PY{o}{\PYZhy{}} \PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}\PY{p}{)}
+        \PY{k}{if} \PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{pythonButcher}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n}{n}\PY{p}{)}\PY{p}{:}
+            \PY{n}{pythonButcher}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{p}{[}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{0.0}\PY{o}{/}\PY{l+m+mf}{1.0}\PY{p}{)}\PY{p}{,}\PY{n}{sp}\PY{o}{.}\PY{n}{Rational}\PY{p}{(}\PY{l+m+mf}{0.0}\PY{o}{/}\PY{l+m+mf}{1.0}\PY{p}{)}\PY{p}{]}\PY{p}{)}
+            \PY{c+c1}{\PYZsh{}add another row if we need it.}
+        \PY{k}{if} \PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{pythonButcher}\PY{p}{[}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{:}
+            \PY{n}{pythonButcher}\PY{p}{[}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{expr2}\PY{p}{)}
+            \PY{n}{i} \PY{o}{=} \PY{l+m+mi}{0}
+            \PY{k}{while} \PY{n}{i} \PY{o}{\PYZlt{}} \PY{n}{n}\PY{p}{:}
+                \PY{k}{if}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{pythonButcher}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n+nb}{len}\PY{p}{(}\PY{n}{pythonButcher}\PY{p}{[}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{p}{:}
+                    \PY{n}{pythonButcher}\PY{p}{[}\PY{n}{i}\PY{p}{]}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{sp}\PY{o}{.}\PY{n}{sympify}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+                \PY{n}{i} \PY{o}{=} \PY{n}{i}\PY{o}{+}\PY{l+m+mi}{1}
+        \PY{k}{else}\PY{p}{:}
+            \PY{n}{pythonButcher}\PY{p}{[}\PY{n}{n}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{j}\PY{p}{]} \PY{o}{=} \PY{n}{expr2}
+        \PY{n}{j} \PY{o}{=} \PY{n}{j}\PY{o}{+}\PY{l+m+mi}{1}
+    \PY{n}{n} \PY{o}{=} \PY{n}{n}\PY{o}{+}\PY{l+m+mi}{1}
+
+\PY{n+nb}{print}\PY{p}{(}\PY{n}{pythonButcher}\PY{p}{)}
+
+\PY{n}{Butcher\PYZus{}dict}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{AB}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{=}\PY{p}{(}
+\PY{n}{pythonButcher}
+\PY{p}{,} \PY{n}{order}\PY{p}{)}
+
+\PY{c+c1}{\PYZsh{}this currently does not clean out extra zeroes in the matrix, like the other butcher tables. Careful!}
+\end{Verbatim}
+\end{tcolorbox}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+[[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [3/2, -1/2, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [23/12, -4/3, 5/12, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [55/24, -59/24, 37/24, -3/8, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0], [1901/720, -1387/360, 109/30, -637/360, 251/720, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [4277/1440, -2641/480, 4991/720, -3649/720,
+959/480, -95/288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [198721/60480,
+-18637/2520, 235183/20160, -10754/945, 135713/20160, -5603/2520, 19087/60480, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [16083/4480, -1152169/120960, 242653/13440,
+-296053/13440, 2102243/120960, -115747/13440, 32863/13440, -5257/17280, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0], [14097247/3628800, -21562603/1814400, 47738393/1814400,
+-69927631/1814400, 862303/22680, -45586321/1814400, 19416743/1814400,
+-4832053/1814400, 1070017/3628800, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[4325321/1036800, -104995189/7257600, 6648317/181440, -28416361/453600,
+269181919/3628800, -222386081/3628800, 15788639/453600, -2357683/181440,
+20884811/7257600, -25713/89600, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+[2132509567/479001600, -2067948781/119750400, 1572737587/31933440,
+-1921376209/19958400, 3539798831/26611200, -82260679/623700,
+2492064913/26611200, -186080291/3991680, 2472634817/159667200,
+-52841941/17107200, 26842253/95800320, 0, 0, 0, 0, 0, 0, 0, 0],
+[4527766399/958003200, -6477936721/319334400, 12326645437/191600640,
+-15064372973/106444800, 35689892561/159667200, -41290273229/159667200,
+35183928883/159667200, -625551749/4561920, 923636629/15206400,
+-17410248271/958003200, 30082309/9123840, -4777223/17418240, 0, 0, 0, 0, 0, 0,
+0], [13064406523627/2615348736000, -931781102989/39626496000,
+5963794194517/72648576000, -10498491598103/52306974720,
+20730767690131/58118860800, -34266367915049/72648576000, 228133014533/486486000,
+-2826800577631/8072064000, 2253957198793/11623772160,
+-20232291373837/261534873600, 4588414555201/217945728000,
+-169639834921/48432384000, 703604254357/2615348736000, 0, 0, 0, 0, 0, 0],
+[905730205/172204032, -140970750679621/5230697472000,
+89541175419277/871782912000, -34412222659093/124540416000,
+570885914358161/1046139494400, -31457535950413/38745907200,
+134046425652457/145297152000, -350379327127877/435891456000,
+310429955875453/581188608000, -10320787460413/38745907200,
+7222659159949/74724249600, -21029162113651/871782912000,
+6460951197929/1743565824000, -106364763817/402361344000, 0, 0, 0, 0, 0],
+[13325653738373/2414168064000, -60007679150257/1961511552000,
+3966421670215481/31384184832000, -25990262345039/70053984000,
+25298910337081429/31384184832000, -2614079370781733/1961511552000,
+17823675553313503/10461394944000, -2166615342637/1277025750,
+13760072112094753/10461394944000, -1544031478475483/1961511552000,
+1600835679073597/4483454976000, -58262613384023/490377888000,
+859236476684231/31384184832000, -696561442637/178319232000,
+1166309819657/4483454976000, 0, 0, 0, 0], [362555126427073/62768369664000,
+-2161567671248849/62768369664000, 740161300731949/4828336128000,
+-4372481980074367/8966909952000, 72558117072259733/62768369664000,
+-131963191940828581/62768369664000, 62487713370967631/20922789888000,
+-70006862970773983/20922789888000, 62029181421198881/20922789888000,
+-129930094104237331/62768369664000, 10103478797549069/8966909952000,
+-2674355537386529/5706215424000, 9038571752734087/62768369664000,
+-1934443196892599/62768369664000, 36807182273689/8966909952000,
+-25221445/98402304, 0, 0, 0], [14845854129333883/2462451425280000,
+-55994879072429317/1455084933120000, 2612634723678583/14227497123840,
+-22133884200927593/35177877504000, 5173388005728297701/3201186852864000,
+-5702855818380878219/1778437140480000, 80207429499737366711/16005934264320000,
+-3993885936674091251/640237370572800, 2879939505554213/463134672000,
+-324179886697104913/65330343936000, 7205576917796031023/2286562037760000,
+-2797406189209536629/1778437140480000, 386778238886497951/640237370572800,
+-551863998439384493/3201186852864000, 942359269351333/27360571392000,
+-68846386581756617/16005934264320000, 8092989203533249/32011868528640000, 0, 0],
+[57424625956493833/9146248151040000, -3947240465864473/92386344960000,
+497505713064683651/2286562037760000, -511501877919758129/640237370572800,
+65509525475265061/29640619008000, -38023516029116089751/8002967132160000,
+129650088885345917773/16005934264320000, -19726972891423175089/1778437140480000,
+3146403501110383511/256094948229120, -70617432699294428737/6402373705728000,
+14237182892280945743/1778437140480000, -74619315088494380723/16005934264320000,
+17195392832483362153/8002967132160000, -4543527303777247/5928123801600,
+653581961828485643/3201186852864000, -612172313896136299/16005934264320000,
+2460247368070567/547211427840000, -85455477715379/342372925440000, 0],
+[333374427829017307697/51090942171709440000,
+-5148905233415267713/109168679854080000,
+395276943631267674287/1548210368839680000,
+-2129159630108649501931/2128789257154560000,
+841527158963865085639/283838567620608000,
+-189774312558599272277/27646613729280000,
+856822959645399341657/67580611338240000,
+-13440468702008745259589/709596419051520000,
+196513123964380075325537/8515157028618240000,
+-57429776853357830333/2494674910728000,
+53354279746900330600757/2838385676206080000,
+-26632588461762447833393/2128789257154560000,
+4091553114434184723167/608225502044160000,
+-291902259907317785203/101370917007360000,
+816476630884557765547/851515702861824000,
+-169944934591213283591/709596419051520000,
+239730549209090923561/5676771352412160000,
+-19963382447193730393/4257578514309120000,
+12600467236042756559/51090942171709440000]]
+    \end{Verbatim}
+
+    \hypertarget{step-6-output-this-notebook-to-latex-formatted-pdf-file-back-to-top}{%
+\section{\texorpdfstring{Step 6: Output this notebook to
 \(\LaTeX\)-formatted PDF file {[}Back to
-\hyperref[toc]{top}{]}}{Step 5: Output this notebook to \textbackslash LaTeX-formatted PDF file {[}Back to {]}}}\label{step-5-output-this-notebook-to-latex-formatted-pdf-file-back-to-top}}
+\hyperref[toc]{top}{]}}{Step 6: Output this notebook to \textbackslash LaTeX-formatted PDF file {[}Back to {]}}}\label{step-6-output-this-notebook-to-latex-formatted-pdf-file-back-to-top}}
 
 \[\label{latex_pdf_output}\]
 
@@ -1616,7 +1848,7 @@ directory, with filename \url{Tutorial-RK_Butcher_Table_Dictionary.pdf}.
 PDF file through another means.)
 
     \begin{tcolorbox}[breakable, size=fbox, boxrule=1pt, pad at break*=1mm,colback=cellbackground, colframe=cellborder]
-\prompt{In}{incolor}{26}{\boxspacing}
+\prompt{In}{incolor}{27}{\boxspacing}
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{k+kn}{import} \PY{n+nn}{cmdline\PYZus{}helper} \PY{k}{as} \PY{n+nn}{cmd}    \PY{c+c1}{\PYZsh{} NRPy+: Multi\PYZhy{}platform Python command\PYZhy{}line interface}
 \PY{n}{cmd}\PY{o}{.}\PY{n}{output\PYZus{}Jupyter\PYZus{}notebook\PYZus{}to\PYZus{}LaTeXed\PYZus{}PDF}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{Tutorial\PYZhy{}RK\PYZus{}Butcher\PYZus{}Table\PYZus{}Dictionary}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}
