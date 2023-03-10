@@ -7,12 +7,13 @@ on:
     branches: master
 
 jobs:
-  coreJupdevSymPy:
+  JupdevSymPy:
 
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
+        testname: [core_Jupyter_notebook_testsuite, core_Jupyter_notebook_testsuite_GiRonly]
         python-version: ["3.8.12", "3.10", "3.11"]  # 3.8+ required: https://pypi.org/project/sympy/
 
     steps:
@@ -22,7 +23,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install needed ubuntu packages
-      run: sudo apt-get update && sudo apt-get install -y texlive-latex-base colordiff pandoc ffmpeg
+      run: |
+        # use apt-spy2 to select closest apt mirror,
+        # which helps avoid connectivity issues in Azure;
+        # see https://github.com/actions/virtual-environments/issues/675
+        sudo gem install apt-spy2
+        sudo apt-spy2 fix --commit --launchpad --country=US
+        # after selecting a specific mirror, we need to run 'apt-get update'
+        sudo apt-get update
+        sudo apt-get install -y texlive-latex-base colordiff pandoc ffmpeg
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
@@ -32,7 +41,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Core Jupyter notebook testsuite
       run: |
-        ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+        ./UnitTesting/${{ matrix.testname }}.sh
 
   CoreJuplatestSymPy:
 
@@ -49,7 +58,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install needed ubuntu packages
-      run: sudo apt-get install -y texlive-latex-base colordiff pandoc ffmpeg
+      run: |
+        # use apt-spy2 to select closest apt mirror,
+        # which helps avoid connectivity issues in Azure;
+        # see https://github.com/actions/virtual-environments/issues/675
+        sudo gem install apt-spy2
+        sudo apt-spy2 fix --commit --launchpad --country=US
+        # after selecting a specific mirror, we need to run 'apt-get update'
+        sudo apt-get update
+        sudo apt-get install -y texlive-latex-base colordiff pandoc ffmpeg
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
@@ -59,33 +76,6 @@ jobs:
     - name: Core Jupyter notebook testsuite
       run: |
         ./UnitTesting/core_Jupyter_notebook_testsuite.sh
-
-  NRPyGiRaFFEJupdevSymPy:
-
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8.12", "3.10", "3.11"]  # 3.8+ required: https://pypi.org/project/sympy/
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install needed ubuntu packages
-      run: sudo apt-get install -y texlive-latex-base colordiff pandoc ffmpeg
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools
-        python -m pip install --upgrade nbconvert
-        python -m pip install --upgrade git+https://github.com/sympy/sympy/
-        python -m pip install testfixtures mpmath jupyter matplotlib scipy nrpylatex
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Core Jupyter notebook testsuite
-      run: |
-        ./UnitTesting/core_Jupyter_notebook_testsuite_GiRonly.sh
 
   UnitTestdevSymPy:
 
@@ -102,7 +92,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install needed ubuntu packages
-      run: sudo apt-get install -y texlive-latex-base colordiff pandoc
+      run: |
+        # use apt-spy2 to select closest apt mirror,
+        # which helps avoid connectivity issues in Azure;
+        # see https://github.com/actions/virtual-environments/issues/675
+        sudo gem install apt-spy2
+        sudo apt-spy2 fix --commit --launchpad --country=US
+        # after selecting a specific mirror, we need to run 'apt-get update'
+        sudo apt-get update
+        sudo apt-get install -y texlive-latex-base colordiff pandoc
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools
