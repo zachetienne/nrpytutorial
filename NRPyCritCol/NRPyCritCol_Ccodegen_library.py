@@ -3,7 +3,7 @@
 ## Tutorial :
 ## Desc     : C functions for reading/interpolating initial data
 
-from sympy import symbols, exp, tanh
+from sympy import symbols, exp, tanh, sympify
 from outputC import outputC, add_to_Cfunction_dict, lhrh
 from outputC import outC_NRPy_basic_defines_h_dict
 from indexedexp import zerorank1, zerorank2
@@ -12,7 +12,8 @@ from NRPy_param_funcs import parval_from_str
 from NRPy_param_funcs import set_parval_from_str
 from reference_metric import reference_metric
 from reference_metric import Cart_to_xx
-from ScalarField.ScalarField_Tmunu import ScalarField_T4UU
+import BSSN.ADM_Initial_Data_Reader__BSSN_Converter as IDread
+import ScalarField.ScalarField_quantities as SFq
 
 def ID_persist_str():
     return r"""
@@ -66,14 +67,15 @@ def add_to_Cfunction_dict_NRPyCritCol_initial_profiles():
     Nr = Cparameters("int", "NRPyCritCol", "Nr", 320)
     r = symbols("r", real=True)
     eta, r0, sigma = Cparameters("REAL", "NRPyCritCol", ["eta", "r0", "sigma"], [1, 0, 1])
-    phi_profiles = {}
-    phi_profiles["gaussian_pulse"   ] = eta * exp( -(r-r0)**2 / sigma**2 )
-    phi_profiles["gaussian_pulse_v2"] = eta * r**3 * exp( -(r-r0)**2 / sigma**2 )
-    phi_profiles["tanh_pulse"       ] = eta * ( 1 - tanh((r-r0)**2/sigma**2) )
+    global sf_profiles
+    sf_profiles = {}
+    sf_profiles["gaussian_pulse"   ] = eta * exp( -(r-r0)**2 / sigma**2 )
+    sf_profiles["gaussian_pulse_v2"] = eta * r**3 * exp( -(r-r0)**2 / sigma**2 )
+    sf_profiles["tanh_pulse"       ] = eta * ( 1 - tanh((r-r0)**2/sigma**2) )
 
     # Step 3.b: Get maximum length of keys (Optional)
     max_length = 0
-    for key in phi_profiles.keys():
+    for key in sf_profiles.keys():
         if len(key) > max_length:
             max_length = len(key)
 
@@ -116,7 +118,7 @@ NRPyCritCol: Initial """+var+" profile - "+profile
 """
     counter = 0
     defines = ""
-    for profile, phi in phi_profiles.items():
+    for profile, phi in sf_profiles.items():
         Phi = phi.diff(r)
         generate_phi_or_Phi_function("phi", phi, profile)
         generate_phi_or_Phi_function("phi_radial_deriv", Phi, profile)
@@ -335,27 +337,30 @@ def add_to_Cfunction_dict_NRPyCritCol_ID_function(lapse_id_type="pre-collapsed")
       const ID_persist_struct *restrict ID_persist,
       initial_data_struct *restrict initial_data"""
     body     = """  // Step 1: Set r, theta, phi in terms of xCart[3]
-  const REAL Cartx=xCart[0], Carty=xCart[1], Cartz=xCart[2];\n"""
+  const REAL Cartx=xCart[0], Carty=xCart[1], Cartz=xCart[2];
+  REAL r_star, th, ph;\n"""
     desired_rfm_coord = parval_from_str("reference_metric::CoordSystem")
     # "Spherical" is the native basis for NRPyCritCol initial data.
     set_parval_from_str("reference_metric::CoordSystem", "Spherical")
     reference_metric()
     body += outputC(Cart_to_xx[:3],
-                    ["const REAL rr", "const REAL th", "const REAL ph"],
+                    ["r_star", "const REAL th", "const REAL ph"],
                     filename="returnstring",
-                    params="outCverbose=False,includebraces=False,preindent=1")
+                    params="outCverbose=False,preindent=1")
     body += r"""
-  // Step 2: Interpolate the initial data to (r, th, ph)
+  // Step 2: Interpolate the initial data to r_star
   REAL sf_star, psi_star;
-  NRPyCritCol_interpolate_1D(r, ID_persist, &sf_star, &psi_star);
+  NRPyCritCol_interpolate_1D(r_star, ID_persist, &sf_star, &psi_star);
 """
-    # Now compute metric quantities and T4UU
-    r, phi, psi = symbols("r phi psi", real=True)
-    alpha, betaU, BU, gammaDD, KDD = ADM_quantities_ito_NRPyCritCol_soln(phi, psi, lapse_id_type)
-    T4UU = ScalarField_T4UU(alpha=alpha, betaU=betaU, gammaDD=gammaDD)
+    # Add scalar field quantities to the initial data structs
+    
+    # Now compute metric and scalar field quantities
+    SFq.ScalarField_quantities()
+    sf_star, psi_star = symbols("sf_star psi_star", real=True)
+    alpha, betaU, BU, gammaDD, KDD = ADM_quantities_ito_NRPyCritCol_soln(sf_star, psi_star, lapse_id_type)
 
-    list_of_output_exprs = [alpha]
-    list_of_output_varnames = ["initial_data->alpha"]
+    list_of_output_exprs = [alpha, sf_star, sympify(0)]
+    list_of_output_varnames = ["initial_data->alpha", "initial_data->sf", "initial_data->sfM"]
     for i in range(3):
         list_of_output_exprs += [betaU[i]]
         list_of_output_varnames += ["initial_data->betaSphorCartU" + str(i)]
@@ -385,6 +390,8 @@ def add_to_Cfunction_dict_NRPyCritCol_ID_function(lapse_id_type="pre-collapsed")
         params=params, body=body, enableCparameters=False)
 
 def NRPyCritCol_register_C_functions_and_NRPy_basic_defines(lapse_id_type="pre-collapsed"):
+    IDread.add_to_Cfunction_dict_initial_data_reader__convert_ADM_Sph_or_Cart_to_BSSN(input_Coord="Spherical")
+    IDread.register_NRPy_basic_defines(ID_persist_struct_contents_str=ID_persist_str())
     add_to_Cfunction_dict_tridiagonal_solver_thomas_algorithm()
     add_to_Cfunction_dict_NRPyCritCol_initial_profiles()
     add_to_Cfunction_dict_NRPyCritCol_initialize_ID_persist()

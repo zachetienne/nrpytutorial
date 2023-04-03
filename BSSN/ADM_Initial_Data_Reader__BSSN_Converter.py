@@ -79,7 +79,17 @@ def add_to_Cfunction_dict_exact_ADM_ID_function(IDtype, IDCoordSystem, alpha, be
     return pickle_NRPy_env()
 
 
-def Cfunction_ADM_SphorCart_to_Cart(input_Coord="Spherical", include_T4UU=False):
+def Cfunction_ADM_SphorCart_to_Cart(input_Coord="Spherical", include_T4UU=False, extra_gfs=None):
+
+    def get_gf_string(name, rank, dim):
+        if rank==0:
+            return "const REAL "+name+" = initial_data->"+name+";\n"
+        else:
+            gf_string = ""
+            for i in range(dim):
+                gf_string += get_gf_string(name+str(i), rank-1, dim)
+            return gf_string
+    
     includes = []
 
     desired_rfm_basis = par.parval_from_str("reference_metric::CoordSystem")
@@ -93,24 +103,51 @@ def Cfunction_ADM_SphorCart_to_Cart(input_Coord="Spherical", include_T4UU=False)
     body = r"""
   // Unpack initial_data for ADM vectors/tensors
 """
-    for i in ["betaSphorCartU", "BSphorCartU"]:
-        for j in range(3):
-            varname = i + str(j)
-            body += "  const REAL " + varname + " = initial_data->" + varname + ";\n"
-        body += "\n"
-    for i in ["gammaSphorCartDD", "KSphorCartDD"]:
-        for j in range(3):
-            for k in range(j, 3):
-                varname = i + str(j) + str(k)
-                body += "  const REAL " + varname + " = initial_data->" + varname + ";\n"
-        body += "\n"
-    # Read stress-energy tensor in spherical or Cartesian basis if desired.
+    gfs = ["betaU", "BU", "gammaDD", "KDD"]
+
+    if extra_gfs is not None:
+        if not isinstance(extra_gfs, list):
+            extra_gfs = list(extra_gfs)
+        gfs += extra_gfs
+
     if include_T4UU:
-        for mu in range(4):
-            for nu in range(mu, 4):
-                varname = "T4SphorCartUU" + str(mu) + str(nu)
-                body += "  const REAL " + varname + " = initial_data->" + varname + ";\n"
-        body += "\n"
+        gfs += ["T4UU"]
+
+    string = ""
+    for gf in gfs:
+        rank = 0
+        last = ""
+        while gf[-1] == "U" or gf[-1] == "D":
+            last  = gf[-1] + last
+            gf    = gf[:-1]
+            rank += 1
+
+        if rank == 0:
+            continue
+
+        dim = 3 if "4" not in gf else 4
+        string += get_gf_string(gf+"SphorCart"+last, rank, dim)
+
+    body += string
+    
+    # for i in ["betaSphorCartU", "BSphorCartU"]:
+    #     for j in range(3):
+    #         varname = i + str(j)
+    #         body += "  const REAL " + varname + " = initial_data->" + varname + ";\n"
+    #     body += "\n"
+    # for i in ["gammaSphorCartDD", "KSphorCartDD"]:
+    #     for j in range(3):
+    #         for k in range(j, 3):
+    #             varname = i + str(j) + str(k)
+    #             body += "  const REAL " + varname + " = initial_data->" + varname + ";\n"
+    #     body += "\n"
+    # # Read stress-energy tensor in spherical or Cartesian basis if desired.
+    # if include_T4UU:
+    #     for mu in range(4):
+    #         for nu in range(mu, 4):
+    #             varname = "T4SphorCartUU" + str(mu) + str(nu)
+    #             body += "  const REAL " + varname + " = initial_data->" + varname + ";\n"
+    #     body += "\n"
 
     if input_Coord == "Spherical":
         body += r"""
@@ -401,7 +438,9 @@ def Cfunction_initial_data_lambdaU_grid_interior():
 def add_to_Cfunction_dict_initial_data_reader__convert_ADM_Sph_or_Cart_to_BSSN(addl_includes=None,
                                                                                rel_path_to_Cparams=os.path.join("."),
                                                                                input_Coord="Spherical",
-                                                                               include_T4UU=False):
+                                                                               include_T4UU=False,
+                                                                               extra_adm_gfs=None,
+                                                                               extra_bssn_gfs=None):
     includes = ["NRPy_basic_defines.h", "NRPy_function_prototypes.h"]
     if par.parval_from_str("finite_difference::enable_FD_functions"):
         includes += ["finite_difference_functions.h"]
@@ -410,6 +449,18 @@ def add_to_Cfunction_dict_initial_data_reader__convert_ADM_Sph_or_Cart_to_BSSN(a
             print("Error: addl_includes must be a list.")
             sys.exit(1)
         includes += addl_includes
+
+    extra_adm_gfs_str = ""
+    if extra_adm_gfs is not None:
+        if not isinstance(extra_adm_gfs, list):
+            extra_adm_gfs = list(extra_adm_gfs)
+        extra_adm_gfs_str = "REAL "+", ".join(extra_adm_gfs)+";\n"
+
+    extra_bssn_gfs_str = ""
+    if extra_adm_gfs is not None:
+        if not isinstance(extra_adm_gfs, list):
+            extra_bssn_gfs = list(extra_bssn_gfs)
+        extra_bssn_gfs_str = "REAL "+", ".join(extra_bssn_gfs)+";\n"
 
     def T4UU_prettyprint():
         return r"""
@@ -425,6 +476,9 @@ typedef struct __ADM_Cart_basis_struct__ {
   REAL gammaDD00,gammaDD01,gammaDD02,gammaDD11,gammaDD12,gammaDD22;
   REAL KDD00,KDD01,KDD02,KDD11,KDD12,KDD22;
 """
+    if extra_adm_gfs is not None:
+        prefunc += extra_adm_gfs_str
+
     if include_T4UU:
         prefunc += T4UU_prettyprint()
     prefunc += "} ADM_Cart_basis_struct;\n"
@@ -437,6 +491,9 @@ typedef struct __BSSN_Cart_basis_struct__ {
   REAL gammabarDD00,gammabarDD01,gammabarDD02,gammabarDD11,gammabarDD12,gammabarDD22;
   REAL AbarDD00,AbarDD01,AbarDD02,AbarDD11,AbarDD12,AbarDD22;
 """
+    if extra_bssn_gfs is not None:
+        prefunc += extra_bssn_gfs_str
+
     if include_T4UU:
         prefunc += T4UU_prettyprint()
     prefunc += "} BSSN_Cart_basis_struct;\n"
@@ -449,14 +506,17 @@ typedef struct __rescaled_BSSN_rfm_basis_struct__ {
   REAL hDD00,hDD01,hDD02,hDD11,hDD12,hDD22;
   REAL aDD00,aDD01,aDD02,aDD11,aDD12,aDD22;
 """
+    if extra_bssn_gfs is not None:
+        prefunc += extra_bssn_gfs_str
+
     if include_T4UU:
         prefunc += T4UU_prettyprint()
     prefunc += "} rescaled_BSSN_rfm_basis_struct;\n"
     ##############
     ##############
-    prefunc += Cfunction_ADM_SphorCart_to_Cart(input_Coord=input_Coord, include_T4UU=include_T4UU)
+    prefunc += Cfunction_ADM_SphorCart_to_Cart(input_Coord=input_Coord, include_T4UU=include_T4UU,)
     prefunc += Cfunction_ADM_Cart_to_BSSN_Cart(                         include_T4UU=include_T4UU)
-    prefunc += Cfunction_BSSN_Cart_to_rescaled_BSSN_rfm(rel_path_to_Cparams=rel_path_to_Cparams,
+    prefunc += Cfunction_BSSN_Cart_to_rescaled_BSSN_rfm(rel_path_to_Cparams=rel_path_to_Cparams  ,
                                                         include_T4UU=include_T4UU)
     prefunc += Cfunction_initial_data_lambdaU_grid_interior()
 
@@ -496,6 +556,10 @@ typedef struct __rescaled_BSSN_rfm_basis_struct__ {
     // Output data to gridfunctions
 """
     gf_list = ["alpha", "trK", "cf"]
+
+    if extra_bssn_gfs is not None:
+        gf_list += extra_bssn_gfs
+    
     for i in range(3):
         gf_list += ["vetU"+str(i), "betU"+str(i)]
         for j in range(i, 3):
@@ -528,7 +592,7 @@ typedef struct __rescaled_BSSN_rfm_basis_struct__ {
 # used to store e.g., pseudospectral coefficients for TwoPunctures,
 # initial data gridfunctions from NRPyElliptic, pointers to TOV 1D data
 # from the TOV solver, etc.
-def register_NRPy_basic_defines(ID_persist_struct_contents_str="", include_T4UU=False):
+def register_NRPy_basic_defines(ID_persist_struct_contents_str="", include_T4UU=False, extra_ID_gfs=None):
     Nbd = r"""typedef struct __initial_data_struct__ {
   REAL alpha;
 
@@ -541,6 +605,12 @@ def register_NRPy_basic_defines(ID_persist_struct_contents_str="", include_T4UU=
   REAL KSphorCartDD00, KSphorCartDD01, KSphorCartDD02;
   REAL KSphorCartDD11, KSphorCartDD12, KSphorCartDD22;
 """
+    if extra_ID_gfs is not None:
+        if not isinstance(extra_ID_gfs, list):
+            extra_gfs = list(extra_ID_gfs)
+        Nbd += "REAL " + ", ".join(extra_ID_gfs) + ";\n"
+        
+    
     if include_T4UU:
         Nbd += """
   REAL T4SphorCartUU00,T4SphorCartUU01,T4SphorCartUU02,T4SphorCartUU03;

@@ -349,16 +349,15 @@ outputting to initial_data_struct *restrict initial_data"""
     # https://stackoverflow.com/questions/9764298/is-it-possible-to-sort-two-listswhich-reference-each-other-in-the-exact-same-w
     list_of_output_varnames, list_of_output_exprs = (list(t) for t in zip(*sorted(zip(list_of_output_varnames, list_of_output_exprs))))
 
-    body += outputC(list_of_output_exprs, list_of_output_varnames,
-                    filename="returnstring", params="outCverbose=False,includebraces=False,preindent=1")
+    body += outputC(list_of_output_exprs,
+                    list_of_output_varnames,
+                    filename="returnstring",
+                    params="outCverbose=False,includebraces=False,preindent=1")
 
     # Restore CoordSystem:
     par.set_parval_from_str("reference_metric::CoordSystem", desired_rfm_coord)
     rfm.reference_metric()
 
     add_to_Cfunction_dict(
-        includes=includes,
-        desc=desc,
-        c_type=c_type, name=name, params=params,
-        body=body,
-        enableCparameters=False)
+        includes=includes, desc=desc, c_type=c_type, name=name,
+        params=params, body=body, enableCparameters=False)
