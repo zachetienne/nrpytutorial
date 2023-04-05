@@ -6,6 +6,7 @@
 # Authors: Brandon Clark
 #          Zachariah B. Etienne
 #          zachetie **at** gmail **dot* com
+#	   Gabriel M Steward
 
 
 # Step 1: Initialize needed Python/NRPy+ modules
@@ -93,6 +94,133 @@ def Validate(Butcher_dict, Butcher_key, yn, tn, rhs_key):
     # Produces Taylor series of exact solution at t=tn about t = 0 with the specified order
     exact_series = sp.series(exact.subs(t, dt),dt, 0, order)
     num_series = sp.series(ynp1, dt, 0, order)
+    diff = exact_series-num_series
+    return diff
+    
+# Step 2d: Validating Inherently Adaptive RK Methods against ODEs
+
+def ValidateARK1(Butcher_key, yn, tn, rhs_key):
+    # 1. First we solve the ODE exactly
+    y = sp.Function('y')
+    sol = sp.dsolve(sp.Eq(y(t).diff(t), rhs_dict[rhs_key](y(t), t)), y(t)).rhs
+    constants = sp.solve([sol.subs(t,tn)-yn])
+    exact = sol.subs(constants)
+
+    # 2. Now we solve the ODE numerically using specified Butcher table
+
+    # Access the requested Butcher table
+    Butcher = Butcher_dict[Butcher_key][0]
+    # Determine number of predictor-corrector steps
+    L = len(Butcher)-1
+    # Set a temporary array for update values
+    k = np.zeros(L, dtype=object)
+    # Initialize intermediate variable
+    yhat = 0
+    # Initialize the updated solution
+    ynp1 = 0
+    for i in range(L-1):
+        #Initialize and approximate update for solution
+        yhat = yn
+        for j in range(i):
+            # Update yhat for solution using a_ij Butcher table coefficients
+            yhat += Butcher[i][j+1]*k[j]
+            if Butcher_key == "DP8" or Butcher_key == "L6":
+                yhat = 1.0*sp.N(yhat,20) # Otherwise the adding of fractions kills performance.
+        # Determine the next corrector variable k_i using c_i Butcher table coefficients
+        k[i] = dt*rhs_dict[rhs_key](yhat, tn + Butcher[i][0]*dt)
+        # Update the solution at the next iteration ynp1 using Butcher table coefficients
+        ynp1 += Butcher[L][i+1]*k[i]
+    # Finish determining the solution for the next iteration
+    ynp1 += yn
+
+    # Determine the order of the RK method
+    order = Butcher_dict[Butcher_key][1]+2
+    # Produces Taylor series of exact solution at t=tn about t = 0 with the specified order
+    exact_series = sp.series(exact.subs(t, dt),dt, 0, order)
+    num_series = sp.series(ynp1, dt, 0, order)
+    diff = exact_series-num_series
+    return diff
+
+def ValidateARK2(Butcher_key, yn, tn, rhs_key):
+    # 1. First we solve the ODE exactly
+    y = sp.Function('y')
+    sol = sp.dsolve(sp.Eq(y(t).diff(t), rhs_dict[rhs_key](y(t), t)), y(t)).rhs
+    constants = sp.solve([sol.subs(t,tn)-yn])
+    exact = sol.subs(constants)
+
+    # 2. Now we solve the ODE numerically using specified Butcher table
+
+    # Access the requested Butcher table
+    Butcher = Butcher_dict[Butcher_key][0]
+    # Determine number of predictor-corrector steps
+    L = len(Butcher)-1
+    # Set a temporary array for update values
+    k = np.zeros(L, dtype=object)
+    # Initialize intermediate variable
+    yhat = 0
+    # Initialize the updated solution
+    ynp1 = 0
+    for i in range(L-1):
+        #Initialize and approximate update for solution
+        yhat = yn
+        for j in range(i):
+            # Update yhat for solution using a_ij Butcher table coefficients
+            yhat += Butcher[i][j+1]*k[j]
+            if Butcher_key == "DP8" or Butcher_key == "L6":
+                yhat = 1.0*sp.N(yhat,20) # Otherwise the adding of fractions kills performance.
+        # Determine the next corrector variable k_i using c_i Butcher table coefficients
+        k[i] = dt*rhs_dict[rhs_key](yhat, tn + Butcher[i][0]*dt)
+        # Update the solution at the next iteration ynp1 using Butcher table coefficients
+        ynp1 += Butcher[L-1][i+1]*k[i]
+    # Finish determining the solution for the next iteration
+    ynp1 += yn
+
+    # Determine the order of the RK method
+    order = Butcher_dict[Butcher_key][1]+2
+    # Produces Taylor series of exact solution at t=tn about t = 0 with the specified order
+    exact_series = sp.series(exact.subs(t, dt),dt, 0, order)
+    num_series = sp.series(ynp1, dt, 0, order)
+    diff = exact_series-num_series
+    return diff
+
+# Step 2e: Validating AB Methods against ODEs
+
+#This is taken almost directly from the butcher validation from NRPy+
+
+def ValidateAB(ABorder, yn, tn, rhs_key): # custom function for validating AB methods. 
+
+    order = ABorder
+
+    # 1. First we solve the ODE exactly
+    y = sp.Function('y')
+    sol = sp.dsolve(sp.Eq(y(t).diff(t), fy(y(t), t)), y(t)).rhs
+    constants = sp.solve([sol.subs(t,tn)-yn])
+    exact = sol.subs(constants)
+    exact_series = sp.series(exact.subs(t, dt),dt, 0, order+2)
+
+    # 2. Now we solve the ODE numerically using specified Butcher table
+
+    # Access the requested Butcher table
+    Butcher = Butcher_dict.get("AB")[0]
+    # Determine number of predictor-corrector steps
+    L = len(Butcher)-1 #set to -2 for adaptive methods.
+    # Set a temporary array for update values
+    k = np.zeros(L, dtype=object)
+    # Initialize intermediate variable
+    yhat = 1
+    # Initialize the updated solution
+    ynp1 = 0
+    for i in range(ABorder):
+        # Initialize and approximate update for solution
+        # Update yhat for solution using "past values",
+        # Which means evaluating the exact answer at x=(-i*dt).
+        # If the user wishes to validate another ODE, the respective section
+        # In the below line will have to be changed. 
+        yhat += dt*Butcher[ABorder-1][i]*sp.exp((-i)*dt)
+    # Finish determining the solution for the next iteration
+    num_series = sp.series(yhat, dt, 0, order+2)
+
+    # Produces Taylor series of exact solution at t=tn about t = 0 with the specified order
     diff = exact_series-num_series
     return diff
 
