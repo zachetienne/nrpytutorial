@@ -1,0 +1,58 @@
+name: OS-setup
+description: 'Setup requested OS and python environment'
+inputs:
+  OS:
+    description: OS for test
+    required: true
+    default: 'Ubuntu'
+  python-version:
+    description: python version for test
+    required: true
+    default: '3.8'
+  sympy-version:
+    description: sympy version for test
+    required: true
+    default: 'sympy'
+
+
+runs:
+  using: "composite"
+  steps:
+  - uses: actions/setup-python@v3
+    with:
+      python-version: ${{ inputs.python-version }}
+  - if: inputs.OS == 'ubuntu'
+    run: |
+      # use apt-spy2 to select closest apt mirror,
+      # which helps avoid connectivity issues in Azure;
+      # see https://github.com/actions/virtual-environments/issues/675
+      sudo gem install apt-spy2
+      sudo apt-spy2 fix --commit --launchpad --country=US
+      # after selecting a specific mirror, we need to run 'apt-get update'
+      sudo apt-get update
+      sudo apt-get install -y texlive-latex-base colordiff pandoc ffmpeg
+    shell: bash
+  - run: |
+      python -m pip install --upgrade pip setuptools
+      python -m pip install --upgrade nbconvert
+      python -m pip install testfixtures ${{ inputs.sympy-version }} mpmath jupyter matplotlib scipy nrpylatex
+      if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    shell: bash
+
+#
+#ubuntu 22
+#  JupdevSymPy:
+#        python -m pip install --upgrade git+https://github.com/sympy/sympy/
+#        python -m pip install testfixtures mpmath jupyter matplotlib scipy nrpylatex
+#
+#  UnitTestdevSymPy:
+#        sudo apt-get install -y texlive-latex-base colordiff pandoc
+#        python -m pip install --upgrade git+https://github.com/sympy/sympy/
+#        python -m pip install testfixtures mpmath jupyter matplotlib scipy nrpylatex
+#
+#ubuntu 20
+#  coreJupdevSymPy:
+#    - name: Install dependencies
+#      run: |
+#        python -m pip install --upgrade git+https://github.com/sympy/sympy/
+#        python -m pip install testfixtures mpmath jupyter matplotlib scipy nrpylatex

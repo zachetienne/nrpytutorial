@@ -17,16 +17,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+    - name: Setup OS and python environment
+      uses: ./.github/actions/OS_setup
       with:
+        OS: 'Mac'
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools
-        python -m pip install --upgrade nbconvert
-        python -m pip install testfixtures sympy mpmath jupyter matplotlib scipy nrpylatex
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        sympy-version: 'sympy'
     - name: UnitTests
       run: |
         ./UnitTesting/run_NRPy_UnitTests.sh python3
