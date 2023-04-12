@@ -34,13 +34,12 @@ FORCE:
 reveal-%: FORCE
 	@echo $($*)
 
-gitingore-general := .gitignore
-append-gitingore-general-%: FORCE
-	@grep --quiet --line-regexp --fixed-strings $* $(gitingore-general) 2> /dev/null \
-	|| echo $* >> $(gitingore-general)
+append-gitignore-%: FORCE
+	@grep --quiet --line-regexp --fixed-strings $* .gitignore 2> /dev/null \
+	|| echo $* >> .gitignore
 
-remove-gitingore-general-%: FORCE
-	sed --in-place '/$*/d' $(gitingore-general)
+remove-gitignore-%: FORCE
+	sed --in-place '/$*/d' .gitignore
 
 src-dir := src
 test-dir := tests
@@ -50,6 +49,7 @@ build-dir := build
 nbconvert-dir := $(build-dir)/nbconvert
 stamp-dir := .stamps
 doc-dir := docs
+stamp-nrpy-dir := $(stamp-dir)/nrpy
 diagram-dir := $(doc-dir)/diagrams
 fig-dir := $(build-dir)/figs
 dist-dir := dist
@@ -57,7 +57,7 @@ data-dir := data
 
 maintainer-dirs := $(venv) $(build-dir) $(stamp-dir) $(dist-dir)
 
-$(src-dir) $(test-dir) $(build-dir) $(stamp-dir) \
+$(src-dir) $(test-dir) $(build-dir) $(stamp-dir) $(stamp-nrpy-dir) \
 $(doc-dir) $(diagram-dir) $(fig-dir) $(data-dir) \
 $(bin-dir) $(notebook-dir) $(nbconvert-dir):
 	@mkdir --parents $@
@@ -417,6 +417,34 @@ TAGS: append-gitignore-tags
 .PHONY: clean-TAGS
 clean-TAGS:
 	rm --force tags
+
+nrpy-modules := outputC.py loop.py NRPy_param_funcs.py SIMD.py
+nrpy-modules += expr_tree.py cse_helpers.py finite_difference.py
+nrpy-modules += finite_difference_helpers.py grid.py indexedexp.py
+nrpy-modules += functional.py reference_metric.py
+nrpy-modules += Deprecated/deprecated_reference_metric.py
+nrpy-modules += cmdline_helper.py Deprecated/MoLtimestepping/
+
+nrpy-stamps := $(patsubst %,$(stamp-nrpy-dir)/%.stamp,$(nrpy-modules))
+
+python-version := $(shell $(python) --version 2> /dev/null | grep -Po '\d+.\d+')
+python-site-packages := $(venv)/lib/python$(python-version)/site-packages
+$(stamp-nrpy-dir)/%.stamp: | $(stamp-nrpy-dir)
+	@if [[ ! -e $(abspath ./$*) ]]; then \
+		echo 'Not found nrpy module ./$*'; \
+		exit 2; \
+	fi
+	ln -s $(abspath ./$*) $(python-site-packages)/.
+	mkdir -p $(dir $@)
+	touch $@
+
+.PHONY: install-nrpy-modules ### install nrpy modules into project venv
+install-nrpy-modules: is-venv-present $(nrpy-stamps)
+
+.PHONY: uninstall-nrpy-modules
+uninstall-nrpy-modules:
+	rm --force $(addprefix $(python-site-packages)/,$(notdir $(nrpy-modules)))
+	rm --force --recursive $(stamp-nrpy-dir)
 
 .PHONY: maintainer-clean ### clean Makefile can reconstruct
 maintainer-clean:
