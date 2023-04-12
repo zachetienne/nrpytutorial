@@ -1,3 +1,11 @@
+pytest
+pytest-mock
+pytest-cov
+pytest-datafiles
+pylint
+pylint-junit
+autopep8
+pynvim
 sympy
 matplotlib
-nrpylatex>=1.0.7
+nrpylatex
