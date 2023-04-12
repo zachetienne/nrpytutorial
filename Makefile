@@ -423,7 +423,7 @@ nrpy-modules += expr_tree.py cse_helpers.py finite_difference.py
 nrpy-modules += finite_difference_helpers.py grid.py indexedexp.py
 nrpy-modules += functional.py reference_metric.py
 nrpy-modules += Deprecated/deprecated_reference_metric.py
-nrpy-modules += cmdline_helper.py Deprecated/MoLtimestepping/
+nrpy-modules += cmdline_helper.py Deprecated/MoLtimestepping
 
 nrpy-stamps := $(patsubst %,$(stamp-nrpy-dir)/%.stamp,$(nrpy-modules))
 
