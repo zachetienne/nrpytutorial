@@ -34,12 +34,13 @@ FORCE:
 reveal-%: FORCE
 	@echo $($*)
 
-append-gitignore-%: FORCE
-	@grep --quiet --line-regexp --fixed-strings $* .gitignore 2> /dev/null \
-	|| echo $* >> .gitignore
+gitingore-general := .gitignore
+append-gitingore-general-%: FORCE
+	@grep --quiet --line-regexp --fixed-strings $* $(gitingore-general) 2> /dev/null \
+	|| echo $* >> $(gitingore-general)
 
-remove-gitignore-%: FORCE
-	sed --in-place '/$*/d' .gitignore
+remove-gitingore-general-%: FORCE
+	sed --in-place '/$*/d' $(gitingore-general)
 
 src-dir := src
 test-dir := tests
