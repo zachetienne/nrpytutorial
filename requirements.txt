@@ -9,3 +9,4 @@ pynvim
 sympy
 matplotlib
 nrpylatex
+scipy
