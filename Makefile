@@ -465,7 +465,7 @@ nrpy-progress-sfcollapse-bssn-modules := BSSN_quantities.py BSSN_in_terms_of_ADM
 nrpy-progress-sfcollapse-bssn-modules += BSSN_gauge_RHSs.py ADM_in_terms_of_BSSN.py
 nrpy-progress-sfcollapse-bssn-modules += ADMBSSN_tofrom_4metric.py BSSN_stress_energy_source_terms.py
 nrpy-progress-sfcollapse-bssn-modules += Enforce_Detgammahat_Constraint.py
-nrpy-progress-sfcollapse-bssn-modules += BSSN_constraints.py
+nrpy-progress-sfcollapse-bssn-modules += BSSN_constraints.py BSSN_T4UUmunu_vars.py
 nrpy-progress-sfcollapse-bssn-modules := $(addprefix $(nrpy-progress-sfcollapse-bssn-home)/,$(nrpy-progress-sfcollapse-bssn-modules))
 
 $(nrpy-progress-sfcollapse-bssn-modules):
