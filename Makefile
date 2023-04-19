@@ -422,9 +422,7 @@ nrpy-modules := outputC.py loop.py NRPy_param_funcs.py SIMD.py
 nrpy-modules += expr_tree.py cse_helpers.py finite_difference.py
 nrpy-modules += finite_difference_helpers.py grid.py indexedexp.py
 nrpy-modules += functional.py reference_metric.py
-nrpy-modules += Deprecated/deprecated_reference_metric.py
-nrpy-modules += cmdline_helper.py Deprecated/MoLtimestepping
-
+nrpy-modules += cmdline_helper.py
 nrpy-stamps := $(patsubst %,$(stamp-nrpy-dir)/%.stamp,$(nrpy-modules))
 
 python-version := $(shell $(python) --version 2> /dev/null | grep -Po '\d+.\d+')
@@ -445,6 +443,56 @@ install-nrpy-modules: is-venv-present $(nrpy-stamps)
 uninstall-nrpy-modules:
 	rm --force $(addprefix $(python-site-packages)/,$(notdir $(nrpy-modules)))
 	rm --force --recursive $(stamp-nrpy-dir)
+
+nrpy-progress-sfcollapse-modules := Deprecated/deprecated_reference_metric.py
+nrpy-progress-sfcollapse-modules += Deprecated/MoLtimestepping
+nrpy-progress-sfcollapse-modules += Deprecated/BSSN
+nrpy-progress-sfcollapse-stamps := $(patsubst %,$(stamp-nrpy-dir)/%.stamp,$(nrpy-progress-sfcollapse-modules))
+
+nrpy-progress-sfcollapse-home := in_progress-NRPyCritCol
+.PHONY: install-nrpy-progress-sfcollapse-simd
+install-nrpy-progress-sfcollapse-simd:
+	ln -sf $(abspath SIMD) $(nrpy-progress-sfcollapse-home)/.
+	echo $(nrpy-progress-sfcollapse-home)/SIMD >> .gitignore
+
+.PHONY: uninstall-nrpy-progress-sfcollapse-simd
+uninstall-nrpy-progress-sfcollapse-simd:
+	rm --force $(nrpy-progress-sfcollapse-home)/SIMD
+	sed -ri "/$(nrpy-progress-sfcollapse-home)\/SIMD/d" .gitignore
+
+nrpy-progress-sfcollapse-bssn-home := Deprecated/BSSN
+nrpy-progress-sfcollapse-bssn-modules := BSSN_quantities.py BSSN_in_terms_of_ADM.py BSSN_RHSs.py
+nrpy-progress-sfcollapse-bssn-modules += BSSN_gauge_RHSs.py ADM_in_terms_of_BSSN.py
+nrpy-progress-sfcollapse-bssn-modules += ADMBSSN_tofrom_4metric.py BSSN_stress_energy_source_terms.py
+nrpy-progress-sfcollapse-bssn-modules += Enforce_Detgammahat_Constraint.py
+nrpy-progress-sfcollapse-bssn-modules += BSSN_constraints.py
+nrpy-progress-sfcollapse-bssn-modules := $(addprefix $(nrpy-progress-sfcollapse-bssn-home)/,$(nrpy-progress-sfcollapse-bssn-modules))
+
+$(nrpy-progress-sfcollapse-bssn-modules):
+	ln -sf $(abspath $(subst $(nrpy-progress-sfcollapse-bssn-home),BSSN,$@)) $(nrpy-progress-sfcollapse-bssn-home)/.
+	echo $@ >> .gitignore
+
+.PHONY: install-nrpy-progress-sfcollapse-bssn
+install-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-modules)
+
+nrpy-progress-sfcollapse-bssn-gitignore-clean := $(foreach module,$(nrpy-progress-sfcollapse-bssn-modules),/$(subst /,\/,$(module))/d;)
+.PHONY: uninstall-nrpy-progress-sfcollapse-bssn
+uninstall-nrpy-progress-sfcollapse-bssn:
+	rm --force $(nrpy-progress-sfcollapse-bssn-modules)
+	sed -ri '$(nrpy-progress-sfcollapse-bssn-gitignore-clean)' .gitignore
+
+.PHONY: install-nrpy-progress-sfcollapse-modules
+install-nrpy-progress-sfcollapse-modules: is-venv-present
+install-nrpy-progress-sfcollapse-modules: install-nrpy-modules
+install-nrpy-progress-sfcollapse-modules: install-nrpy-progress-sfcollapse-simd
+install-nrpy-progress-sfcollapse-modules: install-nrpy-progress-sfcollapse-bssn
+install-nrpy-progress-sfcollapse-modules: $(nrpy-progress-sfcollapse-stamps)
+
+.PHONY: uninstall-nrpy-progress-sfcollapse-modules
+uninstall-nrpy-progress-sfcollapse-modules: uninstall-nrpy-progress-sfcollapse-simd
+uninstall-nrpy-progress-sfcollapse-modules: uninstall-nrpy-progress-sfcollapse-bssn
+	rm --force $(addprefix $(python-site-packages)/,$(notdir $(nrpy-progress-sfcollapse-modules)))
+	rm --force --recursive $(nrpy-progress-sfcollapse-stamps)
 
 .PHONY: maintainer-clean ### clean Makefile can reconstruct
 maintainer-clean:
