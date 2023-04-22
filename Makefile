@@ -165,7 +165,7 @@ README.md:
 	@echo '# $(package)' >> $@
 	@echo 'Excellent package with much to offer' >> $@
 	@echo '## Quickstart' >> $@
-	@echo '`make dev` to peek its full potential' >> $@
+	@echo 'clone and `pyseed=/path/python make development`' >> $@
 
 LICENSE:
 	@echo 'MIT License' >> $@
