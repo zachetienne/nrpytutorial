@@ -37,9 +37,11 @@ reveal-%: FORCE
 append-gitignore-%: FORCE
 	@grep --quiet --line-regexp --fixed-strings $* .gitignore 2> /dev/null \
 	|| echo $* >> .gitignore
+	sort -o .gitignore{,}
 
 remove-gitignore-%: FORCE
 	sed --in-place '/$*/d' .gitignore
+	sort -o .gitignore{,}
 
 src-dir := src
 test-dir := tests
@@ -448,6 +450,7 @@ nrpy-progress-sfcollapse-modules := Deprecated/deprecated_reference_metric.py
 nrpy-progress-sfcollapse-modules += Deprecated/MoLtimestepping
 nrpy-progress-sfcollapse-modules += Deprecated/BSSN
 nrpy-progress-sfcollapse-modules += Deprecated/deprecated_NRPy_param_funcs.py
+nrpy-progress-sfcollapse-modules += Deprecated/CurviBoundaryConditions
 nrpy-progress-sfcollapse-stamps := $(patsubst %,$(stamp-nrpy-dir)/%.stamp,$(nrpy-progress-sfcollapse-modules))
 
 nrpy-progress-sfcollapse-home := in_progress-NRPyCritCol
@@ -456,11 +459,13 @@ install-nrpy-progress-sfcollapse-simd:
 	ln -sf $(abspath SIMD) $(nrpy-progress-sfcollapse-home)/.
 	@grep --quiet --line-regexp --fixed-strings $(nrpy-progress-sfcollapse-home)/SIMD .gitignore 2> /dev/null \
 				|| echo $(nrpy-progress-sfcollapse-home)/SIMD >> .gitignore
+	sort -o .gitignore{,}
 
 .PHONY: uninstall-nrpy-progress-sfcollapse-simd
 uninstall-nrpy-progress-sfcollapse-simd:
 	rm --force $(nrpy-progress-sfcollapse-home)/SIMD
 	sed -ri "/$(nrpy-progress-sfcollapse-home)\/SIMD/d" .gitignore
+	sort -o .gitignore{,}
 
 nrpy-progress-sfcollapse-bssn-home := Deprecated/BSSN
 nrpy-progress-sfcollapse-bssn-modules := BSSN_quantities.py BSSN_in_terms_of_ADM.py BSSN_RHSs.py
@@ -473,6 +478,7 @@ nrpy-progress-sfcollapse-bssn-modules := $(addprefix $(nrpy-progress-sfcollapse-
 $(nrpy-progress-sfcollapse-bssn-modules):
 	ln -sf $(abspath $(subst $(nrpy-progress-sfcollapse-bssn-home),BSSN,$@)) $(nrpy-progress-sfcollapse-bssn-home)/.
 	echo $@ >> .gitignore
+	sort -o .gitignore{,}
 
 .PHONY: install-nrpy-progress-sfcollapse-bssn
 install-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-modules)
@@ -482,6 +488,7 @@ nrpy-progress-sfcollapse-bssn-gitignore-clean := $(foreach module,$(nrpy-progres
 uninstall-nrpy-progress-sfcollapse-bssn:
 	rm --force $(nrpy-progress-sfcollapse-bssn-modules)
 	sed -ri '$(nrpy-progress-sfcollapse-bssn-gitignore-clean)' .gitignore
+	sort -o .gitignore{,}
 
 .PHONY: install-nrpy-progress-sfcollapse-modules
 install-nrpy-progress-sfcollapse-modules: is-venv-present
