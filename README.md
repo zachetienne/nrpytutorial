@@ -18,4 +18,10 @@ make install-nrpy-modules
 make install-nrpy-progress-sfcollapse-modules
 # print help working with project; recommend only use make
 make venv
+# some more help 
+make help
+# play around with moduels trough CLI
+make run-ipython
+# play around with notebooks trough Jupyter
+make run-jupyter
 ```
