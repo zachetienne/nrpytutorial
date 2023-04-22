@@ -453,7 +453,8 @@ nrpy-progress-sfcollapse-home := in_progress-NRPyCritCol
 .PHONY: install-nrpy-progress-sfcollapse-simd
 install-nrpy-progress-sfcollapse-simd:
 	ln -sf $(abspath SIMD) $(nrpy-progress-sfcollapse-home)/.
-	echo $(nrpy-progress-sfcollapse-home)/SIMD >> .gitignore
+	@grep --quiet --line-regexp --fixed-strings $(nrpy-progress-sfcollapse-home)/SIMD .gitignore 2> /dev/null \
+				|| echo $(nrpy-progress-sfcollapse-home)/SIMD >> .gitignore
 
 .PHONY: uninstall-nrpy-progress-sfcollapse-simd
 uninstall-nrpy-progress-sfcollapse-simd:
