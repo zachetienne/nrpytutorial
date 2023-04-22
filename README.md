@@ -25,3 +25,8 @@ make run-ipython
 # play around with notebooks trough Jupyter
 make run-jupyter
 ```
+
+Using bash autocompletaion will help tremendiosly anyone exploring the `Makefile`. 
+
+I ensure anyone using the `install-` targets that there is an counter `uninstall-` 
+that cleans up after itself. 
