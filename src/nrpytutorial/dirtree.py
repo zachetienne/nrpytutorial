@@ -19,3 +19,4 @@ def make_node(name: str, kind: NodeKind) -> Node:
     return Node(name, kind)
 
 make_file_node = partial(make_node, kind=NodeKind.FILE)
+make_dir_node = partial(make_node, kind=NodeKind.DIR)
