@@ -3,20 +3,20 @@ from dataclasses import dataclass
 from functools import partial
 
 @enum.unique
-class NodeKind(enum.Enum):
+class DirtreeNodeKind(enum.Enum):
     FILE = enum.auto()
     DIR = enum.auto()
 
 @dataclass
 class DirtreeNode:
     name: str
-    kind: NodeKind
+    kind: DirtreeNodeKind
 
-def make_node(name: str, kind: NodeKind) -> DirtreeNode:
-    is_kind_valid = kind in NodeKind
+def make_node(name: str, kind: DirtreeNodeKind) -> DirtreeNode:
+    is_kind_valid = kind in DirtreeNodeKind
     if not is_kind_valid:
         raise TypeError('Kind needs be of type NodeKind')
     return DirtreeNode(name, kind)
 
-make_file_node = partial(make_node, kind=NodeKind.FILE)
-make_dir_node = partial(make_node, kind=NodeKind.DIR)
+make_file_node = partial(make_node, kind=DirtreeNodeKind.FILE)
+make_dir_node = partial(make_node, kind=DirtreeNodeKind.DIR)
