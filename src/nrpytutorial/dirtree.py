@@ -8,15 +8,15 @@ class NodeKind(enum.Enum):
     DIR = enum.auto()
 
 @dataclass
-class Node:
+class DirtreeNode:
     name: str
     kind: NodeKind
 
-def make_node(name: str, kind: NodeKind) -> Node:
+def make_node(name: str, kind: NodeKind) -> DirtreeNode:
     is_kind_valid = kind in NodeKind
     if not is_kind_valid:
         raise TypeError('Kind needs be of type NodeKind')
-    return Node(name, kind)
+    return DirtreeNode(name, kind)
 
 make_file_node = partial(make_node, kind=NodeKind.FILE)
 make_dir_node = partial(make_node, kind=NodeKind.DIR)
