@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import enum
 from dataclasses import dataclass, field
 from typing import List, Dict
@@ -15,10 +16,31 @@ class DirtreeNodeKind(enum.Enum):
 class DirtreeNode:
     name: str
     kind: DirtreeNodeKind
-    parent: DirtreeNode = field(init=False, default_factory=lambda: None)
-    children: List[DirtreeNode] = field(init=False, default_factory=list)
+    _parent: DirtreeNode = field(default_factory=lambda: None)
+    _children: List[DirtreeNode] = field(init=False, default_factory=list)
 
-def make_node(name: str, kind: DirtreeNodeKind) -> DirtreeNode:
+    def update_parent(self, node: DirtreeNode):
+        if node.kind is not DirtreeNodeKind.DIR:
+            raise ValueError('Parent must be a dir dirtree kind')
+
+        self._parent = node
+
+    @property
+    def parent(self):
+        return self._parent
+
+    def add_child(self, node, *args):
+        if self.kind is not DirtreeNodeKind.DIR:
+            raise ValueError('Node is not dir dirtree kind, it is a leaf')
+        self._children.extend([node, *args])
+
+    @property
+    def children(self):
+        return self._children
+
+def make_node(name: str,
+              kind: DirtreeNodeKind,
+              ) -> DirtreeNode:
     is_kind_valid = kind in DirtreeNodeKind
     if not is_kind_valid:
         raise TypeError('Kind needs be of type NodeKind')
@@ -57,14 +79,14 @@ class Dirtree:
 
         self._nodes['root'] = node
 
-    def add_node(self, node: DirtreeNode, parent: str, alias: str = None):
+    def add_node(self, node: DirtreeNode, alias: str = None):
         if not 'root' in self._nodes:
             raise AttributeError('Missing root node, set it first')
 
         alias = alias if alias else node.name
         self.assure_alias_unique(alias)
-        self.assure_parent_exists(parent)
-        self.assure_parent_kind_dir(parent)
+        self.assure_parent_exists(node.parent)
+        self.assure_parent_kind_dir(node.parent)
 
     def get_node(self, alias: str) -> Path:
         if not alias in self._nodes:

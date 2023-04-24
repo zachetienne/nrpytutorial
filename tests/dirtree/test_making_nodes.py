@@ -1,6 +1,6 @@
 import pytest
 
-from nrpytutorial.dirtree import DirtreeNodeKind, DirtreeNode
+from nrpytutorial.dirtree import DirtreeNodeKind, DirtreeNode, Dirtree
 from nrpytutorial.dirtree import make_node, make_file_node, make_dir_node
 from collections import namedtuple
 
