@@ -53,43 +53,37 @@ make_dir_node = partial(make_node, kind=DirtreeNodeKind.DIR)
 class Dirtree:
     _nodes: Dict[str, DirtreeNode] = field(init=False, default_factory=dict)
 
-    def _test_node_key_uniqness(self, alias: str) -> bool:
-        return alias in self._nodes
-
-    def assure_alias_unique(self, alias: str) -> None:
-        is_alias_used = self._test_node_key_uniqness(alias)
-        if is_alias_used:
-            raise ValueError(f'Node alias {alias} already used')
-
-    def assure_parent_exists(self, parent: str) -> None:
-        is_parent_existing = self._test_node_key_uniqness(parent)
-        if not is_parent_existing:
-            raise ValueError(f'Parent {parent} not found')
-
-    def assure_parent_kind_dir(self, parent: str) -> None:
-        if self._nodes[parent].kind is not DirtreeNodeKind.DIR:
-            raise TypeError(f'Parent {parent} is not directory')
+    def test_node_key_used(self, key: str) -> bool:
+        return key in self._nodes
 
     def set_root(self, node: DirtreeNode) -> None:
-        if 'root' in self._nodes:
+        if self.test_node_key_used('root'):
             raise AttributeError(f'root already set')
 
         if node.kind is not DirtreeNodeKind.DIR:
-            raise TypeError(f"Root can only be directory")
+            raise TypeError("Root can only be directory")
+
+        if node.parent:
+            raise TypeError('Root should not have parent')
 
         self._nodes['root'] = node
 
-    def add_node(self, node: DirtreeNode, alias: str = None):
+    def add_node(self, node: DirtreeNode, parent: str, key: str = None):
         if not 'root' in self._nodes:
             raise AttributeError('Missing root node, set it first')
 
-        alias = alias if alias else node.name
-        self.assure_alias_unique(alias)
-        self.assure_parent_exists(node.parent)
-        self.assure_parent_kind_dir(node.parent)
+        key = key if key else node.name
+        if self.test_node_key_used(key):
+            raise AttributeError('Node key already used')
 
-    def get_node(self, alias: str) -> Path:
-        if not alias in self._nodes:
-            raise AttributeError(f'No node alias found with alias = {alias}')
-        node = self._nodes[alias]
-        return node
+        if not self.test_node_key_used(parent):
+            raise ValueError('Parent node not found')
+
+        parent = self.get_node(parent)
+        node.update_parent(parent)
+        self._nodes[key] = node
+
+    def get_node(self, key: str) -> Path:
+        if not key in self._nodes:
+            raise AttributeError(f'Node key not found')
+        return self._nodes[key]
