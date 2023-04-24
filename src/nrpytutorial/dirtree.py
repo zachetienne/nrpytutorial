@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass, field
 from typing import List, Dict
-from functools import partial
+from functools import partial, reduce
 from pathlib import Path
 
 
@@ -83,7 +83,15 @@ class Dirtree:
         node.update_parent(parent)
         self._nodes[key] = node
 
-    def get_node(self, key: str) -> Path:
-        if not key in self._nodes:
+    def get_node(self, key: str) -> DirtreeNode:
+        if not self.test_node_key_used(key):
             raise AttributeError(f'Node key not found')
         return self._nodes[key]
+
+    def get_node_path(self, key: str) -> Path:
+        node = self.get_node(key)
+        node_path = Path(node.name)
+        while node.parent is not None:
+            node_path = Path(node.parent.name).joinpath(node_path)
+            node = node.parent
+        return node_path

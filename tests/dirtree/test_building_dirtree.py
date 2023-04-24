@@ -40,3 +40,7 @@ def test_getting_node(testcase, key, expected, request):
     actual = testcase.get_node(key)
     expected = request.getfixturevalue(expected)
     assert actual == expected
+
+def test_getting_node_path(bssn_dirtree):
+    actual = bssn_dirtree.get_node_path('main')
+    assert actual == Path('bssn').joinpath('codes/main.c')
