@@ -97,3 +97,26 @@ class Dirtree:
             node_path = Path(node.parent.name).joinpath(node_path)
             node = node.parent
         return node_path
+    
+    def backup_node(self, key: str) -> None:
+        path = self.get_node_path(key)
+        new_path = path
+        count = 0
+        while new_path.exists():
+            new_path = f"{str(path)}.{count}bak"
+            new_path = Path(new_path)
+            count += 1
+        path.rename(new_path)
+        return
+
+    def create_node(self, key: str, should_backup=False) -> None:
+        if should_backup:
+            self.backup_node(key)
+
+        node = self.get_node(key)
+        path = self.get_node_path(key)
+        if node.kind is DirtreeNodeKind.DIR:
+            path.mkdir(parents=True,exist_ok=True)
+            return
+        path.touch(exist_ok=True)
+        return
