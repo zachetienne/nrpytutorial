@@ -18,3 +18,4 @@ out*.txt
 *.pyc
 .stamps/
 .venv/
+data/tutorial_codes
