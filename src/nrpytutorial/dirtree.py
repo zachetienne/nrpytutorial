@@ -120,3 +120,5 @@ class Dirtree:
             return
         path.touch(exist_ok=True)
         return
+
+    create_root = partialmethod(create_node, 'root')
