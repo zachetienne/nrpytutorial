@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass, field
 from typing import List, Dict
-from functools import partial, reduce
+from functools import partial, partialmethod
 from pathlib import Path
 
 
@@ -21,7 +21,7 @@ class DirtreeNode:
 
     def update_parent(self, node: DirtreeNode):
         if node.kind is not DirtreeNodeKind.DIR:
-            raise ValueError('Parent must be a dir dirtree kind')
+            raise ValueError('Node parent must be a dir dirtree kind')
 
         self._parent = node
 
@@ -61,7 +61,7 @@ class Dirtree:
             raise AttributeError(f'root already set')
 
         if node.kind is not DirtreeNodeKind.DIR:
-            raise TypeError("Root can only be directory")
+            raise TypeError("Root can only be DirtreeNodeKind.DIR")
 
         if node.parent:
             raise TypeError('Root should not have parent')
@@ -74,10 +74,10 @@ class Dirtree:
 
         key = key if key else node.name
         if self.test_node_key_used(key):
-            raise AttributeError('Node key already used')
+            raise AttributeError(f'Node key {key} already used')
 
         if not self.test_node_key_used(parent):
-            raise ValueError('Parent node not found')
+            raise ValueError(f'Parent {parent} node not found')
 
         parent = self.get_node(parent)
         node.update_parent(parent)
@@ -85,8 +85,10 @@ class Dirtree:
 
     def get_node(self, key: str) -> DirtreeNode:
         if not self.test_node_key_used(key):
-            raise AttributeError(f'Node key not found')
+            raise AttributeError(f'Node key {key} not found')
         return self._nodes[key]
+
+    get_root = partialmethod(get_node, 'root')
 
     def get_node_path(self, key: str) -> Path:
         node = self.get_node(key)
