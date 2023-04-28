@@ -19,3 +19,4 @@ out*.txt
 .stamps/
 .venv/
 data/tutorial_codes
+in_progress-NRPyCritCol/bssn/
