@@ -1,6 +1,6 @@
 import enum
-from dataclasses import dataclass
 from functools import partial
+from collections import namedtuple
 
 
 @enum.unique
@@ -12,21 +12,7 @@ class PulseProfile(enum.Enum):
     def as_string(self):
         return self.value
 
-
-@dataclass
-class PulseParameters:
-    profile: PulseProfile
-    amplitude: float
-    center: float
-    width: float
-
-    def as_tuple(self):
-        return (self.profile.as_string(),
-                self.amplitude,
-                self.center,
-                self.width,
-                )
-
+PulseParameters = namedtuple('PulseParameters', 'profile amplitude center width')
 
 def build_pulse(profile: PulseProfile,
                 amplitude: float,
