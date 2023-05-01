@@ -49,6 +49,11 @@ def make_node(name: str,
 make_file_node = partial(make_node, kind=DirtreeNodeKind.FILE)
 make_dir_node = partial(make_node, kind=DirtreeNodeKind.DIR)
 
+def get_node_factory(kind: DirtreeNodeKind):
+    if kind is DirtreeNodeKind.FILE:
+        return make_file_node
+    return make_dir_node
+
 @dataclass
 class Dirtree:
     _nodes: Dict[str, DirtreeNode] = field(init=False, default_factory=dict)
@@ -100,7 +105,7 @@ class Dirtree:
 
     def get_node_str(self, key: str) -> str:
         return str(self.get_node_path(key))
-    
+
     def backup_node(self, key: str) -> None:
         path = self.get_node_path(key)
         new_path = path
@@ -125,3 +130,13 @@ class Dirtree:
         return
 
     create_root = partialmethod(create_node, 'root')
+
+    def build_node(self,
+                   kind: DirtreeNodeKind,
+                   name: str,
+                   parent: str,
+                   key: str):
+        node_factory = get_node_factory(kind)
+        node = node_factory(name)
+        self.add_node(node, parent, key)
+        self.create_node(key)
