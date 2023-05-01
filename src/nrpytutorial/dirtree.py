@@ -97,6 +97,9 @@ class Dirtree:
             node_path = Path(node.parent.name).joinpath(node_path)
             node = node.parent
         return node_path
+
+    def get_node_str(self, key: str) -> str:
+        return str(self.get_node_path(key))
     
     def backup_node(self, key: str) -> None:
         path = self.get_node_path(key)

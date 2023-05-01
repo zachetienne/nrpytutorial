@@ -18,6 +18,10 @@ class CoordSystemKind(enum.Enum):
     def as_string(self):
         return self.value
 
+COORD_NAME_REFERENCES = {
+        CoordSystemKind.SPHERICAL: ['radial', ]
+        }
+
 def get_params_builder(kind: CoordSystemKind):
     if kind is CoordSystemKind.SPHERICAL:
         return namedtuple('SphericalParams', '')
@@ -39,6 +43,7 @@ SymTP_bScale sets the default value for:
   * SinhSymTP's params.bScale
 SymTP_bScale    = 0.5 # If SymTP chosen
 """)
+
 @dataclass
 class CoordSystem:
     kind: CoordSystemKind
@@ -48,6 +53,10 @@ class CoordSystem:
     @staticmethod
     def get_builder():
         return CoordSystemBuilder()
+
+    def get_coord_name_reference(self):
+        name_reference = " ".join(COORD_NAME_REFERENCES[self.kind])
+        return namedtuple('CoordNameReference', name_reference)
 
 @dataclass
 class CoordSystemBuilder:
