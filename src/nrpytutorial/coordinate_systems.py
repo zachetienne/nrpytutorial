@@ -22,7 +22,7 @@ COORD_NAME_REFERENCES = {
         CoordSystemKind.SPHERICAL: ['radial', ]
         }
 
-def get_params_builder(kind: CoordSystemKind):
+def get_params_factory(kind: CoordSystemKind):
     if kind is CoordSystemKind.SPHERICAL:
         return namedtuple('SphericalParams', '')
     raise NotImplementedError(
@@ -68,7 +68,7 @@ class CoordSystemBuilder:
         self._domain_size = size
 
     def set_free_params(self, *args):
-        params_builder = get_params_builder(self._kind)
+        params_builder = get_params_factory(self._kind)
         self._params = params_builder(*args)
 
     def build(self):
