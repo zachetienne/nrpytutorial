@@ -52,4 +52,4 @@ def make_integration_method(variant: IntegrationMethodVariant,
     if cfl_factor == 0 or not cfl_factor % 2:
         raise ValueError(f"cfl_factor need be positive even number")
 
-    return IntegrationMethod(variant, cfl_factor, fd_order, cfl_factor)
+    return IntegrationMethod(variant, cfl_factor, fd_order, cfloat_type)
