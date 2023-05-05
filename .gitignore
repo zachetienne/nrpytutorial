@@ -1,4 +1,3 @@
-BSSN_ScalarFieldCollapse_Ccodes/
 .coverage
 Deprecated/BSSN/ADMBSSN_tofrom_4metric.py
 Deprecated/BSSN/ADM_in_terms_of_BSSN.py
@@ -20,3 +19,5 @@ out*.txt
 .venv/
 data/tutorial_codes
 in_progress-NRPyCritCol/bssn/
+BSSN_ScalarFieldCollapse_Ccodes/
+BSSN_ScalarFieldCollapse_Ccodes_original/
