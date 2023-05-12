@@ -270,62 +270,61 @@ Butcher_dict['ADP8']=(
 , 8)
 
 # Step 4: The Adams-Bashforth Method
+# Commented out by default.
 
-import numpy as np
-from sympy import symbols
-from sympy import integrate
+# import numpy as np
+# from sympy import symbols
+# from sympy import integrate
 
 # okay so our goal here is to calculate the coefficients to arbitrary precision for
 # Adams-Bashforth methods.
 # Careful! AB methods are NOT structured the same as RK methods, the same code
-# cannot read them! 
+# cannot read them!
 
 # this does not work to generate an order 1 method. But why would you need to generate
 # that, it's just a 1x1 matrix with a 1 in it.
-order = 19 # change this if you want different orders. Default 19, which takes several seconds to generate.
-pythonButcher = [[sp.Rational(0.0/1.0),sp.Rational(0.0/1.0)],
-                 [sp.Rational(0.0/1.0),sp.Rational(0.0/1.0)]]
+# order = 19 # change this if you want different orders. Default 19, which takes several seconds to generate.
+# pythonButcher = [[sp.Rational(0.0/1.0),sp.Rational(0.0/1.0)],
+                 # [sp.Rational(0.0/1.0),sp.Rational(0.0/1.0)]]
 # just to initialize it, we'll set it in a minute
 
-n = 1
-while n < order+1: 
-    j = 0
-    while j < n: # the number of coefficients in each method is equal to the order.
-
-        # set up the product
-        x = symbols('x')
-        expr = x
-        i = 0
-        while i < n:
-            if i == j:
-                i = i+1
-            else:
-                expr = expr*(x + i)
-                i = i+1
-        expr = expr/x
-        expr2 = integrate(expr,(x,0,1))
-        expr2 = expr2 * sp.Rational((-1.0)**j,(sp.factorial(j)* sp.factorial(n - j - 1)))
-        if (len(pythonButcher) < n):
-            pythonButcher.append([sp.Rational(0.0/1.0),sp.Rational(0.0/1.0)])
-            # add another row if we need it.
-        if (len(pythonButcher[n-1]) < j+1):
-            pythonButcher[n-1].append(expr2)
-            i = 0
-            while i < n:
+# n = 1
+# while n < order+1:
+#     j = 0
+#     while j < n: # the number of coefficients in each method is equal to the order.
+#
+#         # set up the product
+#         x = symbols('x')
+#         expr = x
+#         i = 0
+#         while i < n:
+#             if i == j:
+#                 i = i+1
+#             else:
+#                 expr = expr*(x + i)
+#                 i = i+1
+#         expr = expr/x
+#         expr2 = integrate(expr,(x,0,1))
+#         expr2 = expr2 * sp.Rational((-1.0)**j,(sp.factorial(j)* sp.factorial(n - j - 1)))
+#         if (len(pythonButcher) < n):
+#             pythonButcher.append([sp.Rational(0.0/1.0),sp.Rational(0.0/1.0)])
+#             # add another row if we need it.
+#         if (len(pythonButcher[n-1]) < j+1):
+#             pythonButcher[n-1].append(expr2)
+#             i = 0
+#             while i < n:
                 # Uncomment this section to fill the matrix with zeroes
                 # if(len(pythonButcher[i]) < len(pythonButcher[n-1])):
                     # pythonButcher[i].append(sp.sympify(0))
-                i = i+1
-        else:
-            pythonButcher[n-1][j] = expr2
-        j = j+1
-    n = n+1
+#                 i = i+1
+#         else:
+#             pythonButcher[n-1][j] = expr2
+#         j = j+1
+#     n = n+1
 
 # Due to the way we set this up to make sure everything was explicitly an array,
-# We need to remove a single trailing zero. 
+# We need to remove a single trailing zero.
 # Comment out if you want the zeroes.
-pythonButcher[0] = [1]
+# pythonButcher[0] = [1]
 
-Butcher_dict['AB']=(
-pythonButcher
-, order)
+# Butcher_dict['AB']=( pythonButcher, order)
