@@ -19,7 +19,7 @@ def bssn_main_file():
 @pytest.fixture
 def bssn_dirtree(bssn_root_dir, bssn_codes_dir, bssn_main_file):
     dirtree = Dirtree()
-    dirtree.set_root(bssn_root_dir)
+    dirtree.update_root(bssn_root_dir)
     dirtree.add_node(bssn_codes_dir, 'root')
     dirtree.add_node(bssn_main_file, 'codes', key='main')
     return dirtree
