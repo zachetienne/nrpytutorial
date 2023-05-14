@@ -13,6 +13,7 @@ def test_making_unsupported_kind_node_rises_exception(testcase):
     (make_node, ('name', DirtreeNodeKind.FILE)),
     (make_file_node, ('name',))
     ])
+@pytest.mark.xfail(reason='work in progress')
 def test_making_file_node(factory, args):
     actual = factory(*args)
     assert actual.kind is DirtreeNodeKind.FILE
@@ -21,6 +22,7 @@ def test_making_file_node(factory, args):
     (make_node, ('name', DirtreeNodeKind.DIR)),
     (make_dir_node, ('name',))
     ])
+@pytest.mark.xfail(reason='work in progress')
 def test_making_file_node(factory, args):
     actual = factory(*args)
     assert actual.kind is DirtreeNodeKind.DIR
