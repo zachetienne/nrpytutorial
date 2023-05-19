@@ -64,7 +64,7 @@ class DirtreeNodeBuilder:
 class DirtreeNodeDirector:
     _builder: DirtreeNodeBuilder = field(default_factory=DirtreeNode.get_builder)
 
-    def create_node(self,
+    def construct_node(self,
                     name: str,
                     kind: DirtreeNodeKind,
                     parent: DirtreeNode = None,
@@ -75,7 +75,7 @@ class DirtreeNodeDirector:
         self._builder.set_should_backup(should_backup)
         return self._builder.build()
 
-    def create_file_node(self,
+    def construct_file_node(self,
                          name: str,
                          parent: DirtreeNode = None,
                          should_backup: bool = False) -> DirtreeNode:
@@ -85,7 +85,7 @@ class DirtreeNodeDirector:
         self._builder.set_should_backup(should_backup)
         return self._builder.build()
 
-    def create_dir_node(self,
+    def construct_dir_node(self,
                         name: str,
                         parent: DirtreeNode = None,
                         should_backup: bool = False) -> DirtreeNode:
