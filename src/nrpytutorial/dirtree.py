@@ -41,11 +41,12 @@ class DirtreeNode:
             return
 
         count = 0
-        backup_name = f"{self.path}_v{count}"
+        backup_template = "{}_bak{}"
+        backup_name = backup_template.format(self.path, count)
         while Path(backup_name).exists():
             count += 1
-            backup_name = f"{self.path}_v{count}"
-        
+            backup_name = backup_template.format(self.path, count)
+
         self.path.rename(backup_name)
         return
 

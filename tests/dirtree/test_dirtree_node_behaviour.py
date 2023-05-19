@@ -57,4 +57,4 @@ def test_node_is_created(tmp_path, testcase, expected, request):
 def test_node_is_backuped(tmp_path, combined_node):
     combined_node.create()
     combined_node.backup()
-    assert tmp_path.joinpath('name/name_v0').exists()
+    assert tmp_path.joinpath('name/name_bak0').exists()
