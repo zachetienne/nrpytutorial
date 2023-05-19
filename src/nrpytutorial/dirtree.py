@@ -34,7 +34,25 @@ class DirtreeNode:
     def __str__(self):
         return str(self.path)
 
+    def backup(self, is_forced=False):
+        should_backup = is_forced if is_forced else self.data.should_backup
+
+        if not should_backup:
+            return
+
+        count = 0
+        backup_name = f"{self.path}_v{count}"
+        while Path(backup_name).exists():
+            count += 1
+            backup_name = f"{self.path}_v{count}"
+        
+        self.path.rename(backup_name)
+        return
+
     def create(self):
+        if self.path.exists():
+            self.backup()
+
         if self.data.kind is DirtreeNodeKind.DIR:
             self.path.mkdir(parents=True, exist_ok=True)
             return

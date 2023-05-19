@@ -22,6 +22,7 @@ def dir_node(director, root_node):
 @pytest.fixture
 def combined_node(file_node, dir_node):
     file_node.parent = dir_node
+    file_node.data.should_backup = True
     return file_node
 
 @pytest.mark.parametrize('testcase, expected', [
@@ -52,3 +53,8 @@ def test_node_is_created(tmp_path, testcase, expected, request):
     actual = request.getfixturevalue(testcase)
     actual.create()
     assert tmp_path.joinpath(expected).exists()
+
+def test_node_is_backuped(tmp_path, combined_node):
+    combined_node.create()
+    combined_node.backup()
+    assert tmp_path.joinpath('name/name_v0').exists()
