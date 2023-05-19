@@ -22,7 +22,8 @@ class DirtreeNode:
     data: DirtreeNodeData
     parent: DirtreeNode
 
-    def to_path(self):
+    @property
+    def path(self):
         parent_node = self.parent
         parent = Path('')
         while parent_node:
@@ -30,12 +31,17 @@ class DirtreeNode:
             parent_node = parent_node.parent
         return parent.joinpath(self.data.name)
 
-    def to_string(self):
-        path = self.to_path()
-        return str(path)
+    def __str__(self):
+        return str(self.path)
 
     def create(self):
-        return NotImplemented
+        if self.data.kind is DirtreeNodeKind.DIR:
+            self.path.mkdir(parents=True, exist_ok=True)
+            return
+
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.touch()
+        return
 
     @staticmethod
     def get_builder():
