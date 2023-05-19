@@ -20,10 +20,19 @@ class DirtreeNodeData:
 @dataclass
 class DirtreeNode:
     data: DirtreeNodeData
-    parent: str
+    parent: DirtreeNode
 
     def to_path(self):
-        return NotImplemented
+        parent_node = self.parent
+        parent = Path('')
+        while parent_node:
+            parent = Path(parent_node.data.name).joinpath(parent)
+            parent_node = parent_node.parent
+        return parent.joinpath(self.data.name)
+
+    def to_string(self):
+        path = self.to_path()
+        return str(path)
 
     def create(self):
         return NotImplemented
@@ -55,26 +64,33 @@ class DirtreeNodeBuilder:
 class DirtreeNodeDirector:
     _builder: DirtreeNodeBuilder = field(default_factory=DirtreeNode.get_builder)
 
-    def create_node(self, name, kind, should_backup):
+    def create_node(self,
+                    name: str,
+                    kind: DirtreeNodeKind,
+                    parent: DirtreeNode = None,
+                    should_backup: bool =False) -> DirtreeNode:
         self._builder.set_name(name)
         self._builder.set_kind(kind)
+        self._builder.set_parent(parent)
         self._builder.set_should_backup(should_backup)
-        return _builder.build()
+        return self._builder.build()
 
-    def create_file_node(name, should_backup):
+    def create_file_node(self,
+                         name: str,
+                         parent: DirtreeNode = None,
+                         should_backup: bool = False) -> DirtreeNode:
         self._builder.set_name(name)
         self._builder.set_kind(DirtreeNodeKind.FILE)
+        self._builder.set_parent(parent)
         self._builder.set_should_backup(should_backup)
-        return _builder.build()
+        return self._builder.build()
 
-    def create_dir_node(name, should_backup):
+    def create_dir_node(self,
+                        name: str,
+                        parent: DirtreeNode = None,
+                        should_backup: bool = False) -> DirtreeNode:
         self._builder.set_name(name)
         self._builder.set_kind(DirtreeNodeKind.DIR)
+        self._builder.set_parent(parent)
         self._builder.set_should_backup(should_backup)
-        return _builder.build()
-
-    def create_dir_node(name, should_backup):
-        self._builder.set_name(name)
-        self._builder.set_kind(DirtreeNodeKind.DIR)
-        self._builder.set_should_backup(should_backup)
-        return _builder.build()
+        return self._builder.build()
