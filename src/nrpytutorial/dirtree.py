@@ -55,7 +55,6 @@ class DirtreeNode:
             return
 
         if self.data.kind is DirtreeNodeKind.DIR:
-            self.path.rmdir()
             return
 
         self.path.unlink()
@@ -124,3 +123,7 @@ class DirtreeNodeDirector:
                          should_backup: bool = False) -> DirtreeNode:
         node = self.construct_node(name, DirtreeNodeKind.DIR, parent, should_backup)
         return node
+
+@dataclass
+class Dirtree:
+    pass
