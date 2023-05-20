@@ -127,7 +127,7 @@ class DirtreeNodeDirector:
 @dataclass
 class Dirtree:
     _root: DirtreeNode
-    _nodes: dict = field(init=False, default_factory=dict)
+    _nodes: dict[str, DirtreeNode] = field(init=False, default_factory=dict)
 
     def __post_init__(self):
         self._nodes['root'] = self._root
@@ -149,6 +149,13 @@ class Dirtree:
 
     def create(self):
         node_keys = sorted(self._nodes, key=lambda k: len(self._nodes[k].path.parents), reverse=True)
-        nodes = (self._nodes[k] for k in node_keys)
+        nodes = [ self._nodes[k] for k in node_keys ]
         for node in nodes:
+            if node.data.kind is not DirtreeNodeKind.DIR:
+                continue
+            node.create()
+
+        for node in nodes:
+            if node.data.kind is not DirtreeNodeKind.FILE:
+                continue
             node.create()
