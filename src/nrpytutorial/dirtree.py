@@ -4,7 +4,7 @@ import enum
 from dataclasses import dataclass, field, InitVar
 from typing import List, Dict
 from pathlib import Path
-
+from functools import partialmethod
 
 @enum.unique
 class DirtreeNodeKind(enum.Enum):
@@ -129,4 +129,21 @@ class Dirtree:
     _root: DirtreeNode
     _nodes: dict = field(init=False, default_factory=dict)
 
-    pass
+    def __post_init__(self):
+        self._nodes['root'] = self._root
+    
+    def get(self, key: str):
+        return self._nodes.get(key, None)
+
+    def add(self, node: DirtreeNode, parent_key: str, key: str = None):
+        key = key if key else node.data.name
+        node.parent = self.get(parent_key)
+        self._nodes[key] = node
+
+    add_codes = partialmethod(add, parent_key='root', key='codes')
+
+    def create(self):
+        node_keys = sorted(self._nodes, key=lambda k: len(self._nodes[k].path.parents), reverse=True)
+        nodes = (self._nodes[k] for k in node_keys)
+        for node in nodes:
+            node.create()
