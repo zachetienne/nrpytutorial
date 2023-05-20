@@ -133,7 +133,9 @@ class Dirtree:
         self._nodes['root'] = self._root
     
     def get(self, key: str):
-        return self._nodes.get(key, None)
+        if not key in self._nodes:
+            raise KeyError(f'Node with key: {key} not found')
+        return self._nodes.get(key)
 
     def add(self, node: DirtreeNode, parent_key: str, key: str = None):
         key = key if key else node.data.name

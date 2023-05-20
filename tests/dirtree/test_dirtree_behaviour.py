@@ -2,6 +2,7 @@ import pytest
 
 from nrpytutorial.dirtree import Dirtree
 from nrpytutorial.dirtree import DirtreeNodeDirector
+from pathlib import Path
 
 
 @pytest.fixture
@@ -27,7 +28,7 @@ def headers(director: DirtreeNodeDirector):
 
 @pytest.fixture
 def header_file(director: DirtreeNodeDirector):
-    return director.construct_file_node('header.h')
+    return director.construct_file_node('header.h', should_backup=True)
 
 @pytest.fixture
 def dirtree(bssn_node, codes_node, lib_file, headers, header_file):
@@ -43,3 +44,10 @@ def test_dirtree_created_nodes(dirtree, expected, tmp_path, request):
     dirtree.create()
     expected = request.getfixturevalue(expected)
     assert tmp_path.joinpath(expected.path).exists()
+
+def test_dirtree_backups_nodes_when_creating(dirtree, tmp_path, header_file):
+    dirtree.create()
+    dirtree.create()
+    header_path = tmp_path.joinpath(header_file.path)
+    header_backup = f"{header_path}_bak0"
+    assert Path(header_backup).exists()
