@@ -104,18 +104,12 @@ class DirtreeNodeDirector:
                          name: str,
                          parent: DirtreeNode = None,
                          should_backup: bool = False) -> DirtreeNode:
-        self._builder.set_name(name)
-        self._builder.set_kind(DirtreeNodeKind.FILE)
-        self._builder.set_parent(parent)
-        self._builder.set_should_backup(should_backup)
-        return self._builder.build()
+        node = self.construct_node(name, DirtreeNodeKind.FILE, parent, should_backup)
+        return node
 
     def construct_dir_node(self,
-                        name: str,
-                        parent: DirtreeNode = None,
-                        should_backup: bool = False) -> DirtreeNode:
-        self._builder.set_name(name)
-        self._builder.set_kind(DirtreeNodeKind.DIR)
-        self._builder.set_parent(parent)
-        self._builder.set_should_backup(should_backup)
-        return self._builder.build()
+                         name: str,
+                         parent: DirtreeNode = None,
+                         should_backup: bool = False) -> DirtreeNode:
+        node = self.construct_node(name, DirtreeNodeKind.DIR, parent, should_backup)
+        return node
