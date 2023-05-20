@@ -50,9 +50,20 @@ class DirtreeNode:
         self.path.rename(backup_name)
         return
 
+    def clean(self):
+        if not self.path.exists():
+            return
+
+        if self.data.kind is DirtreeNodeKind.DIR:
+            self.path.rmdir()
+            return
+
+        self.path.unlink()
+
     def create(self):
         if self.path.exists():
             self.backup()
+            self.clean()
 
         if self.data.kind is DirtreeNodeKind.DIR:
             self.path.mkdir(parents=True, exist_ok=True)
