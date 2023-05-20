@@ -51,3 +51,7 @@ def test_dirtree_backups_nodes_when_creating(dirtree, tmp_path, header_file):
     header_path = tmp_path.joinpath(header_file.path)
     header_backup = f"{header_path}_bak0"
     assert Path(header_backup).exists()
+
+def test_dirtree_creates_subnode_inplace(dirtree, tmp_path):
+    dirtree.make_dir('name', 'codes')
+    assert tmp_path.joinpath(dirtree.get('codes').path).joinpath('name').exists()

@@ -159,3 +159,19 @@ class Dirtree:
             if node.data.kind is not DirtreeNodeKind.FILE:
                 continue
             node.create()
+
+    def make_dir(self, name, parent_key, should_backup=False) -> Path:
+        director = DirtreeNodeDirector()
+        node = director.construct_dir_node(name,
+                                           self.get(parent_key),
+                                           should_backup=should_backup)
+        node.create()
+        return node.path
+
+    def make_file(self, name, parent_key, should_backup=False) -> Path:
+        director = DirtreeNodeDirector()
+        node = director.construct_file_node(name,
+                                           self.get(parent_key),
+                                           should_backup=should_backup)
+        node.create()
+        return node.path
