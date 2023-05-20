@@ -141,6 +141,9 @@ class Dirtree:
         self._nodes[key] = node
 
     add_codes = partialmethod(add, parent_key='root', key='codes')
+    add_build = partialmethod(add, parent_key='root', key='build')
+    add_bin = partialmethod(add, parent_key='root', key='bin')
+    add_output = partialmethod(add, parent_key='root', key='output')
 
     def create(self):
         node_keys = sorted(self._nodes, key=lambda k: len(self._nodes[k].path.parents), reverse=True)
