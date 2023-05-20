@@ -126,4 +126,7 @@ class DirtreeNodeDirector:
 
 @dataclass
 class Dirtree:
+    _root: DirtreeNode
+    _nodes: dict = field(init=False, default_factory=dict)
+
     pass
