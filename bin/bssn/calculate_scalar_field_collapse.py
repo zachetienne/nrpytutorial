@@ -10,16 +10,20 @@ CFL_FACTOR = 0.5
 FD_ORDER = 4
 CFLOAT_TYPE = CfloatPrecision.DOUBLE
 
-
-def setup_dirtree(home) -> Dirtree:
-    dirtree = Dirtree(home)
+def _add_skeleton(dirtree: Dirtree):
     dirtree.add_new_dir('codes', 'root')
     dirtree.add_new_dir('build', 'root')
     dirtree.add_new_dir('bin', 'root')
     dirtree.add_new_dir('output', 'root')
-    dirtree.create()
-    return dirtree
 
+def _create_skeleton(dirtree: Dirtree):
+    dirtree.create()
+
+def setup_dirtree(home) -> Dirtree:
+    dirtree = Dirtree(home)
+    _add_skeleton(dirtree)
+    _create_skeleton(dirtree)
+    return dirtree
 
 if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)

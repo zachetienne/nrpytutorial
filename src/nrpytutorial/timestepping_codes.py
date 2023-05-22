@@ -10,9 +10,15 @@ if TYPE_CHECKING:
     from nrpytutorial.dirtree import Dirtree
     from nrpytutorial.integration_methods import IntegrationMethod
 
-def _create_home(dirtree: Dirtree) -> None:
+def _add_home(dirtree: Dirtree):
     dirtree.add_new_dir('MoLtimestepping', 'codes', 'moltimestepping')
+
+def _create_home(dirtree: Dirtree):
     dirtree.create_node('moltimestepping')
+
+def _setup_home(dirtree: Dirtree) -> None:
+    _add_home(dirtree)
+    _create_home(dirtree)
 
 def _build_factory() -> CprototypeFactory:
     cparmater_factory = CparameterFactory()
@@ -34,7 +40,7 @@ def _create_post_rhs_string(cprototype_factory: CprototypeFactory):
     return post_rhs_string
 
 def setup_rktimestepping(dirtree: Dirtree, integration_method: IntegrationMethod):
-    _create_home(dirtree)
+    _setup_home(dirtree)
 
     rk_order = integration_method.variant.attrs.order
     rk_method = f"{integration_method.variant}"

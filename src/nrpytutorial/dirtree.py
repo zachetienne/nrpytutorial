@@ -136,13 +136,14 @@ class DirtreeNodeDirector:
 @dataclass
 class Dirtree:
     root: InitVar[DirtreeNode]
+    should_backup: InitVar[boo] = False
     _root: DirtreeNode = None
     _nodes: dict[str, DirtreeNode] = field(init=False, default_factory=dict)
 
-    def __post_init__(self, root):
+    def __post_init__(self, root, should_backup):
         director = DirtreeNodeDirector()
         self._nodes['root'] = director.construct_dir_node(str(root), None,
-                                                    should_backup=False)
+                                                    should_backup=should_backup)
 
     def get(self, key: str):
         if key not in self._nodes:
