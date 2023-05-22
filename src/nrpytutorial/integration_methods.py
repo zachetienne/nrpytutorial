@@ -30,10 +30,11 @@ class IntegrationMethodVariant(enum.Enum):
     L6 = "L6"
     DP8 = "DP8"
 
-    def as_string(self):
+    def __str__(self):
         return self.value
 
-    def get_attrs(self):
+    @property
+    def attrs(self):
         coeffs, order = Butcher_dict[self.value]
         return RkMethodAttrs(coeffs, order)
 
