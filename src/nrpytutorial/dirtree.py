@@ -140,7 +140,9 @@ class Dirtree:
     _nodes: dict[str, DirtreeNode] = field(init=False, default_factory=dict)
 
     def __post_init__(self, root):
-        self.add_new_dir(str(root), None, 'root', should_backup=False)
+        director = DirtreeNodeDirector()
+        self._nodes['root'] = director.construct_dir_node(str(root), None,
+                                                    should_backup=False)
 
     def get(self, key: str):
         if key not in self._nodes:
