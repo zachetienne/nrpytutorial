@@ -33,7 +33,7 @@ def header_file(director: DirtreeNodeDirector):
 @pytest.fixture
 def dirtree(bssn_node, codes_node, lib_file, headers, header_file):
     dirtree = Dirtree(bssn_node)
-    dirtree.add_codes(codes_node)
+    dirtree.add(codes_node, 'root', 'codes')
     dirtree.add(lib_file, 'codes')
     dirtree.add(headers, 'codes')
     dirtree.add(header_file, 'headers')
@@ -53,5 +53,6 @@ def test_dirtree_backups_nodes_when_creating(dirtree, tmp_path, header_file):
     assert Path(header_backup).exists()
 
 def test_dirtree_creates_subnode_inplace(dirtree, tmp_path):
-    dirtree.make_dir('name', 'codes')
+    dirtree.add_new_dir('name', 'codes')
+    dirtree.create_node('name')
     assert tmp_path.joinpath(dirtree.get('codes').path).joinpath('name').exists()

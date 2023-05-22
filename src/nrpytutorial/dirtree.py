@@ -6,16 +6,19 @@ from typing import List, Dict
 from pathlib import Path
 from functools import partialmethod
 
+
 @enum.unique
 class DirtreeNodeKind(enum.Enum):
     FILE = enum.auto()
     DIR = enum.auto()
+
 
 @dataclass
 class DirtreeNodeData:
     name: str
     kind: DirtreeNodeKind
     should_backup: bool = False
+
 
 @dataclass
 class DirtreeNode:
@@ -76,6 +79,7 @@ class DirtreeNode:
     def get_builder():
         return DirtreeNodeBuilder()
 
+
 @dataclass
 class DirtreeNodeBuilder:
 
@@ -95,15 +99,17 @@ class DirtreeNodeBuilder:
         data = DirtreeNodeData(self._name, self._kind, self._should_backup)
         return DirtreeNode(data, self._parent)
 
+
 @dataclass
 class DirtreeNodeDirector:
-    _builder: DirtreeNodeBuilder = field(default_factory=DirtreeNode.get_builder)
+    _builder: DirtreeNodeBuilder = field(
+        default_factory=DirtreeNode.get_builder)
 
     def construct_node(self,
-                    name: str,
-                    kind: DirtreeNodeKind,
-                    parent: DirtreeNode = None,
-                    should_backup: bool =False) -> DirtreeNode:
+                       name: str,
+                       kind: DirtreeNodeKind,
+                       parent: DirtreeNode = None,
+                       should_backup: bool = False) -> DirtreeNode:
         self._builder.set_name(name)
         self._builder.set_kind(kind)
         self._builder.set_parent(parent)
@@ -111,29 +117,36 @@ class DirtreeNodeDirector:
         return self._builder.build()
 
     def construct_file_node(self,
-                         name: str,
-                         parent: DirtreeNode = None,
-                         should_backup: bool = False) -> DirtreeNode:
-        node = self.construct_node(name, DirtreeNodeKind.FILE, parent, should_backup)
+                            name: str,
+                            parent: DirtreeNode = None,
+                            should_backup: bool = False) -> DirtreeNode:
+        node = self.construct_node(
+            name, DirtreeNodeKind.FILE, parent, should_backup)
         return node
 
     def construct_dir_node(self,
-                         name: str,
-                         parent: DirtreeNode = None,
-                         should_backup: bool = False) -> DirtreeNode:
-        node = self.construct_node(name, DirtreeNodeKind.DIR, parent, should_backup)
+                           name: str,
+                           parent: DirtreeNode = None,
+                           should_backup: bool = False) -> DirtreeNode:
+        node = self.construct_node(
+            name, DirtreeNodeKind.DIR, parent, should_backup)
         return node
+
 
 @dataclass
 class Dirtree:
-    _root: DirtreeNode
+    root: InitVar[DirtreeNode]
+    _root: DirtreeNode = None
     _nodes: dict[str, DirtreeNode] = field(init=False, default_factory=dict)
 
-    def __post_init__(self):
-        self._nodes['root'] = self._root
-    
+    def __post_init__(self, root):
+        director = DirtreeNodeDirector()
+        self._nodes['root'] = director.construct_dir_node(str(root),
+                                                          None,
+                                                          should_backup=False)
+
     def get(self, key: str):
-        if not key in self._nodes:
+        if key not in self._nodes:
             raise KeyError(f'Node with key: {key} not found')
         return self._nodes.get(key)
 
@@ -142,36 +155,49 @@ class Dirtree:
         node.parent = self.get(parent_key)
         self._nodes[key] = node
 
-    add_codes = partialmethod(add, parent_key='root', key='codes')
-    add_build = partialmethod(add, parent_key='root', key='build')
-    add_bin = partialmethod(add, parent_key='root', key='bin')
-    add_output = partialmethod(add, parent_key='root', key='output')
+    def add_new_dir(
+            self,
+            name: str,
+            parent_key: str = None,
+            key: str = None,
+            should_backup=False):
+
+        parent = self.get(parent_key) if parent_key else None
+        director = DirtreeNodeDirector()
+        node = director.construct_dir_node(
+            name, parent, should_backup=should_backup)
+
+        key = key if key else name
+        self._nodes[key] = node
+
+    def add_new_file(
+            self,
+            name: str,
+            parent_key: str = None,
+            key: str = None,
+            should_backup=False):
+        parent = self.get(parent_key) if parent_key else None
+        director = DirtreeNodeDirector()
+        node = director.construct_file_node(
+            name, parent, should_backup=should_backup)
+
+        key = key if key else name
+        self._nodes[key] = node
+
+    def create_node(self, key: str):
+        node = self.get(key)
+        node.create()
 
     def create(self):
-        node_keys = sorted(self._nodes, key=lambda k: len(self._nodes[k].path.parents), reverse=True)
-        nodes = [ self._nodes[k] for k in node_keys ]
-        for node in nodes:
-            if node.data.kind is not DirtreeNodeKind.DIR:
-                continue
+        node_keys = sorted(
+            self._nodes,
+            key=lambda k: len(
+                self._nodes[k].path.parents),
+            reverse=True)
+        nodes = [self._nodes[k] for k in node_keys]
+
+        for node in (n for n in nodes if n.data.kind is DirtreeNodeKind.DIR):
             node.create()
 
-        for node in nodes:
-            if node.data.kind is not DirtreeNodeKind.FILE:
-                continue
+        for node in (n for n in nodes if n.data.kind is DirtreeNodeKind.FILE):
             node.create()
-
-    def make_dir(self, name, parent_key, should_backup=False) -> Path:
-        director = DirtreeNodeDirector()
-        node = director.construct_dir_node(name,
-                                           self.get(parent_key),
-                                           should_backup=should_backup)
-        node.create()
-        return node.path
-
-    def make_file(self, name, parent_key, should_backup=False) -> Path:
-        director = DirtreeNodeDirector()
-        node = director.construct_file_node(name,
-                                           self.get(parent_key),
-                                           should_backup=should_backup)
-        node.create()
-        return node.path
