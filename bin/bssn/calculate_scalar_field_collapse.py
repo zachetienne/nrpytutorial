@@ -1,4 +1,5 @@
 from __future__ import annotations
+import deprecated_reference_metric as evil_rfm
 
 from nrpytutorial.dirtree import Dirtree
 from nrpytutorial.timestepping_codes import setup_rktimestepping
@@ -6,6 +7,8 @@ from nrpytutorial.integration_methods import make_integration_method, Integratio
 from nrpytutorial.ccode_rendering import CfloatPrecision
 from nrpytutorial.coordinate_systems import build_spherical_coord_system
 from nrpytutorial.numerical_grids import NumericalGrid
+
+import deprecated_reference_metric as evil_rfm
 
 from pathlib import Path
 
@@ -52,6 +55,7 @@ def _create_numerical_grid(coord_system: CoordSystem):
     numerical_grid_builder.set_infinity(coord_system.domain_size * 1.1)
     return numerical_grid_builder.build()
 
+
 def create_simd_headers(src: Path, dst: Dirtree):
     dst.add_new_dir('SIMD', 'codes', 'simds')
     dst.create_node('simds')
@@ -63,11 +67,19 @@ def create_simd_headers(src: Path, dst: Dirtree):
     header.path.write_text(src.read_text())
     return
 
+
+def make_find_timestep_header(dirtree: Dirtree):
+    dirtree.add_new_file('find_timestep.h', 'codes', 'find_timestep_header')
+    dirtree.create_node('find_timestep_header')
+    evil_rfm.out_timestep_func_to_file(
+        str(dirtree.get('find_timestep_header')))
+
+
 if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)
 
     integration_method = make_integration_method(
-            INTEGRATION_METHOD, CFL_FACTOR, FD_ORDER, CFLOAT_TYPE)
+        INTEGRATION_METHOD, CFL_FACTOR, FD_ORDER, CFLOAT_TYPE)
 
     setup_rktimestepping(dirtree, integration_method)
 
@@ -75,3 +87,5 @@ if __name__ == '__main__':
     numerical_grid = _create_numerical_grid(coord_system)
 
     create_simd_headers(Path(SIMD_HEADERS), dirtree)
+
+    make_find_timestep_header(dirtree)
