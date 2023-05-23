@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from collections import namedtuple
 from typing import Any
 from functools import partial
+import NRPy_param_funcs as par   # NRPy+: Parameter interface
 
 
 @enum.unique
@@ -18,15 +19,17 @@ class CoordSystemKind(enum.Enum):
     def as_string(self):
         return self.value
 
+
 COORD_NAME_REFERENCES = {
-        CoordSystemKind.SPHERICAL: ['radial', ]
-        }
+    CoordSystemKind.SPHERICAL: ['radial', ]
+    }
+
 
 def get_params_factory(kind: CoordSystemKind):
     if kind is CoordSystemKind.SPHERICAL:
-        return namedtuple('SphericalParams', '')
+        return namedtuple('SphericalParams', 'symmetry_axes')
     raise NotImplementedError(
-"""
+        """
 REVIEW comments to match coordsystemkinds
 sinh_width sets the default value for:
   * SinhSpherical's params.SINHW
@@ -44,6 +47,7 @@ SymTP_bScale sets the default value for:
 SymTP_bScale    = 0.5 # If SymTP chosen
 """)
 
+
 @dataclass
 class CoordSystem:
     kind: CoordSystemKind
@@ -57,6 +61,7 @@ class CoordSystem:
     def get_coord_name_reference(self):
         name_reference = " ".join(COORD_NAME_REFERENCES[self.kind])
         return namedtuple('CoordNameReference', name_reference)
+
 
 @dataclass
 class CoordSystemBuilder:
@@ -72,13 +77,20 @@ class CoordSystemBuilder:
         self._params = params_builder(*args)
 
     def build(self):
+        par.set_parval_from_str("indexedexp::symmetry_axes", self._params.symmetry_axes)
         return CoordSystem(self._kind, self._domain_size, self._params)
 
-def build_coord_system(kind: CoordSystemKind, domain_size: int, *args) -> CoordSystem:
+
+def build_coord_system(
+        kind: CoordSystemKind,
+        domain_size: int,
+        *args) -> CoordSystem:
     builder = CoordSystemBuilder()
     builder.set_kind(kind)
     builder.set_domain_size(domain_size)
     builder.set_free_params(*args)
     return builder.build()
 
-build_spherical_coord_system = partial(build_coord_system, CoordSystemKind.SPHERICAL)
+
+build_spherical_coord_system = partial(
+    build_coord_system, CoordSystemKind.SPHERICAL)

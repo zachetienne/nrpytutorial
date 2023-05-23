@@ -22,6 +22,7 @@ CFLOAT_TYPE = CfloatPrecision.DOUBLE
 DOMAIN_SIZE = 32
 SPATIAL_DIMENSIONS = 3
 GRID_POINTS_COUNT = 30000
+SYMMETRY_AXES = '12'
 SIMD_HEADERS = 'SIMD/SIMD_intrinsics.h'
 
 
@@ -70,7 +71,7 @@ if __name__ == '__main__':
 
     setup_rktimestepping(dirtree, integration_method)
 
-    coord_system = build_spherical_coord_system(DOMAIN_SIZE)
+    coord_system = build_spherical_coord_system(DOMAIN_SIZE, SYMMETRY_AXES)
     numerical_grid = _create_numerical_grid(coord_system)
 
     create_simd_headers(Path(SIMD_HEADERS), dirtree)
