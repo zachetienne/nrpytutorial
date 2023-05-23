@@ -55,7 +55,7 @@ def _create_numerical_grid(coord_system: CoordSystem):
 def create_simd_headers(src: Path, dst: Dirtree):
     dst.add_new_dir('SIMD', 'codes', 'simds')
     dst.create_node('simds')
-    
+
     dst.add_new_file('SIMD_intrinsics.h', 'simds', 'simd_header')
     dst.create_node('simd_header')
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)
 
     integration_method = make_integration_method(
-        INTEGRATION_METHOD, CFL_FACTOR, FD_ORDER, CFLOAT_TYPE)
+            INTEGRATION_METHOD, CFL_FACTOR, FD_ORDER, CFLOAT_TYPE)
 
     setup_rktimestepping(dirtree, integration_method)
 
