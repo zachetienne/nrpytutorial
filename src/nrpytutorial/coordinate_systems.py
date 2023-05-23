@@ -78,7 +78,7 @@ def build_coord_system(kind: CoordSystemKind, domain_size: int, *args) -> CoordS
     builder = CoordSystemBuilder()
     builder.set_kind(kind)
     builder.set_domain_size(domain_size)
-    builder.set_free_params()
+    builder.set_free_params(*args)
     return builder.build()
 
 build_spherical_coord_system = partial(build_coord_system, CoordSystemKind.SPHERICAL)

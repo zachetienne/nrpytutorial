@@ -5,6 +5,9 @@ from MoLtimestepping.RK_Butcher_Table_Dictionary import Butcher_dict
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+import NRPy_param_funcs as par
+import finite_difference as fin # cannot set "finite_difference::FD_CENTDERIVS_ORDER"
+
 
 if TYPE_CHECKING:
     from nrpytutorial.ccode_rendering import CfloatPrecision
@@ -52,5 +55,7 @@ def make_integration_method(variant: IntegrationMethodVariant,
                             ):
     if cfl_factor == 0 or not cfl_factor % 2:
         raise ValueError(f"cfl_factor need be positive even number")
+
+    par.set_parval_from_str("finite_difference::FD_CENTDERIVS_ORDER", fd_order)
 
     return IntegrationMethod(variant, cfl_factor, fd_order, cfloat_type)

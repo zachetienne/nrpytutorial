@@ -3,6 +3,7 @@ from __future__ import annotations
 import NRPy_param_funcs as par
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+import reference_metric as rfm
 
 if TYPE_CHECKING:
     from nrpytutorial.coordinate_systems import CoordSystem
@@ -19,6 +20,7 @@ class NumericalGrid:
     def get_builder():
         return NumericalGridBuilder()
 
+
 @dataclass
 class NumericalGridBuilder:
 
@@ -28,6 +30,8 @@ class NumericalGridBuilder:
         return self
 
     def set_coord_system(self, coord_system: CoordSystem):
+        par.set_parval_from_str("reference_metric::CoordSystem",
+                                coord_system.kind.as_string())
         self._coord_system = coord_system
         return self
 
@@ -42,6 +46,7 @@ class NumericalGridBuilder:
         return self
 
     def build(self):
+        rfm.reference_metric()
         return NumericalGrid(self._spatial_dimensions,
                              self._coord_system,
                              self._points_count,
