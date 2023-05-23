@@ -7,6 +7,8 @@ from nrpytutorial.ccode_rendering import CfloatPrecision
 from nrpytutorial.coordinate_systems import build_spherical_coord_system
 from nrpytutorial.numerical_grids import NumericalGrid
 
+from pathlib import Path
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from nrpytutorial.coordinate_systems import CoordSystem
@@ -20,6 +22,7 @@ CFLOAT_TYPE = CfloatPrecision.DOUBLE
 DOMAIN_SIZE = 32
 SPATIAL_DIMENSIONS = 3
 GRID_POINTS_COUNT = 30000
+SIMD_HEADERS = 'SIMD/SIMD_intrinsics.h'
 
 
 def _add_skeleton(dirtree: Dirtree):
@@ -48,6 +51,16 @@ def _create_numerical_grid(coord_system: CoordSystem):
     numerical_grid_builder.set_infinity(coord_system.domain_size * 1.1)
     return numerical_grid_builder.build()
 
+def create_simd_headers(src: Path, dst: Dirtree):
+    dst.add_new_dir('SIMD', 'codes', 'simds')
+    dst.create_node('simds')
+    
+    dst.add_new_file('SIMD_intrinsics.h', 'simds', 'simd_header')
+    dst.create_node('simd_header')
+
+    header = dst.get('simd_header')
+    header.path.write_text(src.read_text())
+    return
 
 if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)
@@ -59,3 +72,5 @@ if __name__ == '__main__':
 
     coord_system = build_spherical_coord_system(DOMAIN_SIZE)
     numerical_grid = _create_numerical_grid(coord_system)
+
+    create_simd_headers(Path(SIMD_HEADERS), dirtree)
