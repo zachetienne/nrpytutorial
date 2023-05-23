@@ -7,14 +7,17 @@ from nrpytutorial.integration_methods import make_integration_method, Integratio
 from nrpytutorial.ccode_rendering import CfloatPrecision
 from nrpytutorial.coordinate_systems import build_spherical_coord_system
 from nrpytutorial.numerical_grids import NumericalGrid
+from nrpytutorial.pulse import build_gaussian_pulse
 
 import deprecated_reference_metric as evil_rfm
+import ScalarField.ScalarField_InitialData as sfid
 
 from pathlib import Path
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from nrpytutorial.coordinate_systems import CoordSystem
+    from nrpytutorial.pulse import PulseParameters
 
 
 HOME = 'build/bssn/scalar_field_collapse'
@@ -27,6 +30,9 @@ SPATIAL_DIMENSIONS = 3
 GRID_POINTS_COUNT = 30000
 SYMMETRY_AXES = '12'
 SIMD_HEADERS = 'SIMD/SIMD_intrinsics.h'
+PULSE_AMPLITUDE = 0.4
+PULSE_CENTER = 0
+PULSE_WIDTH = 1
 
 
 def _add_skeleton(dirtree: Dirtree):
@@ -75,6 +81,27 @@ def make_find_timestep_header(dirtree: Dirtree):
         str(dirtree.get('find_timestep_header')))
 
 
+def make_scalar_field_init_data(dirtree: Dirtree, pulse: PulseParameters,
+                                numerical_grid: NumericalGrid):
+    dirtree.add_new_file("SFID.txt", 'output', 'sfidtxt')
+    dirtree.create_node('sfidtxt')
+
+    outputfilename = dirtree.get('sfidtxt')
+
+    sfid.ScalarField_InitialData(str(outputfilename),
+                                 pulse.profile.as_string(),
+                                 pulse.amplitude,
+                                 pulse.center,
+                                 pulse.width,
+                                 numerical_grid.points_count.radial,
+                                 numerical_grid.infinity.radial)
+
+    ccodesdir = dirtree.get('codes')
+    ccodesdir = str(ccodesdir)
+    sfid.NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(
+        Ccodesdir=ccodesdir)
+
+
 if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)
 
@@ -89,3 +116,6 @@ if __name__ == '__main__':
     create_simd_headers(Path(SIMD_HEADERS), dirtree)
 
     make_find_timestep_header(dirtree)
+
+    pulse = build_gaussian_pulse(PULSE_AMPLITUDE, PULSE_CENTER, PULSE_WIDTH)
+    make_scalar_field_init_data(dirtree, pulse, numerical_grid)

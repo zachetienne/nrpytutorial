@@ -451,6 +451,7 @@ nrpy-progress-sfcollapse-modules += Deprecated/MoLtimestepping
 nrpy-progress-sfcollapse-modules += Deprecated/BSSN
 nrpy-progress-sfcollapse-modules += Deprecated/deprecated_NRPy_param_funcs.py
 nrpy-progress-sfcollapse-modules += Deprecated/CurviBoundaryConditions
+nrpy-progress-sfcollapse-modules += in_progress-NRPyCritCol/ScalarField/
 nrpy-progress-sfcollapse-stamps := $(patsubst %,$(stamp-nrpy-dir)/%.stamp,$(nrpy-progress-sfcollapse-modules))
 
 nrpy-progress-sfcollapse-home := in_progress-NRPyCritCol
