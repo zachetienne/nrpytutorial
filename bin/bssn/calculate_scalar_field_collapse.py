@@ -9,6 +9,7 @@ from nrpytutorial.coordinate_systems import build_spherical_coord_system
 from nrpytutorial.numerical_grids import NumericalGrid
 from nrpytutorial.pulse import build_gaussian_pulse
 from nrpytutorial.foliation_conditions import FoliationCondition, LapseCondition, ShiftCondition
+from nrpytutorial.bssn_vacuum_terms import calculate_bssn_vacuum_terms
 
 import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
@@ -105,7 +106,7 @@ def make_scalar_field_init_data(dirtree: Dirtree, pulse: PulseParameters,
     sfid.NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(
         Ccodesdir=ccodesdir)
 
-def make_foliation_conditions(lapse, shift):
+def make_foliation_conditions(lapse, shift) -> FoliationCondition:
     foliation_condition_builder = FoliationCondition.get_builder()
     foliation_condition_builder.set_lapse_condition(lapse)
     foliation_condition_builder.set_shift_condition(shift)
@@ -139,3 +140,5 @@ if __name__ == '__main__':
             )
 
     foliation_condition = make_foliation_conditions(LAPSE_CONDITOIN, SHIFT_CONDITION)
+
+    calculate_bssn_vacuum_terms(dirtree, numerical_grid, foliation_condition)
