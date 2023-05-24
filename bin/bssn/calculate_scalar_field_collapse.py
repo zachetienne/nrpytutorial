@@ -8,6 +8,7 @@ from nrpytutorial.ccode_rendering import CfloatPrecision
 from nrpytutorial.coordinate_systems import build_spherical_coord_system
 from nrpytutorial.numerical_grids import NumericalGrid
 from nrpytutorial.pulse import build_gaussian_pulse
+from nrpytutorial.foliation_conditions import FoliationCondition, LapseCondition, ShiftCondition
 
 import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
@@ -34,6 +35,8 @@ SIMD_HEADERS = 'SIMD/SIMD_intrinsics.h'
 PULSE_AMPLITUDE = 0.4
 PULSE_CENTER = 0
 PULSE_WIDTH = 1
+LAPSE_CONDITOIN = LapseCondition.ONE_PLUS_LOG
+SHIFT_CONDITION = ShiftCondition.GAMMA_DRIVING
 
 
 def _add_skeleton(dirtree: Dirtree):
@@ -102,6 +105,12 @@ def make_scalar_field_init_data(dirtree: Dirtree, pulse: PulseParameters,
     sfid.NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(
         Ccodesdir=ccodesdir)
 
+def make_foliation_conditions(lapse, shift):
+    foliation_condition_builder = FoliationCondition.get_builder()
+    foliation_condition_builder.set_lapse_condition(lapse)
+    foliation_condition_builder.set_shift_condition(shift)
+    foliation_condition = foliation_condition_builder.build()
+    return foliation_condition
 
 if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)
@@ -128,3 +137,5 @@ if __name__ == '__main__':
             Ccodesdir=ccodesdir,
             loopopts=""
             )
+
+    foliation_condition = make_foliation_conditions(LAPSE_CONDITOIN, SHIFT_CONDITION)
