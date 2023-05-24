@@ -11,6 +11,7 @@ from nrpytutorial.pulse import build_gaussian_pulse
 
 import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
+import BSSN.ADM_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoBnum
 
 from pathlib import Path
 
@@ -119,3 +120,11 @@ if __name__ == '__main__':
 
     pulse = build_gaussian_pulse(PULSE_AMPLITUDE, PULSE_CENTER, PULSE_WIDTH)
     make_scalar_field_init_data(dirtree, pulse, numerical_grid)
+
+    ccodesdir = str(dirtree.get('codes'))
+    AtoBnum.Convert_Spherical_or_Cartesian_ADM_to_BSSN_curvilinear(
+            coord_system.kind.as_string(),
+            "ID_scalarfield_ADM_quantities",
+            Ccodesdir=ccodesdir,
+            loopopts=""
+            )
