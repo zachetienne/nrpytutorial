@@ -113,6 +113,18 @@ def make_foliation_conditions(lapse, shift) -> FoliationCondition:
     foliation_condition = foliation_condition_builder.build()
     return foliation_condition
 
+@dataclass
+class Stopwatch:
+    _start: float = None
+
+    def start(self):
+        self._start = time.time()
+
+    def stop(self):
+        return time.time() - self._start
+
+stopwatch = Stopwatch()
+
 if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)
 
@@ -141,4 +153,7 @@ if __name__ == '__main__':
 
     foliation_condition = make_foliation_conditions(LAPSE_CONDITOIN, SHIFT_CONDITION)
 
+    print("Generating symbolic expressions for BSSN RHSs")
+    stopwatch.start()
     calculate_bssn_vacuum_terms(dirtree, numerical_grid, foliation_condition)
+    print(f"Finish generating symbolic expressions for BSSN RHSs in {stopwatch.stop()}")
