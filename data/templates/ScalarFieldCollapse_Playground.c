@@ -84,7 +84,7 @@ typedef struct __ID_inputs {
 
 // Part P11: Declare all functions for setting up ScalarField initial data.
 /* Routines to interpolate the ScalarField solution and convert to ADM & T^{munu}: */
-#include "../ScalarField/ScalarField_interp.h"
+#include "ScalarField_interp.h"
 #include "ID_scalarfield_ADM_quantities.h"
 #include "ID_scalarfield_spherical.h"
 #include "ID_scalarfield_xx0xx1xx2_to_BSSN_xx0xx1xx2.h"

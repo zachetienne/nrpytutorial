@@ -21,6 +21,7 @@ import BSSN.ADM_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoBnum
 import NRPy_param_funcs as par
 import deprecated_NRPy_param_funcs as evil_par
 import CurviBoundaryConditions.CurviBoundaryConditions as cbcs
+import cmdline_helper as cmd
 
 import os
 from pathlib import Path
@@ -201,8 +202,20 @@ if __name__ == '__main__':
                 })
             )
 
+    dirtree.add_new_file('ScalarField_interp.h', 'codes', 'scalar_field_interp_header')
+    dirtree.create_node('scalar_field_interp_header')
+    dirtree.get('scalar_field_interp_header').path.write_text(
+            Path('in_progress-NRPyCritCol/ScalarField/ScalarField_interp.h').read_text()
+            )
+
     dirtree.add_new_file('ScalarFieldCollapse_Playground.c', 'codes', 'playground')
     dirtree.create_node('playground')
     dirtree.get('playground').path.write_text(
             Path('data/templates/ScalarFieldCollapse_Playground.c').read_text()
             )
+
+    dirtree.add_new_file('ScalarFieldCollapse_Playground', 'bin', 'mainexec')
+    cmd.C_compile( str(dirtree.get('playground')),
+                   str(dirtree.get('mainexec')),
+                  compile_mode="optimized"
+                  )
