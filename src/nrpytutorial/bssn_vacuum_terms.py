@@ -185,3 +185,23 @@ def generate_c_code_bssn_rhs_terms(dirtree: Dirtree,
             body     = fin.FD_outputC("returnstring",BSSN_evol_rhss, params="outCverbose=False,enable_SIMD=True",
                                       upwindcontrolvec=beta_u),
             loopopts = "InteriorPoints,enable_SIMD,enable_rfm_precompute")
+
+def generate_c_code_ricci(dirtree: Dirtree):
+    desc="Evaluate the Ricci tensor"
+    name="Ricci_eval"
+
+    dirtree.add_new_file(f"{name}.h", 'codes', f'{name}_header')
+    dirtree.create_node(f'{name}_header')
+    outCfunction(
+            outfile  = str(dirtree.get(f'{name}_header')), desc=desc, name=name,
+            params   = """rfm_struct *restrict rfmstruct,const paramstruct *restrict params,
+            const REAL *restrict in_gfs,REAL *restrict auxevol_gfs""",
+            body     = fin.FD_outputC("returnstring",
+                                      [lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD00"),rhs=Bq.RbarDD[0][0]),
+                                       lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD01"),rhs=Bq.RbarDD[0][1]),
+                                       lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD02"),rhs=Bq.RbarDD[0][2]),
+                                       lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD11"),rhs=Bq.RbarDD[1][1]),
+                                       lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD12"),rhs=Bq.RbarDD[1][2]),
+                                       lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD22"),rhs=Bq.RbarDD[2][2])],
+                                      params="outCverbose=False,enable_SIMD=True"),
+            loopopts = "InteriorPoints,enable_SIMD,enable_rfm_precompute")

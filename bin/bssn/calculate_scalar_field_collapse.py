@@ -9,7 +9,9 @@ from nrpytutorial.coordinate_systems import build_spherical_coord_system
 from nrpytutorial.numerical_grids import NumericalGrid
 from nrpytutorial.pulse import build_gaussian_pulse
 from nrpytutorial.foliation_conditions import FoliationCondition, LapseCondition, ShiftCondition
-from nrpytutorial.bssn_vacuum_terms import calculate_bssn_vacuum_terms, generate_c_code_bssn_rhs_terms
+from nrpytutorial.bssn_vacuum_terms import calculate_bssn_vacuum_terms
+from nrpytutorial.bssn_vacuum_terms import generate_c_code_bssn_rhs_terms
+from nrpytutorial.bssn_vacuum_terms import generate_c_code_ricci
 
 import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
@@ -116,18 +118,6 @@ def make_foliation_conditions(lapse, shift) -> FoliationCondition:
     foliation_condition = foliation_condition_builder.build()
     return foliation_condition
 
-@dataclass
-class Stopwatch:
-    _start: float = None
-
-    def start(self):
-        self._start = time.time()
-
-    def stop(self):
-        return time.time() - self._start
-
-stopwatch = Stopwatch()
-
 if __name__ == '__main__':
     dirtree = setup_dirtree(HOME)
 
@@ -156,12 +146,7 @@ if __name__ == '__main__':
 
     foliation_condition = make_foliation_conditions(LAPSE_CONDITOIN, SHIFT_CONDITION)
 
-    print("Generating symbolic expressions for BSSN RHSs")
-    stopwatch.start()
     beta_u = calculate_bssn_vacuum_terms(dirtree, numerical_grid, foliation_condition)
-    print(f"Finish generating symbolic expressions for BSSN RHSs in {stopwatch.stop()}")
 
-    print(f"Generating C code for BSSN RHSs in {par.parval_from_str('reference_metric::CoordSystem')} coord")
-    stopwatch.start()
     generate_c_code_bssn_rhs_terms(dirtree, numerical_grid, beta_u)
-    print(f"Finish generating C code expressions for BSSN RHSs in {stopwatch.stop()}")
+    generate_c_code_ricci(dirtree)
