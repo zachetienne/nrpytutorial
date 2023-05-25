@@ -9,13 +9,16 @@ from nrpytutorial.coordinate_systems import build_spherical_coord_system
 from nrpytutorial.numerical_grids import NumericalGrid
 from nrpytutorial.pulse import build_gaussian_pulse
 from nrpytutorial.foliation_conditions import FoliationCondition, LapseCondition, ShiftCondition
-from nrpytutorial.bssn_vacuum_terms import calculate_bssn_vacuum_terms
+from nrpytutorial.bssn_vacuum_terms import calculate_bssn_vacuum_terms, generate_c_code_bssn_rhs_terms
 
 import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
 import BSSN.ADM_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoBnum
+import NRPy_param_funcs as par
 
 from pathlib import Path
+from dataclasses import dataclass
+import time
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -155,5 +158,10 @@ if __name__ == '__main__':
 
     print("Generating symbolic expressions for BSSN RHSs")
     stopwatch.start()
-    calculate_bssn_vacuum_terms(dirtree, numerical_grid, foliation_condition)
+    beta_u = calculate_bssn_vacuum_terms(dirtree, numerical_grid, foliation_condition)
     print(f"Finish generating symbolic expressions for BSSN RHSs in {stopwatch.stop()}")
+
+    print(f"Generating C code for BSSN RHSs in {par.parval_from_str('reference_metric::CoordSystem')} coord")
+    stopwatch.start()
+    generate_c_code_bssn_rhs_terms(dirtree, numerical_grid, beta_u)
+    print(f"Finish generating C code expressions for BSSN RHSs in {stopwatch.stop()}")
