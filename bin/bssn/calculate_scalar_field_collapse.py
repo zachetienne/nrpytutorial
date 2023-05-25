@@ -12,6 +12,8 @@ from nrpytutorial.foliation_conditions import FoliationCondition, LapseCondition
 from nrpytutorial.bssn_vacuum_terms import calculate_bssn_vacuum_terms
 from nrpytutorial.bssn_vacuum_terms import generate_c_code_bssn_rhs_terms
 from nrpytutorial.bssn_vacuum_terms import generate_c_code_ricci
+from nrpytutorial.bssn_vacuum_terms import generate_c_code_hamiltonian
+from nrpytutorial.bssn_vacuum_terms import generate_c_code_gammadet
 
 import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
@@ -146,7 +148,12 @@ if __name__ == '__main__':
 
     foliation_condition = make_foliation_conditions(LAPSE_CONDITOIN, SHIFT_CONDITION)
 
-    beta_u = calculate_bssn_vacuum_terms(dirtree, numerical_grid, foliation_condition)
+    beta_u, detg_constraint = calculate_bssn_vacuum_terms(dirtree, numerical_grid, foliation_condition)
 
     generate_c_code_bssn_rhs_terms(dirtree, numerical_grid, beta_u)
     generate_c_code_ricci(dirtree)
+    generate_c_code_hamiltonian(dirtree)
+    generate_c_code_gammadet(dirtree, detg_constraint)
+
+    rfm.out_default_free_parameters_for_rfm(os.path.join(Ccodesdir,"free_parameters.h"),
+                                        domain_size,sinh_width,sinhv2_const_dr,SymTP_bScale)

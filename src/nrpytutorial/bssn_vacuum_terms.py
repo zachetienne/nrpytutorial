@@ -37,7 +37,7 @@ def _evaluate_scalar_field_rhs():
 
 
 def _compute_contravariant_stress_enrgy_tensor(
-        numerical_grid: NumericalGrid) -> StressEnergyTensorDto:
+        numerical_grid: NumericalGrid):
     sfTmunu.ScalarField_Tmunu()
     stress_energy_tensor = sfTmunu.T4UU
 
@@ -57,7 +57,7 @@ def _compute_contravariant_stress_enrgy_tensor(
     betaU = Bq.betaU
     enforce_detg_constraint_symb_expressions = EGC.Enforce_Detgammahat_Constraint_symb_expressions()
 
-    return stress_energy_tensor, betaU
+    return stress_energy_tensor, betaU, enforce_detg_constraint_symb_expressions
 
 
 def _compute_ricci_tensor():
@@ -114,7 +114,7 @@ def _evaluate_rhs_terms(
     par.set_parval_from_str("BSSN.BSSN_quantities::LeaveRicciSymbolic", "True")
     _evaluate_gauge_bssn_rhs()
     _evaluate_scalar_field_rhs()
-    stress_energy_tensor, beta_u = _compute_contravariant_stress_enrgy_tensor(
+    stress_energy_tensor, beta_u, detg_constraint = _compute_contravariant_stress_enrgy_tensor(
         numerical_grid)
     par.set_parval_from_str(
         "BSSN.BSSN_quantities::LeaveRicciSymbolic", "False")
@@ -123,25 +123,25 @@ def _evaluate_rhs_terms(
     _define_hamiltonian_constraint_and_output_ccode(stress_energy_tensor)
     _add_kreiss_oliger_dissipation(numerical_grid, foliation_condition)
 
-    return beta_u
+    return beta_u, detg_constraint
 
 
 def calculate_bssn_vacuum_terms(
         dirtree: Dirtree,
         numerical_grid: NumericalGrid,
-        foliation_condition: FoliationCondition) -> BetauDto:
+        foliation_condition: FoliationCondition) -> ( BetauDto, DetgConstraintDto ):
     _prepare_rfm_infra_home(dirtree)
 
     par.set_parval_from_str("reference_metric::enable_rfm_precompute", "True")
 
     par.set_parval_from_str("reference_metric::rfm_precompute_Ccode_outdir",
                             str(dirtree.get('rfm_files')))
-    beta_u = _evaluate_rhs_terms(numerical_grid, foliation_condition)
+    beta_u, detg_constraint = _evaluate_rhs_terms(numerical_grid, foliation_condition)
 
     par.set_parval_from_str("reference_metric::enable_rfm_precompute","False")
     rfm.ref_metric__hatted_quantities()
 
-    return beta_u
+    return beta_u, detg_constraint
 
 def generate_c_code_bssn_rhs_terms(dirtree: Dirtree,
                                    numerical_grid: NumericalGrid,
@@ -205,3 +205,24 @@ def generate_c_code_ricci(dirtree: Dirtree):
                                        lhrh(lhs=gri.gfaccess("auxevol_gfs","RbarDD22"),rhs=Bq.RbarDD[2][2])],
                                       params="outCverbose=False,enable_SIMD=True"),
             loopopts = "InteriorPoints,enable_SIMD,enable_rfm_precompute")
+
+def generate_c_code_hamiltonian(dirtree: Dirtree):
+    # Set up the C function for the Hamiltonian RHS
+    desc="Evaluate the Hamiltonian constraint"
+    name="Hamiltonian_constraint"
+
+    dirtree.add_new_file(f"{name}.h", 'codes', f'{name}_header')
+    dirtree.create_node(f'{name}_header')
+    outCfunction(
+            outfile  = str(dirtree.get(f'{name}_header')), desc=desc, name=name,
+            params   = """rfm_struct *restrict rfmstruct,const paramstruct *restrict params,
+            REAL *restrict in_gfs, REAL *restrict auxevol_gfs, REAL *restrict aux_gfs""",
+            body     = fin.FD_outputC("returnstring",lhrh(lhs=gri.gfaccess("aux_gfs", "H"), rhs=bssncon.H),
+                                      params="outCverbose=False"),
+            loopopts = "InteriorPoints,enable_rfm_precompute")
+
+def generate_c_code_gammadet(dirtree: Dirtree, detg_constraint: DetgConstraintDto):
+    # Set up the C function for the det(gammahat) = det(gammabar)
+    EGC.output_Enforce_Detgammahat_Constraint_Ccode(str(dirtree.get('codes')),
+                                                    exprs=detg_constraint
+                                                    )
