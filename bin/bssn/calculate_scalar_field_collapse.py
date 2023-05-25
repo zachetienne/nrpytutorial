@@ -1,5 +1,4 @@
 from __future__ import annotations
-import deprecated_reference_metric as evil_rfm
 
 from nrpytutorial.dirtree import Dirtree
 from nrpytutorial.timestepping_codes import setup_rktimestepping
@@ -19,6 +18,8 @@ import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
 import BSSN.ADM_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoBnum
 import NRPy_param_funcs as par
+import deprecated_NRPy_param_funcs as evil_par
+import reference_metric as rfm
 
 from pathlib import Path
 from dataclasses import dataclass
@@ -45,7 +46,9 @@ PULSE_CENTER = 0
 PULSE_WIDTH = 1
 LAPSE_CONDITOIN = LapseCondition.ONE_PLUS_LOG
 SHIFT_CONDITION = ShiftCondition.GAMMA_DRIVING
-
+SINH_WIDTH = 0.2
+SINHV2_CONST_DR = 0.05
+SYMTP_BSCALE = 0.5
 
 def _add_skeleton(dirtree: Dirtree):
     dirtree.add_new_dir('codes', 'root')
@@ -155,5 +158,20 @@ if __name__ == '__main__':
     generate_c_code_hamiltonian(dirtree)
     generate_c_code_gammadet(dirtree, detg_constraint)
 
-    rfm.out_default_free_parameters_for_rfm(os.path.join(Ccodesdir,"free_parameters.h"),
-                                        domain_size,sinh_width,sinhv2_const_dr,SymTP_bScale)
+    dirtree.add_new_file('free_parameters.h', 'codes', 'free_parameters_header')
+    dirtree.create_node('free_parameters_header')
+    rfm.out_default_free_parameters_for_rfm(str(dirtree.get('free_parameters_header')),
+                                            numerical_grid.coord_system.domain_size,
+                                            SINH_WIDTH,
+                                            SINHV2_CONST_DR,
+                                            SYMTP_BSCALE)
+
+    evil_rfm.set_Nxx_dxx_invdx_params__and__xx_h(str(dirtree.get('codes')))
+
+    dirtree.add_new_file("xx_to_Cart.h", 'codes', 'xx_to_cart_header')
+    dirtree.create_node('xx_to_cart_header')
+    evil_rfm.xx_to_Cart_h("xx_to_Cart",
+                          "./set_Cparameters.h",
+                          str(dirtree.get('xx_to_cart_header'))
+                          )
+    evil_par.generate_Cparameters_Ccodes(str(dirtree.get('codes')))
