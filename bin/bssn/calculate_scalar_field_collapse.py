@@ -26,6 +26,7 @@ import os
 from pathlib import Path
 from dataclasses import dataclass
 import time
+from string import Template
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -184,4 +185,18 @@ if __name__ == '__main__':
             str(dirtree.get('boundary_conditions')),
             Cparamspath=os.path.join("../"),
             path_prefix='/home/dimitar/projects/nrpytutorial/Deprecated'
+            )
+
+    playground_header = 'ScalarFieldCollapse_Playground_REAL__NGHOSTS__CFL_FACTOR.h'
+    dirtree.add_new_file(playground_header, 'codes', 'playground_header')
+    dirtree.create_node('playground_header')
+
+    playground_header_src = Path('data/templates/ScalarFieldCollapse_Playground_REAL__NGHOSTS__CFL_FACTOR.h')
+    playground_header_template = Template(playground_header_src.read_text())
+    dirtree.get('playground_header').path.write_text(
+            playground_header_template.substitute({
+                'nghosts': int(integration_method.fd_order/2)+1,
+                'cfloat_precision': integration_method.cfloat_type.as_string(),
+                'cfl_factor': integration_method.cfl_factor
+                })
             )
