@@ -14,13 +14,15 @@ from nrpytutorial.bssn_vacuum_terms import generate_c_code_ricci
 from nrpytutorial.bssn_vacuum_terms import generate_c_code_hamiltonian
 from nrpytutorial.bssn_vacuum_terms import generate_c_code_gammadet
 
+import reference_metric as rfm
 import deprecated_reference_metric as evil_rfm
 import ScalarField.ScalarField_InitialData as sfid
 import BSSN.ADM_Numerical_Spherical_or_Cartesian_to_BSSNCurvilinear as AtoBnum
 import NRPy_param_funcs as par
 import deprecated_NRPy_param_funcs as evil_par
-import reference_metric as rfm
+import CurviBoundaryConditions.CurviBoundaryConditions as cbcs
 
+import os
 from pathlib import Path
 from dataclasses import dataclass
 import time
@@ -175,3 +177,11 @@ if __name__ == '__main__':
                           str(dirtree.get('xx_to_cart_header'))
                           )
     evil_par.generate_Cparameters_Ccodes(str(dirtree.get('codes')))
+
+    dirtree.add_new_dir("boundary_conditions", 'codes', 'boundary_conditions')
+    dirtree.create_node('boundary_conditions')
+    cbcs.Set_up_CurviBoundaryConditions(
+            str(dirtree.get('boundary_conditions')),
+            Cparamspath=os.path.join("../"),
+            path_prefix='/home/dimitar/projects/nrpytutorial/Deprecated'
+            )
