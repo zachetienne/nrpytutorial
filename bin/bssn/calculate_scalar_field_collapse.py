@@ -200,3 +200,9 @@ if __name__ == '__main__':
                 'cfl_factor': integration_method.cfl_factor
                 })
             )
+
+    dirtree.add_new_file('ScalarFieldCollapse_Playground.c', 'codes', 'playground')
+    dirtree.create_node('playground')
+    dirtree.get('playground').path.write_text(
+            Path('data/templates/ScalarFieldCollapse_Playground.c').read_text()
+            )
