@@ -105,7 +105,7 @@ void initial_data(const paramstruct *restrict params,const bc_struct *restrict b
     // Step 1.a: Read ScalarField initial data from data file
     // Open the data file:
     char filename[100];
-    sprintf(filename,"./SFID.txt");
+    sprintf(filename,"./output/SFID.txt");
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
         fprintf(stderr,"ERROR: could not open file %s\n",filename);
