@@ -504,18 +504,28 @@ uninstall-nrpy-progress-sfcollapse-modules: uninstall-nrpy-progress-sfcollapse-b
 	rm --force $(addprefix $(python-site-packages)/,$(notdir $(nrpy-progress-sfcollapse-modules)))
 	rm --force --recursive $(nrpy-progress-sfcollapse-stamps)
 
-nrpy-progress-sfcollapse-bssn-stamp := $(stamp-nrpy-dir)/nrpy_progress_sfcollapse.stamp
+nrpy-progress-sfcollapse-bssn-proj-home := $(build-dir)/bssn/scalar_field_collapse
+nrpy-progress-sfcollapse-bssn-bin := $(nrpy-progress-sfcollapse-bssn-proj-home)/bin/ScalarFieldCollapse_Playground
 nrpy-progress-sfcollapse-bssn-generator := $(bin-dir)/bssn/generate_scalar_field_collapse.py
-$(nrpy-progress-sfcollapse-bssn-stamp): data/templates/ScalarFieldCollapse_Playground.c
-$(nrpy-progress-sfcollapse-bssn-stamp): data/templates/ScalarFieldCollapse_Playground_REAL__NGHOSTS__CFL_FACTOR.h
-$(nrpy-progress-sfcollapse-bssn-stamp): SIMD/SIMD_intrinsics.h
-$(nrpy-progress-sfcollapse-bssn-stamp): in_progress-NRPyCritCol/ScalarField/ScalarField_interp.h
-$(nrpy-progress-sfcollapse-bssn-stamp): $(nrpy-progress-sfcollapse-bssn-generator)
+$(nrpy-progress-sfcollapse-bssn-bin): data/templates/ScalarFieldCollapse_Playground.c
+$(nrpy-progress-sfcollapse-bssn-bin): data/templates/ScalarFieldCollapse_Playground_REAL__NGHOSTS__CFL_FACTOR.h
+$(nrpy-progress-sfcollapse-bssn-bin): SIMD/SIMD_intrinsics.h
+$(nrpy-progress-sfcollapse-bssn-bin): in_progress-NRPyCritCol/ScalarField/ScalarField_interp.h
+$(nrpy-progress-sfcollapse-bssn-bin): $(nrpy-progress-sfcollapse-bssn-generator)
 	$(python) $<
-	touch $@
 
+nrpy-progress-sfcollapse-bssn-runs-config := $(nrpy-progress-sfcollapse-bssn-proj-home)/output/runs.config
 .PHONY: generate-nrpy-progress-sfcollapse-bssn
-generate-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-stamp)
+generate-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-bin)
+	@echo "Find generated project in $(nrpy-progress-sfcollapse-bssn-proj-home)"
+	@echo "Find run configs in $(nrpy-progress-sfcollapse-bssn-runs-config)"
+	@echo "# Nx0, Nx1, Nx2, cfl_factor" > $(nrpy-progress-sfcollapse-bssn-runs-config)
+	@echo "640, 2, 2, 0.5" > $(nrpy-progress-sfcollapse-bssn-runs-config)
+
+.PHONY: run-nrpy-progress-sfcollapse-bssn
+run-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-bin)
+run-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-runs-config)
+	bash data/runners/run_default_config.sh $^
 
 .PHONY: maintainer-clean ### clean Makefile can reconstruct
 maintainer-clean:

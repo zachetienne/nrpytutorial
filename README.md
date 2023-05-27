@@ -16,8 +16,8 @@ pyseed=~/.pyenv/versions/3.8.16/bin/python make development
 make install-nrpy-modules
 # populate venv with progress scalar field collapse module dependencies
 make install-nrpy-progress-sfcollapse-modules
-# recreate nrpytutorial
-make nrpy-progress-sfcollapse-bssn
+# generate in progress nrpytutorial for scalar field collapse
+make run-nrpy-progress-sfcollapse-bssn
 # print help working with project; recommend only use make
 make venv
 # some more help
@@ -32,3 +32,12 @@ Using bash autocompletaion will help tremendiosly anyone exploring the `Makefile
 
 I ensure anyone using the `install-` targets that there is an counter `uninstall-`
 that cleans up after itself.
+
+Find in `data/runners/` scripts used by `make` to run executable products.
+
+The default runner takes two arguments, the configuration and executable;
+The configuration should be in `csv` format. The script iterates over the rows
+and passes the values to the executable preserving the order.
+
+Outputs are stored into `.../output/`; Backups are made if runs already were
+made.
