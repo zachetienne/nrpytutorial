@@ -16,9 +16,11 @@ pyseed=~/.pyenv/versions/3.8.16/bin/python make development
 make install-nrpy-modules
 # populate venv with progress scalar field collapse module dependencies
 make install-nrpy-progress-sfcollapse-modules
+# recreate nrpytutorial
+make nrpy-progress-sfcollapse-bssn
 # print help working with project; recommend only use make
 make venv
-# some more help 
+# some more help
 make help
 # play around with moduels trough CLI
 make run-ipython
@@ -26,7 +28,7 @@ make run-ipython
 make run-jupyter
 ```
 
-Using bash autocompletaion will help tremendiosly anyone exploring the `Makefile`. 
+Using bash autocompletaion will help tremendiosly anyone exploring the `Makefile`.
 
-I ensure anyone using the `install-` targets that there is an counter `uninstall-` 
-that cleans up after itself. 
+I ensure anyone using the `install-` targets that there is an counter `uninstall-`
+that cleans up after itself.

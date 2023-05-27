@@ -504,6 +504,15 @@ uninstall-nrpy-progress-sfcollapse-modules: uninstall-nrpy-progress-sfcollapse-b
 	rm --force $(addprefix $(python-site-packages)/,$(notdir $(nrpy-progress-sfcollapse-modules)))
 	rm --force --recursive $(nrpy-progress-sfcollapse-stamps)
 
+nrpy-progress-sfcollapse-bssn-stamp := $(stamp-nrpy-dir)/nrpy_progress_sfcollapse.stamp
+nrpy-progress-sfcollapse-bssn-generator := $(bin-dir)/bssn/generate_scalar_field_collapse.py
+$(nrpy-progress-sfcollapse-bssn-stamp): $(nrpy-progress-sfcollapse-bssn-generator)
+	$(python) $<
+	touch $@
+
+.PHONY: generate-nrpy-progress-sfcollapse-bssn
+generate-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-stamp)
+
 .PHONY: maintainer-clean ### clean Makefile can reconstruct
 maintainer-clean:
 	rm --force --recursive $(maintainer-dirs)
