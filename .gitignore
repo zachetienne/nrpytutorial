@@ -18,7 +18,6 @@ in_progress-NRPyCritCol/bssn/
 in_progress-NRPyCritCol/SIMD
 .ipynb_checkpoints
 nrpytutorial.egg-info/
-out*.txt
 *.pyc
 .stamps/
 .venv/
