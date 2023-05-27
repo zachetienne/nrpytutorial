@@ -506,6 +506,10 @@ uninstall-nrpy-progress-sfcollapse-modules: uninstall-nrpy-progress-sfcollapse-b
 
 nrpy-progress-sfcollapse-bssn-stamp := $(stamp-nrpy-dir)/nrpy_progress_sfcollapse.stamp
 nrpy-progress-sfcollapse-bssn-generator := $(bin-dir)/bssn/generate_scalar_field_collapse.py
+$(nrpy-progress-sfcollapse-bssn-stamp): data/templates/ScalarFieldCollapse_Playground.c
+$(nrpy-progress-sfcollapse-bssn-stamp): data/templates/ScalarFieldCollapse_Playground_REAL__NGHOSTS__CFL_FACTOR.h
+$(nrpy-progress-sfcollapse-bssn-stamp): SIMD/SIMD_intrinsics.h
+$(nrpy-progress-sfcollapse-bssn-stamp): in_progress-NRPyCritCol/ScalarField/ScalarField_interp.h
 $(nrpy-progress-sfcollapse-bssn-stamp): $(nrpy-progress-sfcollapse-bssn-generator)
 	$(python) $<
 	touch $@
