@@ -143,7 +143,7 @@ def calculate_bssn_vacuum_terms(
 
     return beta_u, detg_constraint
 
-def generate_c_code_bssn_rhs_terms(dirtree: Dirtree,
+def generate_bssn_rhs_terms_codes(dirtree: Dirtree,
                                    numerical_grid: NumericalGrid,
                                    beta_u: BetauDto):
     # Construct the left-hand sides and right-hand-side expressions for all BSSN RHSs
@@ -221,7 +221,7 @@ def generate_c_code_hamiltonian(dirtree: Dirtree):
                                       params="outCverbose=False"),
             loopopts = "InteriorPoints,enable_rfm_precompute")
 
-def generate_c_code_gammadet(dirtree: Dirtree, detg_constraint: DetgConstraintDto):
+def generate_gammadet_codes(dirtree: Dirtree, detg_constraint: DetgConstraintDto):
     # Set up the C function for the det(gammahat) = det(gammabar)
     EGC.output_Enforce_Detgammahat_Constraint_Ccode(str(dirtree.get('codes')),
                                                     exprs=detg_constraint
