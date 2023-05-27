@@ -167,7 +167,7 @@ def generate_boundary_conditions_codes(dirtree: Dirtree):
         )
 
 
-def generate_playground_headers(
+def generate_playground_headers_codes(
         dirtree: Dirtree,
         integration_method: IntegrationMethod):
     playground_header = 'ScalarFieldCollapse_Playground_REAL__NGHOSTS__CFL_FACTOR.h'
@@ -194,7 +194,7 @@ def generate_playground_headers(
         Path('in_progress-NRPyCritCol/ScalarField/ScalarField_interp.h').read_text())
 
 
-def generate_playground_mainexec_codes(dirtree: Dirtree):
+def generate_playground_main_codes(dirtree: Dirtree):
     dirtree.add_new_file(
         'ScalarFieldCollapse_Playground.c',
         'codes',
@@ -249,7 +249,7 @@ if __name__ == '__main__':
                                    SYMTP_BSCALE)
 
     generate_boundary_conditions_codes(dirtree)
-    generate_playground_header_codes(dirtree, integration_method)
+    generate_playground_headers_codes(dirtree, integration_method)
 
     generate_playground_main_codes(dirtree)
 

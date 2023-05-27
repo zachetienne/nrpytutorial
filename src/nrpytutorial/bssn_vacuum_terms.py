@@ -186,7 +186,7 @@ def generate_bssn_rhs_terms_codes(dirtree: Dirtree,
                                       upwindcontrolvec=beta_u),
             loopopts = "InteriorPoints,enable_SIMD,enable_rfm_precompute")
 
-def generate_c_code_ricci(dirtree: Dirtree):
+def generate_ricci_codes(dirtree: Dirtree):
     desc="Evaluate the Ricci tensor"
     name="Ricci_eval"
 
@@ -206,7 +206,7 @@ def generate_c_code_ricci(dirtree: Dirtree):
                                       params="outCverbose=False,enable_SIMD=True"),
             loopopts = "InteriorPoints,enable_SIMD,enable_rfm_precompute")
 
-def generate_c_code_hamiltonian(dirtree: Dirtree):
+def generate_hamiltonian_codes(dirtree: Dirtree):
     # Set up the C function for the Hamiltonian RHS
     desc="Evaluate the Hamiltonian constraint"
     name="Hamiltonian_constraint"
