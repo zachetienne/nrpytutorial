@@ -1,4 +1,4 @@
-# nrpytutorial fork
+# nrpytutorial
 
 Refactor and extend project structure following modern day software architecture
 concepts and implementations.
