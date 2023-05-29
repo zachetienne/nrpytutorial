@@ -519,13 +519,13 @@ nrpy-progress-sfcollapse-bssn-runs-config := $(nrpy-progress-sfcollapse-bssn-pro
 generate-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-bin)
 	@echo "Find generated project in $(nrpy-progress-sfcollapse-bssn-proj-home)"
 	@echo "Find run configs in $(nrpy-progress-sfcollapse-bssn-runs-config)"
-	@echo "# Nx0, Nx1, Nx2, cfl_factor" > $(nrpy-progress-sfcollapse-bssn-runs-config)
-	@echo "640, 2, 2, 0.5" > $(nrpy-progress-sfcollapse-bssn-runs-config)
+	@echo "# Nx0, Nx1, Nx2, cfl_factor, run_name" > $(nrpy-progress-sfcollapse-bssn-runs-config)
+	@echo "640, 2, 2, 0.5, default" > $(nrpy-progress-sfcollapse-bssn-runs-config)
 
 .PHONY: run-nrpy-progress-sfcollapse-bssn
 run-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-bin)
 run-nrpy-progress-sfcollapse-bssn: $(nrpy-progress-sfcollapse-bssn-runs-config)
-	bash data/runners/run_default_config.sh $^
+	bash data/runners/run_configs.sh $^
 
 .PHONY: maintainer-clean ### clean Makefile can reconstruct
 maintainer-clean:
