@@ -16,4 +16,4 @@ while IFS=, read -r nx0 nx1 nx2 cfl_factor run_name; do
     cp $output/SFID.txt $output_target/.
     (cd $output_target && $bin $nx0 $nx1 $nx2 $cfl_factor)
     echo -e "Succeed\n"
-done < <(tr -d "[:blank:]" < $config | grep -v '#')
+done < <(tr -d "[:blank:]" < $config | grep -v '#' | sed 1d)
