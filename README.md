@@ -39,5 +39,7 @@ The default runner takes two arguments, the configuration and executable;
 The configuration should be in `csv` format. The script iterates over the rows
 and passes the values to the executable preserving the order.
 
-Outputs are stored into `.../output/`; Backups are made if runs already were
+Outputs are stored into `build/.../output/`; Backups are made if runs already were
 made.
+
+The figs are generated using the output into `build/.../output/figs`.
