@@ -97,7 +97,7 @@ def _latex_def(basename, fmt, gf, args):
             _latex_def(basename, fmt, gf[i], args + [coords[i]])
     else:
         indexes = fmt % tuple(args)
-        latex = f("% \\text{{{basename}}}{indexes} = \\text{{{gf}}}")
+        latex = f("% \\mathrm{{{basename}}}{indexes} = \\mathrm{{{gf}}}")
         parse_latex(latex)
 
 
@@ -114,7 +114,7 @@ def match_expr(expr):
         g = re.match(r'''(?x)
         \s+| # spaces
         %.*| # comments
-        \\text{([A-Za-z_]+)}| # var name, group 1
+        \\mathrm{([A-Za-z_]+)}| # var name, group 1
         \\(hat|tilde|bar){\\?([A-Za-z_]+)}| # var name, group 2 and 3
         \\?([A-Za-z]+)| # var name, group 4
         ([\^_]){\ *((?:[a-z]\ )*[a-z])\ *}| # multi-index, group 5 and 6
@@ -670,7 +670,7 @@ def geneqns3(eqn, DIM=3, globs=None, loop=False):
 def geneqns2(lhs, rhs, DIM=3, globs=None, loop=False):
     if globs is None:
         globs = currentframe().f_back.f_globals
-    lhs_str = r"\text{result}"
+    lhs_str = r"\mathrm{result}"
     last = ""
     suffix = ""
 
