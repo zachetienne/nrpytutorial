@@ -41,7 +41,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Core Jupyter notebook testsuite
       run: |
-        ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+        PYDEVD_DISABLE_FILE_VALIDATION=1 ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
   coreJupdevSymPy:
 
@@ -77,7 +77,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Core Jupyter notebook testsuite
       run: |
-        ./UnitTesting/core_Jupyter_notebook_testsuite.sh
+        PYDEVD_DISABLE_FILE_VALIDATION=1 ./UnitTesting/core_Jupyter_notebook_testsuite.sh
 
 
   UnitTests:

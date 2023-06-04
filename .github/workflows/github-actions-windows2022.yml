@@ -7,7 +7,7 @@ on:
     branches: master
 
 jobs:
-  TwoBHsCollidelatestSymPy:
+  NRPyUnitTests:
 
     runs-on: windows-2022
     strategy:
@@ -31,6 +31,6 @@ jobs:
         python -m pip install --upgrade nbconvert
         python -m pip install testfixtures sympy mpmath jupyter matplotlib scipy clang_format
         python -m pip install git+https://github.com/zachetienne/nrpylatex.git
-    - name: Core Jupyter notebook testsuite
+    - name: NRPyUnitTests
       run: |
         bash ./UnitTesting/run_NRPy_UnitTests.sh python3
