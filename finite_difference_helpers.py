@@ -123,10 +123,8 @@ def extract_from_list_of_deriv_vars__base_gfs_and_deriv_ops_lists(list_of_deriv_
         #            in the suffix of a variable name matches the
         #            number of U's + D's in the variable name:
         varstr = str(var)
-        num_UDs = 0
-        for i in range(len(varstr)):
-            if varstr[i] == 'D' or varstr[i] == 'U':
-                num_UDs += 1
+        # Count number of "D" and "U" in the varstr.
+        num_UDs = varstr.count('D') + varstr.count('U')
         num_digits = 0
         i = len(varstr) - 1
         while varstr[i].isdigit():

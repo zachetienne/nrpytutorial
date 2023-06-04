@@ -97,13 +97,13 @@ def FD_outputC(filename, sympyexpr_list, params="", upwindcontrolvec="",idxs=Non
     # Step 2c:
     # Check each derivative operator to make sure it is
     #     supported. If not, error out.
-    for i in range(len(list_of_deriv_operators)):
+    for deriv_operator in list_of_deriv_operators:
         found_derivID = False
         for derivID in ["dD", "dupD", "ddnD", "dKOD"]:
-            if derivID in list_of_deriv_operators[i]:
+            if derivID in deriv_operator:
                 found_derivID = True
         if not found_derivID:
-            print("Error: Valid derivative operator in "+list_of_deriv_operators[i]+" not found.")
+            print("Error: Valid derivative operator in "+deriv_operator+" not found.")
             sys.exit(1)
 
     # Step 3:
@@ -122,8 +122,8 @@ def FD_outputC(filename, sympyexpr_list, params="", upwindcontrolvec="",idxs=Non
     #     etc.
     fdcoeffs = [[] for i in range(len(list_of_deriv_operators))]
     fdstencl = [[[] for i in range(4)] for j in range(len(list_of_deriv_operators))]
-    for i in range(len(list_of_deriv_operators)):
-        fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(list_of_deriv_operators[i])
+    for i, deriv_operator in enumerate(list_of_deriv_operators):
+        fdcoeffs[i], fdstencl[i] = compute_fdcoeffs_fdstencl(deriv_operator)
 
     # Step 4: Create C code to read gridfunctions from memory
     read_from_memory_Ccode = read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sympyexpr_list, FDparams, idxs)
