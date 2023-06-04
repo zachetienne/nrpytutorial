@@ -12,7 +12,7 @@ def getsuffix(f):
     return subtable.get(f, "")
 
 def dosubs(expr):
-    for sym in [s for s in expr.free_symbols]:
+    for sym in list(expr.free_symbols):
         ss = str(sym)
         if ss in subtable:
             expr = expr.subs(sym, sp.symbols(ss+subtable[ss]))
