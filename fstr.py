@@ -1,7 +1,4 @@
 from inspect import currentframe
-import re
-import sys
-from here import here
 
 def f(s):
     """
@@ -24,7 +21,6 @@ def f(s):
     locs= currentframe().f_back.f_locals
     count = 0
     ns = u''
-    w = ''
     i = 0
     while i < len(s):
         c = s[i]
@@ -54,7 +50,7 @@ def f(s):
             ns += str(eval(s[j:i],globs,locs))
             i += 1
         else:
-           ns += c
+            ns += c
     return ns
 
 if __name__ == "__main__":
