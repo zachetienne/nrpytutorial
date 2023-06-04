@@ -14,7 +14,7 @@ colors = {
 reset = "\033[0m"
 
 def colored(arg,c):
-    assert type(c) == str
+    assert isinstance(c, str)
     assert c in colors
     s = str(arg)
     return colors[c] + s + reset
@@ -30,6 +30,6 @@ if (not is_tty) and (not is_jupyter):
 
 if __name__ == "__main__":
     if installed:
-        print(colored("Colored was installed","green"))
+        print(colored("Colored was installed", "green"))
     else:
         print("Colored was NOT installed")
