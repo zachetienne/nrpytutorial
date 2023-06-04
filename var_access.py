@@ -1,5 +1,4 @@
 import re
-from fstr import f
 
 from_access = {}
 
