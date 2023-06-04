@@ -54,7 +54,7 @@ def f(s):
             ns += str(eval(s[j:i],globs,locs))
             i += 1
         else:
-           ns += c 
+           ns += c
     return ns
 
 if __name__ == "__main__":

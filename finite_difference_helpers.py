@@ -324,7 +324,7 @@ def varsuffix(name, idx4, FDparams):
     """
     base_suffix = getsuffix(name)
     if idx4 == [0, 0, 0, 0]:
-        return base_suffix 
+        return base_suffix
     return base_suffix + "_" + ijkl_string(idx4, FDparams).replace(",", "_").replace("+", "p").replace("-", "m")
 
 def read_gfs_from_memory(list_of_base_gridfunction_names_in_derivs, fdstencl, sympyexpr_list, FDparams, idxs=None):

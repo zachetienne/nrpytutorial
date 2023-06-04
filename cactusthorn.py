@@ -375,7 +375,7 @@ class CactusThorn:
   for(int i0=0;i0<cctk_nghostzones[0];i0++) {{
   {kernel}
   }} }} }}
-   
+
   for(int i2=cctk_lsh[2]-cctk_nghostzones[2];i2<cctk_lsh[2];i2++) {{
   for(int i1=0;i1<cctk_lsh[1];i1++) {{
   for(int i0=0;i0<cctk_lsh[0];i0++) {{
@@ -579,7 +579,7 @@ class CactusThorn:
                     if ixp.find_gftype_for_group(gf_group,die=False) in ["TILE_TMP","SCALAR_TMP"]:
                         continue
 
-                    rhs="rhs_" + gf_group 
+                    rhs="rhs_" + gf_group
                     if re.match(r'rhs_.*',gf_group):
                         tag = "TAGS='checkpoint=\"no\"'"
                         rhs_pairs.add(gf_group)
@@ -705,7 +705,7 @@ schedule {self.thornname}_RegisterVars in MoL_Register
                     print(doc_src, file=fd)
             with SafeWrite(self.makefile) as fd:
                 # for item in outC_function_master_list
-                print(re.sub(r'{thornname}',self.thornname,makefile_init), end='', file=fd) 
+                print(re.sub(r'{thornname}',self.thornname,makefile_init), end='', file=fd)
                 for src in self.src_files.values():
                     print(" ",src.name,sep="",end="",file=fd)
                 if grid.ET_driver == "Carpet":

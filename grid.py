@@ -115,7 +115,7 @@ def gfaccess(gfarrayname = "", varname = "", ijklstring = "", context = "DECL"):
     #from_access[ret] = varname
     set_access(ret, varname)
     return ret
-    
+
 def _gfaccess(gfarrayname, varname, ijklstring, context):
     var_data = glb_gridfcs_map().get(varname, None)
 
