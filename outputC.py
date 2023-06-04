@@ -370,7 +370,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
         # Synthesizing `muladd` calls seems to slow down the code
         # sympyexpr = list(map(map_synthesize_muladd, sympyexpr))
-        for ii, expr in sympyexpr:
+        for ii, expr in enumerate(sympyexpr):
             name = output_varname_str[ii]
             var = var_from_access(name)
             type = find_gftype(var, fail_on_missing=False)
