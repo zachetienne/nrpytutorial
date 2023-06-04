@@ -1,20 +1,13 @@
-import os
-import grid
 import sys
 import re
 import sympy as sp
-import safewrite
 import indexedexp as ixp
-from here import here
 from outputC import lhrh
 from colored import colored
-from here import here, herecc
-from traceback import print_exc
 from inspect import currentframe
 
-import nrpylatex
 from nrpylatex import parse_latex as parse_latex_
-from here import here, herecc
+from here import here
 from fstr import f
 
 import warnings
@@ -49,7 +42,7 @@ def flatten(lists):
     """
     new_list = []
     for item in lists:
-        if type(item) == list:
+        if isinstance(item, list):
             new_list += flatten(item)
         else:
             new_list += [item]
@@ -88,11 +81,11 @@ class Seq:
         else:
             assert False
         self.prev = letter
-            
+
 
 def _latex_def(basename, fmt, gf, args):
     assert coords is not None, "Please call set_coords()"
-    if type(gf) == list:
+    if isinstance(gf, list):
         for i in range(len(gf)):
             _latex_def(basename, fmt, gf[i], args + [coords[i]])
     else:
@@ -137,14 +130,14 @@ def match_expr(expr):
                 else:
                     typestr = "downindex"
                 answer = re.split(r'\s+',g.group(6))
-                result += [(typestr,answer)] 
+                result += [(typestr,answer)]
             elif g.group(7) is not None:
                 if g.group(7) == "^":
                     typestr = "upindex"
                 else:
                     typestr = "downindex"
                 answer = [g.group(8)]
-                result += [(typestr,answer)] 
+                result += [(typestr,answer)]
             elif g.group(0) == "=":
                 result += [("equals","=")]
                 result += [("end",expr[g.end():])]
@@ -157,7 +150,7 @@ def match_expr(expr):
 ###
 
 def get_add_type():
-    a,b = sp.symbols("a b")
+    a, b = sp.symbols("a b")
     return type(a+b)
 
 # Need to get type type of two symbols added together
@@ -187,15 +180,14 @@ def gfparams(**kw):
 def n(s):
     if s is None:
         return ""
-    assert type(s) == str
+    assert isinstance(s, str)
     return s
 
 def numstr(n):
     assert n >= 0
     if n == 0:
         return ""
-    else:
-        return str(n)
+    return str(n)
 
 def _deriv_decl(globs, tens, base, suffix, rank, div, indexes, rstart, sym_start, DIM):
     """
@@ -218,11 +210,11 @@ def _deriv_decl(globs, tens, base, suffix, rank, div, indexes, rstart, sym_start
             suffix2 += 'U'
         else:
             suffix2 += 'D'
-    s = [x for x in sym_start]
-    for i in range(rstart,rank-1):
-        s += [f("sym{i}{i+1}")]
+    sym_list = list(sym_start)
+    for i in range(rstart, rank-1):
+        sym_list += [f("sym{i}{i+1}")]
     fullname = base + suffix + div + suffix2
-    syms = "_".join(s)
+    syms = "_".join(sym_list)
     result = ixp.declare_indexedexp(rank=rank, \
         symbol=fullname, dimension=DIM, \
         symmetry=syms)
@@ -237,7 +229,7 @@ def deriv_decl(tens, *args):
     globs = currentframe().f_back.f_globals
     rank = 0
     suffix = ''
-    if type(tens) == sp.Symbol:
+    if isinstance(tens, sp.Symbol):
         base = str(tens)
     else:
         base = str(tens.base)
@@ -259,17 +251,17 @@ def deriv_decl(tens, *args):
     div = None
     indexes = None
     for arg in args:
-        if type(arg) == str:
+        if isinstance(arg, str):
             div = arg
             if indexes is None:
                 continue
-        elif type(arg) == list:
+        elif isinstance(arg, list):
             indexes = arg
             if div is None:
                 continue
-        elif type(arg) == tuple:
-            assert type(arg[0]) == str
-            assert type(arg[1]) == list
+        elif isinstance(arg, tuple):
+            assert isinstance(arg[0], str)
+            assert isinstance(arg[1], list)
             div, indexes = arg
         _deriv_decl(globs, tens, base, suffix, rank, div, indexes, rstart, sym_start, DIM)
 
@@ -283,23 +275,23 @@ def gfdecl(*args):
     >>> (eTtt,eTtD,eTDD)
     (eTtt, [eTtx, eTty, eTtz], [[eTxx, eTxy, eTxz], [eTxy, eTyy, eTyz], [eTxz, eTyz, eTzz]])
     """
-    if len(args)>0 and type(args[-1]) == dict:
+    if len(args)>0 and isinstance(args[-1], dict):
         globs = args[-1]
         args = args[:-1]
     else:
         globs = currentframe().f_back.f_globals
     namelist = []
     for arg in args:
-        if type(arg) == str:
+        if isinstance(arg, str):
             namelist += [arg]
             #sim_params["gf_basename"] = name
             #globs[name] = ixp.register_gridfunctions_for_single_rankN(**sim_params)
-        elif type(arg) == list:
+        elif isinstance(arg, list):
             #gfparams(rank=len(arg))
             rank = len(arg)
             suffix = ""
             for k in arg:
-                assert type(k) == sp.tensor.indexed.Idx
+                assert isinstance(k, sp.tensor.indexed.Idx)
                 if str(k)[0] == "u":
                     suffix += "U"
                 elif str(k)[0] == "l":
@@ -327,11 +319,12 @@ def gfdecl(*args):
 
                 base_variants = variants.get(basename,set())
                 sym1 = copy.get("symmetry_option", "")
-                for k in base_variants:
-                    variant_copy = properties.get(k)
-                    sym2 = variant_copy.get("symmetry_option", None)
-                    #assert n(sym1) == n(sym2), \
-                    #    f("Inconsistent declaration of {basename}. Variant {k} has {sym2}, and {fullname} has {sym1}")
+                # FIXME: dead code:
+                # for k in base_variants:
+                #     variant_copy = properties.get(k)
+                #     sym2 = variant_copy.get("symmetry_option", None)
+                #     #assert n(sym1) == n(sym2), \
+                #     #    f("Inconsistent declaration of {basename}. Variant {k} has {sym2}, and {fullname} has {sym1}")
 
                 if verbose:
                     print(colored("Adding Definition for:","cyan"),basename)
@@ -385,7 +378,7 @@ def latex_tensor(inp, globs = None):
     """
     if globs is None:
         globs = currentframe().f_back.f_globals
-    assert type(inp) == str, "input shoud be str"
+    assert isinstance(inp, str), "input shoud be str"
     assert "," not in inp, f("Commas are not valid in input: '{inp}'")
     args = match_expr(inp)
     assert len(args) > 0, f("Failed to parse {inp}")
@@ -491,7 +484,7 @@ def getindexes(expr):
             indexes[let] = indexes.get(let,0) | mask
     return indexes
 
-def incrindexes(indexes_input,dim,symmetries=[]):
+def incrindexes(indexes_input,dim,symmetries=[]):  # FIXME: [] is a dangerous default value here.
     """
     This function is designed to generate all permuations
     of values for a set of indexes. The `indexes_input`
@@ -515,7 +508,7 @@ def incrindexes(indexes_input,dim,symmetries=[]):
                 # Check the symmetry
                 assert len(symmetry) == 3, f("The symmetry is {symmetry}, it should be (index1,index2,sign)")
                 assert symmetry[2] in [1, -1] # Third index is the sign
-                assert type(symmetry) in [list, tuple]
+                assert isinstance(symmetry, (list, tuple))
 
                 # We want the symmetry ordered
                 assert symmetry[0] < symmetry[1]
@@ -528,7 +521,7 @@ def incrindexes(indexes_input,dim,symmetries=[]):
                     return
                 indexes[i] = 0
             else:
-                result = [x for x in indexes]
+                result = list(indexes)
                 yield result
                 break
 
@@ -537,7 +530,7 @@ def lookup(array, indexes, i=0):
         return array
     else:
         return lookup(array[indexes[i]], indexes, i+1)
-    
+
 def getsyms(syms):
     """
     Parse a symmetry string and return a triple of the
@@ -571,27 +564,28 @@ def getsuffix(expr):
                 suffix += "D"
     return suffix
 
-def getname(expr):
-    assert type(sym) == sp.tensor.indexed.Indexed
-    nm = str(sym.base)
-    indexes = []
-    for k in sym.args[1:]:
-        ks = str(k)
-        g = re.match(r'([ul]).$', ks)
-        if g.group(1) == "u":
-            nm += "U"
-        else:
-            nm += "D"
-    return nm
+# FIXME: dead code:
+# def getname(expr):
+#     assert type(sym) == sp.tensor.indexed.Indexed
+#     nm = str(sym.base)
+#     indexes = []
+#     for k in sym.args[1:]:
+#         ks = str(k)
+#         g = re.match(r'([ul]).$', ks)
+#         if g.group(1) == "u":
+#             nm += "U"
+#         else:
+#             nm += "D"
+#     return nm
 
 def make_sum(expr, dim=3):
     expr = sp.expand(expr)
-    if type(expr) is Add:
+    if isinstance(expr, Add):
         sume = sp.sympify(0)
         for a in expr.args:
             sume += make_sum(a,dim)
         return sume
-    elif type(expr) is sp.Piecewise:
+    elif isinstance(expr, sp.Piecewise):
         nargs = []
         for k in expr.args:
             narg = make_sum(k[0]), k[1]
@@ -620,7 +614,6 @@ def make_sum(expr, dim=3):
                 indexes[letter] |= 1
             else:
                 indexes[letter] |= 2
-    count = 0
     for index in indexes:
         if indexes[index] == 3:
             new_expr = sp.sympify(0)
@@ -634,7 +627,7 @@ def make_sum(expr, dim=3):
 def eval_expression(expr):
     subs = {}
     for sym in expr.free_symbols:
-        if type(sym) == sp.tensor.indexed.Indexed:
+        if isinstance(sym, sp.tensor.indexed.Indexed):
             nm = str(sym.base)
             indexes = []
             for k in sym.args[1:]:
@@ -662,9 +655,10 @@ def geneqns3(eqn, DIM=3, globs=None, loop=False):
         globs = currentframe().f_back.f_globals
     m = match_expr(eqn)
     assert len(m) >= 2, f("match_expr failed for '{eqn}' -> {m}")
-    if m[-2][0] == "equals":
-        ltx = parse_latex(m[-1][1])
-    sy = symlatex(eqn,globs)
+    # FIXME: dead code
+    # if m[-2][0] == "equals":
+    #     ltx = parse_latex(m[-1][1])
+    sy = symlatex(eqn, globs)
     return geneqns2(lhs=sy, rhs=m[-1][1], loop=loop, globs=globs, DIM=DIM)
 
 def geneqns2(lhs, rhs, DIM=3, globs=None, loop=False):
@@ -676,7 +670,7 @@ def geneqns2(lhs, rhs, DIM=3, globs=None, loop=False):
 
     # We expect a tensor expression of the form Foo[la,lb,ua,ub]
     # We will create a latex expression for this to pass to nrpylatex.
-    assert type(lhs) == sp.Indexed, f("Type of lhs was '{type(lhs)}', not Indexed")
+    assert isinstance(lhs, sp.Indexed), f("Type of lhs was '{type(lhs)}', not Indexed")
     for a in lhs.args[1:]:
         sa = str(a)
         # Ensure that we have an index, ua, ub,... or la, lb, ...
@@ -718,9 +712,9 @@ def geneqns(lhs, rhs=None, values=None, DIM=3, globs=None, loop=False):
     """
     if globs is None:
         globs = currentframe().f_back.f_globals
-    if rhs is None and values is None and type(lhs) is str:
+    if rhs is None and values is None and isinstance(lhs, str):
         return geneqns3(lhs, DIM=DIM, globs=globs, loop=loop)
-    if values is None and type(rhs) is str:
+    if values is None and isinstance(rhs, str):
         return geneqns2(lhs, rhs, DIM=DIM, globs=globs, loop=loop)
     if hasattr(lhs,"base"):
         nm = str(lhs.base)+getsuffix(lhs)
