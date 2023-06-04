@@ -68,13 +68,13 @@ def superfast_uniq(seq): # Author: Dave Kirby
 def indent_Ccode(Ccode, indent="  "):
     Ccodesplit = Ccode.splitlines()
     outstring = ""
-    for i in range(len(Ccodesplit)):
-        if Ccodesplit[i] != "":
-            if Ccodesplit[i].lstrip().startswith("#"):
+    for line in Ccodesplit:
+        if line != "":
+            if line.lstrip().startswith("#"):
                 # Remove all indentation from preprocessor statements (lines that start with "#")
-                outstring += Ccodesplit[i].lstrip() + '\n'
+                outstring += line.lstrip() + '\n'
             else:
-                outstring += indent + Ccodesplit[i] + '\n'
+                outstring += indent + line + '\n'
         else:
             outstring += '\n'
     return outstring.rstrip(" ")  # make sure to remove trailing whitespace!
@@ -325,8 +325,8 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         # If CSE is disabled:
         # Synthesizing `muladd` calls seems to slow down the code
         # sympyexpr = list(map(map_synthesize_muladd, sympyexpr))
-        for i in range(len(sympyexpr)):
-            outstring += outtypestring + ccode_postproc(sp.ccode(dosubs(sympyexpr[i]), output_varname_str[i],
+        for i, expr in enumerate(sympyexpr):
+            outstring += outtypestring + ccode_postproc(sp.ccode(dosubs(expr), output_varname_str[i],
                                                                  user_functions=custom_functions_for_SymPy_ccode))+"\n"
     # Step 6b: If CSE enabled, then perform CSE using SymPy and then
     #          resulting C code.
@@ -370,18 +370,18 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
 
         # Synthesizing `muladd` calls seems to slow down the code
         # sympyexpr = list(map(map_synthesize_muladd, sympyexpr))
-        for ii in range(len(sympyexpr)):
-            nm = output_varname_str[ii]
-            var = var_from_access(nm)
-            typ = find_gftype(var, fail_on_missing=False)
-            if typ == "SCALAR_TMP":
-                sympyexpr_group1 += [ sp.Eq(sp.sympify(var), sympyexpr[ii]) ]
-                names_group1 += [nm]
+        for ii, expr in sympyexpr:
+            name = output_varname_str[ii]
+            var = var_from_access(name)
+            type = find_gftype(var, fail_on_missing=False)
+            if type == "SCALAR_TMP":
+                sympyexpr_group1 += [sp.Eq(sp.sympify(var), expr)]
+                names_group1 += [name]
             else:
-                sympyexpr_group1 += [sympyexpr[ii]]
-                names_group1 += [nm]
-                sympyexpr_group2 += [sympyexpr[ii]]
-                names_group2 += [nm]
+                sympyexpr_group1 += [expr]
+                names_group1 += [name]
+                sympyexpr_group2 += [expr]
+                names_group2 += [name]
 
         sympyexpr_group = sympyexpr_group1
         names_group = names_group1
@@ -452,12 +452,12 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
                 print("Error: SIMD constant declaration arrays SIMD_const_varnms[] and SIMD_const_values[] have inconsistent sizes!")
                 sys.exit(1)
 
-            for i in range(len(SIMD_const_varnms)):
+            for i, varname in enumerate(SIMD_const_varnms):
                 if outCparams.enable_TYPE == "False":
-                    SIMD_RATIONAL_decls += indent + SIMD_const_varnms[i] + " = " + SIMD_const_values[i]+";"
+                    SIMD_RATIONAL_decls += indent + varname + " = " + SIMD_const_values[i]+";"
                 else:
-                    SIMD_RATIONAL_decls += indent + "const double " + "tmp" + SIMD_const_varnms[i] + " = " + SIMD_const_values[i] + ";\n"
-                    SIMD_RATIONAL_decls += indent + "const REAL_SIMD_ARRAY " + SIMD_const_varnms[i] + " = ConstSIMD(" + "tmp" + SIMD_const_varnms[i] + ");\n"
+                    SIMD_RATIONAL_decls += indent + "const double " + "tmp" + varname + " = " + SIMD_const_values[i] + ";\n"
+                    SIMD_RATIONAL_decls += indent + "const REAL_SIMD_ARRAY " + varname + " = ConstSIMD(" + "tmp" + varname + ");\n"
                 SIMD_RATIONAL_decls += "\n"
 
     # Step 7: Construct final output string
@@ -529,15 +529,8 @@ def Cfunction(includes=None, prefunc="", desc="", c_type="void", name=None, para
     if prefunc != "":
         complete_func += prefunc + "\n"
 
-    def indent_Ccode(indent, Ccode):
-        Ccodesplit = Ccode.splitlines()
-        outstring = ""
-        for i in range(len(Ccodesplit)):
-            outstring += indent + Ccodesplit[i] + '\n'
-        return outstring
-
     if desc != "":
-        complete_func += "/*\n" + indent_Ccode(" * ", desc) + " */\n"
+        complete_func += "/*\n" + indent_Ccode(desc, " * ") + " */\n"
     complete_func += func_prototype + " {\n"+include_Cparams_str+preloop+"\n"+lp.simple_loop(loopopts, body)+postloop+"}\n"
 
     return func_prototype+";", complete_func
@@ -810,22 +803,22 @@ def NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(directory=os.pa
     params = "paramstruct *restrict params"
     body = ""
 
-    for i in range(len(par.glb_Cparams_list)):
-        Cptype, parname = type_and_parname_from_Cparam(par.glb_Cparams_list[i])
+    for Cparam in par.glb_Cparams_list:
+        Cptype, parname = type_and_parname_from_Cparam(Cparam)
         if Cptype != "#define":
-            comment = "  // " + par.glb_Cparams_list[i].module + "::" + parname
+            comment = "  // " + Cparam + "::" + parname
             c_output = "  params->" + parname
-            defaultval = par.glb_Cparams_list[i].defaultval
+            defaultval = Cparam.defaultval
             if Cptype == "char":
                 chararray_name = parname.split("[")[0]
                 chararray_size = parname.split("[")[1].replace("]", "")
                 c_output = "  snprintf(params->" + chararray_name + \
                            ", " + chararray_size + ", " \
                            "\"" + defaultval + "\");" + comment + "\n"
-            elif isinstance(par.glb_Cparams_list[i].defaultval, (bool, int, float)):
+            elif isinstance(Cparam.defaultval, (bool, int, float)):
                 c_output += " = " + str(defaultval).lower() + ";" + comment + "\n"
             else:
-                c_output += " = " + str(par.glb_Cparams_list[i].defaultval) + ";" + comment + "\n"
+                c_output += " = " + str(Cparam.defaultval) + ";" + comment + "\n"
             body += c_output
     add_to_Cfunction_dict(
         includes=includes,
@@ -843,9 +836,9 @@ def NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(directory=os.pa
     # Step 4.a: Output non-SIMD version, set_Cparameters.h
     def gen_set_Cparameters(pointerEnable=True):
         returnstring = ""
-        for i in range(len(par.glb_Cparams_list)):
+        for Cparam in par.glb_Cparams_list:
             # C parameter type, parameter name
-            Cptype, Cpparname = type_and_parname_from_Cparam(par.glb_Cparams_list[i])
+            Cptype, Cpparname = type_and_parname_from_Cparam(Cparam)
             # For efficiency reasons, set_Cparameters*.h does not set char arrays;
             #   access those from the params struct directly.
             if Cptype != "char":
@@ -853,8 +846,8 @@ def NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(directory=os.pa
                 if pointerEnable==False:
                     pointer = "."
 
-                if not ((Cptype == "REAL" and par.glb_Cparams_list[i].defaultval == 1e300) or Cptype == "#define" or Cptype == "externally_defined"):
-                    comment = "  // " + par.glb_Cparams_list[i].module + "::" + Cpparname
+                if not ((Cptype == "REAL" and Cparam.defaultval == 1e300) or Cptype == "#define" or Cptype == "externally_defined"):
+                    comment = "  // " + Cparam.module + "::" + Cpparname
                     Coutput = "const " + Cptype + " " + Cpparname + " = " + "params" + pointer + Cpparname + ";" + comment + "\n"
                     returnstring += Coutput
         return returnstring
@@ -867,16 +860,16 @@ def NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(directory=os.pa
 
     # Step 4.b: Output SIMD version, set_Cparameters-SIMD.h
     with open(os.path.join(directory, "set_Cparameters-SIMD.h"), "w") as file:
-        for i in range(len(par.glb_Cparams_list)):
+        for Cparam in par.glb_Cparams_list:
             # SIMD does not support char arrays.
-            if "char" not in par.glb_Cparams_list[i].type:
-                Cptype, Cpparname = type_and_parname_from_Cparam(par.glb_Cparams_list[i])
-                comment = "  // " + par.glb_Cparams_list[i].module + "::" + Cpparname
-                if Cptype == "REAL" and par.glb_Cparams_list[i].defaultval != 1e300:
+            if "char" not in Cparam.type:
+                Cptype, Cpparname = type_and_parname_from_Cparam(Cparam)
+                comment = "  // " + Cparam.module + "::" + Cpparname
+                if Cptype == "REAL" and Cparam.defaultval != 1e300:
                     c_output =  "const REAL            NOSIMD" + Cpparname + " = " + "params->" + Cpparname + ";"+comment+"\n"
                     c_output += "const REAL_SIMD_ARRAY " + Cpparname + " = ConstSIMD(NOSIMD" + Cpparname + ");"+comment+"\n"
                     file.write(c_output)
-                elif par.glb_Cparams_list[i].defaultval != 1e300 and Cptype != "#define":
+                elif Cparam.defaultval != 1e300 and Cptype != "#define":
                     c_output = "const "+Cptype+" "+Cpparname + " = " + "params->" + Cpparname + ";"+comment+"\n"
                     file.write(c_output)
 
@@ -888,10 +881,10 @@ def NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(directory=os.pa
     #         for checkpointing purposes.
     Nbd_str = "typedef struct __paramstruct__ {\n"
     CCodelines = []
-    for i in range(len(par.glb_Cparams_list)):
-        if par.glb_Cparams_list[i].type != "#define":
-            Cptype, Cpparname = type_and_parname_from_Cparam(par.glb_Cparams_list[i])
-            comment = "  // " + par.glb_Cparams_list[i].module + "::" + Cpparname
+    for Cparam in par.glb_Cparams_list:
+        if Cparam.type != "#define":
+            Cptype, Cpparname = type_and_parname_from_Cparam(Cparam)
+            comment = "  // " + Cparam.module + "::" + Cpparname
             CCodelines.append("  " + Cptype + " " + Cpparname + ";" + comment + "\n")
     for line in sorted(CCodelines):
         Nbd_str += line
