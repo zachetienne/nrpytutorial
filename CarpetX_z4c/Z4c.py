@@ -152,7 +152,7 @@ def main():
             schedule_bin="Z4cNRPy_InitialGroup",
             doc="Convert ADM to Z4c variables, part 1",
             centering=centering)
-        
+
         initial2_eqns = [
             geneqns(lhs=dgammatilde[li,lj,lk], values=gammatildeDD_dD),
             loop,
@@ -160,7 +160,7 @@ def main():
             geneqns(lhs=dgammatilde[ui,uj,lk], rhs=gammatilde[ui,ux] * gammatilde[uj,uy] * dgammatilde[lx,ly,lk]),
             geneqns(lhs=Gammatilde[ui], rhs=dgammatilde[ui,ux,lx])
         ]
-        
+
         thorn.add_func(
             "Z4cNRPy_Initial2",
             body=initial2_eqns,
@@ -188,7 +188,7 @@ def main():
             geneqns(lhs=gammatilde[li,lj], rhs=(1 / cbrt(detgammatilde)) * gammatilde[li,lj]),
             geneqns(lhs=Atilde[li,lj], rhs=(Atilde[li,lj] - trAtilde / 3 * gammatilde[li,lj]))
         ]
-        
+
         thorn.add_func(
             "Z4cNRPy_Enforce",
             body=enforce_eqns,
@@ -217,7 +217,7 @@ def main():
             geneqns(lhs=dt2alp, rhs=sympify(0)),
             geneqns(lhs=dtdtbeta[ui], rhs=zero * betaG[ui]),
         ]
-        
+
         thorn.add_func(
             "Z4cNRPy_ADM",
             body=adm_eqns,
@@ -280,7 +280,7 @@ def main():
             # RHS
             geneqns(lhs=gammatilde[ui,uj], values=gammatildeUU_expr),
             geneqns(lhs=g[ui,uj], rhs=chi*gammatilde[ui,uj]),
-            geneqns(lhs=dg[li,lj,lk], 
+            geneqns(lhs=dg[li,lj,lk],
                     rhs=(- 1 / chi**2 * dchi[lk] * gammatilde[li,lj]
                          + 1 / chi * dgammatilde[li,lj,lk])),
             geneqns(lhs=Christoffel[li,lj,lk],
@@ -316,7 +316,7 @@ def main():
                          + (betaG[ux] * dKhat[lx])
                          # + eps_diss * dissKhat
                          )),
-            geneqns(lhs=Christoffeltilde[li,lj,lk], 
+            geneqns(lhs=Christoffeltilde[li,lj,lk],
                     rhs=Rational(1,2) * (dgammatilde[li,lj,lk] + dgammatilde[li,lk,lj] - dgammatilde[lj,lk,li])),
             geneqns(lhs=Christoffeltilde[ui,lj,lk], rhs=gammatilde[ui,ux]*Christoffeltilde[lx,lj,lk]),
             geneqns(lhs=Christoffeltilde[li,lj,uk], rhs=gammatilde[uk,ux]*Christoffeltilde[li,lj,lx]),
@@ -388,12 +388,12 @@ def main():
                                     + betaG[ux] * dTheta[lx]
                                     # + eps_diss * dissTheta
                                     ), True))),
-            
+
             [lhrh(lhs=rhs_alphaG,
                   rhs=(- alphaG * f_mu_L * Khat
                        # + eps_diss * dissalphaG
                        ))],
-            
+
             geneqns(lhs=rhs_betaG[ui], rhs=(+ f_mu_S * Gammatilde[ui] - eta * betaG[ui])),
             loop,
 
@@ -414,7 +414,7 @@ def main():
             geneqns(lhs=rhs_betaG[ui], rhs=rhs_betaG[ui] + eps_diss * betaG1_dKO1[ui,lx]*one[ux]),
             loop,
         ]
-        
+
         thorn.add_func(
             "Z4cNRPy_RHS",
             body=rhs_eqns,
@@ -462,7 +462,7 @@ def main():
 
             # HC, eqn. (14)
             geneqns(lhs=g[ui,uj], rhs=chi*gammatilde[ui,uj]),
-            geneqns(lhs=dg[li,lj,lk], 
+            geneqns(lhs=dg[li,lj,lk],
                     rhs=(- 1 / chi**2 * dchi[lk] * gammatilde[li,lj]
                          + 1 / chi * dgammatilde[li,lj,lk])),
             geneqns(lhs=Christoffel[li,lj,lk],
@@ -473,7 +473,7 @@ def main():
                     rhs=1 / alphaG**2 * (+ eTtt
                                          - 2 * betaG[ux] * eTt[lx]
                                          + betaG[ux] * betaG[uy] * eT[lx,ly])),
-            geneqns(lhs=DDchi[li,lj], 
+            geneqns(lhs=DDchi[li,lj],
                   rhs=ddchi[li,lj] - Christoffeltilde[ux,li,lj] * dchi[lx]),
             # arXiv:1212.2901 [gr-qc], (8)
             geneqns(lhs=Rchi[li,lj],
@@ -534,7 +534,7 @@ def main():
                                      + Theta**2
                                      + 2 * gammatilde[lx,ly] * ZetatildeCval[ux] * ZetatildeCval[uy])))),
         ]
-        
+
         thorn.add_func(
             "Z4cNRPy_Constraints",
             body=constraints_eqns,
@@ -583,7 +583,7 @@ def main():
     --- a/Z4cNRPy/schedule.ccl
     +++ b/Z4cNRPy/schedule.ccl
     @@ -107,20 +107,20 @@
-     
+
      SCHEDULE Z4cNRPy_Enforce IN Z4cNRPy_PostStepGroup {
          LANG: C
     -    READS: Z4cNRPy::AtildeDD00GF(everywhere)
