@@ -7,9 +7,8 @@
 import NRPy_param_funcs as par      # NRPy+: Parameter interface
 import sympy as sp                  # Import SymPy, a computer algebra system written entirely in Python
 from collections import namedtuple  # Standard Python `collections` module: defines named tuples data structure
-import os                           # Standard Python module for multiplatform OS-level functions
+import sys                          # Standard Python module for multiplatform OS-level functions
 from suffixes import setsuffix
-import re
 from fstr import f
 
 # Initialize globals related to the grid
@@ -58,6 +57,7 @@ invdx = par.Cparameters("REAL", thismodule, ["invdx0", "invdx1", "invdx2"], 1.0)
 Cart_origin = par.Cparameters("REAL", thismodule, ["Cart_originx", "Cart_originy", "Cart_originz"], 0.0)
 Cart_CoM_offset = par.Cparameters("REAL", thismodule, ["Cart_CoM_offsetx", "Cart_CoM_offsety", "Cart_CoM_offsetz"], 0.0)
 
+
 def variable_type(var):
     var_data = glb_gridfcs_map().get(str(var),None)
     var_is_gf = var_data is not None
@@ -78,41 +78,40 @@ def variable_type(var):
         return "gridfunction"
     else:
         raise Exception("grid.py: Could not find variable_type for '"+var+"'.")
-    if not found_registered_gf:
-        print("Error: gridfunction \""+varname+"\" is not registered!")
-        print("Here's the list of registered gridfunctions:", grid.glb_gridfcs_list)
-        sys.exit(1)
+
 
 def find_gfnames():
     return sorted(list(glb_gridfcs_map().keys()))
 
-def find_gftype(varname,die=True):
-    assert type(varname) == str or type(varname) == unicode
-    var_data = glb_gridfcs_map().get(varname, None)
-    if var_data is None:
-        if die:
-            raise Exception("grid.py: Could not find gftype for '"+varname+"'.")
-        else:
-            return None
-    else:
+
+def find_gftype(varname, fail_on_missing=True):
+    assert isinstance(varname, str) or isinstance(varname, unicode)
+    var_data = glb_gridfcs_map().get(varname)
+    if var_data is not None:
         return var_data.gftype
 
-def find_gfmodule(varname,die=True):
-    var_data = glb_gridfcs_map().get(varname, None)
-    if var_data is None:
-        if die:
-            raise Exception("grid.py: Could not find module for '"+varname+"'.")
-        else:
-            return None
-    else:
+    if fail_on_missing:
+        raise Exception("grid.py: Could not find gftype for '" + varname + "'.")
+
+    return None
+
+
+def find_gfmodule(varname, fail_on_missing=True):
+    var_data = glb_gridfcs_map().get(varname)
+    if var_data is not None:
         return var_data.external_module
 
-from var_access import var_from_access, set_access
+    if fail_on_missing:
+        raise Exception("grid.py: Could not find module for '" + varname + "'.")
+
+    return None
+
+
+from var_access import set_access
 
 def gfaccess(gfarrayname = "", varname = "", ijklstring = "", context = "DECL"):
     ret = _gfaccess(gfarrayname, varname, ijklstring, context)
     assert ret is not None, f("gfarrayname={gfarrayname}, varname={varname}, ijklstring={ijklstring}, context={context}")
-    #from_access[ret] = varname
     set_access(ret, varname)
     return ret
 
@@ -251,17 +250,16 @@ def find_centering(gf_name):
     if gf is not None:
         return gf.centering
 
-import sys
-def register_gridfunctions(gf_type,gf_names,rank=0,is_indexed=False,DIM=3, f_infinity=None, wavespeed=None, centering=None, external_module=None):
+def register_gridfunctions(gf_type, gf_names, rank=0, is_indexed=False, DIM=3, f_infinity=None, wavespeed=None, centering=None, external_module=None):
     global gf_centering
 
     # Step 0: Sanity check
     if (rank > 0 and not is_indexed) or (rank == 0 and is_indexed):
         print("Error: Attempted to register *indexed* gridfunction(s) with rank 0, or *scalar* gridfunctions with rank>0.")
-        print("       Gridfunctions = ",gf_names)
+        print("       Gridfunctions = ", gf_names)
         sys.exit(1)
 
-    assert centering is None or type(centering) == str, \
+    assert centering is None or isinstance(centering, str), \
         f("Centering, if supplied, should be of type str. Type was '{type(centering)}'")
     if centering is not None:
         assert len(centering) == DIM, f("len(centering) ({len(centering)}) is not equal to DIM ({DIM})")
@@ -403,7 +401,6 @@ def gridfunction_lists():
     auxevol_variables_list = []
     external_variables_list = []
     core_variables_list = []
-    tmp_variables_list = []
     for gf in glb_gridfcs_list:
         gf_type = gf.gftype
         gf_name = gf.name
@@ -416,13 +413,13 @@ def gridfunction_lists():
         elif gf_type == "EXTERNAL":
             external_variables_list.append(gf_name)
         elif gf_type == "CORE":
-           core_variables_list.append(gf_name)
+            core_variables_list.append(gf_name)
         elif gf_type == "TILE_TMP":
-           tile_tmp_variables_list.append(gf_name)
+            tile_tmp_variables_list.append(gf_name)
         elif gf_type == "SCALAR_TMP":
-           scalar_tmp_variables_list.append(gf_name)
+            scalar_tmp_variables_list.append(gf_name)
         else:
-           raise Exception("Bad gftype '"+gf_type+"'")
+            raise Exception("Bad gftype '"+gf_type+"'")
 
     # Next we alphabetize the lists
     evolved_variables_list.sort()
@@ -491,16 +488,6 @@ static const REAL gridfunctions_wavespeed[NUM_EVOL_GFS] = { """
     return outstr
 
 
-####################
-# TO BE DEPRECATED
-def output__gridfunction_defines_h__return_gf_lists(outdir):
-    with open(os.path.join(outdir, "gridfunction_defines.h"), "w") as file:
-        file.write("/* This file is automatically generated by NRPy+. Do not edit. */\n\n")
-        file.write(gridfunction_defines())
-    return gridfunction_lists()
-####################
-
-#from outputC import outC_NRPy_basic_defines_h_dict
 import defines_dict
 def register_C_functions_and_NRPy_basic_defines(enable_griddata_struct=True,
                                                 list_of_extras_in_griddata_struct=None):

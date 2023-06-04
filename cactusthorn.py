@@ -68,7 +68,7 @@ def check_eqns(name, eqns):
     for lr in eqns:
         if lr.lhs is None:
             for v in scalar_reads:
-                check_msg("SCALAR_TMP",v,scalar_writes,tile_writes,forgotten)
+                check_msg("SCALAR_TMP", v, scalar_writes, tile_writes, forgotten)
             for v in tmp_tile_writes:
                 tile_writes.add(v)
             tmp_tile_writes.clear()
@@ -79,19 +79,19 @@ def check_eqns(name, eqns):
             continue
         for vr in lr.rhs.free_symbols:
             v = str(vr)
-            gftype = gri.find_gftype(v, die=False)
+            gftype = gri.find_gftype(v, fail_on_missing=False)
             if gftype == "SCALAR_TMP":
                 scalar_reads.add(v)
             elif gftype == "TILE_TMP":
-                check_msg("TILE_TMP",v,scalar_writes,tile_writes,forgotten)
+                check_msg("TILE_TMP", v, scalar_writes, tile_writes, forgotten)
         v = str(lr.lhs)
-        gftype = gri.find_gftype(v, die=False)
+        gftype = gri.find_gftype(v, fail_on_missing=False)
         if gftype == "SCALAR_TMP":
             scalar_writes.add(v)
         elif gftype == "TILE_TMP":
             tmp_tile_writes.add(v)
     for v in scalar_reads:
-        check_msg("SCALAR_TMP",v,scalar_writes,tile_writes,forgotten)
+        check_msg("SCALAR_TMP", v, scalar_writes, tile_writes, forgotten)
 
 today = date.today().strftime("%B %d, %Y")
 
@@ -187,7 +187,7 @@ class CactusThorn:
                 if hasattr(item.rhs, "free_symbols"):
                     for sym in item.rhs.free_symbols:
                         rdsym = str(sym)
-                        gftype = gri.find_gftype(rdsym,die=False)
+                        gftype = gri.find_gftype(rdsym,fail_on_missing=False)
                         if gftype == "TILE_TMP":
                             tmps.add(rdsym)
                             continue
@@ -201,7 +201,7 @@ class CactusThorn:
                             readgfs.add(rdsym)
 
                 writem = str(item.lhs)
-                gftype = gri.find_gftype(writem,die=False)
+                gftype = gri.find_gftype(writem,fail_on_missing=False)
                 if gftype == "TILE_TMP":
                     tmps.add(writem)
                 elif gftype == "SCALAR_TMP":
@@ -243,12 +243,12 @@ class CactusThorn:
 
         centerings_used = sortedset()
         for gf in readgfs:
-            gtype = gri.find_gftype(gf,die=False)
+            gtype = gri.find_gftype(gf,fail_on_missing=False)
             c = gri.find_centering(gf)
             if gtype in ["AUX","EVOL","AUXEVOL"] and centering is not None:
                 centerings_used.add(c)
         for gf in writegfs:
-            gtype = gri.find_gftype(gf,die=False)
+            gtype = gri.find_gftype(gf,fail_on_missing=False)
             c = gri.find_centering(gf)
             if gtype in ["AUX","EVOL","AUXEVOL"] and centering is not None:
                 centerings_used.add(c)
@@ -499,7 +499,7 @@ class CactusThorn:
     def get_full_name(self,gf_name):
         if gf_name == "regrid_error":
             return "CarpetX::regrid_error"
-        gfthorn = gri.find_gfmodule(gf_name,die=False)
+        gfthorn = gri.find_gfmodule(gf_name,fail_on_missing=False)
         if gfthorn is None:
             gfthorn = self.thornname
         if gfthorn == self.thornname:
@@ -509,7 +509,7 @@ class CactusThorn:
 
     def get_full_group_name(self,gf_name):
         gf_group = ixp.get_group_name(gf_name)
-        gfthorn = gri.find_gfmodule(gf_name,die=False)
+        gfthorn = gri.find_gfmodule(gf_name,fail_on_missing=False)
         if gfthorn is None:
             gfthorn = self.thornname
         if gfthorn == self.thornname:
@@ -571,7 +571,7 @@ class CactusThorn:
                     #TODO: change lines with "if gf_name in ["x","y","z"]:" to check if gftype=="CORE"
                     if gf_group in ["x","y","z"]:
                         continue
-                    if ixp.find_gftype_for_group(gf_group,die=False) in ["TILE_TMP","SCALAR_TMP"]:
+                    if ixp.find_gftype_for_group(gf_group,fail_on_missing=False) in ["TILE_TMP","SCALAR_TMP"]:
                         continue
 
                     rhs="rhs_" + gf_group
@@ -584,7 +584,7 @@ class CactusThorn:
                         # We assume that variables without RHS are not part of the state vector
                         tag = f("TAGS='checkpoint=\"no\"'")
 
-                    module = ixp.find_gfmodule_for_group(gf_group,die=False)
+                    module = ixp.find_gfmodule_for_group(gf_group,fail_on_missing=False)
                     if module is None or module == self.thornname:
                         gfs = ixp.get_gfnames_for_group(gf_group)
                         gfs_str = "GF, ".join(list(gfs))
@@ -633,7 +633,7 @@ void {self.thornname}_RegisterVars(CCTK_ARGUMENTS)
                         if gf_group in storage_written:
                             continue
                         storage_written.add(gf_group)
-                        if gri.find_gftype(gf_name,die=False) in ["TILE_TMP","SCALAR_TMP"]:
+                        if gri.find_gftype(gf_name,fail_on_missing=False) in ["TILE_TMP","SCALAR_TMP"]:
                             continue
                         if gri.ET_driver == "Carpet":
                             print(f(u"STORAGE: {gf_group}GF[3]"), file=fd)

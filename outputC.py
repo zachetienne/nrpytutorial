@@ -373,7 +373,7 @@ def outputC(sympyexpr, output_varname_str, filename = "stdout", params = "", pre
         for ii in range(len(sympyexpr)):
             nm = output_varname_str[ii]
             var = var_from_access(nm)
-            typ = find_gftype(var,die=False)
+            typ = find_gftype(var, fail_on_missing=False)
             if typ == "SCALAR_TMP":
                 sympyexpr_group1 += [ sp.Eq(sp.sympify(var), sympyexpr[ii]) ]
                 names_group1 += [nm]

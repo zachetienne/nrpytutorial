@@ -41,17 +41,17 @@ def get_gfnames_for_group(gf_group):
     assert gf_group in gri.glb_gridfcs_map(), "Not a valid grid group: '"+gf_group+"'"
     return {gf_group:1}
 
-def find_gftype_for_group(gf_group,die=True):
+def find_gftype_for_group(gf_group,fail_on_missing=True):
     for gf_name in get_gfnames_for_group(gf_group):
-        return gri.find_gftype(gf_name,die=die)
+        return gri.find_gftype(gf_name, fail_on_missing=fail_on_missing)
     return None
 
-def find_gfmodule_for_group(gf_group,die=True):
+def find_gfmodule_for_group(gf_group,fail_on_missing=True):
     for gf_name in get_gfnames_for_group(gf_group):
-        return gri.find_gfmodule(gf_name,die=die)
+        return gri.find_gfmodule(gf_name, fail_on_missing=fail_on_missing)
     return None
 
-def find_centering_for_group(gf_group,die=True):
+def find_centering_for_group(gf_group, fail_on_missing=True):
     for gf_name in get_gfnames_for_group(gf_group):
         return gri.find_centering(gf_name)
     return None
