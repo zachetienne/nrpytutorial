@@ -59,14 +59,11 @@ Cart_CoM_offset = par.Cparameters("REAL", thismodule, ["Cart_CoM_offsetx", "Cart
 
 
 def variable_type(var):
-    var_data = glb_gridfcs_map().get(str(var),None)
+    var_data = glb_gridfcs_map().get(str(var))
     var_is_gf = var_data is not None
     var_is_parameter = False
-#     for paramname in range(len(par.glb_params_list)):
-#         if str(var) == par.glb_params_list[paramname].parname:
-#             var_is_parameter = True
-    for paramname in range(len(par.glb_Cparams_list)):
-        if str(var) == par.glb_Cparams_list[paramname].parname:
+    for param in par.glb_Cparams_list:
+        if str(var) == param.parname:
             var_is_parameter = True
     if var_is_parameter and var_is_gf:
         raise Exception("Error: variable "+str(var)+" is registered both as a gridfunction and as a Cparameter.")
@@ -307,8 +304,8 @@ def register_gridfunctions(gf_type, gf_names, rank=0, is_indexed=False, DIM=3, f
     #         gf_names == base names. Check that the
     #         gridfunction basenames are valid:
     if not is_indexed:
-        for i in range(len(gf_names)):
-            verify_gridfunction_basename_is_valid(gf_names[i])
+        for gf_name in gf_names:
+            verify_gridfunction_basename_is_valid(gf_name)
 
     # Step 3: Verify that gridfunction type is valid.
     if gf_type not in ('EVOL', 'AUX', 'AUXEVOL', 'EXTERNAL', 'CORE', 'TILE_TMP', 'SCALAR_TMP'):
@@ -343,11 +340,10 @@ def register_gridfunctions(gf_type, gf_names, rank=0, is_indexed=False, DIM=3, f
     # Step 4: Check for duplicate grid function registrations. If:
     #         a) A duplicate is found, error out. Otherwise
     #         b) Add to map of gridfunctions, stored in glb_gridfcs_list
-    for i in range(len(gf_names)):
-        gf_name = gf_names[i]
+    for i, gf_name in enumerate(gf_names):
         if gf_name in glb_gridfcs_map():
             assert gf_type == glb_gridfcs_map()[gf_name].gftype, \
-                'Error: Tried to register the gridfunction "'+gf_names[i]+'" twice with different types'
+                'Error: Tried to register the gridfunction "'+gf_name+'" twice with different types'
         # If no duplicate found, append to "gridfunctions" list:
         var_data = (glb_gridfc(gf_type, gf_name, rank, DIM, f_infinity[i], wavespeed[i], centering[i], external_module))
         glb_gridfcs_map()[gf_name] = var_data
@@ -358,8 +354,8 @@ def register_gridfunctions(gf_type, gf_names, rank=0, is_indexed=False, DIM=3, f
     #         list of symbols representing gridfunction in
     #         SymPy expression
     OBJ_TMPS = []
-    for i in range(len(gf_names)):
-        OBJ_TMPS.append(sp.symbols(gf_names[i], real=True))
+    for gf_name in gf_names:
+        OBJ_TMPS.append(sp.symbols(gf_name, real=True))
     if len(gf_names) == 1:
         return OBJ_TMPS[0]
     return OBJ_TMPS
@@ -437,23 +433,23 @@ def gridfunction_defines():
 
     outstr  = """// EVOLVED VARIABLES:
 #define NUM_EVOL_GFS """ + str(len(evolved_variables_list)) + "\n"
-    for i in range(len(evolved_variables_list)):
-        outstr += "#define " + evolved_variables_list[i].upper() + "GF\t" + str(i) + "\n"
+    for i, varname in enumerate(evolved_variables_list):
+        outstr += "#define " + varname.upper() + "GF\t" + str(i) + "\n"
 
     outstr += """\n\n// AUXILIARY VARIABLES:
 #define NUM_AUX_GFS """ + str(len(auxiliary_variables_list)) + "\n"
-    for i in range(len(auxiliary_variables_list)):
-        outstr += "#define " + auxiliary_variables_list[i].upper() + "GF\t" + str(i) + "\n"
+    for i, varname in enumerate(auxiliary_variables_list):
+        outstr += "#define " + varname.upper() + "GF\t" + str(i) + "\n"
 
     outstr += """\n\n// AUXEVOL VARIABLES:
 #define NUM_AUXEVOL_GFS """ + str(len(auxevol_variables_list)) + "\n"
-    for i in range(len(auxevol_variables_list)):
-        outstr += "#define " + auxevol_variables_list[i].upper() + "GF\t" + str(i) + "\n"
+    for i, varname in enumerate(auxevol_variables_list):
+        outstr += "#define " + varname.upper() + "GF\t" + str(i) + "\n"
 
     outstr += """\n\n// EXTERNAL VARIABLES:
 #define NUM_EXTERNAL_GFS """ + str(len(external_variables_list)) + "\n"
-    for i in range(len(external_variables_list)):
-        outstr += "#define " + external_variables_list[i].upper() + "GF\t" + str(i) + "\n"
+    for i, varname in enumerate(external_variables_list):
+        outstr += "#define " + varname.upper() + "GF\t" + str(i) + "\n"
 #If CarpetX: Do I need to do this for CORE vars? I don't think so.
 
     if(len(evolved_variables_list)) > 0:
