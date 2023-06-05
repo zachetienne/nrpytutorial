@@ -1,5 +1,6 @@
 from inspect import currentframe
 
+
 def f(s):
     """
     Mimic the functionality of formatted strings in Python3. Convert curly brackets in s
@@ -18,14 +19,14 @@ def f(s):
     '\\texttt{gxx}'
     """
     globs = currentframe().f_back.f_globals
-    locs= currentframe().f_back.f_locals
+    locs = currentframe().f_back.f_locals
     count = 0
     ns = u''
     i = 0
     while i < len(s):
         c = s[i]
         if i + 1 < len(s):
-            nc = s[i+1]
+            nc = s[i + 1]
         else:
             nc = ""
         i += 1
@@ -47,12 +48,14 @@ def f(s):
                 if count == 0:
                     break
                 i += 1
-            ns += str(eval(s[j:i],globs,locs))
+            ns += str(eval(s[j:i], globs, locs))
             i += 1
         else:
             ns += c
     return ns
 
+
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()

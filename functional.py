@@ -4,6 +4,7 @@
 
 import sys
 
+
 def pipe(x, *f):
     """ Pipe Operator
 
@@ -16,6 +17,7 @@ def pipe(x, *f):
     if not f: return x
     return pipe(f[0](x), *f[1:])
 
+
 def repeat(f, x, n):
     """ Repeat Function
 
@@ -25,6 +27,7 @@ def repeat(f, x, n):
     if n == 0: return x
     return repeat(f, f(x), n - 1)
 
+
 def chain(*iterable):
     """ Chain Iterable(s)
 
@@ -32,11 +35,13 @@ def chain(*iterable):
         [1, 2, 3, 4, 5]
     """
     for iter_ in iterable:
-        try: iter(iter_)
+        try:
+            iter(iter_)
         except TypeError:
             iter_ = [iter_]
         for element in iter_:
             yield element
+
 
 def flatten(iterable):
     """ Flatten Iterable
@@ -45,6 +50,7 @@ def flatten(iterable):
         [1, 2, 3, 4, 5]
     """
     return chain(*iterable)
+
 
 def reduce(f, iterable, initializer=None):
     """ Reduction Operation
@@ -66,6 +72,7 @@ def reduce(f, iterable, initializer=None):
         result = f(result, element)
     return result
 
+
 def uniquify(iterable):
     """ Uniquify Iterable
 
@@ -73,6 +80,7 @@ def uniquify(iterable):
         [1, 2, 3, 4, 5]
     """
     return reduce(lambda l, x: l if x in l else l + [x], iterable, [])
+
 
 def product(*iterable, **kwargs):
     """ Cartesian Product
@@ -97,6 +105,8 @@ def product(*iterable, **kwargs):
     for prod in reduce(f, iterable):
         yield tuple(prod)
 
+
 if __name__ == "__main__":
     import doctest
+
     sys.exit(doctest.testmod()[0])
