@@ -806,7 +806,7 @@ def NRPy_param_funcs_register_C_functions_and_NRPy_basic_defines(directory=os.pa
     for Cparam in par.glb_Cparams_list:
         Cptype, parname = type_and_parname_from_Cparam(Cparam)
         if Cptype != "#define":
-            comment = "  // " + Cparam + "::" + parname
+            comment = "  // " + Cparam.module + "::" + parname
             c_output = "  params->" + parname
             defaultval = Cparam.defaultval
             if Cptype == "char":
