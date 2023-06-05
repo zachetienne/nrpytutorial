@@ -10,6 +10,7 @@ from outputC import outputC      # NRPy+: Core C code output module
 import NRPy_param_funcs as par   # NRPy+: Parameter interface
 import sympy as sp               # SymPy: The Python computer algebra package upon which NRPy+ depends
 import grid as gri               # NRPy+: Functions having to do with numerical grids
+import deprecated_grid as evil_gri               # NRPy+: Functions having to do with numerical grids
 import indexedexp as ixp         # NRPy+: Symbolic indexed expression (e.g., tensors, vectors, etc.) support
 import reference_metric as rfm   # NRPy+: Reference metric support
 import cmdline_helper as cmd     # NRPy+: Multi-platform Python command-line interface
@@ -117,7 +118,7 @@ def Set_up_CurviBoundaryConditions(Ccodesdir,verbose=True,Cparamspath=os.path.jo
 
     # Step 2.a: Generate Ccodesdir/gridfunction_defines.h file,
     #       containing human-readable gridfunction aliases
-    evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = gri.output__gridfunction_defines_h__return_gf_lists(Ccodesdir)[0:3]
+    evolved_variables_list, auxiliary_variables_list, auxevol_variables_list = evil_gri.output__gridfunction_defines_h__return_gf_lists(Ccodesdir)[0:3]
 
     # Step 2.b: set the parity conditions on all gridfunctions in gf_list,
     #       based on how many digits are at the end of their names
