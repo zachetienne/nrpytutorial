@@ -20,7 +20,7 @@ def herell(usecc,*args):
         herestr = re.sub(r"^herecc\((.*)\)$",r"HERE: \1:",frame.code_context[0].strip())
     else:
         herestr = "HERE:"
-    if type(frame) == tuple:
+    if isinstance(frame, tuple):
         frame = frame[0]
         fname = _here
         line = frame.f_lineno
@@ -29,8 +29,8 @@ def herell(usecc,*args):
         line = frame.lineno
     if fname.startswith(_here):
         fname = fname[len(_here)+1:]
-    assert type(fname) == str
-    assert type(line) == int
+    assert isinstance(fname, str)
+    assert isinstance(line, int)
     nargs = [colored(herestr,"cyan"),fname+":"+colored(line,"yellow")] + list(args) #, flush=True)
     print(*nargs)
     sys.stdout.flush()
