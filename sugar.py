@@ -319,12 +319,6 @@ def gfdecl(*args):
 
                 base_variants = variants.get(basename,set())
                 sym1 = copy.get("symmetry_option", "")
-                # FIXME: dead code:
-                # for k in base_variants:
-                #     variant_copy = properties.get(k)
-                #     sym2 = variant_copy.get("symmetry_option", None)
-                #     #assert n(sym1) == n(sym2), \
-                #     #    f("Inconsistent declaration of {basename}. Variant {k} has {sym2}, and {fullname} has {sym1}")
 
                 if verbose:
                     print(colored("Adding Definition for:","cyan"),basename)
@@ -484,7 +478,7 @@ def getindexes(expr):
             indexes[let] = indexes.get(let,0) | mask
     return indexes
 
-def incrindexes(indexes_input,dim,symmetries=[]):  # FIXME: [] is a dangerous default value here.
+def incrindexes(indexes_input,dim,symmetries=None):
     """
     This function is designed to generate all permuations
     of values for a set of indexes. The `indexes_input`
@@ -496,6 +490,8 @@ def incrindexes(indexes_input,dim,symmetries=[]):  # FIXME: [] is a dangerous de
     Thus, incrindexes(2,2,[0,1,1]) should yield [0,0], [1,0], and [1,1].
     By symmetry, the index [0,1] is not needed.
     """
+    if symmetries is None:
+        symmetries = []
     # Make a copy of the input
     indexes = [0]*indexes_input
     yield indexes
@@ -563,20 +559,6 @@ def getsuffix(expr):
             else:
                 suffix += "D"
     return suffix
-
-# FIXME: dead code:
-# def getname(expr):
-#     assert type(sym) == sp.tensor.indexed.Indexed
-#     nm = str(sym.base)
-#     indexes = []
-#     for k in sym.args[1:]:
-#         ks = str(k)
-#         g = re.match(r'([ul]).$', ks)
-#         if g.group(1) == "u":
-#             nm += "U"
-#         else:
-#             nm += "D"
-#     return nm
 
 def make_sum(expr, dim=3):
     expr = sp.expand(expr)
@@ -655,9 +637,6 @@ def geneqns3(eqn, DIM=3, globs=None, loop=False):
         globs = currentframe().f_back.f_globals
     m = match_expr(eqn)
     assert len(m) >= 2, f("match_expr failed for '{eqn}' -> {m}")
-    # FIXME: dead code
-    # if m[-2][0] == "equals":
-    #     ltx = parse_latex(m[-1][1])
     sy = symlatex(eqn, globs)
     return geneqns2(lhs=sy, rhs=m[-1][1], loop=loop, globs=globs, DIM=DIM)
 
