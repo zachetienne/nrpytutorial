@@ -1,12 +1,13 @@
 import logging
-from mpmath import log10,fabs, mp
+from mpmath import log10, fabs, mp
 from datetime import date
 from UnitTesting.standard_constants import precision
 from UnitTesting.create_dict_string import create_dict_string
 
+
 # calc_error loops through each item in self.calculated_dict and self.trusted_values_dict_entry,
 # and makes sure that the difference between each respective value's number of decimal in the dictionaries places is
-# less than 1/2 of the precision. It returns a boolean representing whether or not any variables differed.
+# less than 1/2 of the precision. It returns a boolean representing whether any variables differed.
 
 # Called by run_test
 
@@ -14,7 +15,6 @@ from UnitTesting.create_dict_string import create_dict_string
 
 
 def calc_error(self):
-
     # Setting precision
     mp.dps = precision
 
@@ -52,7 +52,8 @@ def calc_error(self):
         trusted_val = self.trusted_values_dict_entry[var]
 
         # For each variable, print calculated and trusted values
-        logging.debug('\n' + self.module_name + ': ' + var + ': Calculated: ' + str(calculated_val) + '\n' + self.module_name + ': ' + var
+        logging.debug('\n' + self.module_name + ': ' + var + ': Calculated: ' + str(
+            calculated_val) + '\n' + self.module_name + ': ' + var
                       + ': Trusted:    ' + str(trusted_val) + '\n')
 
         # Calculate the error between both values
@@ -71,7 +72,7 @@ def calc_error(self):
             bad_var_list.append(var)
 
     # If we want to output and there exists at least one variable with error, print
-    if bad_var_list != []:
+    if bad_var_list:
         logging.error('''
 \nVariable(s) {} in module {} failed. Please check values.
 If you are confident that the newly calculated values are correct, comment out the old trusted values for
