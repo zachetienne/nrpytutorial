@@ -132,7 +132,7 @@ def main():
     z0 = thorn.declare_param('z0',default=0,vmin=-100,vmax=100,doc="The z pos of the wave")
     zero = thorn.declare_param('zero',default=0,vmin=0,vmax=0,doc="zero")
 
-    centering='VVC'
+    centering='CVV'
 
     # AUXEVOL needed for the evo, can be freed after evaluating rhs (1 time level)
     # AUX uu_rhs (1 time level)
