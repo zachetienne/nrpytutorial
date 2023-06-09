@@ -242,8 +242,6 @@ def read_from_memory_Ccode_onept(gfname,idx, FDparams, idxs=set()):
     else:
         ijklstring = ijkl_string(idx4, FDparams)
     gfaccess_str = gri.gfaccess(gf_array_name,gfname,ijklstring,"USE")
-    if gfaccess_str.endswith("DD00"):
-        raise Exception()
     idxs.add(",".join([str(ii) for ii in idx4]))
     if FDparams.enable_SIMD == "True":
         retstring = type__var(gfname, FDparams) + varsuffix(gfname, idx4, FDparams) + " = ReadSIMD(&" + gfaccess_str + ");"
