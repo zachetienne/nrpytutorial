@@ -54,7 +54,7 @@ def balsara2(x, bound = 0.0):
     press = noif.coord_less_bound(x, bound)*press_left \
           + noif.coord_geq_bound(x,bound)*press_right
 
-    BU[0] = rl(1,2)
+    BU[0] = rl(5.0)
 
     By_left = rl(6.0)
     By_right = rl(7,10)
@@ -148,10 +148,24 @@ def balsara5(x, bound = 0.0):
 
 
 def BtoA_piecewise_constant_Cart_Flat(x, y, z, BU):
+#     AD = ixp.zerorank1()
+#     AD[0] = z*BU[1]
+#     AD[1] = x*BU[2]
+#     AD[2] = y*BU[0]
+
     AD = ixp.zerorank1()
-    AD[0] = z*BU[1]
-    AD[1] = x*BU[2]
+    AD[0] = z*BU[1] - y*BU[2]
+    AD[1] = sp.sympify(0.0)
     AD[2] = y*BU[0]
+
+#     if(CCTK_EQUALS(test_shock_direction, "x")) {
+#           if(x[index] <= discontinuity_position) {
+#             Avec[ind4x] = By_l * z[index] - Bz_l * y[index];
+#           } else {
+#             Avec[ind4x] = By_r * z[index] - Bz_r * y[index];
+#           }
+#           Avec[ind4y] = 0.0;
+#           Avec[ind4z] = Bx_r * y[index];
 
     return AD
 
