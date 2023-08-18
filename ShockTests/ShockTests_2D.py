@@ -16,9 +16,7 @@ import Min_Max_and_Piecewise_Expressions as noif
 par.set_parval_from_str("grid::DIM", 3)
 DIM = par.parval_from_str("grid::DIM")
 
-par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
 rfm.reference_metric()
-
 
 def cylindrical_explosion(r, r_in=0.8, r_out=1.0):
     vU = ixp.zerorank1()
@@ -46,13 +44,13 @@ def cylindrical_explosion(r, r_in=0.8, r_out=1.0):
            +noif.coord_geq_bound(r, r_out)*press_out
 
     BU[0] = rl(1,10)
+#     BU[2] = rl(1, 10)
 
     return rho, press, vU, BU
 
-def magnetic_rotor(r, r_in=0.1, Omega=9.95, cartx=rfm.Cartx, carty=rfm.Carty):
-    cart_list = [cartx, carty]
+def magnetic_rotor(r, r_in=0.1, Omega=9.95, x=rfm.xx_to_Cart[0], y=rfm.xx_to_Cart[1]):
 
-    vU_cyl = ixp.zerorank1()
+    vU = ixp.zerorank1()
     BU = ixp.zerorank1()
 
     rho_in = rl(10.0)
@@ -61,27 +59,13 @@ def magnetic_rotor(r, r_in=0.1, Omega=9.95, cartx=rfm.Cartx, carty=rfm.Carty):
     rho = noif.coord_leq_bound(r, r_in)*rho_in\
          +noif.coord_greater_bound(r, r_in)*rho_out
 
+    vx_in = -Omega*y
+    vU[0] = noif.coord_less_bound(r, r_in)*vx_in
+
+    vy_in = Omega*x
+    vU[1] = noif.coord_less_bound(r, r_in)*vy_in
+
     press = rl(1.0)
-
-    par.set_parval_from_str("reference_metric::CoordSystem","Cylindrical")
-    rfm.reference_metric()
-
-    vU_Cyl = ixp.zerorank1()
-    vU_Cyl[1] = noif.coord_leq_bound(r, r_in)*Omega
-
-    Jac_dUCart_dDrfmUD, Jac_dUrfm_dDCartUD = rfm.compute_Jacobian_and_inverseJacobian_tofrom_Cartesian()
-    vU = rfm.basis_transform_vectorU_from_rfmbasis_to_Cartesian(Jac_dUCart_dDrfmUD, vU_Cyl)
-
-    for i in range(DIM):
-        for j in range(DIM):
-            vU[i] = vU[i].subs(rfm.xx[j], rfm.Cart_to_xx[j])
-
-    par.set_parval_from_str("reference_metric::CoordSystem","Cartesian")
-    rfm.reference_metric()
-
-    for i in range(DIM):
-        for j in range(2):
-            vU[i] = vU[i].subs(rfm.Cart[j], cart_list[j])
 
     BU[0] = rl(1.0)
 
