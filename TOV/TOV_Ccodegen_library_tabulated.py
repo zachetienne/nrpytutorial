@@ -183,7 +183,7 @@ Author: Zachariah B. Etienne
     c_type="void"
     name="TOV_interpolate_1D"
     params="""REAL rrbar,const ID_persist_struct *ID_persist,
-                        REAL *restrict rho,REAL *restrict rho_baryon,REAL *restrict P, REAL *restrict Y_e, REAL *restrict entropy, REAL *restrict M,REAL *restrict expnu,REAL *restrict exp4phi"""
+                        REAL *restrict rho,REAL *restrict rho_baryon,REAL *restrict P, REAL *restrict M,REAL *restrict expnu,REAL *restrict exp4phi"""
     body = r"""
   // First unpack ID_persist struct (this should be pretty quick relative to the rest of the routine):
   const REAL Rbar               = ID_persist->Rbar;
@@ -245,8 +245,8 @@ Author: Zachariah B. Etienne
   *rho = 0.0;
   *rho_baryon = 0.0;
   *P = 0.0;
-  *Y_e = 0.0;
-  *entropy = 0.0;
+  //*Y_e = 0.0;
+  //*entropy = 0.0;
   *M = 0.0;
   *expnu = 0.0;
   *exp4phi = 0.0;
@@ -257,8 +257,8 @@ Author: Zachariah B. Etienne
     *rho        += l_i_of_r[i-idxmin] * rho_arr[i];
     *rho_baryon += l_i_of_r[i-idxmin] * rho_baryon_arr[i];
     *P          += l_i_of_r[i-idxmin] * P_arr[i];
-    *Y_e        += l_i_of_r[i-idxmin] * Y_e_arr[i];
-    *entropy    += l_i_of_r[i-idxmin] * entropy_arr[i];
+    //*Y_e        += l_i_of_r[i-idxmin] * Y_e_arr[i];
+    //*entropy    += l_i_of_r[i-idxmin] * entropy_arr[i];
     *M          += l_i_of_r[i-idxmin] * M_arr[i];
     *expnu      += l_i_of_r[i-idxmin] * expnu_arr[i];
     *exp4phi    += l_i_of_r[i-idxmin] * exp4phi_arr[i];
@@ -268,8 +268,8 @@ Author: Zachariah B. Etienne
     *rho        = 0;
     *rho_baryon = 0;
     *P          = 0;
-    *Y_e        = 0;
-    *entropy    = 0;
+    //*Y_e        = 0;
+    //*entropy    = 0;
     *M          = M_arr[Rbar_idx+1];
     *expnu      = 1. - 2.*(*M) / r_Schw;
     *exp4phi    = pow(r_Schw / rrbar,2.0);
@@ -335,8 +335,8 @@ outputting to initial_data_struct *restrict initial_data"""
   }
 
   // Next set gamma_{ij} in spherical basis
-  REAL rho,rho_baryon,P,Y_e,entropy,M,expnu,exp4phi;
-  TOV_interpolate_1D(rbar,ID_persist, &rho,&rho_baryon,&P, &Y_e, &entropy,&M,&expnu,&exp4phi);
+  REAL rho,rho_baryon,P,M,expnu,exp4phi;
+  TOV_interpolate_1D(rbar,ID_persist, &rho,&rho_baryon,&P,&M,&expnu,&exp4phi);
 """
     rbar, theta, rho, P, expnu, exp4phi = sp.symbols('rbar theta rho P expnu exp4phi', real=True)
     alpha, betaU, BU, gammaDD, KDD = ADM_quantities_ito_TOV_soln(rbar, theta, expnu, exp4phi)
