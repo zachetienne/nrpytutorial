@@ -22,7 +22,7 @@ def ID_persist_str():
   REAL *restrict rho_baryon_arr; // Baryonic mass density
   REAL *restrict P_arr;  // Pressure
   REAL *restrict Y_e_arr;  // electron fraction
-  REAL *restrict entropy_arr;  // entropy
+  //REAL *restrict entropy_arr;  // entropy
   REAL *restrict M_arr;  // Integrated rest mass
   REAL *restrict expnu_arr;    // Metric quantity
   REAL *restrict exp4phi_arr;  // Metric quantity
@@ -72,7 +72,7 @@ def add_to_Cfunction_dict_TOV_read_data_file_set_ID_persist(interp_stencil_size=
     ID_persist->rho_baryon_arr = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
     ID_persist->P_arr          = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
     ID_persist->Y_e_arr        = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
-    ID_persist->entropy_arr    = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
+    //ID_persist->entropy_arr    = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
     ID_persist->M_arr          = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
     ID_persist->expnu_arr      = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
     ID_persist->exp4phi_arr    = (REAL *restrict)malloc(sizeof(REAL)*numlines_in_file);
@@ -103,7 +103,7 @@ def add_to_Cfunction_dict_TOV_read_data_file_set_ID_persist(interp_stencil_size=
       ID_persist->rho_baryon_arr[which_line] = strtod(token, NULL); token = strtok( NULL, delimiters );
       ID_persist->P_arr[which_line]          = strtod(token, NULL); token = strtok( NULL, delimiters );
       ID_persist->Y_e_arr[which_line]          = strtod(token, NULL); token = strtok( NULL, delimiters );
-      ID_persist->entropy_arr[which_line]          = strtod(token, NULL); token = strtok( NULL, delimiters );
+      //ID_persist->entropy_arr[which_line]          = strtod(token, NULL); token = strtok( NULL, delimiters );
       ID_persist->M_arr[which_line]          = strtod(token, NULL); token = strtok( NULL, delimiters );
       ID_persist->expnu_arr[which_line]      = strtod(token, NULL); token = strtok( NULL, delimiters );
       ID_persist->exp4phi_arr[which_line]    = strtod(token, NULL); token = strtok( NULL, delimiters );
@@ -196,7 +196,7 @@ Author: Zachariah B. Etienne
   const REAL *restrict rho_baryon_arr = ID_persist->rho_baryon_arr;
   const REAL *restrict P_arr          = ID_persist->P_arr;
   const REAL *restrict Y_e_arr        = ID_persist->Y_e_arr;
-  const REAL *restrict entropy_arr    = ID_persist->entropy_arr;
+  //const REAL *restrict entropy_arr    = ID_persist->entropy_arr;
   const REAL *restrict M_arr          = ID_persist->M_arr;
   const REAL *restrict expnu_arr      = ID_persist->expnu_arr;
   const REAL *restrict exp4phi_arr    = ID_persist->exp4phi_arr;

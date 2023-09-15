@@ -46,7 +46,7 @@ def TOV_Solver(eos,
                verbose = True,
                return_M_RSchw_and_Riso = False,
                output_electron_fraction = True,
-               output_entropy = True,
+               output_entropy = False,
                accuracy = "medium",
                integrator_type = "default",
                no_output_File = False):
