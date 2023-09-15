@@ -154,9 +154,9 @@ def BtoA_piecewise_constant_Cart_Flat(x, y, z, BU):
 #     AD[2] = y*BU[0]
 
     AD = ixp.zerorank1()
-    AD[0] = z*BU[1] - y*BU[2]
+    AD[0] = z*BU[1]*sp.sqrt(4*sp.pi) - y*BU[2]*sp.sqrt(4*sp.pi)
     AD[1] = sp.sympify(0.0)
-    AD[2] = y*BU[0]
+    AD[2] = y*BU[0]*sp.sqrt(4*sp.pi)
 
 #     if(CCTK_EQUALS(test_shock_direction, "x")) {
 #           if(x[index] <= discontinuity_position) {

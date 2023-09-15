@@ -43,7 +43,7 @@ def cylindrical_explosion(r, r_in=0.8, r_out=1.0):
            +noif.coord_greater_bound(r, r_in)*noif.coord_less_bound(r, r_out)*press_mid\
            +noif.coord_geq_bound(r, r_out)*press_out
 
-    BU[0] = rl(1,10)
+    BU[0] = rl(1,10)*sp.sqrt(4*sp.pi)
 #     BU[2] = rl(1, 10)
 
     return rho, press, vU, BU
@@ -67,7 +67,7 @@ def magnetic_rotor(r, r_in=0.1, Omega=9.95, x=rfm.xx_to_Cart[0], y=rfm.xx_to_Car
 
     press = rl(1.0)
 
-    BU[0] = rl(1.0)
+    BU[0] = rl(1.0)*sp.sqrt(4*sp.pi)
 
     return rho, press, vU, BU
 
@@ -87,7 +87,7 @@ def loop_advection(r, R_loop=rl(3,10), A_loop=rl(1/1000), vz_equals_zero=False):
     if not vz_equals_zero:
         vU[2] = noif.coord_less_bound(r, R_loop)*vy_in
 
-    AD[2] = noif.max_noif(0, A_loop*(R_loop - r))
+    AD[2] = noif.max_noif(0, A_loop*(R_loop - r))*sp.sqrt(4*sp.pi)
 
     return rho, press, vU, AD
 
