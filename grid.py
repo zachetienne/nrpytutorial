@@ -191,7 +191,7 @@ def _gfaccess(gfarrayname, varname, ijklstring, context):
                 if ijklstring == "":
                     return retstring + varname + "(" + mask + find_centering(varname) + "_tmp_index)"
                 else:
-                    return retstring + varname + "(" + mask + find_centering(varname) + "_tmp_layout, p.I{ijklstring})"
+                    return retstring + varname + "((" + mask + find_centering(varname) + "_tmp_layout, p.I{ijklstring}))"
             elif gftype == "SCALAR_TMP":
                 if context == "DECL":
                     return retstring + "const " + vartype + " " + varname + " CCTK_ATTRIBUTE_UNUSED /* decl */"
@@ -201,8 +201,8 @@ def _gfaccess(gfarrayname, varname, ijklstring, context):
                 if ijklstring == "":
                     return retstring + varname + "GF(" + mask + find_centering(varname) + "_index)"
                 else:
-                    return retstring + varname + "GF(" + mask + find_centering(
-                        varname) + "_layout, p.I" + ijklstring + ")"
+                    return retstring + varname + "GF((" + mask + find_centering(
+                        varname) + "_layout, p.I" + ijklstring + "))"
         else:
             retstring += varname + "GF[CCTK_GFINDEX" + str(DIM) + "D(cctkGH, "
     else:

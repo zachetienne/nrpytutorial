@@ -9,6 +9,7 @@
     # Email: ksible *at* outlook *dot* com
 
 import re, sys
+import grid as gri
 
 def loop1D(idx_var='i', lower_bound='0', upper_bound='N', increment='1', pragma='#pragma omp parallel for', padding=''):
     """ Generate a one-dimensional loop in C.
@@ -126,6 +127,73 @@ def loop(idx_var, lower_bound, upper_bound, increment, pragma, padding='  ', int
     if not interior: return header, footer
     return header + ''.join(interior) + footer
 
+def loopX(centering, domain, padding='  ', interior=""):
+    """ Generate a nested loop of arbitrary dimension in C.
+
+        :arg:    array of centering values [x0,x1,x2]
+        :arg:    domain of loop (interior or everywhere)
+        :arg:    padding before a line (tab stop)
+        :arg:    interior of the loop
+        :return: (header, footer) or string of the loop
+
+        >>> header, footer = loop('i', '0', 'N', '1', '', padding='')
+        >>> print(header)
+        for (int i = 0; i < N; i++) {
+        <BLANKLINE>
+
+        >>> print(footer)
+        } // END LOOP: for (int i = 0; i < N; i++)
+        <BLANKLINE>
+
+        >>> print(loop('i', '0', 'N', '1', '',padding='  ', interior='// <INTERIOR>'))
+          for (int i = 0; i < N; i++) {
+            // <INTERIOR>
+          } // END LOOP: for (int i = 0; i < N; i++)
+        <BLANKLINE>
+
+        >>> print(loop('i', '0', 'N', '1', '', padding='    ', interior='// <INTERIOR>', tile_size='16'))
+            for (int iB = 0; iB < N; iB += 16) {
+                for (int i = iB; i < MIN(N, iB + 16); i++) {
+                    // <INTERIOR>
+                } // END LOOP: for (int i = iB; i < MIN(N, iB + 16); i++)
+            } // END LOOP: for (int iB = 0; iB < N; iB += 16)
+        <BLANKLINE>
+
+        >>> print(loop(['i', 'j'], ['0', '0'], ['Nx', 'Ny'], ['1', '1'], ['', ''], padding='  ', interior='// <INTERIOR>'))
+          for (int i = 0; i < Nx; i++) {
+            for (int j = 0; j < Ny; j++) {
+              // <INTERIOR>
+            } // END LOOP: for (int j = 0; j < Ny; j++)
+          } // END LOOP: for (int i = 0; i < Nx; i++)
+        <BLANKLINE>
+    """
+    centering_type  = 'C' if centering[0] == 1 else 'V'
+    centering_type += 'C' if centering[1] == 1 else 'V'
+    centering_type += 'C' if centering[2] == 1 else 'V'
+    loop_dim = 'all' if domain == 'everywhere' else 'int'
+    header_list = []
+    line1 = padding + 'const std::array<int, Loop::dim> indextype = {{ {i1}, {i2}, {i3} }};\n'.format(
+                                                         i0=loop_dim, i1=centering[0], i2=centering[1], i3=centering[2])
+    line2 = padding + 'const Loop::GF3D2layout layout(cctkGH, indextype);\n\n'
+    line3 = padding + 'grid.loop_{i0}_device<{i1}, {i2}, {i3}>(\n'.format(
+                                                         i0=loop_dim, i1=centering[0], i2=centering[1], i3=centering[2])
+    line4 = 3*padding + 'grid.nghostzones,\n'
+    line5 = 3*padding + '[=] CCTK_DEVICE(const Loop::PointDesc &p) CCTK_ATTRIBUTE_ALWAYS_INLINE {\n'
+    line6 = 2*padding + 'const Loop::GF3D2index ' + centering_type + '_index(layout, p.I);\n'
+    header_list.append(line1)
+    header_list.append(line2)
+    header_list.append(line3)
+    header_list.append(line4)
+    header_list.append(line5)
+    header_list.append(line6)
+    header = ''.join(header_list)
+    footer = padding + '}); // END LOOP: ' + line3.strip() + '\n'
+    # If loop interior was provided, generate the loop body with appropriate formatting
+    if interior:
+        interior = [2*padding + line + '\n' for line in interior.split('\n')]
+    if not interior: return header, footer
+    return header + ''.join(interior) + footer
+
 def simple_loop(options, interior):
     """ Generate a simple loop in C (for use inside of a function).
 
@@ -147,6 +215,23 @@ def simple_loop(options, interior):
     if not options:
         return interior
 
+    if gri.ET_driver == 'CarpetX':
+        centering = [1,1,1]
+        if 'centering_on' in options:
+            centering[0] = int(re.search(r'centering_on_([0-9])_([0-9])_([0-9])', options).group(1))
+            centering[1] = int(re.search(r'centering_on_([0-9])_([0-9])_([0-9])', options).group(2))
+            centering[2] = int(re.search(r'centering_on_([0-9])_([0-9])_([0-9])', options).group(3))
+
+        domain = ''
+        if "AllPoints" in options:
+            domain = 'everywhere'
+        elif "InteriorPoints" in options:
+            domain = 'interior'
+        else:
+      	    raise ValueError('no iteration space was specified.')
+
+        return loopX(centering, domain, padding='  ', interior=interior)
+    
     # 'AllPoints': loop over all points on a numerical grid, including ghost zones
     if "AllPoints" in options:
         i2i1i0_mins = ["0", "0", "0"]

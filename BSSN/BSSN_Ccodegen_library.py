@@ -59,8 +59,12 @@ def print_msg_with_timing(desc, msg="Symbolic", startstop="start", starttime=0.0
 
 
 # get_loopopts() sets up options for NRPy+'s loop module
-def get_loopopts(points_to_update, enable_SIMD, enable_rfm_precompute, OMP_pragma_on, enable_xxs=True):
+def get_loopopts(points_to_update, enable_SIMD, enable_rfm_precompute, OMP_pragma_on, enable_xxs=True, centering=[0,0,0]):
     loopopts = points_to_update + ",includebraces=False"
+    if gri.ET_driver == 'CarpetX':
+        loopopts += ",centering_on_"+str(centering[0])+"_"+str(centering[1])+"_"+str(centering[2])
+    if enable_SIMD:
+        loopopts += ",enable_SIMD"
     if enable_SIMD:
         loopopts += ",enable_SIMD"
     if enable_rfm_precompute:
@@ -167,6 +171,15 @@ def EinsteinToolkit_SIMD_declare_C_params(ThornName):
 def set_ETK_func_params_preloop(func_name, enable_SIMD=True):
     params = "CCTK_ARGUMENTS"
     preloop = """  DECLARE_CCTK_ARGUMENTS_"""+func_name+""";"""
+    if gri.ET_driver == "CarpetX":
+    	preloop  = """#define UPWIND_ALG(UpwindVecU) UpwindVecU > 0.0 ? 1.0 : 0.0
+  DECLARE_CCTK_ARGUMENTSX_"""+func_name+""";
+  DECLARE_CCTK_PARAMETERS;\n"""
+    	preloop += """
+  const CCTK_REAL invdx0 CCTK_ATTRIBUTE_UNUSED = 1.0/CCTK_DELTA_SPACE(0);
+  const CCTK_REAL invdx1 CCTK_ATTRIBUTE_UNUSED = 1.0/CCTK_DELTA_SPACE(1);
+  const CCTK_REAL invdx2 CCTK_ATTRIBUTE_UNUSED = 1.0/CCTK_DELTA_SPACE(2);\n"""
+    	return params, preloop
     ThornName = "Baikal"
     if "BaikalVacuum" in func_name:
         ThornName = "BaikalVacuum"
@@ -320,7 +333,7 @@ def add_rhs_eval_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os.path.jo
     FD_outCparams = "outCverbose=False,enable_SIMD=" + str(enable_SIMD)
     FD_outCparams += ",GoldenKernelsEnable=" + str(enable_golden_kernels)
 
-    loopopts = get_loopopts("InteriorPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on)
+    loopopts = get_loopopts("InteriorPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on, centering=[0,0,0])
     FDorder = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
     starttime = print_msg_with_timing("BSSN_RHSs (FD order="+str(FDorder)+")", msg="Ccodegen", startstop="start")
     if enable_split_for_optimizations_doesnt_help and FDorder == 6:
@@ -422,7 +435,7 @@ def add_Ricci_eval_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os.path.
     Ricci_SymbExpressions = Ricci__generate_symbolic_expressions()
     FD_outCparams = "outCverbose=False,enable_SIMD=" + str(enable_SIMD)
     FD_outCparams += ",GoldenKernelsEnable=" + str(enable_golden_kernels)
-    loopopts = get_loopopts("InteriorPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on)
+    loopopts = get_loopopts("InteriorPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on, centering=[0,0,0])
 
     FDorder = par.parval_from_str("finite_difference::FD_CENTDERIVS_ORDER")
     starttime = print_msg_with_timing("3-Ricci tensor (FD order="+str(FDorder)+")", msg="Ccodegen", startstop="start")
@@ -555,7 +568,7 @@ def add_BSSN_constraints_to_Cfunction_dict(includes=None, rel_path_to_Cparams=os
         name=func_name, params=params,
         preloop=preloop,
         body=body,
-        loopopts=get_loopopts("InteriorPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on),
+        loopopts=get_loopopts("InteriorPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on, centering=[0,0,0]),
         rel_path_to_Cparams=rel_path_to_Cparams, enableCparameters=enableCparameters)
     return pickle_NRPy_env()
 
@@ -606,7 +619,7 @@ def add_enforce_detgammahat_constraint_to_Cfunction_dict(includes=None, rel_path
         name=func_name, params=params,
         preloop=preloop,
         body=body,
-        loopopts=get_loopopts("AllPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on),
+        loopopts=get_loopopts("AllPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on, centering=[0,0,0]),
         rel_path_to_Cparams=rel_path_to_Cparams, enableCparameters=enableCparameters)
     return pickle_NRPy_env()
 
@@ -685,7 +698,7 @@ psi4_tetrad(params,
         name=name, params=params,
         body=body,
         loopopts=get_loopopts("InteriorPoints", enable_SIMD, enable_rfm_precompute, OMP_pragma_on,
-                              enable_xxs=False),
+                              enable_xxs=False, centering=[0,0,0]),
         rel_path_to_Cparams=rel_path_to_Cparams)
     return pickle_NRPy_env()
 

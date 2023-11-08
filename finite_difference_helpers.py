@@ -260,13 +260,13 @@ def ijk_carpetx(idx4):
         if ff == 0:
             pass
         elif ff == 1:
-            result += f("+p.DI[{i}]")
+            result += f(" + p.DI[{i}]")
         elif ff == -1:
-            result += f("-p.DI[{i}]")
+            result += f(" - p.DI[{i}]")
         elif ff < 0:
-            result += f("-{-ff}*p.DI[{i}]")
+            result += f(" - {-ff}*p.DI[{i}]")
         else:
-            result += f("+{ff}*p.DI[{i}]")
+            result += f(" + {ff}*p.DI[{i}]")
     return result
 
 def ijkl_string(idx4, FDparams):
