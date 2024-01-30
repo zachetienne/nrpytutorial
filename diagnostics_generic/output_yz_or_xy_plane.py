@@ -114,7 +114,7 @@ the given coordinate system's """+plane+""" plane.
 """
     c_type = "void"
     name = plane + "_plane_diagnostics"
-    params = """const griddata_struct *restrict griddata,
+    params = """FILE *fp, const griddata_struct *restrict griddata,
     const REAL *restrict y_n_gfs, const REAL *restrict diagnostic_output_gfs"""
     body  = output_plane_yz_or_xy_body(plane=plane, include_ghosts=include_ghosts)
     printf_char_string = "\"%e %e %e"
@@ -130,7 +130,7 @@ the given coordinate system's """+plane+""" plane.
     REAL xCart[3];
     xx_to_Cart(&params, xx, i0,i1,i2, xCart);
     int idx = IDX3S(i0,i1,i2);
-    printf("""+printf_char_string+output_quantities+r""");
+    fprintf(fp, """+printf_char_string+output_quantities+r""");
   }
 """
     outC.add_to_Cfunction_dict(
