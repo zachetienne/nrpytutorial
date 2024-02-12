@@ -114,7 +114,7 @@ int RemainingIterations = max_iterations;
 
 for(int i=1;i<=max_iterations;i++) {
   // Step 2.a: First perform the iteration on refinement level startRefLev
-  printf("Beginning iteration %d...",counter+1);
+  printf("Beginning iteration %d...\n",counter+1);
 
   // Step 2.b: Now loop over remaining refinement levels, performing the
   //           path of least resistance (POLR) algorithm
@@ -144,7 +144,7 @@ for(int i=1;i<=max_iterations;i++) {
     // Step 2.d.i: Converged!
     RemainingIterations = 0;
     i = max_iterations*10;
-    printf("Algorithm converged! l2norm_tau_change = %e (threshold = %e)",l2norm_global,tauChangeThreshold);
+    printf("Algorithm converged! l2norm_tau_change = %e (threshold = %e)\n",l2norm_global,tauChangeThreshold);
   }
   else {
     // Step 2.d.ii: Have not converged. Restrict current solution from the
@@ -152,10 +152,10 @@ for(int i=1;i<=max_iterations;i++) {
     // number of iterations remaining; continue.
     if( RemainingIterations > 1 ) {
       RemainingIterations--;
-      printf("Completed iteration %d. Global change: %e. Remaining iterations: %4d",counter,l2norm_global,RemainingIterations);
+      printf("Completed iteration %d. Global change: %e. Remaining iterations: %4d\n",counter,l2norm_global,RemainingIterations);
     }
     else {
-      printf("Maximum iterations reached, but convergence threshold not met.");
+      printf("Maximum iterations reached, but convergence threshold not met.\n");
     }
   }
 }
@@ -481,7 +481,7 @@ else {
                  &dummy1, &dummy2, &stencil_gzz[0]);
 
     compute_gDDii(params, i_j_kp1, evol_gfs, 
-                 &dummy1, &dummy2, &stencil_gzz[1]);
+                 &dummy1, &dummy2, &stencil_gzz[2]);
                   
     //const REAL stencil_gxx[3] = {gxx[im1_j_k], gxx[i_j_k], gxx[ip1_j_k]};
     //const REAL stencil_gyy[3] = {gyy[i_jm1_k], gyy[i_j_k], gyy[i_jp1_k]};
