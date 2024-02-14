@@ -50,6 +50,8 @@ rho_max_threshold = par.Cparameters("REAL", thismodule, ["rho_max_threshold"], 1
 max_iterations = par.Cparameters("int", thismodule, ["max_iterations"], 2048)
 
 
+CoordSystem     = "Cartesian"
+par.set_parval_from_str("reference_metric::CoordSystem", CoordSystem)
 rfm.reference_metric()
 
 import BSSN.BSSN_quantities as Bq
@@ -287,12 +289,12 @@ const REAL cf = evol_gfs[IDX4ptS(CFGF, index)];
     // Step 3.b.i: Read from main memory
     const REAL Y_eL         = auxevol_gfs[IDX4ptS(YEGF, index)];
     const REAL temperatureL = auxevol_gfs[IDX4ptS(TEMPERATUREGF, index)];
-    tau.nue [0]                  = auxevol_gfs[IDX4ptS(TAU_0_NUEGF,  index)];
-    tau.nue [1]                  = auxevol_gfs[IDX4ptS(TAU_1_NUEGF,  index)];
-    tau.anue[0]                  = auxevol_gfs[IDX4ptS(TAU_0_ANUEGF, index)];
-    tau.anue[1]                  = auxevol_gfs[IDX4ptS(TAU_1_ANUEGF, index)];
-    tau.nux [0]                  = auxevol_gfs[IDX4ptS(TAU_0_NUXGF,  index)];
-    tau.nux [1]                  = auxevol_gfs[IDX4ptS(TAU_1_NUXGF,  index)];
+    tau.nue [0]             = auxevol_gfs[IDX4ptS(TAU_0_NUEGF,  index)];
+    tau.nue [1]             = auxevol_gfs[IDX4ptS(TAU_1_NUEGF,  index)];
+    tau.anue[0]             = auxevol_gfs[IDX4ptS(TAU_0_ANUEGF, index)];
+    tau.anue[1]             = auxevol_gfs[IDX4ptS(TAU_1_ANUEGF, index)];
+    tau.nux [0]             = auxevol_gfs[IDX4ptS(TAU_0_NUXGF,  index)];
+    tau.nux [1]             = auxevol_gfs[IDX4ptS(TAU_1_NUXGF,  index)];
 
     // Step 3.b.ii: Compute opacities
     NRPyLeakage_compute_neutrino_opacities(ghl_eos, rhoL, Y_eL, temperatureL, &tau, &kappa);
@@ -323,11 +325,6 @@ tau_1_nux_p [index] = tau.nux [1];
                       body=body,
                       rel_path_to_Cparams=os.path.join("."), 
                       loopopts="AllPoints")
-
-
-
-
-
 
 def add_to_Cfunction_dict_NRPyLeakageET_optical_depths_PathOfLeastResistance():
 
@@ -421,13 +418,13 @@ REAL *kappa_0_nux  = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*KAPPA_0_NUXGF;
 REAL *kappa_1_nux  = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*KAPPA_1_NUXGF;
 
 // Step 1: Set gridpoint indices
-const int i_j_k   = IDX3S(i0  , i1, i2  );
-const int ip1_j_k = IDX3S(i0+1, i1, i2  );
-const int im1_j_k = IDX3S(i0-1, i1, i2  );
-const int i_jp1_k = IDX3S(i0, i1+1, i2  );
-const int i_jm1_k = IDX3S(i0, i1-1, i2  );
-const int i_j_kp1 = IDX3S(i0, i1  , i2+1);
-const int i_j_km1 = IDX3S(i0, i1  , i2-1);
+const int i_j_k   = IDX3S(i0  , i1,   i2  );
+const int ip1_j_k = IDX3S(i0+1, i1,   i2  );
+const int im1_j_k = IDX3S(i0-1, i1,   i2  );
+const int i_jp1_k = IDX3S(i0,   i1+1, i2  );
+const int i_jm1_k = IDX3S(i0,   i1-1, i2  );
+const int i_j_kp1 = IDX3S(i0,   i1  , i2+1);
+const int i_j_km1 = IDX3S(i0,   i1  , i2-1);
 
 const REAL rhoL = auxevol_gfs[IDX4ptS(RHOBGF, i_j_k)];
 // Only compute optical depths if density is above a threshold
@@ -578,10 +575,10 @@ const REAL *tau_auxs[6] = {tau_0_nue_aux,  tau_1_nue_aux,
 //             + dTau_1_nue + dTau_1_anue + dTau_1_nux)                         
   
 REAL l2norm = 0.0;
-#pragma omp parallel for
-LOOP_REGION(NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS,
-            NGHOSTS, Nxx_plus_2NGHOSTS1-NGHOSTS,
-            NGHOSTS, Nxx_plus_2NGHOSTS2-NGHOSTS){
+#pragma omp parallel for reduction(+:l2norm)
+LOOP_REGION(0, Nxx_plus_2NGHOSTS2,
+            0, Nxx_plus_2NGHOSTS1,
+            0, Nxx_plus_2NGHOSTS2){
 
     const int index = IDX3S(i0, i1, i2);
     for (int i = 0; i<6; i++) l2norm += tau_auxs[i][index];
@@ -721,6 +718,196 @@ else {
               loopopts="InteriorPoints")
 
 
+# For evolutions
+def add_to_Cfunction_dict_NRPyLeakageET_compute_neutrino_opacities_and_add_GRHD_source_terms():
+        
+  includes = ["NRPy_basic_defines.h", "NRPy_function_prototypes.h"]
+  c_type = "void"
+  name = "NRPyLeakageET_compute_neutrino_opacities_and_add_GRHD_source_terms"
+  desc = r"""
+(c) Leo Werneck
+Compute opacities
+https://adsabs.harvard.edu/pdf/1996A%26A...311..532R
+"""
+  params = r"""const paramstruct *restrict params, const ghl_eos_parameters *restrict ghl_eos,
+  const REAL *restrict evol_gfs, REAL *restrict rhs_gfs, REAL *restrict auxevol_gfs"""
+
+  R_sourceL, Q_sourceL = sp.symbols(["R_sourceL", "Q_sourceL"])
+
+  vU = ixp.declarerank1("vU")
+  u4Ut = sp.symbols("u4Ut")
+
+  u4U = ixp.zerorank1(DIM=4)
+
+  u4U[0] = u4Ut
+  for i in range(3):
+      u4U[i+1] = u4Ut * vU[i]
+
+  import BSSN.ADM_in_terms_of_BSSN as AtoB
+  AtoB.ADM_in_terms_of_BSSN()
+  import BSSN.BSSN_quantities as Bq
+
+  Bq.BSSN_basic_tensors()
+
+  import BSSN.ADMBSSN_tofrom_4metric as AB4m
+  AB4m.g4DD_ito_BSSN_or_ADM("BSSN")
+
+  u4D = ixp.zerorank1(DIM=4)
+
+  for mu in range(4):
+      for nu in range(4):
+          u4D[mu] += AB4m.g4DD[mu][nu] * u4U[nu]
+
+  for mu in range(4):
+      u4D[mu] = sp.simplify(u4D[mu])
+
+  Bq.phi_and_derivs()
+  psi6 = Bq.exp_m4phi**(-0.5*3)
+
+  Y_e_star_sourceL =  Bq.alpha     * psi6 * R_sourceL
+  tau_sourceL      = (Bq.alpha**2) * psi6 * Q_sourceL * u4Ut
+
+  StildeD_sourceL  = ixp.zerorank1()
+  for i in range(3):
+      StildeD_sourceL[i] = sp.simplify(Bq.alpha * psi6 * Q_sourceL * u4D[i+1])
+
+
+  sourceL_str = outputC([Y_e_star_sourceL, tau_sourceL, *StildeD_sourceL], 
+                        ["Y_e_star_sourceL", "tau_sourceL", "StildeD_sourceL[0]", "StildeD_sourceL[1]", "StildeD_sourceL[2]"], 
+                        filename='returnstring', params="includebraces=true")  
+  
+  body = r"""  
+// Step 1: Set local gridfunction index
+const int index = IDX3S(i0, i1, i2);
+
+// Step 2: Declare variables
+const REAL rho = auxevol_gfs[IDX4ptS(RHOBGF, index)];
+const REAL vU0 = auxevol_gfs[IDX4ptS(VU0GF,  index)];
+const REAL vU1 = auxevol_gfs[IDX4ptS(VU1GF,  index)];
+const REAL vU2 = auxevol_gfs[IDX4ptS(VU2GF,  index)];
+const REAL u4Ut = auxevol_gfs[IDX4ptS(U4UTGF,  index)];
+
+const REAL alpha = evol_gfs[IDX4ptS(ALPHAGF, index)];
+const REAL vetU0 = evol_gfs[IDX4ptS(VETU0GF, index)];
+const REAL vetU1 = evol_gfs[IDX4ptS(VETU1GF, index)];
+const REAL vetU2 = evol_gfs[IDX4ptS(VETU2GF, index)];
+
+const REAL hDD00 = evol_gfs[IDX4ptS(HDD00GF, index)];
+const REAL hDD01 = evol_gfs[IDX4ptS(HDD01GF, index)];
+const REAL hDD02 = evol_gfs[IDX4ptS(HDD02GF, index)];
+const REAL hDD11 = evol_gfs[IDX4ptS(HDD11GF, index)];
+const REAL hDD12 = evol_gfs[IDX4ptS(HDD12GF, index)];
+const REAL hDD22 = evol_gfs[IDX4ptS(HDD22GF, index)];
+const REAL cf    = evol_gfs[IDX4ptS(CFGF,    index)];
+
+ghl_neutrino_opacities kappa;
+ghl_neutrino_optical_depths tau;
+
+// Step 3: Check density threshold, compute opacities
+if( rho < rho_min_threshold || rho > rho_max_threshold ) {
+  // Step 3.a: Below density threshold; set opacities and optical
+  // depths to zero
+  kappa.nue[0] = kappa.anue[0] = kappa.nux[0] = 0.0;
+  kappa.nue[1] = kappa.anue[1] = kappa.nux[1] = 0.0;
+}
+else {
+"""+psi6_str+r"""
+  if( psi6L > psi6_threshold ) {
+    kappa.nue[0] = kappa.anue[0] = kappa.nux[0] = 0.0;
+    kappa.nue[1] = kappa.anue[1] = kappa.nux[1] = 0.0;
+  }
+  else {
+    // Step 3.b: Above density threshold, compute opacities
+    // Step 3.b.i: Read from main memory
+    const REAL Y_e         = auxevol_gfs[IDX4ptS(YEGF, index)];
+    const REAL temperature = auxevol_gfs[IDX4ptS(TEMPERATUREGF, index)];
+    tau.nue [0]            = auxevol_gfs[IDX4ptS(TAU_0_NUEGF,  index)];
+    tau.nue [1]            = auxevol_gfs[IDX4ptS(TAU_1_NUEGF,  index)];
+    tau.anue[0]            = auxevol_gfs[IDX4ptS(TAU_0_ANUEGF, index)];
+    tau.anue[1]            = auxevol_gfs[IDX4ptS(TAU_1_ANUEGF, index)];
+    tau.nux [0]            = auxevol_gfs[IDX4ptS(TAU_0_NUXGF,  index)];
+    tau.nux [1]            = auxevol_gfs[IDX4ptS(TAU_1_NUXGF,  index)];
+
+    // Compute R, Q, and the neutrino opacities
+    REAL R_sourceL, Q_sourceL;
+    NRPyLeakage_compute_neutrino_opacities_and_GRMHD_source_terms(ghl_eos,
+                                                                  rho, Y_e, temperature,
+                                                                  &tau, &kappa, &R_sourceL, &Q_sourceL);
+    // Now add to RHSs
+    REAL Y_e_star_sourceL, tau_sourceL;
+    REAL StildeD_sourceL[3];
+""" + sourceL_str + r"""
+    rhs_gfs[IDX4ptS(YE_STARGF, index)]   += Y_e_star_sourceL;
+    rhs_gfs[IDX4ptS(TAU_TILDEGF, index)] += tau_sourceL;
+    rhs_gfs[IDX4ptS(STILDED0GF, index)]  += StildeD_sourceL[0];
+    rhs_gfs[IDX4ptS(STILDED1GF, index)]  += StildeD_sourceL[1];
+    rhs_gfs[IDX4ptS(STILDED2GF, index)]  += StildeD_sourceL[2];
+  }
+}
+
+// Step 4: Write to main memory
+auxevol_gfs[IDX4ptS(KAPPA_0_NUEGF,  index)] = kappa.nue [0];
+auxevol_gfs[IDX4ptS(KAPPA_1_NUEGF,  index)] = kappa.nue [1];
+auxevol_gfs[IDX4ptS(KAPPA_0_ANUEGF, index)] = kappa.anue[0];
+auxevol_gfs[IDX4ptS(KAPPA_1_ANUEGF, index)] = kappa.anue[1];
+auxevol_gfs[IDX4ptS(KAPPA_0_NUXGF,  index)] = kappa.nux [0];
+auxevol_gfs[IDX4ptS(KAPPA_1_NUXGF,  index)] = kappa.nux [1];
+"""  
+  add_to_Cfunction_dict(
+                      includes=includes,
+                      desc=desc,
+                      c_type=c_type, name=name, params=params,
+                      body=body,
+                      rel_path_to_Cparams=os.path.join("."),
+                      loopopts="InteriorPoints")
+
+
+
+def add_to_Cfunction_dict_NRPyLeakageET_update_opacities_and_optical_depths__add_to_RHSs():
+          
+  name = "NRPyLeakageET_update_opacities_and_optical_depths__add_to_RHSs"
+  includes = ["NRPy_basic_defines.h", "NRPy_function_prototypes.h"]
+  c_type = "void"
+  desc = "update opacities and optical depths to current timestep, add to GRHD RHSs"
+  params = "const paramstruct *restrict params, const ghl_eos_parameters *restrict ghl_eos, const REAL *restrict evol_gfs, REAL *restrict rhs_gfs, REAL *restrict auxevol_gfs"
+
+  body = r"""
+// Step 0: set pointers to GFs not in use at the moment
+
+const int Nxx_plus_2NGHOSTS_TOT = Nxx_plus_2NGHOSTS0*Nxx_plus_2NGHOSTS1*Nxx_plus_2NGHOSTS2;
+
+REAL *tau_0_nue_p  = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*RBARDD00GF;
+REAL *tau_1_nue_p  = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*RBARDD01GF;
+REAL *tau_0_anue_p = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*RBARDD02GF;
+REAL *tau_1_anue_p = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*RBARDD11GF;
+REAL *tau_0_nux_p  = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*RBARDD12GF;
+REAL *tau_1_nux_p  = auxevol_gfs + Nxx_plus_2NGHOSTS_TOT*RBARDD22GF;
+
+// Now perform update for opacities and source terms
+NRPyLeakageET_compute_neutrino_opacities_and_add_GRHD_source_terms(params, ghl_eos, 
+                                                                   evol_gfs, rhs_gfs,
+                                                                   auxevol_gfs);
+
+// Now copy valid data to these tmp storage
+NRPyLeakage_CopyOpticalDepthsToAux(params, auxevol_gfs, 
+                                   tau_0_nue_p,  tau_1_nue_p,
+                                   tau_0_anue_p, tau_1_anue_p,
+                                   tau_0_nux_p,  tau_1_nux_p);
+
+// Finally, update optical depths
+NRPyLeakageET_optical_depths_PathOfLeastResistance(params, evol_gfs, auxevol_gfs,
+                                                   tau_0_nue_p,  tau_1_nue_p, 
+                                                   tau_0_anue_p, tau_1_anue_p, 
+                                                   tau_0_nux_p,  tau_1_nux_p);                                                  
+"""
+  add_to_Cfunction_dict(
+                      includes=includes,
+                      desc=desc,
+                      c_type=c_type, name=name, params=params,
+                      body=body,
+                      rel_path_to_Cparams=os.path.join("."))
+
+
 def add_to_all_Cfunctions():
   add_to_Cfunction_dict_NRPyLeakageET_Initialize()
   add_to_Cfunction_dict_NRPyLeakageET_compute_optical_depth_change()
@@ -729,3 +916,5 @@ def add_to_all_Cfunctions():
   add_to_Cfunction_dict_NRPyLeakageET_optical_depths_initialize_to_zero()
   add_to_Cfunction_dict_NRPyLeakageET_compute_neutrino_opacities()
   add_to_Cfunction_dict_NRPyLeakageET_optical_depths_PathOfLeastResistance()
+  add_to_Cfunction_dict_NRPyLeakageET_compute_neutrino_opacities_and_add_GRHD_source_terms()
+  add_to_Cfunction_dict_NRPyLeakageET_update_opacities_and_optical_depths__add_to_RHSs()
