@@ -581,6 +581,7 @@ def add_enforce_detgammahat_constraint_to_Cfunction_dict(includes=None, rel_path
     else:
         params += "REAL *restrict xx[3], "
     params += "REAL *restrict in_gfs"
+#     params += "REAL *restrict auxevol_gfs"
 
     # Construct body:
     enforce_detg_constraint_symb_expressions = EGC.Enforce_Detgammahat_Constraint_symb_expressions()
